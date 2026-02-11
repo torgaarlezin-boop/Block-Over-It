@@ -1113,26 +1113,19 @@
       }
 
       /* Mobile Controls */
-      #mobile-controls {
       .mobile-controls-overlay {
         display: none;
-        position: absolute;
         position: fixed;
         bottom: 20px;
         left: 0;
         width: 100%;
-        height: 100px;
         height: 140px;
         pointer-events: none;
-        z-index: 200;
         z-index: 1000;
         justify-content: space-between;
         padding: 0 30px;
         box-sizing: border-box;
       }
-      .d-pad,
-      .action-pad {
-        pointer-events: auto;
 
       body.mobile-mode.in-game .mobile-controls-overlay {
         display: flex;
@@ -1144,7 +1137,6 @@
         pointer-events: auto;
         align-items: center;
       }
-      #mobile-controls button {
 
       .mc-btn {
         width: 70px;
@@ -1167,7 +1159,6 @@
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
-      #mobile-controls button:active {
       .mc-btn:active, .mc-btn.pressed {
         background: rgba(255, 255, 255, 0.4);
         transform: scale(0.95);
@@ -1211,6 +1202,7 @@
           border: none;
           box-shadow: 0 4px 0 #111;
           text-shadow: 1px 1px 0 #000;
+        }
 
         /* Hide desktop elements */
         .mobile-mode .bottom-controls,
@@ -1222,15 +1214,12 @@
         .mobile-mode #social-notif {
             display: none !important;
         }
-        .mobile-mode .btn:active {
-          transform: translateY(4px);
-          box-shadow: none;
-        }
         .mobile-mode .level-btn {
           width: 60px;
           height: 60px;
           font-size: 1.5rem;
           padding: 0;
+        }
 
         /* Mobile Menu Grid */
         .mobile-mode .mobile-menu-grid {
@@ -1241,6 +1230,7 @@
         }
         .mobile-mode .level-grid {
           gap: 10px;
+        }
 
         @media (orientation: portrait) {
           .mobile-mode .mobile-menu-grid {
@@ -1264,6 +1254,7 @@
           position: fixed;
           top: 20px; /* Move to top */
           bottom: auto;
+        }
 
         .mobile-mode .mobile-icon-btn {
           width: 80px;
@@ -1663,6 +1654,20 @@
     </div>
 
     <script>
+      import { DiscordSDK } from "@discord/embedded-app-sdk";
+
+// 1. Initialize the SDK
+const discordSdk = new DiscordSDK(1470968739527790655);
+
+async function setupDiscordSdk() {
+    // 2. Wait for the handshake to complete
+    await discordSdk.ready();
+    console.log("Discord SDK is ready!");
+    
+    // Now you can do things like authenticate or get user info
+}
+
+setupDiscordSdk();
       // --- Safe Storage Helper ---
       const safeStorage = {
         getItem: function (key) {
@@ -4481,7 +4486,6 @@
         const useCamera = gameSettings.camera || isMobile;
 
         // Ensure camera works by resetting display to block when camera is active
-        if (gameSettings.camera) {
         if (useCamera) {
           this.wrap.style.display = "block";
           this.wrap.style.overflow = "hidden"; // Hide scrollbars for transform camera
@@ -4491,7 +4495,6 @@
           this.world.style.transform = "none"; // Reset transform
         }
 
-        if (gameSettings.camera) {
         if (useCamera) {
           this.scrollPlayerIntoView();
         }
@@ -7039,4 +7042,3 @@
     </script>
   </body>
 </html>
-
