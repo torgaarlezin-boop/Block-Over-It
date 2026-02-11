@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -1469,7 +1468,7 @@
           min-width: auto;
           padding: 10px 20px;
           font-size: 1rem;
-          opacity:0.5;
+          opacity: 0.5;
           pointer-events: none;
         "
         onclick="showMenu('social')"
@@ -4020,7 +4019,7 @@
             player.pos.x + player.size.x > posBefore.x &&
             player.pos.x < posBefore.x + this.size.x
           ) {
-                        var moveDelta = this.pos.plus(posBefore.times(-1));
+            var moveDelta = this.pos.plus(posBefore.times(-1));
             var proposedPos = player.pos.plus(moveDelta);
             var obstacle = level.obstacleAt(proposedPos, player.size, player);
             if (!obstacle || obstacle !== "wall") {
@@ -4037,11 +4036,13 @@
               this.pos.y + this.size.y > player.pos.y
             ) {
               if (this.speed.x !== 0) {
-                if (this.speed.x > 0) player.pos.x = this.pos.x + this.size.x + 0.01;
+                if (this.speed.x > 0)
+                  player.pos.x = this.pos.x + this.size.x + 0.01;
                 else player.pos.x = this.pos.x - player.size.x - 0.01;
               }
               if (this.speed.y !== 0) {
-                if (this.speed.y > 0) player.pos.y = this.pos.y + this.size.y + 0.01;
+                if (this.speed.y > 0)
+                  player.pos.y = this.pos.y + this.size.y + 0.01;
                 else {
                   player.pos.y = this.pos.y - player.size.y - 0.01;
                   player.speed.y = 0;
@@ -4213,8 +4214,8 @@
             var td = rowElement.appendChild(element("td", type));
             if (type === "wall") {
               var color = self.level.colors[`${x},${y}`];
-              if (color === 'invisible') {
-                td.style.visibility = 'hidden';
+              if (color === "invisible") {
+                td.style.visibility = "hidden";
               } else if (color) {
                 td.style.backgroundColor = color;
                 td.style.borderColor = adjustColor(color, -20);
@@ -4260,7 +4261,7 @@
 
             // Static setup
             if (actor.color) {
-              if (actor.color === 'invisible' && actor.type !== 'player') {
+              if (actor.color === "invisible" && actor.type !== "player") {
                 el.style.visibility = 0;
               } else if (actor.type !== "spike") {
                 el.style.backgroundColor = actor.color;
@@ -4278,8 +4279,9 @@
               visual.style.left = "50%";
               visual.style.bottom = "0";
               visual.style.transform = "translateX(-50%)";
-              if (actor.color && actor.color !== 'invisible') visual.style.borderBottomColor = actor.color;
-              else if (actor.color === 'invisible') el.style.visibility = 0;
+              if (actor.color && actor.color !== "invisible")
+                visual.style.borderBottomColor = actor.color;
+              else if (actor.color === "invisible") el.style.visibility = 0;
               el.appendChild(visual);
             }
             if (actor.text) {
@@ -5459,39 +5461,77 @@
         if (view === "main") {
           subtitle.textContent = "";
 
-          const btnCampaign = document.createElement("button");
-          btnCampaign.className = "btn";
-          btnCampaign.textContent = "CAMPAIGN";
-          btnCampaign.onclick = () => {
-            currentGameMode = "campaign";
-            showMenu("campaign");
-          };
+          if (document.body.classList.contains("mobile-mode")) {
+            const mobileGrid = document.createElement("div");
+            mobileGrid.className = "mobile-menu-grid";
 
-          const btnSpeed = document.createElement("button");
-          btnSpeed.className = "btn";
-          btnSpeed.textContent = "SPEEDRUN";
-          btnSpeed.onclick = () => {
-            currentGameMode = "speedrun";
-            showMenu("source-select");
-          };
+            // Leaderboard
+            const lbBtn = document.createElement("button");
+            lbBtn.className = "mobile-icon-btn";
+            lbBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>`;
+            lbBtn.onclick = () => showMenu("leaderboards-new");
 
-          const btnCustom = document.createElement("button");
-          btnCustom.className = "btn";
-          btnCustom.textContent = "CUSTOM LEVELS";
-          btnCustom.onclick = () => {
-            currentGameMode = "custom";
-            showMenu("custom");
-          };
+            // Campaign
+            const campBtn = document.createElement("button");
+            campBtn.className = "mobile-icon-btn";
+            campBtn.style.width = "100px";
+            campBtn.style.height = "100px";
+            campBtn.style.background = "#335699";
+            campBtn.style.borderColor = "#5588cc";
+            campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            campBtn.onclick = () => {
+              currentGameMode = "campaign";
+              showMenu("campaign");
+            };
 
-          const btnOther = document.createElement("button");
-          btnOther.className = "btn";
-          btnOther.textContent = "OTHER MODES";
-          btnOther.onclick = () => showMenu("other-modes");
+            // Profile
+            const profBtn = document.createElement("button");
+            profBtn.className = "mobile-icon-btn";
+            profBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+            profBtn.onclick = () => {
+              if (currentUser) showMenu("account");
+              else openLoginModal();
+            };
 
-          container.appendChild(btnCampaign);
-          container.appendChild(btnSpeed);
-          container.appendChild(btnCustom);
-          container.appendChild(btnOther);
+            mobileGrid.appendChild(lbBtn);
+            mobileGrid.appendChild(campBtn);
+            mobileGrid.appendChild(profBtn);
+            container.appendChild(mobileGrid);
+          } else {
+            const btnCampaign = document.createElement("button");
+            btnCampaign.className = "btn";
+            btnCampaign.textContent = "CAMPAIGN";
+            btnCampaign.onclick = () => {
+              currentGameMode = "campaign";
+              showMenu("campaign");
+            };
+
+            const btnSpeed = document.createElement("button");
+            btnSpeed.className = "btn";
+            btnSpeed.textContent = "SPEEDRUN";
+            btnSpeed.onclick = () => {
+              currentGameMode = "speedrun";
+              showMenu("source-select");
+            };
+
+            const btnCustom = document.createElement("button");
+            btnCustom.className = "btn";
+            btnCustom.textContent = "CUSTOM LEVELS";
+            btnCustom.onclick = () => {
+              currentGameMode = "custom";
+              showMenu("custom");
+            };
+
+            const btnOther = document.createElement("button");
+            btnOther.className = "btn";
+            btnOther.textContent = "OTHER MODES";
+            btnOther.onclick = () => showMenu("other-modes");
+
+            container.appendChild(btnCampaign);
+            container.appendChild(btnSpeed);
+            container.appendChild(btnCustom);
+            container.appendChild(btnOther);
+          }
         } else if (view === "settings") {
           subtitle.textContent = "SETTINGS";
 
@@ -5976,8 +6016,10 @@
 
           // Stats Calculation
           let totalBlue = 0;
-          Object.values(gameState.levelBlueCoins).forEach((v) => {
-            if (v) totalBlue++;
+          Object.keys(gameState.levelBlueCoins).forEach((key) => {
+            if (gameState.levelBlueCoins[key] && !key.startsWith("custom_")) {
+              totalBlue++;
+            }
           });
           let totalHighscores = Object.keys(highscores).length;
           let completionPct = Math.round((totalBlue / 60) * 100); // Approx total blue coins
@@ -6860,4 +6902,3 @@
     </script>
   </body>
 </html>
-
