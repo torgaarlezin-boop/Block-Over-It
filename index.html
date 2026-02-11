@@ -1114,14 +1114,18 @@
 
       /* Mobile Controls */
       #mobile-controls {
+      .mobile-controls-overlay {
         display: none;
         position: absolute;
+        position: fixed;
         bottom: 20px;
         left: 0;
         width: 100%;
         height: 100px;
+        height: 140px;
         pointer-events: none;
         z-index: 200;
+        z-index: 1000;
         justify-content: space-between;
         padding: 0 30px;
         box-sizing: border-box;
@@ -1129,26 +1133,49 @@
       .d-pad,
       .action-pad {
         pointer-events: auto;
+
+      body.mobile-mode.in-game .mobile-controls-overlay {
+        display: flex;
+      }
+
+      .mc-dpad, .mc-action {
         display: flex;
         gap: 20px;
+        pointer-events: auto;
+        align-items: center;
       }
       #mobile-controls button {
+
+      .mc-btn {
         width: 70px;
         height: 70px;
         background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
         border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: white;
         font-size: 24px;
         touch-action: manipulation;
+        touch-action: none;
         user-select: none;
         -webkit-user-select: none;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
       #mobile-controls button:active {
+      .mc-btn:active, .mc-btn.pressed {
         background: rgba(255, 255, 255, 0.4);
         transform: scale(0.95);
+      }
+      .mc-btn svg {
+        width: 32px;
+        height: 32px;
+        fill: currentColor;
       }
 
       @media (max-width: 768px) {
@@ -1166,8 +1193,13 @@
         .mobile-mode .menu-container {
           width: 100%;
           padding: 0 20px;
+          padding: 0;
           box-sizing: border-box;
           max-width: 500px;
+          max-width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .mobile-mode .btn {
           width: 100%;
@@ -1179,6 +1211,16 @@
           border: none;
           box-shadow: 0 4px 0 #111;
           text-shadow: 1px 1px 0 #000;
+
+        /* Hide desktop elements */
+        .mobile-mode .bottom-controls,
+        .mobile-mode .leaderboard-btn,
+        .mobile-mode .editor-btn,
+        .mobile-mode .login-btn,
+        .mobile-mode .feedback-btn,
+        .mobile-mode .controls-hint,
+        .mobile-mode #social-notif {
+            display: none !important;
         }
         .mobile-mode .btn:active {
           transform: translateY(4px);
@@ -1189,12 +1231,21 @@
           height: 60px;
           font-size: 1.5rem;
           padding: 0;
+
+        /* Mobile Menu Grid */
+        .mobile-mode .mobile-menu-grid {
           display: flex;
+          gap: 30px;
           align-items: center;
           justify-content: center;
         }
         .mobile-mode .level-grid {
           gap: 10px;
+
+        @media (orientation: portrait) {
+          .mobile-mode .mobile-menu-grid {
+              flex-direction: column;
+          }
         }
         .mobile-mode .controls-hint {
           display: none;
@@ -1213,6 +1264,14 @@
           position: fixed;
           top: 20px; /* Move to top */
           bottom: auto;
+
+        .mobile-mode .mobile-icon-btn {
+          width: 80px;
+          height: 80px;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.1);
+          border: 2px solid rgba(255,255,255,0.2);
+          color: white;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1222,6 +1281,30 @@
           border: 2px solid rgba(255, 255, 255, 0.1);
           z-index: 200;
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(5px);
+          transition: transform 0.1s;
+        }
+        .mobile-mode .mobile-icon-btn:active {
+          transform: scale(0.95);
+          background: rgba(255,255,255,0.2);
+        }
+        .mobile-mode .mobile-icon-btn svg {
+          width: 40px;
+          height: 40px;
+          fill: currentColor;
+        }
+
+        /* Center Campaign Button (Larger) */
+        .mobile-mode .mobile-icon-btn.campaign-btn {
+          width: 120px;
+          height: 120px;
+          background: #335699;
+          border-color: #5588cc;
+          box-shadow: 0 0 20px rgba(51, 86, 153, 0.4);
+        }
+        .mobile-mode .mobile-icon-btn.campaign-btn svg {
+          width: 60px;
+          height: 60px;
         }
       }
 
@@ -1555,6 +1638,28 @@
     <div id="notification-banner" class="notification-banner">
       <div id="notif-text">Notification Text</div>
       <div id="notif-actions" style="display: flex; gap: 10px"></div>
+    </div>
+
+    <div class="mobile-controls-overlay">
+      <div class="mc-dpad">
+        <div class="mc-btn" id="mc-left">
+          <svg viewBox="0 0 24 24">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+          </svg>
+        </div>
+        <div class="mc-btn" id="mc-right">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+          </svg>
+        </div>
+      </div>
+      <div class="mc-action">
+        <div class="mc-btn" id="mc-up">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z" />
+          </svg>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -4189,6 +4294,17 @@
           window.innerWidth / level.width,
           window.innerHeight / level.height,
         );
+        // Determine scale: fit to screen normally, or zoom in for camera/mobile
+        const isMobile = document.body.classList.contains("mobile-mode");
+        if (gameSettings.camera || isMobile) {
+          // Zoomed in scale (e.g., show ~15 blocks width)
+          this.scale = window.innerWidth / 15;
+        } else {
+          this.scale = Math.min(
+            window.innerWidth / level.width,
+            window.innerHeight / level.height,
+          );
+        }
 
         this.world = this.wrap.appendChild(element("div", "world"));
         this.world.style.width = this.level.width * this.scale + "px";
@@ -4361,8 +4477,12 @@
         this.drawPracticeMarker();
         this.wrap.className = "game " + (this.level.status || "");
 
+        const isMobile = document.body.classList.contains("mobile-mode");
+        const useCamera = gameSettings.camera || isMobile;
+
         // Ensure camera works by resetting display to block when camera is active
         if (gameSettings.camera) {
+        if (useCamera) {
           this.wrap.style.display = "block";
           this.wrap.style.overflow = "hidden"; // Hide scrollbars for transform camera
         } else {
@@ -4372,6 +4492,7 @@
         }
 
         if (gameSettings.camera) {
+        if (useCamera) {
           this.scrollPlayerIntoView();
         }
       };
@@ -4690,6 +4811,7 @@
         }
 
         document.getElementById("restart-btn").style.display = "block";
+        document.body.classList.add("in-game"); // Show mobile controls
         runLevel(
           new Level(levelData),
           DOMDisplay,
@@ -4944,6 +5066,7 @@
       function exitToMenu() {
         cancelAnimationFrame(activeAnimationFrame);
         activeAnimationFrame = false;
+        document.body.classList.remove("in-game"); // Hide mobile controls
         if (activeLevelDisplay) {
           activeLevelDisplay.clear();
           activeLevelDisplay = null;
@@ -5478,6 +5601,7 @@
             campBtn.style.height = "100px";
             campBtn.style.background = "#335699";
             campBtn.style.borderColor = "#5588cc";
+            campBtn.className = "mobile-icon-btn campaign-btn";
             campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
             campBtn.onclick = () => {
               currentGameMode = "campaign";
@@ -6689,7 +6813,7 @@
             } catch (err) {
               showPopup(
                 "ERROR",
-                "Failed to parse JSON file. Please check the file format.",
+                "Failed to parse JSON file. ",
                 () => {},
               );
             }
@@ -6880,7 +7004,7 @@
           if (cheatCodeInput === CLEAR_CODE) {
             showConfirmPopup(
               "CLEAR PROGRESS",
-              "Are you sure you want to clear all progress? This cannot be undone.",
+              "Are you sure you want to clear all progress?",
               () => {
                 clearAllProgress();
               },
@@ -6890,6 +7014,18 @@
         }
       });
 
+      function setupMobileControls() {
+        const addTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            if(!btn) return;
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); arrows[key] = true; btn.classList.add('pressed'); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); arrows[key] = false; btn.classList.remove('pressed'); });
+        };
+        addTouch('mc-left', 'left');
+        addTouch('mc-right', 'right');
+        addTouch('mc-up', 'up');
+      }
+
       // Mobile Detection
       if (
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -6898,7 +7034,9 @@
         window.innerWidth <= 768
       ) {
         document.body.classList.add("mobile-mode");
+        setupMobileControls();
       }
     </script>
   </body>
 </html>
+
