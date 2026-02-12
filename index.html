@@ -1131,7 +1131,8 @@
         display: flex;
       }
 
-      .mc-dpad, .mc-action {
+      .mc-dpad,
+      .mc-action {
         display: flex;
         gap: 20px;
         pointer-events: auto;
@@ -1159,7 +1160,8 @@
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
-      .mc-btn:active, .mc-btn.pressed {
+      .mc-btn:active,
+      .mc-btn.pressed {
         background: rgba(255, 255, 255, 0.4);
         transform: scale(0.95);
       }
@@ -1212,7 +1214,7 @@
         .mobile-mode .feedback-btn,
         .mobile-mode .controls-hint,
         .mobile-mode #social-notif {
-            display: none !important;
+          display: none !important;
         }
         .mobile-mode .level-btn {
           width: 60px;
@@ -1234,7 +1236,7 @@
 
         @media (orientation: portrait) {
           .mobile-mode .mobile-menu-grid {
-              flex-direction: column;
+            flex-direction: column;
           }
         }
         .mobile-mode .controls-hint {
@@ -1260,8 +1262,8 @@
           width: 80px;
           height: 80px;
           border-radius: 20px;
-          background: rgba(255,255,255,0.1);
-          border: 2px solid rgba(255,255,255,0.2);
+          background: rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(255, 255, 255, 0.2);
           color: white;
           display: flex;
           align-items: center;
@@ -1277,7 +1279,7 @@
         }
         .mobile-mode .mobile-icon-btn:active {
           transform: scale(0.95);
-          background: rgba(255,255,255,0.2);
+          background: rgba(255, 255, 255, 0.2);
         }
         .mobile-mode .mobile-icon-btn svg {
           width: 40px;
@@ -1654,20 +1656,6 @@
     </div>
 
     <script>
-      import { DiscordSDK } from "@discord/embedded-app-sdk";
-
-// 1. Initialize the SDK
-const discordSdk = new DiscordSDK(1470968739527790655);
-
-async function setupDiscordSdk() {
-    // 2. Wait for the handshake to complete
-    await discordSdk.ready();
-    console.log("Discord SDK is ready!");
-    
-    // Now you can do things like authenticate or get user info
-}
-
-setupDiscordSdk();
       // --- Safe Storage Helper ---
       const safeStorage = {
         getItem: function (key) {
@@ -1694,16 +1682,12 @@ setupDiscordSdk();
         },
       };
 
-      // --- Supabase Integration ---
+      // --- Supabase Stuff ---
       const supabaseUrl = "https://heqmnluegbbglmhtublu.supabase.co";
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
-      const LATEST_NEWS_VERSION = "1.4.1";
-
-      if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
-        _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-      }
+      const LATEST_NEWS_VERSION = "1.4.1"; // Not even really related to supabase
 
       async function fetchGlobalHighscore(key) {
         if (!_supabase) return null;
@@ -1840,12 +1824,8 @@ setupDiscordSdk();
               saveGame();
               saveCustomLevels();
               saveCustomLevelsProgress();
-              // saveGame(); // Don't overwrite local progress
-              // saveCustomLevels();
-              // saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
-              // saveSettings();
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -1853,6 +1833,69 @@ setupDiscordSdk();
           safeStorage.setItem("blockoverit_username", currentUser);
         } catch (e) {
           showPopup("ERROR", "Auth error: " + e.message, () => {});
+        }
+      }
+
+      async function fetchAndSyncUserData() {
+        if (!_supabase || !currentUser) return;
+        try {
+          const { data, error } = await _supabase
+            .from("users")
+            .select("data")
+            .eq("username", currentUser)
+            .single();
+
+          if (data && data.data) {
+            const d = data.data;
+            if (d.gameState) {
+              if (d.gameState.levelBlueCoins) {
+                gameState.levelBlueCoins = {
+                  ...gameState.levelBlueCoins,
+                  ...d.gameState.levelBlueCoins,
+                };
+              }
+              gameState.unlockedLevel = Math.max(
+                gameState.unlockedLevel,
+                d.gameState.unlockedLevel || 0,
+              );
+              gameState.unlockedLevelCh2 = Math.max(
+                gameState.unlockedLevelCh2,
+                d.gameState.unlockedLevelCh2 || 0,
+              );
+              gameState.unlockedLevelCh3 = Math.max(
+                gameState.unlockedLevelCh3,
+                d.gameState.unlockedLevelCh3 || 0,
+              );
+              if (d.gameState.chapter1Beaten) gameState.chapter1Beaten = true;
+              if (d.gameState.chapter2Beaten) gameState.chapter2Beaten = true;
+              if (d.gameState.chapter3Beaten) gameState.chapter3Beaten = true;
+              if (d.gameState.gameBeaten) gameState.gameBeaten = true;
+              if (d.gameState.blueCoinUnlockShown)
+                gameState.blueCoinUnlockShown = true;
+            }
+            if (d.customLevelsProgress)
+              customLevelsProgress = {
+                ...customLevelsProgress,
+                ...d.customLevelsProgress,
+              };
+            if (d.highscores) {
+              for (const key in d.highscores) {
+                if (!highscores[key] || d.highscores[key] < highscores[key])
+                  highscores[key] = d.highscores[key];
+              }
+            }
+            if (d.customLevels) customLevels = d.customLevels;
+            if (d.gameSettings && d.gameSettings.playlist)
+              gameSettings.playlist = d.gameSettings.playlist;
+
+            saveGame();
+            saveCustomLevels();
+            saveCustomLevelsProgress();
+            saveHighscores();
+            saveSettings();
+          }
+        } catch (e) {
+          console.warn("Sync error:", e);
         }
       }
 
@@ -1942,7 +1985,7 @@ setupDiscordSdk();
         }
       }
 
-      // --- Audio System (Synthesizer) ---
+      // Synth
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       let bgmOscillator = null;
       let synthGainNode = null;
@@ -2008,7 +2051,7 @@ setupDiscordSdk();
           if (libItem) {
             targetFile = libItem.file;
           } else {
-            // Fallback for direct file paths or unknown IDs
+            // Fallback for direct file paths or if unknown ID
             targetFile = targetId.includes(".") ? targetId : null;
           }
         } else if (activeLevelDisplay) {
@@ -2017,7 +2060,7 @@ setupDiscordSdk();
             currentGameMode === "deathrun" ||
             currentGameMode === "chapter_speedrun"
           ) {
-            // Speedrun/Deathrun override
+            // Speedrun/Deathrun music
             const t = MUSIC_LIBRARY.find((x) => x.id === "skate");
             if (t) {
               targetId = t.id;
@@ -2141,7 +2184,7 @@ setupDiscordSdk();
         }
 
         if (file) {
-          // Play MP3
+          // Play Song
           currentAudio = new Audio(file);
           currentAudio.onerror = () => {
             console.warn("Audio load error, falling back to synth");
@@ -6814,11 +6857,7 @@ setupDiscordSdk();
               saveCustomLevels();
               showMenu("custom"); // refresh
             } catch (err) {
-              showPopup(
-                "ERROR",
-                "Failed to parse JSON file. ",
-                () => {},
-              );
+              showPopup("ERROR", "Failed to parse JSON file. ", () => {});
             }
           };
           reader.readAsText(file);
@@ -6863,6 +6902,7 @@ setupDiscordSdk();
       if (savedUser) {
         currentUser = savedUser;
         updateLoginButton();
+        fetchAndSyncUserData();
       } else {
         if (!safeStorage.getItem("hasSeenLoginPrompt")) {
           safeStorage.setItem("hasSeenLoginPrompt", "true");
@@ -6941,6 +6981,37 @@ setupDiscordSdk();
         }, 3500);
       }
 
+      function setupMobileControls() {
+        const addTouch = (id, key) => {
+          const btn = document.getElementById(id);
+          if (!btn) return;
+          btn.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            arrows[key] = true;
+            btn.classList.add("pressed");
+          });
+          btn.addEventListener("touchend", (e) => {
+            e.preventDefault();
+            arrows[key] = false;
+            btn.classList.remove("pressed");
+          });
+        };
+        addTouch("mc-left", "left");
+        addTouch("mc-right", "right");
+        addTouch("mc-up", "up");
+      }
+
+      // Mobile Detection
+      if (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        ) ||
+        window.innerWidth <= 768
+      ) {
+        document.body.classList.add("mobile-mode");
+        setupMobileControls();
+      }
+
       // --- Start ---
       if (!safeStorage.getItem("hasSeenIntro")) {
         safeStorage.setItem("hasSeenIntro", "true");
@@ -7016,29 +7087,6 @@ setupDiscordSdk();
           }
         }
       });
-
-      function setupMobileControls() {
-        const addTouch = (id, key) => {
-            const btn = document.getElementById(id);
-            if(!btn) return;
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); arrows[key] = true; btn.classList.add('pressed'); });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); arrows[key] = false; btn.classList.remove('pressed'); });
-        };
-        addTouch('mc-left', 'left');
-        addTouch('mc-right', 'right');
-        addTouch('mc-up', 'up');
-      }
-
-      // Mobile Detection
-      if (
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent,
-        ) ||
-        window.innerWidth <= 768
-      ) {
-        document.body.classList.add("mobile-mode");
-        setupMobileControls();
-      }
     </script>
   </body>
 </html>
