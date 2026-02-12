@@ -4560,7 +4560,8 @@
         const isMobile = document.body.classList.contains("mobile-mode");
         const useCamera = gameSettings.camera || isMobile;
 
-             this.`.style.justifyContent = "center";
+        if (this.zoomedOut) {
+             this.wrap.style.justifyContent = "center";
              this.wrap.style.alignItems = "center";
              this.wrap.style.overflow = "hidden";
              
