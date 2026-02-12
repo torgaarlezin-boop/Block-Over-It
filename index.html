@@ -1183,7 +1183,6 @@
         }
         /* --- Mobile Mode Overhaul --- */
         .mobile-mode h1 {
-          font-size: 3rem;
           font-size: 2rem;
           letter-spacing: 2px;
           text-shadow: 2px 2px 0px #335699;
@@ -1202,15 +1201,10 @@
         }
         .mobile-mode .btn {
           width: 100%;
-          padding: 18px;
           padding: 15px;
           font-size: 1.2rem;
           margin: 8px 0;
-          border-radius: 15px;
           background: #333;
-          border: none;
-          box-shadow: 0 4px 0 #111;
-          text-shadow: 1px 1px 0 #000;
           border: 2px solid #555;
         }
 
@@ -1543,24 +1537,6 @@
         </button>
       </div>
 
-      <button
-        class="btn"
-        style="
-          position: absolute;
-          top: 20px;
-          left: 200px;
-          min-width: auto;
-          padding: 10px 20px;
-          font-size: 1rem;
-          opacity: 0.5;
-          pointer-events: none;
-        "
-        onclick="showMenu('social')"
-      >
-        <span>Social</span>
-        <div id="social-notif" class="notif-dot"></div>
-      </button>
-
       <button class="leaderboard-btn" onclick="showMenu('leaderboards-new')">
         <span>Leaderboards</span>
         <svg
@@ -1622,7 +1598,6 @@
     <div id="game-container"></div>
     <div class="hud" id="hud">ESC</div>
     <button id="restart-btn" class="btn" onclick="restartCurrentLevel()">
-      Restart
       <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
     </button>
     <div id="timer-display">00:00.000</div>
@@ -2354,8 +2329,6 @@
 
       // Game Modes
       let currentGameMode = "campaign"; // 'campaign', 'custom', 'speedrun', 'deathrun'
-      let currentDuelId = null;
-      let duelAttempts = 0;
       let gameTimer = 0;
       let gameTimerRunning = false;
       let gameTimerStart = 0;
@@ -4964,11 +4937,6 @@
                 }
                 return;
               }
-              if (currentGameMode === "duel") {
-                gameTimer = Date.now() - gameTimerStart;
-                finishDuelRun(gameTimer);
-                return;
-              }
               if (currentGameMode === "speedrun") {
                 gameTimerRunning = false;
                 if (gameTimerStart > 0) {
@@ -5177,8 +5145,6 @@
           if (
             currentGameMode === "speedrun" ||
             currentGameMode === "deathrun" ||
-            currentGameMode === "deathrun" ||
-            currentGameMode === "duel" ||
             currentGameMode === "practice"
           ) {
             showMenu("source-select");
@@ -5236,357 +5202,6 @@
         section.appendChild(header);
         section.appendChild(content);
         return section;
-      }
-
-      // --- Social Logic ---
-      async function switchSocialTab(tab, el) {
-        document
-          .querySelectorAll(".social-tab")
-          .forEach((t) => t.classList.remove("active"));
-        // Use provided element if available, otherwise try to find the matching tab
-        let tabEl =
-          el ||
-          Array.from(document.querySelectorAll(".social-tab")).find(
-            (t) => t.textContent.trim().toLowerCase() === tab,
-          );
-        if (tabEl) tabEl.classList.add("active");
-        if (tab === "friends") loadFriendsTab();
-        else loadDuelsTab();
-      }
-
-      async function loadFriendsTab() {
-        const content = document.getElementById("social-content");
-        content.innerHTML = `
-          <div class="search-bar">
-            <input type="text" id="friend-search" class="search-input" placeholder="Search username...">
-            <button class="btn" style="min-width:auto; padding:10px;" onclick="searchAndAddFriend()">ADD</button>
-          </div>
-          <div id="friends-list">Loading...</div>
-        `;
-
-        const { data: friends, error } = await _supabase
-          .from("friends")
-          .select("*")
-          .or(`user_1.eq.${currentUser},user_2.eq.${currentUser}`);
-
-        const list = document.getElementById("friends-list");
-        list.innerHTML = "";
-
-        if (friends && friends.length > 0) {
-          friends.forEach((f) => {
-            const isUser1 = f.user_1 === currentUser;
-            const otherUser = isUser1 ? f.user_2 : f.user_1;
-            const status = f.status;
-
-            const row = document.createElement("div");
-            row.className = "friend-row";
-
-            let actionHtml = "";
-            if (status === "pending" && !isUser1) {
-              actionHtml = `<button class="btn" style="min-width:auto; padding:5px 10px; font-size:0.8rem; background:#2ecc71;" onclick="acceptFriend('${f.id}')">ACCEPT</button>`;
-            } else if (status === "accepted") {
-              actionHtml = `<button class="btn" style="min-width:auto; padding:5px 10px; font-size:0.8rem;" onclick="setupDuel('${otherUser}')">DUEL</button>`;
-            } else {
-              actionHtml = `<span style="color:#888; font-size:0.8rem;">PENDING</span>`;
-            }
-
-            row.innerHTML = `
-              <span style="font-weight:bold; color:${status === "pending" ? "#888" : "#fff"}">${otherUser}</span>
-              <div>${actionHtml}</div>
-            `;
-            list.appendChild(row);
-          });
-        } else {
-          list.innerHTML =
-            '<div style="text-align:center; color:#666;">No friends yet.</div>';
-        }
-      }
-
-      async function searchAndAddFriend() {
-        const username = document.getElementById("friend-search").value.trim();
-        if (!username || username === currentUser) return;
-
-        // Check if user exists
-        const { data: user } = await _supabase
-          .from("users")
-          .select("username")
-          .eq("username", username)
-          .single();
-        if (!user) return showPopup("ERROR", "User not found.", () => {});
-
-        // Check if already friends
-        const { data: existing } = await _supabase
-          .from("friends")
-          .select("*")
-          .or(
-            `and(user_1.eq.${currentUser},user_2.eq.${username}),and(user_1.eq.${username},user_2.eq.${currentUser})`,
-          );
-        if (existing && existing.length > 0)
-          return showPopup(
-            "INFO",
-            "Friend request already sent or accepted.",
-            () => {},
-          );
-
-        await _supabase
-          .from("friends")
-          .insert([{ user_1: currentUser, user_2: username }]);
-        showPopup("SUCCESS", "Friend request sent!", () => loadFriendsTab());
-      }
-
-      async function acceptFriend(id) {
-        await _supabase
-          .from("friends")
-          .update({ status: "accepted" })
-          .eq("id", id);
-        loadFriendsTab();
-      }
-
-      async function loadDuelsTab() {
-        const content = document.getElementById("social-content");
-        content.innerHTML = '<div id="duels-list">Loading...</div>';
-
-        const { data: duels } = await _supabase
-          .from("duels")
-          .select("*")
-          .or(`challenger.eq.${currentUser},opponent.eq.${currentUser}`)
-          .order("created_at", { ascending: false });
-
-        const list = document.getElementById("duels-list");
-        list.innerHTML = "";
-
-        if (duels && duels.length > 0) {
-          duels.forEach((d) => {
-            const isChallenger = d.challenger === currentUser;
-            const otherUser = isChallenger ? d.opponent : d.challenger;
-            const myTimes = isChallenger
-              ? d.challenger_times
-              : d.opponent_times;
-            const attempts = myTimes ? myTimes.length : 0;
-
-            let statusHtml = "";
-            let actionBtn = "";
-
-            if (d.status === "pending") {
-              if (!isChallenger) {
-                actionBtn = `<button class="btn" style="min-width:auto; padding:5px 10px; font-size:0.8rem; background:#2ecc71;" onclick="respondDuel('${d.id}', 'active')">ACCEPT</button>
-                             <button class="btn" style="min-width:auto; padding:5px 10px; font-size:0.8rem; background:#a44;" onclick="respondDuel('${d.id}', 'declined')">DECLINE</button>`;
-              } else {
-                statusHtml = "Waiting for opponent...";
-              }
-            } else if (d.status === "active") {
-              if (attempts < 3) {
-                actionBtn = `<button class="btn" style="min-width:auto; padding:5px 10px; font-size:0.8rem; background:#e67e22;" onclick="startDuelRun('${d.id}')">PLAY (${3 - attempts} LEFT)</button>`;
-              } else {
-                statusHtml = "Waiting for result...";
-              }
-            } else if (d.status === "completed") {
-              const won = d.winner === currentUser;
-              statusHtml = `<span style="color:${won ? "#2ecc71" : "#a44"}; font-weight:bold;">${won ? "VICTORY" : "DEFEAT"}</span>`;
-            } else {
-              statusHtml = "Declined";
-            }
-
-            const row = document.createElement("div");
-            row.className = "duel-row";
-            row.innerHTML = `
-              <div style="display:flex; flex-direction:column;">
-                <span style="font-weight:bold; color:#fff">vs ${otherUser}</span>
-                <span style="font-size:0.7rem; color:#888;">${d.level_type.toUpperCase()}</span>
-              </div>
-              <div style="display:flex; gap:5px; align-items:center;">
-                ${statusHtml}
-                ${actionBtn}
-              </div>
-            `;
-            list.appendChild(row);
-          });
-        } else {
-          list.innerHTML =
-            '<div style="text-align:center; color:#666;">No duels found.</div>';
-        }
-      }
-
-      function setupDuel(opponent) {
-        const overlay = document.createElement("div");
-        overlay.className = "popup-overlay";
-        overlay.innerHTML = `
-            <div class="popup">
-                <button class="popup-close" onclick="this.closest('.popup-overlay').remove()">&times;</button>
-                <div class="popup-title">DUEL MODE</div>
-                <div class="popup-message">Select duel type against <b>${opponent}</b>:</div>
-                <div class="popup-buttons">
-                    <button class="popup-btn" onclick="createDuel('${opponent}', 'random'); this.closest('.popup-overlay').remove()">RANDOM (CH1/2)</button>
-                    <button class="popup-btn" onclick="createDuel('${opponent}', 'custom'); this.closest('.popup-overlay').remove()">CUSTOM</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-      }
-
-      async function createDuel(opponent, type) {
-        let levelData = null;
-        if (type === "random") {
-          // Pick random level from Ch1 or Ch2
-          const pool = [...CHAPTER_1, ...CHAPTER_2];
-          levelData = pool[Math.floor(Math.random() * pool.length)];
-        } else {
-          // For custom, let's pick the first custom level for now, or open a picker
-          // To keep it simple in this iteration: Pick random custom level if exists, else error
-          if (customLevels.length > 0) {
-            levelData =
-              customLevels[Math.floor(Math.random() * customLevels.length)];
-          } else {
-            return showPopup(
-              "ERROR",
-              "You have no custom levels to duel with!",
-              () => {},
-            );
-          }
-        }
-
-        await _supabase.from("duels").insert([
-          {
-            challenger: currentUser,
-            opponent: opponent,
-            level_type: type,
-            level_data: levelData,
-            status: "pending",
-          },
-        ]);
-        showPopup("SENT", "Duel challenge sent!", () => loadDuelsTab());
-      }
-
-      async function respondDuel(id, status) {
-        await _supabase.from("duels").update({ status: status }).eq("id", id);
-        loadDuelsTab();
-      }
-
-      async function checkNotifications() {
-        if (!currentUser || !_supabase) return;
-
-        // Check pending duels
-        const { data: duels } = await _supabase
-          .from("duels")
-          .select("*")
-          .eq("opponent", currentUser)
-          .eq("status", "pending");
-        if (duels && duels.length > 0) {
-          const d = duels[0]; // Show first
-          showNotification(
-            `Duel Request from ${d.challenger}`,
-            `<button class="btn" style="padding:5px 10px; font-size:0.7rem; min-width:auto;" onclick="respondDuel('${d.id}', 'active'); hideNotification()">ACCEPT</button>
-                 <button class="btn" style="padding:5px 10px; font-size:0.7rem; min-width:auto; background:#a44;" onclick="respondDuel('${d.id}', 'declined'); hideNotification()">DECLINE</button>`,
-          );
-          document.getElementById("social-notif").style.display = "block";
-        }
-      }
-
-      function showNotification(text, actionsHtml) {
-        const banner = document.getElementById("notification-banner");
-        document.getElementById("notif-text").innerText = text;
-        document.getElementById("notif-actions").innerHTML = actionsHtml || "";
-        banner.classList.add("show");
-        // Auto hide after 10s if no interaction
-        setTimeout(hideNotification, 10000);
-      }
-
-      function hideNotification() {
-        document.getElementById("notification-banner").classList.remove("show");
-      }
-
-      async function startDuelRun(id) {
-        const { data: duel } = await _supabase
-          .from("duels")
-          .select("*")
-          .eq("id", id)
-          .single();
-        if (!duel) return;
-
-        currentDuelId = id;
-        const isChallenger = duel.challenger === currentUser;
-        const times = isChallenger
-          ? duel.challenger_times
-          : duel.opponent_times;
-        duelAttempts = times ? times.length : 0;
-
-        if (duelAttempts >= 3)
-          return showPopup("INFO", "You have used all attempts.", () => {});
-
-        currentGameMode = "duel";
-        startGameLevel(duel.level_data, 0, "duel");
-      }
-
-      async function finishDuelRun(time) {
-        // Fetch current state to append time
-        if (!currentDuelId) return;
-        const { data: duel, error } = await _supabase
-          .from("duels")
-          .select("*")
-          .eq("id", currentDuelId)
-          .single();
-
-        if (error || !duel) {
-          showPopup("ERROR", "Connection error. Duel not saved.", () =>
-            exitToMenu(),
-          );
-          return;
-        }
-
-        const isChallenger = duel.challenger === currentUser;
-
-        let times = isChallenger
-          ? duel.challenger_times || []
-          : duel.opponent_times || [];
-        times.push(time); // time is null if died
-
-        const update = isChallenger
-          ? { challenger_times: times }
-          : { opponent_times: times };
-
-        // Check if finished
-        if (times.length >= 3) {
-          // Check if opponent finished
-          const oppTimes = isChallenger
-            ? duel.opponent_times || []
-            : duel.challenger_times || [];
-          if (oppTimes.length >= 3) {
-            // Calculate winner
-            const getBest = (arr) => {
-              const valid = arr.filter((t) => t !== null);
-              return valid.length > 0 ? Math.min(...valid) : Infinity;
-            };
-            const myBest = getBest(times);
-            const oppBest = getBest(oppTimes);
-
-            if (myBest < oppBest) update.winner = currentUser;
-            else if (oppBest < myBest)
-              update.winner = isChallenger ? duel.opponent : duel.challenger;
-            else update.winner = "draw";
-
-            update.status = "completed";
-          }
-        }
-
-        await _supabase.from("duels").update(update).eq("id", currentDuelId);
-
-        if (times.length < 3) {
-          // Next attempt
-          duelAttempts++;
-          showPopup(
-            "ATTEMPT " + (duelAttempts + 1),
-            "Get ready for the next attempt!",
-            () => {
-              startGameLevel(duel.level_data, 0, "duel");
-            },
-          );
-        } else {
-          showPopup(
-            "DUEL FINISHED",
-            "You have completed your 3 attempts.",
-            () => exitToMenu(),
-          );
-        }
       }
 
       // Views: 'main', 'campaign', 'chapter1', 'chapter2', 'custom'
@@ -6147,45 +5762,6 @@
           container.appendChild(btnCamp);
           container.appendChild(btnCust);
           container.appendChild(btnBack);
-        } else if (view === "social") {
-          if (!currentUser) {
-            showPopup(
-              "LOGIN REQUIRED",
-              "You must be logged in to use social features.",
-              () => openLoginModal(),
-            );
-            return;
-          }
-          subtitle.textContent = "SOCIAL";
-          document.getElementById("social-notif").style.display = "none";
-
-          const panel = document.createElement("div");
-          panel.className = "social-panel";
-
-          const tabs = document.createElement("div");
-          tabs.className = "social-tabs";
-          tabs.innerHTML = `
-            <div class="social-tab active" onclick="switchSocialTab('friends')">FRIENDS</div>
-            <div class="social-tab" onclick="switchSocialTab('duels')">DUELS</div>
-          `;
-          panel.appendChild(tabs);
-
-          const content = document.createElement("div");
-          content.className = "social-content";
-          content.id = "social-content";
-          panel.appendChild(content);
-
-          container.appendChild(panel);
-
-          const btnBack = document.createElement("button");
-          btnBack.className = "btn";
-          btnBack.textContent = "BACK";
-          btnBack.style.marginTop = "20px";
-          btnBack.onclick = () => showMenu("main");
-          container.appendChild(btnBack);
-
-          // Initial load
-          loadFriendsTab();
         } else if (view === "account") {
           subtitle.textContent = currentUser.toUpperCase();
           container.style.maxWidth = "800px";
@@ -6525,7 +6101,6 @@
             if (
               currentGameMode === "speedrun" ||
               currentGameMode === "chapter_speedrun" ||
-              currentGameMode === "duel" ||
               currentGameMode === "deathrun" ||
               currentGameMode === "practice"
             )
@@ -6759,7 +6334,6 @@
             if (
               currentGameMode === "speedrun" ||
               currentGameMode === "chapter_speedrun" ||
-              currentGameMode === "duel" ||
               currentGameMode === "deathrun" ||
               currentGameMode === "practice"
             )
