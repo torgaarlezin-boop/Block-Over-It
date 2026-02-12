@@ -4560,10 +4560,7 @@
         const isMobile = document.body.classList.contains("mobile-mode");
         const useCamera = gameSettings.camera || isMobile;
 
-        // Ensure camera works by resetting display to block when camera is active
-        if (this.zoomedOut) {
-             this.wrap.style.display = "flex"; // Center content
-             this.wrap.style.justifyContent = "center";
+             this.`.style.justifyContent = "center";
              this.wrap.style.alignItems = "center";
              this.wrap.style.overflow = "hidden";
              
