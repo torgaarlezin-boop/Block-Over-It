@@ -1745,7 +1745,7 @@
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
-      const LATEST_NEWS_VERSION = "1.4.1"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.4.2"; // Not even really related to supabase idk why here
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
       }
@@ -5738,6 +5738,11 @@
             "width:100%; max-width:600px; max-height:60vh; overflow-y:auto; background:#222; border:2px solid #444; padding:20px; text-align:left;";
 
           const updates = [
+            {
+              v: "1.4.2",
+              t: "Mobile",
+              d: "Redesigned support for mobile, with a special UI for gamemode selection, full beats support, cloud account sync and leaderboard viewing, and more. Also fixed several desktop bugs and added a temporary zoom-out button on mobile that zooms out while you hold it down, useful when screens are smaller like on mobile. You can also now use space to jump. ",
+            },
             {
               v: "1.4.1",
               t: "Bug Fix",
