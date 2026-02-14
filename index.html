@@ -48,7 +48,7 @@
         border: 1px solid #c2c828;
       }
 
-      /* Bonus Coin Style*/
+      /* Bonus Coin Style - Flattened as requested */
       .bonus-coin {
         background: #335699;
         border-radius: 50%;
@@ -256,7 +256,7 @@
       }
 
       h1 {
-        font-size: 4rem;
+        font-size: clamp(2.5rem, 5vw, 4rem);
         margin-bottom: 20px;
         color: #fff;
         text-transform: uppercase;
@@ -266,7 +266,7 @@
       }
 
       h2 {
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 3vw, 2rem);
         margin-bottom: 30px;
         color: #ccc;
         text-transform: uppercase;
@@ -281,7 +281,8 @@
         max-width: 800px;
         flex: 1;
         min-height: 0;
-        margin-bottom: 100px;
+        margin-bottom: 20px;
+        padding-bottom: 80px;
         overflow-y: auto;
         overflow-x: hidden;
         padding: 10px;
@@ -314,10 +315,10 @@
         border: 2px solid #555;
         color: white;
         font-family: inherit;
-        font-size: 1.5rem;
+        font-size: clamp(1rem, 1.5vw, 1.5rem);
         cursor: pointer;
-        padding: 15px 30px;
-        min-width: 200px;
+        padding: clamp(10px, 1.5vw, 15px) clamp(20px, 3vw, 30px);
+        min-width: clamp(150px, 20vw, 200px);
         text-transform: uppercase;
         transition: all 0.2s;
       }
@@ -1152,8 +1153,10 @@
       }
 
       .mc-btn {
-        width: 70px;
-        height: 70px;
+        width: 16vw;
+        height: 16vw;
+        max-width: 70px;
+        max-height: 70px;
         background: rgba(255, 255, 255, 0.15);
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.1);
@@ -1197,14 +1200,13 @@
         }
         .mobile-mode .menu-container {
           width: 100%;
-          padding: 0 20px;
-          padding: 0;
+          padding: 0 20px 120px 20px;
           box-sizing: border-box;
           max-width: 500px;
           max-width: 100%;
           display: flex;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
         }
         .mobile-mode .btn {
           width: 100%;
@@ -1215,8 +1217,8 @@
           border: 2px solid #555;
         }
         .mobile-mode .popup-btn {
-            padding: 10px 20px;
-            font-size: 0.9rem;
+          padding: 10px 20px;
+          font-size: 0.9rem;
         }
 
         /* Hide desktop elements */
@@ -1272,8 +1274,10 @@
         }
 
         .mobile-mode .mobile-icon-btn {
-          width: 80px;
-          height: 80px;
+          width: 18vw;
+          height: 18vw;
+          max-width: 80px;
+          max-height: 80px;
           border-radius: 20px;
           background: rgba(255, 255, 255, 0.1);
           border: 2px solid rgba(255, 255, 255, 0.2);
@@ -1302,8 +1306,10 @@
 
         /* Center Campaign Button (Larger) */
         .mobile-mode .mobile-icon-btn.campaign-btn {
-          width: 120px;
-          height: 120px;
+          width: 25vw;
+          height: 25vw;
+          max-width: 120px;
+          max-height: 120px;
           background: #335699;
           border-color: #5588cc;
           box-shadow: 0 0 20px rgba(51, 86, 153, 0.4);
@@ -1315,25 +1321,25 @@
 
         /* Mobile Beats Button */
         #mobile-beats-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #333;
-            border: 2px solid #555;
-            color: white;
-            display: none; /* Toggled by JS */
-            align-items: center;
-            justify-content: center;
-            z-index: 150;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: #333;
+          border: 2px solid #555;
+          color: white;
+          display: none; /* Toggled by JS */
+          align-items: center;
+          justify-content: center;
+          z-index: 150;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
         }
         #mobile-beats-btn svg {
-            width: 30px;
-            height: 30px;
-            fill: currentColor;
+          width: 30px;
+          height: 30px;
+          fill: currentColor;
         }
       }
 
@@ -1632,10 +1638,33 @@
     <div id="game-container"></div>
     <div class="hud" id="hud">ESC</div>
     <button id="restart-btn" class="btn" onclick="restartCurrentLevel()">
-      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path
+          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+        />
+      </svg>
     </button>
-    <button id="zoom-btn" class="btn" style="display:none; position:absolute; top:20px; right:70px; width:44px; height:44px; padding:0; z-index:60; align-items:center; justify-content:center;">
-        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
+    <button
+      id="zoom-btn"
+      class="btn"
+      style="
+        display: none;
+        position: absolute;
+        top: 20px;
+        right: 70px;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        z-index: 60;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path
+          d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"
+        />
+      </svg>
     </button>
     <div id="timer-display">00:00.000</div>
     <div id="highscore-display">BEST: --:--.---</div>
@@ -1677,7 +1706,11 @@
     </div>
 
     <button id="mobile-beats-btn" onclick="openMobileBeatsUI()">
-        <svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+        />
+      </svg>
     </button>
 
     <script>
@@ -1995,6 +2028,42 @@
           showPopup(
             "ERROR",
             "Failed to update password: " + e.message,
+            () => {},
+          );
+        }
+      }
+
+      async function changeUsername(newUsername) {
+        if (!_supabase || !currentUser) return;
+        if (!newUsername)
+          return showPopup("ERROR", "Username cannot be empty.", () => {});
+
+        try {
+          // Check if taken
+          const { data: existing } = await _supabase
+            .from("users")
+            .select("username")
+            .eq("username", newUsername)
+            .single();
+
+          if (existing)
+            return showPopup("ERROR", "Username already taken.", () => {});
+
+          const { error } = await _supabase
+            .from("users")
+            .update({ username: newUsername })
+            .eq("username", currentUser);
+
+          if (error) throw error;
+          currentUser = newUsername;
+          safeStorage.setItem("blockoverit_username", currentUser);
+          updateLoginButton();
+          showMenu("account");
+          showPopup("SUCCESS", "Username updated!", () => {});
+        } catch (e) {
+          showPopup(
+            "ERROR",
+            "Failed to update username: " + e.message,
             () => {},
           );
         }
@@ -2443,6 +2512,7 @@
         volume: 50,
         menuMusic: "synth",
         confirmDelete: true,
+        sensitivity: 50,
         shuffleMusic: true,
         showEditorButton: false,
         editorNewTab: false,
@@ -2465,6 +2535,7 @@
 
       if (gameSettings.shuffleMusic === undefined)
         gameSettings.shuffleMusic = true;
+      if (gameSettings.sensitivity === undefined) gameSettings.sensitivity = 50;
       if (gameSettings.confirmDelete === undefined)
         gameSettings.confirmDelete = true;
       if (gameSettings.showEditorButton === undefined)
@@ -4542,9 +4613,9 @@
         this.world.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
       };
 
-      DOMDisplay.prototype.setZoomOut = function(state) {
-          this.zoomedOut = state;
-          this.drawFrame();
+      DOMDisplay.prototype.setZoomOut = function (state) {
+        this.zoomedOut = state;
+        this.drawFrame();
       };
 
       DOMDisplay.prototype.drawFrame = function () {
@@ -4561,29 +4632,26 @@
         const useCamera = gameSettings.camera || isMobile;
 
         if (this.zoomedOut) {
-             this.wrap.style.justifyContent = "center";
-             this.wrap.style.alignItems = "center";
-             this.wrap.style.overflow = "hidden";
-             
-             // Calculate fit
-             var totalW = this.level.width * this.scale;
-             var totalH = this.level.height * this.scale;
-             var fitX = window.innerWidth / totalW;
-             var fitY = window.innerHeight / totalH;
-             var fit = Math.min(fitX, fitY) * 0.9;
-             this.world.style.transform = `scale(${fit})`;
-        } else 
-        if (useCamera) {
+          this.wrap.style.display = "flex";
+          this.wrap.style.justifyContent = "center";
+          this.wrap.style.alignItems = "center";
+          this.wrap.style.overflow = "hidden";
+
+          // Calculate fit
+          var totalW = this.level.width * this.scale;
+          var totalH = this.level.height * this.scale;
+          var fitX = window.innerWidth / totalW;
+          var fitY = window.innerHeight / totalH;
+          var fit = Math.min(fitX, fitY) * 0.9;
+          this.world.style.transform = `scale(${fit})`;
+        } else if (useCamera) {
           this.wrap.style.display = "block";
           this.wrap.style.overflow = "hidden"; // Hide scrollbars for transform camera
+          this.scrollPlayerIntoView();
         } else {
           this.wrap.style.display = ""; // Revert to flex from CSS
           this.wrap.style.overflow = "auto";
           this.world.style.transform = "none"; // Reset transform
-        }
-
-        if (useCamera) {
-          this.scrollPlayerIntoView();
         }
       };
 
@@ -4643,15 +4711,18 @@
         reusableInputs.p = arrows.p;
         reusableInputs.r = arrows.r;
 
+        const sensitivity = (gameSettings.sensitivity || 50) / 100;
+        const threshold = Math.max(0.1, Math.min(0.9, 0.5 / sensitivity));
+
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
         for (let i = 0; i < gamepads.length; i++) {
           const gp = gamepads[i];
           if (gp) {
             // Threshold for sticks
-            if (gp.axes[0] < -0.5) reusableInputs.left = true;
-            if (gp.axes[0] > 0.5) reusableInputs.right = true;
-            if (gp.axes[1] < -0.5) reusableInputs.up = true;
-            if (gp.axes[1] > 0.5) reusableInputs.down = true;
+            if (gp.axes[0] < -threshold) reusableInputs.left = true;
+            if (gp.axes[0] > threshold) reusableInputs.right = true;
+            if (gp.axes[1] < -threshold) reusableInputs.up = true;
+            if (gp.axes[1] > threshold) reusableInputs.down = true;
 
             // D-Pad (Standard mapping: 12=Up, 13=Down, 14=Left, 15=Right)
             if (gp.buttons[14] && gp.buttons[14].pressed)
@@ -4901,7 +4972,8 @@
         }
 
         document.getElementById("restart-btn").style.display = "block";
-        if (document.body.classList.contains("mobile-mode")) document.getElementById("zoom-btn").style.display = "flex";
+        if (document.body.classList.contains("mobile-mode"))
+          document.getElementById("zoom-btn").style.display = "flex";
         document.getElementById("restart-btn").style.display = "flex";
         document.body.classList.add("in-game"); // Show mobile controls
         runLevel(
@@ -5303,7 +5375,10 @@
 
         const mobileBeatsBtn = document.getElementById("mobile-beats-btn");
         if (mobileBeatsBtn) {
-            mobileBeatsBtn.style.display = (view === "main" && document.body.classList.contains("mobile-mode")) ? "flex" : "none";
+          mobileBeatsBtn.style.display =
+            view === "main" && document.body.classList.contains("mobile-mode")
+              ? "flex"
+              : "none";
         }
 
         // Clear beats interval if leaving beats menu
@@ -5361,6 +5436,15 @@
             mobileGrid.appendChild(campBtn);
             mobileGrid.appendChild(profBtn);
             container.appendChild(mobileGrid);
+
+            // Mobile Settings Button
+            const mobSettingsBtn = document.createElement("button");
+            mobSettingsBtn.className = "mobile-icon-btn";
+            mobSettingsBtn.style.cssText =
+              "position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; z-index: 100;";
+            mobSettingsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`;
+            mobSettingsBtn.onclick = () => showMenu("mobile-settings");
+            container.appendChild(mobSettingsBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -5515,6 +5599,28 @@
             createAccordion("GAMEPLAY", gameplayItems, openGameplay),
           );
 
+          // Sensitivity Slider (PC)
+          const sensRow = document.createElement("div");
+          sensRow.style.cssText =
+            "display:flex; flex-direction:column; gap:10px; margin-top:10px;";
+          const sensLabel = document.createElement("div");
+          sensLabel.innerHTML = `<span style="font-size:1.2rem;">SENSITIVITY: <span id="sens-display">${gameSettings.sensitivity}%</span></span>`;
+          const sensSlider = document.createElement("input");
+          sensSlider.type = "range";
+          sensSlider.min = "10";
+          sensSlider.max = "200";
+          sensSlider.value = gameSettings.sensitivity;
+          sensSlider.style.cursor = "pointer";
+          sensSlider.oninput = (e) => {
+            gameSettings.sensitivity = parseInt(e.target.value);
+            document.getElementById("sens-display").innerText =
+              gameSettings.sensitivity + "%";
+            saveSettings();
+          };
+          sensRow.appendChild(sensLabel);
+          sensRow.appendChild(sensSlider);
+          gameplayItems.push(sensRow);
+
           // --- Audio Section ---
           const audioItems = [];
 
@@ -5572,10 +5678,92 @@
             userItems.push(passDiv);
           }
 
+          if (currentUser) {
+            const userDiv = document.createElement("div");
+            userDiv.style.cssText =
+              "display:flex; flex-direction:column; gap:10px; padding:10px; background:#222; border:1px solid #444; border-radius:4px; margin-top:10px;";
+            userDiv.innerHTML = `<div style="font-size:0.9rem; color:#ccc; font-weight:bold;">CHANGE USERNAME</div><input type="text" id="new-user-input" placeholder="New Username" style="padding:8px; background:#333; color:white; border:1px solid #555; font-size:0.8rem;"><button class="btn" style="padding:8px; font-size:0.8rem; min-width:auto;" onclick="changeUsername(document.getElementById('new-user-input').value)">UPDATE USERNAME</button>`;
+            userItems.push(userDiv);
+          }
+
           const openUser = context === "user";
           container.appendChild(
             createAccordion("USER SETTINGS", userItems, openUser),
           );
+
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "settings-close-btn";
+          closeBtn.innerHTML = "&times;";
+          closeBtn.onclick = () => showMenu("main");
+          container.appendChild(closeBtn);
+        } else if (view === "mobile-settings") {
+          subtitle.textContent = "SETTINGS";
+          container.style.maxWidth = "400px";
+
+          // Volume
+          const volDiv = document.createElement("div");
+          volDiv.style.cssText = "width:100%; margin-bottom:20px;";
+          volDiv.innerHTML = `<div style="margin-bottom:5px; font-weight:bold;">VOLUME: <span id="m-vol-val">${gameSettings.volume}%</span></div>`;
+          const volSlider = document.createElement("input");
+          volSlider.type = "range";
+          volSlider.min = "0";
+          volSlider.max = "100";
+          volSlider.value = gameSettings.volume;
+          volSlider.oninput = (e) => {
+            gameSettings.volume = parseInt(e.target.value);
+            document.getElementById("m-vol-val").innerText =
+              gameSettings.volume + "%";
+            if (currentAudio) currentAudio.volume = gameSettings.volume / 100;
+            saveSettings();
+          };
+          volDiv.appendChild(volSlider);
+          container.appendChild(volDiv);
+
+          // Sensitivity
+          const sensDiv = document.createElement("div");
+          sensDiv.style.cssText = "width:100%; margin-bottom:20px;";
+          sensDiv.innerHTML = `<div style="margin-bottom:5px; font-weight:bold;">SENSITIVITY: <span id="m-sens-val">${gameSettings.sensitivity}%</span></div>`;
+          const sensSlider = document.createElement("input");
+          sensSlider.type = "range";
+          sensSlider.min = "10";
+          sensSlider.max = "200";
+          sensSlider.value = gameSettings.sensitivity;
+          sensSlider.oninput = (e) => {
+            gameSettings.sensitivity = parseInt(e.target.value);
+            document.getElementById("m-sens-val").innerText =
+              gameSettings.sensitivity + "%";
+            saveSettings();
+          };
+          sensDiv.appendChild(sensSlider);
+          container.appendChild(sensDiv);
+
+          // Alt Coin
+          const altCoinDiv = document.createElement("div");
+          altCoinDiv.style.cssText =
+            "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:10px; border-radius:4px;";
+          altCoinDiv.innerHTML = "<span>ALT BLUE COIN</span>";
+          const acToggle = document.createElement("div");
+          acToggle.className =
+            "toggle-btn" +
+            (gameSettings.alternateBlueCoinStyle ? " active" : "");
+          acToggle.innerHTML = '<div class="toggle-slider"></div>';
+          acToggle.onclick = () => {
+            gameSettings.alternateBlueCoinStyle =
+              !gameSettings.alternateBlueCoinStyle;
+            acToggle.className =
+              "toggle-btn" +
+              (gameSettings.alternateBlueCoinStyle ? " active" : "");
+            saveSettings();
+          };
+          altCoinDiv.appendChild(acToggle);
+          container.appendChild(altCoinDiv);
+
+          // Feedback
+          const fbBtn = document.createElement("button");
+          fbBtn.className = "btn";
+          fbBtn.textContent = "SEND FEEDBACK";
+          fbBtn.onclick = openFeedbackModal;
+          container.appendChild(fbBtn);
 
           const closeBtn = document.createElement("button");
           closeBtn.className = "settings-close-btn";
@@ -5927,153 +6115,174 @@
           subtitle.textContent = "LEADERBOARDS";
 
           const isMobile = document.body.classList.contains("mobile-mode");
-          
+
           if (isMobile) {
-              // Mobile Leaderboard UI
-              container.style.padding = "0";
-              container.style.width = "100%";
-              
-              const mobileContainer = document.createElement("div");
-              mobileContainer.style.cssText = "width:100%; height:100%; display:flex; flex-direction:column; background:#111;";
-              
-              // Header Controls
-              const header = document.createElement("div");
-              header.style.cssText = "padding:15px; background:#222; border-bottom:1px solid #333; display:flex; flex-direction:column; gap:10px;";
-              
-              const row1 = document.createElement("div");
-              row1.style.display = "flex";
-              row1.style.gap = "10px";
-              
-              const modeSelect = document.createElement("select");
-              modeSelect.style.cssText = "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-              ["Speedrun", "Deathrun", "Chapter Speedrun"].forEach((m) => {
-                const opt = document.createElement("option");
-                opt.value = m.toLowerCase().replace(" ", "_");
-                opt.text = m;
-                modeSelect.appendChild(opt);
-              });
-              
-              const chapSelect = document.createElement("select");
-              chapSelect.style.cssText = "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-              [1, 2, 3].forEach((c) => {
-                const opt = document.createElement("option");
-                opt.value = c;
-                opt.text = "Ch " + c;
-                chapSelect.appendChild(opt);
-              });
-              
-              row1.appendChild(modeSelect);
-              row1.appendChild(chapSelect);
-              
-              const row2 = document.createElement("div");
-              row2.style.display = "flex";
-              row2.style.gap = "10px";
-              
-              const levelSelect = document.createElement("select");
-              levelSelect.style.cssText = "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-              
-              const catSelect = document.createElement("select");
-              catSelect.style.cssText = "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-              catSelect.innerHTML = '<option value="any">Any%</option><option value="blue">Blue Coin</option>';
-              
-              row2.appendChild(levelSelect);
-              row2.appendChild(catSelect);
-              
-              header.appendChild(row1);
-              header.appendChild(row2);
-              
-              // List
-              const list = document.createElement("div");
-              list.style.cssText = "flex:1; overflow-y:auto; padding:10px;";
-              list.innerHTML = "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
-              
-              const updateLevels = () => {
-                levelSelect.innerHTML = "";
-                const ch = parseInt(chapSelect.value);
-                const levels = ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
-                
-                if (modeSelect.value === "chapter_speedrun") {
-                  levelSelect.style.display = "none";
-                  levelSelect.disabled = true;
-                } else {
-                  levelSelect.style.display = "block";
-                  levelSelect.disabled = false;
-                  levels.forEach((_, i) => {
-                    const opt = document.createElement("option");
-                    opt.value = i;
-                    opt.text = "Level " + (i + 1);
-                    levelSelect.appendChild(opt);
-                  });
-                }
-                
-                if (modeSelect.value === "deathrun" || modeSelect.value === "chapter_speedrun") {
-                  catSelect.style.display = "none";
-                } else {
-                  catSelect.style.display = "block";
-                }
-                fetchScores();
-              };
-              
-              const fetchScores = async () => {
-                list.innerHTML = "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
-                const mode = modeSelect.value;
-                const ch = parseInt(chapSelect.value);
-                const lvlIdx = parseInt(levelSelect.value);
-                const cat = catSelect.value;
-                
-                let key = "";
-                let prefix = "";
-                if (mode === "speedrun") prefix = "speedrun_";
-                else if (mode === "deathrun") prefix = "deathrun_";
-                else if (mode === "chapter_speedrun") key = `chapter_speedrun_${ch}`;
-                
-                if (!key) {
-                  if (cat === "blue" && mode !== "deathrun") prefix += "blue_";
-                  key = `${prefix}campaign_${ch}_${lvlIdx}`;
-                }
-                
-                const scores = await fetchLevelLeaderboard(key);
-                if (scores.length === 0) {
-                  list.innerHTML = "<div style='text-align:center; color:#666; margin-top:20px;'>No records found.</div>";
-                } else {
-                  list.innerHTML = scores.map((s, i) => {
-                      const t = s.time_ms;
-                      const ms = String(t % 1000).padStart(3, "0");
-                      const sec = String(Math.floor(t / 1000) % 60).padStart(2, "0");
-                      const min = String(Math.floor(t / 60000)).padStart(2, "0");
-                      const isMe = s.username === currentUser;
-                      return `
-                      <div style="background:${isMe ? '#1a2a40' : '#222'}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? '#335699' : '#333'}; display:flex; justify-content:space-between; align-items:center;">
+            // Mobile Leaderboard UI
+            container.style.padding = "0";
+            container.style.width = "100%";
+
+            const mobileContainer = document.createElement("div");
+            mobileContainer.style.cssText =
+              "width:100%; height:100%; display:flex; flex-direction:column; background:#111;";
+
+            // Header Controls
+            const header = document.createElement("div");
+            header.style.cssText =
+              "padding:15px; background:#222; border-bottom:1px solid #333; display:flex; flex-direction:column; gap:10px;";
+
+            const row1 = document.createElement("div");
+            row1.style.display = "flex";
+            row1.style.gap = "10px";
+
+            const modeSelect = document.createElement("select");
+            modeSelect.style.cssText =
+              "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
+            ["Speedrun", "Deathrun", "Chapter Speedrun"].forEach((m) => {
+              const opt = document.createElement("option");
+              opt.value = m.toLowerCase().replace(" ", "_");
+              opt.text = m;
+              modeSelect.appendChild(opt);
+            });
+
+            const chapSelect = document.createElement("select");
+            chapSelect.style.cssText =
+              "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
+            [1, 2, 3].forEach((c) => {
+              const opt = document.createElement("option");
+              opt.value = c;
+              opt.text = "Ch " + c;
+              chapSelect.appendChild(opt);
+            });
+
+            row1.appendChild(modeSelect);
+            row1.appendChild(chapSelect);
+
+            const row2 = document.createElement("div");
+            row2.style.display = "flex";
+            row2.style.gap = "10px";
+
+            const levelSelect = document.createElement("select");
+            levelSelect.style.cssText =
+              "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
+
+            const catSelect = document.createElement("select");
+            catSelect.style.cssText =
+              "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
+            catSelect.innerHTML =
+              '<option value="any">Any%</option><option value="blue">Blue Coin</option>';
+
+            row2.appendChild(levelSelect);
+            row2.appendChild(catSelect);
+
+            header.appendChild(row1);
+            header.appendChild(row2);
+
+            // List
+            const list = document.createElement("div");
+            list.style.cssText = "flex:1; overflow-y:auto; padding:10px;";
+            list.innerHTML =
+              "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
+
+            const updateLevels = () => {
+              levelSelect.innerHTML = "";
+              const ch = parseInt(chapSelect.value);
+              const levels =
+                ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
+
+              if (modeSelect.value === "chapter_speedrun") {
+                levelSelect.style.display = "none";
+                levelSelect.disabled = true;
+              } else {
+                levelSelect.style.display = "block";
+                levelSelect.disabled = false;
+                levels.forEach((_, i) => {
+                  const opt = document.createElement("option");
+                  opt.value = i;
+                  opt.text = "Level " + (i + 1);
+                  levelSelect.appendChild(opt);
+                });
+              }
+
+              if (
+                modeSelect.value === "deathrun" ||
+                modeSelect.value === "chapter_speedrun"
+              ) {
+                catSelect.style.display = "none";
+              } else {
+                catSelect.style.display = "block";
+              }
+              fetchScores();
+            };
+
+            const fetchScores = async () => {
+              list.innerHTML =
+                "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
+              const mode = modeSelect.value;
+              const ch = parseInt(chapSelect.value);
+              const lvlIdx = parseInt(levelSelect.value);
+              const cat = catSelect.value;
+
+              let key = "";
+              let prefix = "";
+              if (mode === "speedrun") prefix = "speedrun_";
+              else if (mode === "deathrun") prefix = "deathrun_";
+              else if (mode === "chapter_speedrun")
+                key = `chapter_speedrun_${ch}`;
+
+              if (!key) {
+                if (cat === "blue" && mode !== "deathrun") prefix += "blue_";
+                key = `${prefix}campaign_${ch}_${lvlIdx}`;
+              }
+
+              const scores = await fetchLevelLeaderboard(key);
+              if (scores.length === 0) {
+                list.innerHTML =
+                  "<div style='text-align:center; color:#666; margin-top:20px;'>No records found.</div>";
+              } else {
+                list.innerHTML = scores
+                  .map((s, i) => {
+                    const t = s.time_ms;
+                    const ms = String(t % 1000).padStart(3, "0");
+                    const sec = String(Math.floor(t / 1000) % 60).padStart(
+                      2,
+                      "0",
+                    );
+                    const min = String(Math.floor(t / 60000)).padStart(2, "0");
+                    const isMe = s.username === currentUser;
+                    return `
+                      <div style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <span style="font-size:1.2rem; font-weight:bold; color:#666; width:25px;">${i+1}</span>
-                            <span style="font-weight:bold; color:${isMe ? '#fff' : '#ccc'}">${s.username}</span>
+                            <span style="font-size:1.2rem; font-weight:bold; color:#666; width:25px;">${i + 1}</span>
+                            <span style="font-weight:bold; color:${isMe ? "#fff" : "#ccc"}">${s.username}</span>
                         </div>
                         <span style="font-family:monospace; font-size:1.1rem; color:#fff;">${min}:${sec}.${ms}</span>
                       </div>
                       `;
-                  }).join("");
-                }
-              };
-              
-              modeSelect.onchange = updateLevels;
-              chapSelect.onchange = updateLevels;
-              levelSelect.onchange = fetchScores;
-              catSelect.onchange = fetchScores;
-              
-              mobileContainer.appendChild(header);
-              mobileContainer.appendChild(list);
-              
-              // Back Button Floating
-              const backBtn = document.createElement("button");
-              backBtn.className = "btn";
-              backBtn.textContent = "BACK";
-              backBtn.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:80%; max-width:300px; box-shadow:0 4px 10px rgba(0,0,0,0.5); z-index:100;";
-              backBtn.onclick = () => showMenu("main");
-              mobileContainer.appendChild(backBtn);
-              
-              container.appendChild(mobileContainer);
-              updateLevels();
-              return;
+                  })
+                  .join("");
+              }
+            };
+
+            modeSelect.onchange = updateLevels;
+            chapSelect.onchange = updateLevels;
+            levelSelect.onchange = fetchScores;
+            catSelect.onchange = fetchScores;
+
+            mobileContainer.appendChild(header);
+            mobileContainer.appendChild(list);
+
+            // Back Button Floating
+            const backBtn = document.createElement("button");
+            backBtn.className = "btn";
+            backBtn.textContent = "BACK";
+            backBtn.style.cssText =
+              "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:80%; max-width:300px; box-shadow:0 4px 10px rgba(0,0,0,0.5); z-index:100;";
+            backBtn.onclick = () => showMenu("main");
+            mobileContainer.appendChild(backBtn);
+
+            container.appendChild(mobileContainer);
+            updateLevels();
+            return;
           }
 
           // Controls Container
@@ -6277,10 +6486,10 @@
           btnCh2.onclick = () => startChapterRun(2);
 
           const btnCh3 = document.createElement("button");
-          btnCh3.className = "btn";
-          btnCh3.textContent = "Chapter III";
-          if (!gameState.chapter2Beaten) btnCh3.disabled = true;
-          btnCh3.onclick = () => startChapterRun(3);
+          // btnCh3.className = "btn";
+          // btnCh3.textContent = "Chapter III";
+          // if (!gameState.chapter2Beaten) btnCh3.disabled = true;
+          // btnCh3.onclick = () => startChapterRun(3);
 
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
@@ -6289,7 +6498,7 @@
 
           container.appendChild(btnCh1);
           container.appendChild(btnCh2);
-          container.appendChild(btnCh3);
+          // container.appendChild(btnCh3); // Removed Chapter 3 Speedrun
           container.appendChild(btnBack);
         } else if (view === "campaign") {
           subtitle.textContent = "Select Chapter";
@@ -6802,13 +7011,23 @@
         addTouch("mc-left", "left");
         addTouch("mc-right", "right");
         addTouch("mc-up", "up");
-        
+
         const zoomBtn = document.getElementById("zoom-btn");
         if (zoomBtn) {
-            zoomBtn.addEventListener("touchstart", (e) => { e.preventDefault(); if(activeLevelDisplay) activeLevelDisplay.setZoomOut(true); });
-            zoomBtn.addEventListener("touchend", (e) => { e.preventDefault(); if(activeLevelDisplay) activeLevelDisplay.setZoomOut(false); });
-            zoomBtn.addEventListener("mousedown", (e) => { if(activeLevelDisplay) activeLevelDisplay.setZoomOut(true); });
-            zoomBtn.addEventListener("mouseup", (e) => { if(activeLevelDisplay) activeLevelDisplay.setZoomOut(false); });
+          zoomBtn.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(true);
+          });
+          zoomBtn.addEventListener("touchend", (e) => {
+            e.preventDefault();
+            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(false);
+          });
+          zoomBtn.addEventListener("mousedown", (e) => {
+            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(true);
+          });
+          zoomBtn.addEventListener("mouseup", (e) => {
+            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(false);
+          });
         }
       }
 
@@ -6822,55 +7041,58 @@
         document.body.classList.add("mobile-mode");
         setupMobileControls();
         if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock("portrait").catch(() => {});
+          screen.orientation.lock("portrait").catch(() => {});
         }
       }
 
       function openMobileBeatsUI() {
-          const overlay = document.createElement("div");
-          overlay.className = "popup-overlay";
-          overlay.style.zIndex = "2000";
-          
-          const container = document.createElement("div");
-          container.style.cssText = "background:#111; width:90%; max-width:400px; border-radius:15px; padding:20px; border:2px solid #333; display:flex; flex-direction:column; gap:15px; max-height:80vh;";
-          
-          const header = document.createElement("div");
-          header.innerHTML = "<span style='font-size:1.5rem; font-weight:bold; color:#fff;'>BEATS</span>";
-          header.style.textAlign = "center";
-          
-          const list = document.createElement("div");
-          list.style.cssText = "overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;";
-          
-          MUSIC_LIBRARY.forEach(track => {
-              const isPlaying = track.id === currentPlayingTrackId;
-              const row = document.createElement("div");
-              row.style.cssText = `padding:15px; background:${isPlaying ? '#1a2a40' : '#222'}; border:1px solid ${isPlaying ? '#335699' : '#333'}; border-radius:8px; display:flex; justify-content:space-between; align-items:center;`;
-              row.innerHTML = `
+        const overlay = document.createElement("div");
+        overlay.className = "popup-overlay";
+        overlay.style.zIndex = "2000";
+
+        const container = document.createElement("div");
+        container.style.cssText =
+          "background:#111; width:90%; max-width:400px; border-radius:15px; padding:20px; border:2px solid #333; display:flex; flex-direction:column; gap:15px; max-height:80vh;";
+
+        const header = document.createElement("div");
+        header.innerHTML =
+          "<span style='font-size:1.5rem; font-weight:bold; color:#fff;'>BEATS</span>";
+        header.style.textAlign = "center";
+
+        const list = document.createElement("div");
+        list.style.cssText =
+          "overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;";
+
+        MUSIC_LIBRARY.forEach((track) => {
+          const isPlaying = track.id === currentPlayingTrackId;
+          const row = document.createElement("div");
+          row.style.cssText = `padding:15px; background:${isPlaying ? "#1a2a40" : "#222"}; border:1px solid ${isPlaying ? "#335699" : "#333"}; border-radius:8px; display:flex; justify-content:space-between; align-items:center;`;
+          row.innerHTML = `
                 <div style="display:flex; flex-direction:column;">
                     <span style="color:white; font-weight:bold;">${track.title}</span>
                     <span style="color:#888; font-size:0.8rem;">${track.artist}</span>
                 </div>
-                ${isPlaying ? '<div style="width:10px; height:10px; background:#2ecc71; border-radius:50%;"></div>' : ''}
+                ${isPlaying ? '<div style="width:10px; height:10px; background:#2ecc71; border-radius:50%;"></div>' : ""}
               `;
-              row.onclick = () => {
-                  playMusic(track.id, true);
-                  overlay.remove();
-                  openMobileBeatsUI(); // Re-open to update UI
-              };
-              list.appendChild(row);
-          });
-          
-          const closeBtn = document.createElement("button");
-          closeBtn.className = "btn";
-          closeBtn.textContent = "CLOSE";
-          closeBtn.style.width = "100%";
-          closeBtn.onclick = () => overlay.remove();
-          
-          container.appendChild(header);
-          container.appendChild(list);
-          container.appendChild(closeBtn);
-          overlay.appendChild(container);
-          document.body.appendChild(overlay);
+          row.onclick = () => {
+            playMusic(track.id, true);
+            overlay.remove();
+            openMobileBeatsUI(); // Re-open to update UI
+          };
+          list.appendChild(row);
+        });
+
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "btn";
+        closeBtn.textContent = "CLOSE";
+        closeBtn.style.width = "100%";
+        closeBtn.onclick = () => overlay.remove();
+
+        container.appendChild(header);
+        container.appendChild(list);
+        container.appendChild(closeBtn);
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
       }
 
       // --- Start ---
@@ -6951,4 +7173,3 @@
     </script>
   </body>
 </html>
-
