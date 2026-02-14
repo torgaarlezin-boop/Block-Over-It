@@ -785,6 +785,18 @@
                 <div>
                   <label
                     class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                    >Creator</label
+                  >
+                  <input
+                    id="prop-creator"
+                    type="text"
+                    value="Anonymous"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
                     >Description</label
                   >
                   <textarea
@@ -2376,6 +2388,21 @@
         "@": "t-player",
         " ": "",
       };
+      const BLOCK_NAMES = {
+        x: "Wall",
+        "!": "Lava",
+        "=": "Horizontal Lava",
+        "|": "Vertical Lava",
+        v: "Dripping Lava",
+        H: "Horizontal Moving Block",
+        V: "Vertical Moving Block",
+        "^": "Rising Lava",
+        S: "Spike",
+        o: "Coin",
+        B: "Blue Coin",
+        "@": "Player",
+        " ": "Empty",
+      };
       const MUSIC_LIBRARY = [
         {
           id: "synth",
@@ -2941,7 +2968,14 @@
           if (cell) {
             const x = parseInt(cell.dataset.x),
               y = parseInt(cell.dataset.y);
-            document.getElementById("cursor-pos").innerText = `${x}, ${y}`;
+            
+            if (state.tool !== 'select') {
+               const char = state.grid[y][x];
+               const bName = BLOCK_NAMES[char] || 'Unknown';
+               document.getElementById("cursor-pos").innerText = `${x}, ${y} (${bName})`;
+            } else {
+               document.getElementById("cursor-pos").innerText = `${x}, ${y}`;
+            }
 
             if (state.picker.active) {
               if (state.picker.mode === "multi" && state.isDrawing) {
@@ -4367,6 +4401,7 @@
           return JSON.stringify(
             {
               name: document.getElementById("prop-name").value,
+              creator: document.getElementById("prop-creator").value,
               description: document.getElementById("prop-desc").value,
               difficulty: parseInt(document.getElementById("prop-diff").value),
               gravity: parseInt(document.getElementById("prop-gravity").value),
@@ -4734,6 +4769,7 @@
         newProject(type) {
           this.currentId = null;
           document.getElementById("prop-name").value = "New Level";
+          document.getElementById("prop-creator").value = "Anonymous";
           document.getElementById("prop-desc").value = "";
           setDifficulty(1);
 
@@ -4776,6 +4812,7 @@
             this.currentId = null; // Treat as new project initially
             document.getElementById("prop-name").value =
               d.name || "Imported Sector";
+            document.getElementById("prop-creator").value = d.creator || "Anonymous";
             document.getElementById("prop-desc").value = d.description || "";
             setDifficulty(d.difficulty || 1);
             document.getElementById("prop-gravity").value = d.gravity || 27;
@@ -4829,6 +4866,7 @@
           const data = {
             id: this.currentId,
             name: document.getElementById("prop-name").value,
+            creator: document.getElementById("prop-creator").value,
             description: document.getElementById("prop-desc").value,
             difficulty: parseInt(document.getElementById("prop-diff").value),
             gravity: parseInt(document.getElementById("prop-gravity").value),
@@ -4858,6 +4896,7 @@
           const data = JSON.parse(json);
           this.currentId = data.id;
           document.getElementById("prop-name").value = data.name;
+          document.getElementById("prop-creator").value = data.creator || "Anonymous";
           document.getElementById("prop-desc").value = data.description || "";
           setDifficulty(data.difficulty || 1);
           document.getElementById("prop-gravity").value = data.gravity || 27;
