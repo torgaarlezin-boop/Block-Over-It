@@ -1323,7 +1323,7 @@
         #mobile-beats-btn {
           position: fixed;
           bottom: 20px;
-          right: 20px;
+          left: 20px;
           width: 60px;
           height: 60px;
           border-radius: 50%;
@@ -1345,11 +1345,13 @@
 
       /* Mobile Landscape Optimizations */
       @media screen and (orientation: landscape) and (max-height: 500px) {
-        .mobile-mode h1 {
-          font-size: 2rem;
-          margin-bottom: 5px;
-          text-shadow: 2px 2px 0px #335699;
+        #main-menu {
+          padding-top: 10px;
         }
+        .mobile-mode h1 {
+          display: none;
+        }
+
         .btn {
           font-size: 1rem;
           padding: 12px 20px;
@@ -1364,10 +1366,11 @@
           gap: 10px;
         }
         .mobile-mode .menu-container {
-          flex-direction: row;
-          flex-wrap: wrap;
+          flex-direction: column;
           justify-content: center;
-          gap: 10px;
+          align-items: center;
+          padding-top: 0;
+          height: 100%;
         }
         .menu-container {
           padding: 0 20px;
@@ -1745,7 +1748,7 @@
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
-      const LATEST_NEWS_VERSION = "1.4.2"; // Not even really related to supabase idk why here
+      const LATEST_NEWS_VERSION = "1.4.1"; // Not even really related to supabase
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
       }
@@ -5224,6 +5227,11 @@
       function handleMenuBack() {
         if (currentMenuView === "main") return;
 
+        if (currentMenuView === "mobile-gamemodes") {
+          showMenu("main");
+          return;
+        }
+
         if (currentMenuView === "beats-menu") {
           showMenu("main");
           return;
@@ -5384,8 +5392,7 @@
             campBtn.className = "mobile-icon-btn campaign-btn";
             campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
             campBtn.onclick = () => {
-              currentGameMode = "campaign";
-              showMenu("campaign");
+              showMenu("mobile-gamemodes");
             };
 
             // Profile
@@ -5564,28 +5571,6 @@
             createAccordion("GAMEPLAY", gameplayItems, openGameplay),
           );
 
-          // Sensitivity Slider (PC)
-          const sensRow = document.createElement("div");
-          sensRow.style.cssText =
-            "display:flex; flex-direction:column; gap:10px; margin-top:10px;";
-          const sensLabel = document.createElement("div");
-          sensLabel.innerHTML = `<span style="font-size:1.2rem;">SENSITIVITY: <span id="sens-display">${gameSettings.sensitivity}%</span></span>`;
-          const sensSlider = document.createElement("input");
-          sensSlider.type = "range";
-          sensSlider.min = "10";
-          sensSlider.max = "200";
-          sensSlider.value = gameSettings.sensitivity;
-          sensSlider.style.cursor = "pointer";
-          sensSlider.oninput = (e) => {
-            gameSettings.sensitivity = parseInt(e.target.value);
-            document.getElementById("sens-display").innerText =
-              gameSettings.sensitivity + "%";
-            saveSettings();
-          };
-          sensRow.appendChild(sensLabel);
-          sensRow.appendChild(sensSlider);
-          gameplayItems.push(sensRow);
-
           // --- Audio Section ---
           const audioItems = [];
 
@@ -5676,24 +5661,6 @@
           volDiv.appendChild(volSlider);
           container.appendChild(volDiv);
 
-          // Sensitivity
-          const sensDiv = document.createElement("div");
-          sensDiv.style.cssText = "width:100%; margin-bottom:20px;";
-          sensDiv.innerHTML = `<div style="margin-bottom:5px; font-weight:bold;">SENSITIVITY: <span id="m-sens-val">${gameSettings.sensitivity}%</span></div>`;
-          const sensSlider = document.createElement("input");
-          sensSlider.type = "range";
-          sensSlider.min = "10";
-          sensSlider.max = "200";
-          sensSlider.value = gameSettings.sensitivity;
-          sensSlider.oninput = (e) => {
-            gameSettings.sensitivity = parseInt(e.target.value);
-            document.getElementById("m-sens-val").innerText =
-              gameSettings.sensitivity + "%";
-            saveSettings();
-          };
-          sensDiv.appendChild(sensSlider);
-          container.appendChild(sensDiv);
-
           // Alt Coin
           const altCoinDiv = document.createElement("div");
           altCoinDiv.style.cssText =
@@ -5727,6 +5694,78 @@
           closeBtn.innerHTML = "&times;";
           closeBtn.onclick = () => showMenu("main");
           container.appendChild(closeBtn);
+        } else if (view === "mobile-gamemodes") {
+          subtitle.textContent = "SELECT MODE";
+          container.style.width = "100%";
+          container.style.padding = "0";
+
+          const carousel = document.createElement("div");
+          carousel.className = "gamemode-carousel";
+          carousel.style.cssText =
+            "display: flex; overflow-x: auto; scroll-snap-type: x mandatory; width: 100%; height: 60vh; align-items: center; gap: 20px; padding: 0 calc(50% - 125px); box-sizing: border-box; scrollbar-width: none;";
+
+          const modes = [
+            {
+              name: "CAMPAIGN",
+              desc: "Play the main story levels.",
+              action: () => {
+                currentGameMode = "campaign";
+                showMenu("campaign");
+              },
+              color: "#335699",
+            },
+            {
+              name: "SPEEDRUN",
+              desc: "Race against the clock.",
+              action: () => {
+                currentGameMode = "speedrun";
+                showMenu("source-select");
+              },
+              color: "#e67e22",
+            },
+            {
+              name: "DEATHRUN",
+              desc: "One life. No checkpoints.",
+              action: () => {
+                currentGameMode = "deathrun";
+                showMenu("source-select");
+              },
+              color: "#a04040",
+            },
+            {
+              name: "CHAPTER RUN",
+              desc: "Speedrun entire chapters.",
+              action: () => {
+                currentGameMode = "chapter_speedrun";
+                showMenu("chapter-speedrun-select");
+              },
+              color: "#8e44ad",
+            },
+          ];
+
+          modes.forEach((m) => {
+            const card = document.createElement("div");
+            card.className = "gamemode-card";
+            card.style.cssText = `flex: 0 0 250px; height: 300px; background: #222; border: 2px solid ${m.color}; border-radius: 15px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; position: relative; transition: transform 0.2s;`;
+
+            card.innerHTML = `
+                  <div style="font-size: 1.5rem; font-weight: bold; color: ${m.color}; margin-bottom: 10px; text-align: center;">${m.name}</div>
+                  <div style="font-size: 0.9rem; color: #aaa; text-align: center; margin-bottom: 20px;">${m.desc}</div>
+                  <button class="btn" style="font-size: 1rem; padding: 10px 20px; background: ${m.color}; border-color: #fff;">PLAY</button>
+              `;
+            card.onclick = m.action;
+            carousel.appendChild(card);
+          });
+
+          container.appendChild(carousel);
+
+          const backBtn = document.createElement("button");
+          backBtn.className = "btn";
+          backBtn.textContent = "BACK";
+          backBtn.style.cssText =
+            "position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;";
+          backBtn.onclick = () => showMenu("main");
+          container.appendChild(backBtn);
         } else if (view === "news") {
           subtitle.textContent = "NEWS & UPDATES";
 
@@ -5738,11 +5777,6 @@
             "width:100%; max-width:600px; max-height:60vh; overflow-y:auto; background:#222; border:2px solid #444; padding:20px; text-align:left;";
 
           const updates = [
-            {
-              v: "1.4.2",
-              t: "Mobile",
-              d: "Redesigned support for mobile, with a special UI for gamemode selection, full beats support, cloud account sync and leaderboard viewing, and more. Also fixed several desktop bugs and added a temporary zoom-out button on mobile that zooms out while you hold it down, useful when screens are smaller like on mobile. You can also now use space to jump. ",
-            },
             {
               v: "1.4.1",
               t: "Bug Fix",
