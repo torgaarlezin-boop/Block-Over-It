@@ -1274,10 +1274,6 @@
           align-items: center;
           justify-content: center;
         }
-        /* Ensure grid flows horizontally in landscape if space permits */
-        .mobile-mode .mobile-menu-grid {
-          flex-direction: row;
-        }
         .mobile-mode .level-grid {
           gap: 10px;
         }
@@ -1442,6 +1438,60 @@
           height: 40px;
           top: 10px;
           left: 60px;
+        }
+      }
+
+      /* Mobile Landscape Redesign (Complete) */
+      @media screen and (orientation: landscape) and (max-height: 600px) {
+        .mobile-mode .mobile-menu-grid {
+          flex-direction: row;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          gap: 40px;
+          width: auto;
+        }
+        .mobile-mode .mobile-icon-btn.campaign-btn {
+          width: 100px;
+          height: 100px;
+        }
+        .mobile-mode .mobile-icon-btn {
+          width: 70px;
+          height: 70px;
+        }
+        /* Settings Bottom Right */
+        .mobile-mode .settings-btn-mobile {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          top: auto !important;
+        }
+        /* Beats Bottom Left */
+        .mobile-mode .beats-btn-mobile {
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          display: flex !important;
+        }
+        /* Custom Levels Top Right */
+        .mobile-mode .custom-btn-mobile {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          display: flex !important;
+        }
+
+        /* Redesign Settings/Leaderboard/Modes for Landscape */
+        .mobile-mode .menu-container {
+          max-width: 90%;
+        }
+        /* Settings Grid */
+        .mobile-mode .settings-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          width: 100%;
         }
       }
 
@@ -2759,7 +2809,6 @@
 
         const difficulty = lvl.difficulty || 1;
         const desc = lvl.description || "No description provided.";
-        const creator = lvl.creator || "Anonymous";
 
         // Determine Buttons based on Mode
         let buttonsHtml = "";
@@ -2787,10 +2836,7 @@
         overlay.innerHTML = `
             <div class="cl-popup">
                 <div class="cl-header">
-                    <div class="cl-title">
-                        ${lvl.name || "Custom Level"}
-                        <div style="font-size:0.8rem; color:#888; font-weight:normal; margin-top:5px;">by ${creator}</div>
-                    </div>
+                    <div class="cl-title">${lvl.name || "Custom Level"}</div>
                     <button class="cl-close" onclick="this.closest('.cl-popup-overlay').remove()">&times;</button>
                 </div>
                 <div class="cl-body">
@@ -3266,7 +3312,7 @@
             "  ooo          x          xx!",
             "  xxx          x       oo   !",
             "               x       xx   !",
-            "               x           w !",
+            "               x            !",
             "               x            !",
             "      xxx      x    oo      !",
             "               x    xx      !",
@@ -5033,6 +5079,15 @@
 
                 // Check if there is a next level in this chapter
                 if (index < chapterData.length - 1) {
+                  // Unlock next level in campaign
+                  if (chapter === 1 && index >= gameState.unlockedLevel)
+                    gameState.unlockedLevel = index + 1;
+                  if (chapter === 2 && index >= gameState.unlockedLevelCh2)
+                    gameState.unlockedLevelCh2 = index + 1;
+                  if (chapter === 3 && index >= gameState.unlockedLevelCh3)
+                    gameState.unlockedLevelCh3 = index + 1;
+                  saveGame();
+
                   // Proceed to next level
                   startGameLevel(
                     chapterData[index + 1],
@@ -5380,10 +5435,6 @@
         if (leaderboardBtn)
           leaderboardBtn.style.display = view === "main" ? "block" : "none";
 
-        const awardsBtn = document.querySelector(".awards-btn");
-        if (awardsBtn)
-          awardsBtn.style.display = view === "main" ? "block" : "none";
-
         const editorBtn = document.querySelector(".editor-btn");
         if (editorBtn)
           editorBtn.style.display =
@@ -5404,6 +5455,12 @@
               ? "flex"
               : "none";
         }
+
+        // Hide mobile specific buttons if not in main
+        document.querySelectorAll(".mobile-fixed-btn").forEach((el) => {
+          if (view !== "main") el.style.display = "none";
+          else el.style.display = "flex";
+        });
 
         // Clear beats interval if leaving beats menu
         if (view !== "beats-menu" && beatsUpdateInterval) {
@@ -5460,14 +5517,38 @@
             mobileGrid.appendChild(profBtn);
             container.appendChild(mobileGrid);
 
-            // Mobile Settings Button
+            // Mobile Settings Button (Bottom Right)
             const mobSettingsBtn = document.createElement("button");
-            mobSettingsBtn.className = "mobile-icon-btn";
+            mobSettingsBtn.className =
+              "mobile-icon-btn settings-btn-mobile mobile-fixed-btn";
             mobSettingsBtn.style.cssText =
               "position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; z-index: 100;";
             mobSettingsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`;
             mobSettingsBtn.onclick = () => showMenu("mobile-settings");
             container.appendChild(mobSettingsBtn);
+
+            // Mobile Beats Button (Bottom Left)
+            const mobBeatsBtn = document.createElement("button");
+            mobBeatsBtn.className =
+              "mobile-icon-btn beats-btn-mobile mobile-fixed-btn";
+            mobBeatsBtn.style.cssText =
+              "position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; z-index: 100; display:none;"; // Hidden by default in portrait via CSS, shown in landscape
+            mobBeatsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`;
+            mobBeatsBtn.onclick = () => showMenu("beats-menu");
+            container.appendChild(mobBeatsBtn);
+
+            // Mobile Custom Levels Button (Top Right)
+            const mobCustomBtn = document.createElement("button");
+            mobCustomBtn.className =
+              "mobile-icon-btn custom-btn-mobile mobile-fixed-btn";
+            mobCustomBtn.style.cssText =
+              "position: fixed; top: 20px; right: 20px; width: 50px; height: 50px; z-index: 100; display:none;";
+            mobCustomBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+            mobCustomBtn.onclick = () => {
+              currentGameMode = "custom";
+              showMenu("custom");
+            };
+            container.appendChild(mobCustomBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -5693,6 +5774,9 @@
           subtitle.textContent = "SETTINGS";
           container.style.maxWidth = "400px";
 
+          const settingsContent = document.createElement("div");
+          settingsContent.className = "settings-grid"; // For landscape layout
+
           // Volume
           const volDiv = document.createElement("div");
           volDiv.style.cssText = "width:100%; margin-bottom:20px;";
@@ -5710,7 +5794,7 @@
             saveSettings();
           };
           volDiv.appendChild(volSlider);
-          container.appendChild(volDiv);
+          settingsContent.appendChild(volDiv);
 
           // Alt Coin
           const altCoinDiv = document.createElement("div");
@@ -5731,14 +5815,16 @@
             saveSettings();
           };
           altCoinDiv.appendChild(acToggle);
-          container.appendChild(altCoinDiv);
+          settingsContent.appendChild(altCoinDiv);
 
           // Feedback
           const fbBtn = document.createElement("button");
           fbBtn.className = "btn";
           fbBtn.textContent = "SEND FEEDBACK";
           fbBtn.onclick = openFeedbackModal;
-          container.appendChild(fbBtn);
+          settingsContent.appendChild(fbBtn);
+
+          container.appendChild(settingsContent);
 
           const closeBtn = document.createElement("button");
           closeBtn.className = "settings-close-btn";
@@ -5753,7 +5839,7 @@
           const carousel = document.createElement("div");
           carousel.className = "gamemode-carousel";
           carousel.style.cssText =
-            "display: flex; overflow-x: auto; scroll-snap-type: x mandatory; width: 100%; height: 60vh; align-items: center; gap: 20px; padding: 0 calc(50% - 125px); box-sizing: border-box; scrollbar-width: none;";
+            "display: flex; overflow-x: auto; scroll-snap-type: x mandatory; width: 100%; height: 60vh; align-items: center; gap: 20px; padding: 0 20px; box-sizing: border-box; scrollbar-width: none;";
 
           const modes = [
             {
@@ -5797,7 +5883,7 @@
           modes.forEach((m) => {
             const card = document.createElement("div");
             card.className = "gamemode-card";
-            card.style.cssText = `flex: 0 0 250px; height: 300px; background: #222; border: 2px solid ${m.color}; border-radius: 15px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; position: relative; transition: transform 0.2s;`;
+            card.style.cssText = `flex: 0 0 250px; height: 300px; background: #222; border: 2px solid ${m.color}; border-radius: 15px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; position: relative; transition: transform 0.2s; margin: 0 auto;`;
 
             card.innerHTML = `
                   <div style="font-size: 1.5rem; font-weight: bold; color: ${m.color}; margin-bottom: 10px; text-align: center;">${m.name}</div>
@@ -6179,7 +6265,7 @@
             // Header Controls
             const header = document.createElement("div");
             header.style.cssText =
-              "padding:15px; background:#222; border-bottom:1px solid #333; display:flex; flex-direction:column; gap:10px;";
+              "padding:15px; background:#222; border-bottom:1px solid #333; display:flex; flex-direction:column; gap:10px; flex-shrink: 0;";
 
             const row1 = document.createElement("div");
             row1.style.display = "flex";
@@ -6705,6 +6791,13 @@
         } else if (view === "custom") {
           subtitle.textContent = "Custom Levels";
 
+          // Mobile Landscape Optimization for Custom Levels
+          if (document.body.classList.contains("mobile-mode")) {
+            container.style.flexDirection = "row";
+            container.style.flexWrap = "wrap";
+            container.style.justifyContent = "center";
+          }
+
           // List existing custom levels
           if (customLevels.length === 0) {
             const emptyMsg = document.createElement("div");
@@ -6803,15 +6896,18 @@
           }
 
           // Add Level Button logic
+          const controlsDiv = document.createElement("div");
+          controlsDiv.style.cssText =
+            "width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:20px;";
+
           const label = document.createElement("label");
           label.className = "file-label";
           label.textContent = "+ Add Level (.json)";
           label.htmlFor = "file-input";
-
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "Back";
-          btnBack.style.marginTop = "20px";
+          btnBack.style.marginTop = "0"; // Reset margin for flex
           btnBack.onclick = () => {
             if (
               currentGameMode === "speedrun" ||
@@ -6825,15 +6921,16 @@
             else showMenu("main");
           };
 
-          container.appendChild(label);
-          container.appendChild(btnBack);
+          controlsDiv.appendChild(label);
+          controlsDiv.appendChild(btnBack);
+          container.appendChild(controlsDiv);
         } else if (view === "level-awards") {
           subtitle.textContent = "LEVEL AWARDS";
           container.style.maxWidth = "800px";
 
           const list = document.createElement("div");
           list.style.cssText =
-            "width:100%; display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;";
+            "width:100%; display:flex; flex-direction:column; gap:20px; max-height:60vh; overflow-y:auto; padding-right: 10px;";
           list.innerHTML =
             "<div style='text-align:center; color:#888;'>Loading awards...</div>";
           container.appendChild(list);
@@ -6849,6 +6946,7 @@
             _supabase
               .from("level_awards")
               .select("*")
+              .order("created_at", { ascending: false })
               .then(({ data, error }) => {
                 if (error) {
                   console.error("Error fetching awards:", error);
@@ -6859,49 +6957,74 @@
                     "<div style='text-align:center; color:#888;'>No awards available.</div>";
                 } else {
                   list.innerHTML = "";
-                  data.forEach((award) => {
-                    const row = document.createElement("div");
-                    row.style.cssText =
-                      "background:#222; border:1px solid #444; padding:15px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; gap: 15px;";
+                  data.forEach((group) => {
+                    const groupEl = document.createElement("div");
+                    groupEl.style.cssText =
+                      "background:#1a1a1a; border:2px solid #333; border-radius:8px; padding:15px; display:flex; flex-direction:column; gap:10px;";
 
-                    const info = document.createElement("div");
-                    info.style.flex = "1";
-                    info.innerHTML = `
-                    <div style="font-size:1.2rem; font-weight:bold; color:#fff; margin-bottom:5px;">${award.level_name || "Unknown Level"} <span style="font-size:0.8rem; color:#888; font-weight:normal;">by ${award.creator || "Unknown"}</span></div>
-                    <div style="font-size:0.8rem; color:#aaa; display:flex; gap:15px;">
-                      <span style="color:#ffd700;">1st: ${award.first_place || "-"}</span>
-                      <span style="color:#c0c0c0;">2nd: ${award.second_place || "-"}</span>
-                      <span style="color:#cd7f32;">3rd: ${award.third_place || "-"}</span>
-                    </div>
-                  `;
+                    const title = document.createElement("div");
+                    title.style.cssText =
+                      "font-size:1.2rem; font-weight:bold; color:#335699; text-transform:uppercase; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:5px;";
+                    title.textContent = group.title || "Award Event";
+                    groupEl.appendChild(title);
 
-                    const playBtn = document.createElement("button");
-                    playBtn.className = "btn";
-                    playBtn.style.cssText =
-                      "padding:8px 20px; font-size:0.9rem; min-width:auto; background:#335699; border-color:#5588cc;";
-                    playBtn.textContent = "PLAY";
-                    playBtn.onclick = () => {
-                      if (award.level_data) {
-                        let levelData = award.level_data;
-                        if (typeof levelData === "string") {
-                          try {
-                            levelData = JSON.parse(levelData);
-                          } catch (e) {
-                            showPopup("ERROR", "Invalid level data.", () => {});
-                            return;
-                          }
+                    const places = [
+                      {
+                        label: "1ST PLACE",
+                        color: "#ffd700",
+                        data: group.level1,
+                      },
+                      {
+                        label: "2ND PLACE",
+                        color: "#c0c0c0",
+                        data: group.level2,
+                      },
+                      {
+                        label: "3RD PLACE",
+                        color: "#cd7f32",
+                        data: group.level3,
+                      },
+                    ];
+
+                    places.forEach((p) => {
+                      if (!p.data) return;
+                      let lvl = p.data;
+                      if (typeof lvl === "string") {
+                        try {
+                          lvl = JSON.parse(lvl);
+                        } catch (e) {
+                          return;
                         }
-                        if (!levelData.name) levelData.name = award.level_name;
-                        currentGameMode = "custom";
-                        startGameLevel(levelData, -1, "custom");
-                      } else {
-                        showPopup("ERROR", "Level data missing.", () => {});
                       }
-                    };
 
-                    row.appendChild(info);
-                    row.appendChild(playBtn);
-                    list.appendChild(row);
+                      const row = document.createElement("div");
+                      row.style.cssText =
+                        "display:flex; align-items:center; justify-content:space-between; background:#222; padding:10px; border-radius:4px; border-left: 4px solid " +
+                        p.color;
+
+                      const info = document.createElement("div");
+                      info.innerHTML = `
+                        <div style="font-size:0.7rem; color:${p.color}; font-weight:bold;">${p.label}</div>
+                        <div style="font-size:1rem; font-weight:bold; color:#fff;">${lvl.name || "Unknown Level"}</div>
+                        <div style="font-size:0.8rem; color:#888;">by ${lvl.creator || "Anonymous"}</div>
+                    `;
+
+                      const playBtn = document.createElement("button");
+                      playBtn.className = "btn";
+                      playBtn.style.cssText =
+                        "padding:5px 15px; font-size:0.8rem; min-width:auto; background:#335699; border-color:#5588cc;";
+                      playBtn.textContent = "PLAY";
+                      playBtn.onclick = () => {
+                        currentGameMode = "custom";
+                        startGameLevel(lvl, -1, "custom");
+                      };
+
+                      row.appendChild(info);
+                      row.appendChild(playBtn);
+                      groupEl.appendChild(row);
+                    });
+
+                    list.appendChild(groupEl);
                   });
                 }
               });
@@ -7170,7 +7293,7 @@
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent,
         ) ||
-        window.innerWidth <= 920
+        window.innerWidth <= 768
       ) {
         document.body.classList.add("mobile-mode");
         setupMobileControls();
