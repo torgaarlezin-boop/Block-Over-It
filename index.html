@@ -1249,17 +1249,6 @@
           font-size: 0.9rem;
         }
 
-        /* Hide desktop elements */
-        .mobile-mode .bottom-controls,
-        .mobile-mode .top-left-controls,
-        .mobile-mode .leaderboard-btn,
-        .mobile-mode .editor-btn,
-        .mobile-mode .login-btn,
-        .mobile-mode .feedback-btn,
-        .mobile-mode .controls-hint,
-        .mobile-mode #social-notif {
-          display: none !important;
-        }
         .mobile-mode .level-btn {
           width: 60px;
           height: 60px;
@@ -1289,17 +1278,6 @@
         .mobile-mode .popup {
           padding: 20px;
           max-width: 90%;
-        }
-
-        /* Mobile Icons (Settings/Beats) */
-        .mobile-mode .bottom-controls {
-          width: 50px;
-          height: 50px;
-          padding: 0;
-          border-radius: 50%;
-          position: fixed;
-          top: 20px; /* Move to top */
-          bottom: auto;
         }
 
         .mobile-mode .mobile-icon-btn {
@@ -1441,10 +1419,30 @@
         }
       }
 
-      /* Mobile Landscape Redesign (Complete) */
+      /* Global Mobile Mode Overrides (Apply regardless of screen width if class is present) */
+      .mobile-mode .bottom-controls,
+      .mobile-mode .top-left-controls,
+      .mobile-mode .leaderboard-btn,
+      .mobile-mode .editor-btn,
+      .mobile-mode .login-btn,
+      .mobile-mode .feedback-btn,
+      .mobile-mode .controls-hint,
+      .mobile-mode #social-notif {
+        display: none !important;
+      }
+
+      .mobile-mode .mobile-menu-grid {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column; /* Default Portrait */
+      }
+
+      /* Mobile Landscape Redesign */
       @media screen and (orientation: landscape) and (max-height: 600px) {
         .mobile-mode .mobile-menu-grid {
-          flex-direction: row;
+          flex-direction: row !important;
           position: absolute;
           top: 50%;
           left: 50%;
@@ -1452,46 +1450,45 @@
           gap: 40px;
           width: auto;
         }
-        .mobile-mode .mobile-icon-btn.campaign-btn {
-          width: 100px;
-          height: 100px;
-        }
         .mobile-mode .mobile-icon-btn {
           width: 70px;
           height: 70px;
         }
-        /* Settings Bottom Right */
-        .mobile-mode .settings-btn-mobile {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          top: auto !important;
+        .mobile-mode .mobile-icon-btn.campaign-btn {
+          width: 100px;
+          height: 100px;
         }
-        /* Beats Bottom Left */
-        .mobile-mode .beats-btn-mobile {
-          position: fixed;
-          bottom: 20px;
-          left: 20px;
-          display: flex !important;
-        }
-        /* Custom Levels Top Right */
-        .mobile-mode .custom-btn-mobile {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          display: flex !important;
+        .mobile-mode h1 {
+          display: none;
         }
 
-        /* Redesign Settings/Leaderboard/Modes for Landscape */
-        .mobile-mode .menu-container {
-          max-width: 90%;
-        }
-        /* Settings Grid */
+        /* Settings Grid in Landscape */
         .mobile-mode .settings-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 20px;
           width: 100%;
+        }
+
+        /* Leaderboard in Landscape */
+        .mobile-mode .mobile-leaderboard-container {
+          flex-direction: row !important;
+        }
+        .mobile-mode .mobile-leaderboard-header {
+          width: 300px;
+          border-bottom: none !important;
+          border-right: 1px solid #333;
+          height: 100%;
+          justify-content: center;
+        }
+
+        /* Gamemode Carousel in Landscape */
+        .mobile-mode .gamemode-carousel {
+          height: 50vh !important;
+        }
+        .mobile-mode .gamemode-card {
+          height: 200px !important;
+          flex: 0 0 300px !important;
         }
       }
 
@@ -2809,6 +2806,7 @@
 
         const difficulty = lvl.difficulty || 1;
         const desc = lvl.description || "No description provided.";
+        const creator = lvl.creator || "Anonymous";
 
         // Determine Buttons based on Mode
         let buttonsHtml = "";
@@ -2836,7 +2834,10 @@
         overlay.innerHTML = `
             <div class="cl-popup">
                 <div class="cl-header">
-                    <div class="cl-title">${lvl.name || "Custom Level"}</div>
+                    <div class="cl-title">
+                        ${lvl.name || "Custom Level"}
+                        <div style="font-size:0.8rem; color:#888; font-weight:normal; margin-top:5px;">by ${creator}</div>
+                    </div>
                     <button class="cl-close" onclick="this.closest('.cl-popup-overlay').remove()">&times;</button>
                 </div>
                 <div class="cl-body">
@@ -5435,6 +5436,10 @@
         if (leaderboardBtn)
           leaderboardBtn.style.display = view === "main" ? "block" : "none";
 
+        const awardsBtn = document.querySelector(".awards-btn");
+        if (awardsBtn)
+          awardsBtn.style.display = view === "main" ? "block" : "none";
+
         const editorBtn = document.querySelector(".editor-btn");
         if (editorBtn)
           editorBtn.style.display =
@@ -5532,7 +5537,7 @@
             mobBeatsBtn.className =
               "mobile-icon-btn beats-btn-mobile mobile-fixed-btn";
             mobBeatsBtn.style.cssText =
-              "position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; z-index: 100; display:none;"; // Hidden by default in portrait via CSS, shown in landscape
+              "position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; z-index: 100; display:flex;";
             mobBeatsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`;
             mobBeatsBtn.onclick = () => showMenu("beats-menu");
             container.appendChild(mobBeatsBtn);
@@ -5542,7 +5547,7 @@
             mobCustomBtn.className =
               "mobile-icon-btn custom-btn-mobile mobile-fixed-btn";
             mobCustomBtn.style.cssText =
-              "position: fixed; top: 20px; right: 20px; width: 50px; height: 50px; z-index: 100; display:none;";
+              "position: fixed; top: 20px; right: 20px; width: 50px; height: 50px; z-index: 100; display:flex;";
             mobCustomBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
             mobCustomBtn.onclick = () => {
               currentGameMode = "custom";
@@ -6259,11 +6264,13 @@
             container.style.width = "100%";
 
             const mobileContainer = document.createElement("div");
+            mobileContainer.className = "mobile-leaderboard-container";
             mobileContainer.style.cssText =
               "width:100%; height:100%; display:flex; flex-direction:column; background:#111;";
 
             // Header Controls
             const header = document.createElement("div");
+            header.className = "mobile-leaderboard-header";
             header.style.cssText =
               "padding:15px; background:#222; border-bottom:1px solid #333; display:flex; flex-direction:column; gap:10px; flex-shrink: 0;";
 
@@ -7293,7 +7300,7 @@
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent,
         ) ||
-        window.innerWidth <= 768
+        window.innerWidth <= 920
       ) {
         document.body.classList.add("mobile-mode");
         setupMobileControls();
