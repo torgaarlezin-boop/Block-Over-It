@@ -5716,7 +5716,7 @@
             },
             {
               name: "SPEEDRUN",
-              desc: "Race against the clock.",
+              desc: "Regular speedrun.",
               action: () => {
                 currentGameMode = "speedrun";
                 showMenu("source-select");
@@ -5725,7 +5725,7 @@
             },
             {
               name: "DEATHRUN",
-              desc: "One life. No checkpoints.",
+              desc: "Die as fast as possible.",
               action: () => {
                 currentGameMode = "deathrun";
                 showMenu("source-select");
@@ -5734,7 +5734,7 @@
             },
             {
               name: "CHAPTER RUN",
-              desc: "Speedrun entire chapters.",
+              desc: "Speedrun the entire chapter.",
               action: () => {
                 currentGameMode = "chapter_speedrun";
                 showMenu("chapter-speedrun-select");
@@ -6007,7 +6007,11 @@
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
-          btnBack.onclick = () => showMenu("other-modes");
+          btnBack.onclick = () => {
+            if (document.body.classList.contains("mobile-mode"))
+              showMenu("mobile-gamemodes");
+            else showMenu("other-modes");
+          };
 
           container.appendChild(btnCamp);
           container.appendChild(btnCust);
@@ -6490,7 +6494,11 @@
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "Back";
-          btnBack.onclick = () => showMenu("other-modes");
+          btnBack.onclick = () => {
+            if (document.body.classList.contains("mobile-mode"))
+              showMenu("mobile-gamemodes");
+            else showMenu("other-modes");
+          };
 
           container.appendChild(btnCh1);
           container.appendChild(btnCh2);
@@ -6526,6 +6534,8 @@
               currentGameMode === "practice"
             )
               showMenu("source-select");
+            else if (document.body.classList.contains("mobile-mode"))
+              showMenu("mobile-gamemodes");
             else showMenu("main");
           };
 
@@ -6759,6 +6769,8 @@
               currentGameMode === "practice"
             )
               showMenu("source-select");
+            else if (document.body.classList.contains("mobile-mode"))
+              showMenu("mobile-gamemodes");
             else showMenu("main");
           };
 
@@ -7010,20 +7022,13 @@
 
         const zoomBtn = document.getElementById("zoom-btn");
         if (zoomBtn) {
-          zoomBtn.addEventListener("touchstart", (e) => {
+          const toggleZoom = (e) => {
             e.preventDefault();
-            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(true);
-          });
-          zoomBtn.addEventListener("touchend", (e) => {
-            e.preventDefault();
-            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(false);
-          });
-          zoomBtn.addEventListener("mousedown", (e) => {
-            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(true);
-          });
-          zoomBtn.addEventListener("mouseup", (e) => {
-            if (activeLevelDisplay) activeLevelDisplay.setZoomOut(false);
-          });
+            if (activeLevelDisplay)
+              activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
+          };
+          zoomBtn.addEventListener("touchstart", toggleZoom);
+          zoomBtn.addEventListener("mousedown", toggleZoom);
         }
       }
 
