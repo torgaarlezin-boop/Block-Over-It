@@ -1793,13 +1793,13 @@
       }
 
       async function submitHighscoreToCloud(key, time) {
-        if (!_supabase) return;
+        if (!_supabase || !currentUser) return;
         try {
           await _supabase.from("highscores").insert([
             {
               level_key: key,
               time_ms: time,
-              username: currentUser || "Anonymous",
+              username: currentUser,
             },
           ]);
         } catch (e) {
@@ -2028,42 +2028,6 @@
           showPopup(
             "ERROR",
             "Failed to update password: " + e.message,
-            () => {},
-          );
-        }
-      }
-
-      async function changeUsername(newUsername) {
-        if (!_supabase || !currentUser) return;
-        if (!newUsername)
-          return showPopup("ERROR", "Username cannot be empty.", () => {});
-
-        try {
-          // Check if taken
-          const { data: existing } = await _supabase
-            .from("users")
-            .select("username")
-            .eq("username", newUsername)
-            .single();
-
-          if (existing)
-            return showPopup("ERROR", "Username already taken.", () => {});
-
-          const { error } = await _supabase
-            .from("users")
-            .update({ username: newUsername })
-            .eq("username", currentUser);
-
-          if (error) throw error;
-          currentUser = newUsername;
-          safeStorage.setItem("blockoverit_username", currentUser);
-          updateLoginButton();
-          showMenu("account");
-          showPopup("SUCCESS", "Username updated!", () => {});
-        } catch (e) {
-          showPopup(
-            "ERROR",
-            "Failed to update username: " + e.message,
             () => {},
           );
         }
@@ -4669,6 +4633,7 @@
         38: "up",
         39: "right",
         40: "down",
+        32: "up",
         80: "p",
         82: "r",
       };
@@ -5676,14 +5641,6 @@
               <button class="btn" style="padding:8px; font-size:0.8rem; min-width:auto;" onclick="changePassword(document.getElementById('old-pass-input').value, document.getElementById('new-pass-input').value)">UPDATE PASSWORD</button>
             `;
             userItems.push(passDiv);
-          }
-
-          if (currentUser) {
-            const userDiv = document.createElement("div");
-            userDiv.style.cssText =
-              "display:flex; flex-direction:column; gap:10px; padding:10px; background:#222; border:1px solid #444; border-radius:4px; margin-top:10px;";
-            userDiv.innerHTML = `<div style="font-size:0.9rem; color:#ccc; font-weight:bold;">CHANGE USERNAME</div><input type="text" id="new-user-input" placeholder="New Username" style="padding:8px; background:#333; color:white; border:1px solid #555; font-size:0.8rem;"><button class="btn" style="padding:8px; font-size:0.8rem; min-width:auto;" onclick="changeUsername(document.getElementById('new-user-input').value)">UPDATE USERNAME</button>`;
-            userItems.push(userDiv);
           }
 
           const openUser = context === "user";
@@ -6921,7 +6878,7 @@
           setTimeout(() => {
             showConfirmPopup(
               "Cloud Save",
-              "Do you want to sign in to save your progress to the cloud? (Note: All accounts were sadly destroyed while testing, although you can just create a new account)",
+              "Do you want to sign in to save your progress to the cloud?",
               () => openLoginModal(),
               () => {},
             );
