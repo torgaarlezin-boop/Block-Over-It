@@ -1735,6 +1735,7 @@
     <button
       id="zoom-btn"
       class="btn"
+      onclick="if(activeLevelDisplay) activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut)"
       style="
         display: none;
         position: absolute;
@@ -2560,6 +2561,7 @@
         shuffleMusic: true,
         showEditorButton: false,
         editorNewTab: false,
+        currentSkin: 'default',
         playlist: [
           "synth",
           "joyful",
@@ -2586,6 +2588,7 @@
         gameSettings.showEditorButton = false;
       if (gameSettings.editorNewTab === undefined)
         gameSettings.editorNewTab = false;
+      if (gameSettings.currentSkin === undefined) gameSettings.currentSkin = 'default';
       if (!gameSettings.playlist)
         gameSettings.playlist = MUSIC_LIBRARY.map((t) => t.id);
 
@@ -3548,6 +3551,13 @@
         );
       }
 
+      function getAvailableSkins() {
+        const skins = ['default'];
+        if (currentUser === "chairlord") skins.push('chairlord');
+        if (["torgaar", "novalis", "Seppe", "seppe"].includes(currentUser)) skins.push('cubemouth');
+        return skins;
+      }
+
       function Vector(x, y) {
         this.x = x;
         this.y = y;
@@ -4484,31 +4494,16 @@
       function DOMDisplay(parent, level) {
         this.wrap = parent.appendChild(element("div", "game"));
         this.level = level;
-
-        this.scale = Math.min(
-          window.innerWidth / level.width,
-          window.innerHeight / level.height,
-        );
-        // Determine scale: fit to screen normally, or zoom in for camera/mobile
-        const isMobile = document.body.classList.contains("mobile-mode");
-        if (gameSettings.camera || isMobile) {
-          // Zoomed in scale (e.g., show ~15 blocks width)
-          this.scale = window.innerWidth / 15;
-        } else {
-          this.scale = Math.min(
-            window.innerWidth / level.width,
-            window.innerHeight / level.height,
-          );
-        }
+        this.zoomedOut = false;
 
         this.world = this.wrap.appendChild(element("div", "world"));
-        this.world.style.width = this.level.width * this.scale + "px";
-        this.world.style.height = this.level.height * this.scale + "px";
         this.world.style.position = "relative";
-        this.world.appendChild(this.drawBackground());
+        
         this.actorLayer = this.world.appendChild(element("div"));
         this.actorElements = new Map();
-        this.zoomedOut = false;
+        
+        this.updateScale();
+        this.world.insertBefore(this.drawBackground(), this.actorLayer);
         this.drawFrame();
       }
 
@@ -4603,15 +4598,19 @@
               el.style.justifyContent = "center";
             }
 
-            // Custom Player Skins
+            // shhhhhhhh
             if (actor.type === "player") {
-              if (currentUser === "chairlord") {
+              let skin = gameSettings.currentSkin || 'default';
+              const available = getAvailableSkins();
+              if (!available.includes(skin)) skin = 'default';
+
+              if (skin === "chairlord") {
                 el.style.backgroundImage = "url('chairlord.png')";
                 el.style.backgroundSize = "contain";
                 el.style.backgroundRepeat = "no-repeat";
                 el.style.backgroundPosition = "center";
                 el.style.backgroundColor = "transparent";
-              } else if (currentUser === "torgaar") {
+              } else if (skin === "cubemouth") {
                 el.style.backgroundImage = "url('cubemouth.png')";
                 el.style.backgroundSize = "contain";
                 el.style.backgroundRepeat = "no-repeat";
@@ -4694,8 +4693,25 @@
         this.world.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
       };
 
+      DOMDisplay.prototype.updateScale = function() {
+        const isMobile = document.body.classList.contains("mobile-mode");
+        const useCamera = gameSettings.camera || isMobile;
+
+        if (this.zoomedOut) {
+             this.scale = Math.min(window.innerWidth / this.level.width, window.innerHeight / this.level.height);
+        } else if (useCamera) {
+             this.scale = window.innerWidth / 15;
+        } else {
+             this.scale = Math.min(window.innerWidth / this.level.width, window.innerHeight / this.level.height);
+        }
+        this.world.style.width = this.level.width * this.scale + "px";
+        this.world.style.height = this.level.height * this.scale + "px";
+      };
+
       DOMDisplay.prototype.setZoomOut = function (state) {
         this.zoomedOut = state;
+        this.updateScale();
+        this.level.backgroundDirty = true;
         this.drawFrame();
       };
 
@@ -4717,14 +4733,7 @@
           this.wrap.style.justifyContent = "center";
           this.wrap.style.alignItems = "center";
           this.wrap.style.overflow = "hidden";
-
-          // Calculate fit
-          var totalW = this.level.width * this.scale;
-          var totalH = this.level.height * this.scale;
-          var fitX = window.innerWidth / totalW;
-          var fitY = window.innerHeight / totalH;
-          var fit = Math.min(fitX, fitY) * 0.9;
-          this.world.style.transform = `scale(${fit})`;
+          this.world.style.transform = "none";
         } else if (useCamera) {
           this.wrap.style.display = "block";
           this.wrap.style.overflow = "hidden"; // Hide scrollbars for transform camera
@@ -5793,6 +5802,32 @@
           };
           userItems.push(accountBtn);
 
+          // Skin Selector
+          const skins = getAvailableSkins();
+          if (skins.length > 1) {
+              const skinRow = document.createElement("div");
+              skinRow.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#222; border:1px solid #444; border-radius:4px;";
+              
+              const currentSkin = gameSettings.currentSkin || 'default';
+              
+              skinRow.innerHTML = `<span style="color:#ccc; font-weight:bold; font-size:0.9rem;">SKIN</span>`;
+              
+              const skinBtn = document.createElement("button");
+              skinBtn.className = "btn";
+              skinBtn.style.cssText = "padding:5px 10px; font-size:0.8rem; min-width:100px;";
+              skinBtn.textContent = currentSkin.toUpperCase();
+              skinBtn.onclick = () => {
+                  const idx = skins.indexOf(gameSettings.currentSkin || 'default');
+                  const nextIdx = (idx + 1) % skins.length;
+                  gameSettings.currentSkin = skins[nextIdx];
+                  saveSettings();
+                  skinBtn.textContent = gameSettings.currentSkin.toUpperCase();
+              };
+              
+              skinRow.appendChild(skinBtn);
+              userItems.push(skinRow);
+          }
+
           if (currentUser) {
             const passDiv = document.createElement("div");
             passDiv.style.cssText =
@@ -5862,6 +5897,32 @@
           };
           altCoinDiv.appendChild(acToggle);
           settingsContent.appendChild(altCoinDiv);
+
+          // Skin Selector
+          const skins = getAvailableSkins();
+          if (skins.length > 1) {
+              const skinDiv = document.createElement("div");
+              skinDiv.style.cssText = "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:10px; border-radius:4px;";
+              
+              const currentSkin = gameSettings.currentSkin || 'default';
+              
+              skinDiv.innerHTML = `<span style="font-weight:bold;">SKIN</span>`;
+              
+              const skinBtn = document.createElement("button");
+              skinBtn.className = "btn";
+              skinBtn.style.cssText = "padding:5px 10px; font-size:0.8rem; min-width:80px;";
+              skinBtn.textContent = currentSkin.toUpperCase();
+              skinBtn.onclick = () => {
+                  const idx = skins.indexOf(gameSettings.currentSkin || 'default');
+                  const nextIdx = (idx + 1) % skins.length;
+                  gameSettings.currentSkin = skins[nextIdx];
+                  saveSettings();
+                  skinBtn.textContent = gameSettings.currentSkin.toUpperCase();
+              };
+              
+              skinDiv.appendChild(skinBtn);
+              settingsContent.appendChild(skinDiv);
+          }
 
           // Feedback
           const fbBtn = document.createElement("button");
