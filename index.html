@@ -4607,11 +4607,15 @@
             if (actor.type === "player") {
               if (currentUser === "chairlord") {
                 el.style.backgroundImage = "url('chairlord.png')";
-                el.style.backgroundSize = "cover";
+                el.style.backgroundSize = "contain";
+                el.style.backgroundRepeat = "no-repeat";
+                el.style.backgroundPosition = "center";
                 el.style.backgroundColor = "transparent";
               } else if (currentUser === "torgaar") {
                 el.style.backgroundImage = "url('cubemouth.png')";
-                el.style.backgroundSize = "cover";
+                el.style.backgroundSize = "contain";
+                el.style.backgroundRepeat = "no-repeat";
+                el.style.backgroundPosition = "center";
                 el.style.backgroundColor = "transparent";
               }
             }
@@ -4627,10 +4631,24 @@
             el.classList.remove("bonus-coin-alt-visuals");
           }
 
-          el.style.width = actor.size.x * s + "px";
-          el.style.height = actor.size.y * s + "px";
-          el.style.left = actor.pos.x * s + "px";
-          el.style.top = actor.pos.y * s + "px";
+          var visualW = actor.size.x;
+          var visualH = actor.size.y;
+          var visualX = actor.pos.x;
+          var visualY = actor.pos.y;
+
+          if (
+            actor.type === "player" &&
+            (currentUser === "chairlord" || currentUser === "torgaar")
+          ) {
+            visualW = 1.0;
+            visualH = 1.0;
+            visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
+          }
+
+          el.style.width = visualW * s + "px";
+          el.style.height = visualH * s + "px";
+          el.style.left = visualX * s + "px";
+          el.style.top = visualY * s + "px";
         });
 
         // Remove unused elements
