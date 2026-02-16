@@ -3602,10 +3602,8 @@
         this.size = new Vector(1, 1);
         if (ch === "H") {
           this.speed = new Vector(2, 0);
-          this.text = "↔";
         } else {
           this.speed = new Vector(0, 2);
-          this.text = "↕";
         }
       }
       MovingBlock.prototype.type = "moving-block";
@@ -3621,16 +3619,18 @@
           var newY = this.pos.y - riseAmount;
 
           // Check for wall collision above
-          var startX = Math.floor(this.pos.x);
-          var endX = Math.ceil(this.pos.x + this.size.x);
-          var checkY = Math.floor(newY + 0.01);
-
           var blocked = false;
-          if (checkY >= 0 && checkY < level.height) {
-            for (var x = startX; x < endX; x++) {
-              if (level.grid[checkY][x] === "wall") {
-                blocked = true;
-                break;
+          if (!level.risingLavaThroughBlocks) {
+            var startX = Math.floor(this.pos.x);
+            var endX = Math.ceil(this.pos.x + this.size.x);
+            var checkY = Math.floor(newY + 0.01);
+
+            if (checkY >= 0 && checkY < level.height) {
+              for (var x = startX; x < endX; x++) {
+                if (level.grid[checkY][x] === "wall") {
+                  blocked = true;
+                  break;
+                }
               }
             }
           }
@@ -3690,6 +3690,8 @@
         this.colors = levelData.colors || {};
         this.gravity = levelData.gravity || 27; // Use level gravity or default
         this.riseInterval = levelData.riseInterval || 3;
+        this.risingLavaThroughBlocks =
+          levelData.risingLavaThroughBlocks || false;
         this.levelType = levelData.levelType || "campaign"; // Track level type
         this.chapter = levelData.chapter;
         this.customLevelIndex =
@@ -4599,6 +4601,19 @@
               el.style.display = "flex";
               el.style.alignItems = "center";
               el.style.justifyContent = "center";
+            }
+
+            // Custom Player Skins
+            if (actor.type === "player") {
+              if (currentUser === "chairlord") {
+                el.style.backgroundImage = "url('chairlord.png')";
+                el.style.backgroundSize = "cover";
+                el.style.backgroundColor = "transparent";
+              } else if (currentUser === "torgaar") {
+                el.style.backgroundImage = "url('cubemouth.png')";
+                el.style.backgroundSize = "cover";
+                el.style.backgroundColor = "transparent";
+              }
             }
           }
 
