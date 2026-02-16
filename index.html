@@ -4504,10 +4504,12 @@
         return elem;
       }
 
+      var globalZoomedOut = false;
+
       function DOMDisplay(parent, level) {
         this.wrap = parent.appendChild(element("div", "game"));
         this.level = level;
-        this.zoomedOut = false;
+        this.zoomedOut = globalZoomedOut;
 
         this.world = this.wrap.appendChild(element("div", "world"));
         this.world.style.position = "relative";
@@ -4610,27 +4612,6 @@
               el.style.alignItems = "center";
               el.style.justifyContent = "center";
             }
-
-            // shhhhhhhh
-            if (actor.type === "player") {
-              let skin = gameSettings.currentSkin || "default";
-              const available = getAvailableSkins();
-              if (!available.includes(skin)) skin = "default";
-
-              if (skin === "chairlord") {
-                el.style.backgroundImage = "url('chairlord.png')";
-                el.style.backgroundSize = "contain";
-                el.style.backgroundRepeat = "no-repeat";
-                el.style.backgroundPosition = "center";
-                el.style.backgroundColor = "transparent";
-              } else if (skin === "cubemouth") {
-                el.style.backgroundImage = "url('cubemouth.png')";
-                el.style.backgroundSize = "contain";
-                el.style.backgroundRepeat = "no-repeat";
-                el.style.backgroundPosition = "center";
-                el.style.backgroundColor = "transparent";
-              }
-            }
           }
 
           // Dynamic updates
@@ -4652,13 +4633,26 @@
           const available = getAvailableSkins();
           if (!available.includes(skin)) skin = "default";
 
-          if (
-            actor.type === "player" &&
-            (skin === "chairlord" || skin === "cubemouth")
-          ) {
-            visualW = 1.0;
-            visualH = 1.0;
-            visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
+          if (actor.type === "player") {
+            // Reset defaults to prevent glitches when switching skins
+            el.style.backgroundImage = "";
+            el.style.backgroundSize = "";
+            el.style.backgroundRepeat = "";
+            el.style.backgroundPosition = "";
+            el.style.backgroundColor = actor.color || "";
+
+            if (skin === "chairlord" || skin === "cubemouth") {
+              el.style.backgroundImage = `url('${skin}.png')`;
+              el.style.backgroundSize = "contain";
+              el.style.backgroundRepeat = "no-repeat";
+              el.style.backgroundPosition = "center";
+              el.style.backgroundColor = "transparent";
+
+              // Adjust visuals for custom skins
+              visualW = 1.0;
+              visualH = 1.0;
+              visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
+            }
           }
 
           el.style.width = visualW * s + "px";
@@ -4733,6 +4727,7 @@
 
       DOMDisplay.prototype.setZoomOut = function (state) {
         this.zoomedOut = state;
+        globalZoomedOut = state;
         this.updateScale();
         this.level.backgroundDirty = true;
         this.drawFrame();
@@ -5830,7 +5825,7 @@
           if (skins.length > 1) {
             const skinRow = document.createElement("div");
             skinRow.style.cssText =
-              "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#222; border:1px solid #444; border-radius:4px;";
+              "display:flex; align-items:center; justify-content:space-between; padding:15px; background:#222; border:1px solid #444; border-radius:4px; margin-bottom:10px;";
 
             const currentSkin = gameSettings.currentSkin || "default";
 
@@ -5928,7 +5923,7 @@
           if (skins.length > 1) {
             const skinDiv = document.createElement("div");
             skinDiv.style.cssText =
-              "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:10px; border-radius:4px;";
+              "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:15px; border-radius:4px; border:1px solid #444;";
 
             const currentSkin = gameSettings.currentSkin || "default";
 
@@ -7432,7 +7427,6 @@
               activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
           };
           zoomBtn.addEventListener("touchstart", toggleZoom);
-          zoomBtn.addEventListener("mousedown", toggleZoom);
         }
       }
 
