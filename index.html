@@ -27,12 +27,18 @@
 
       .background td {
         padding: 0;
+        box-sizing: border-box;
       }
 
       .lava {
         background: #e55;
       }
       .wall {
+        background: #444;
+        border: solid 3px #333;
+        box-sizing: border-box;
+      }
+      .visual-wall {
         background: #444;
         border: solid 3px #333;
         box-sizing: border-box;
@@ -109,6 +115,11 @@
         border-style: solid;
         border-color: transparent;
         border-bottom-color: #aaa;
+      }
+      .spike-visual.spike-u {
+        border-bottom-color: transparent;
+        border-top-color: #aaa;
+        border-top-style: solid;
       }
 
       .game {
@@ -2503,6 +2514,12 @@
           file: null,
         },
         {
+          id: "none",
+          title: "No Music",
+          artist: "Silence",
+          file: null,
+        },
+        {
           id: "joyful",
           title: "Joyful Morning",
           artist: "Noah Mark Hansen",
@@ -3637,13 +3654,17 @@
       }
       RisingLava.prototype.type = "rising-lava";
       RisingLava.prototype.act = function (step, level) {
-        if (level.riseInterval > 0) {
-          var riseAmount = (1 / level.riseInterval) * step;
+        var interval =
+          this.riseInterval !== undefined
+            ? this.riseInterval
+            : level.riseInterval;
+        if (interval > 0) {
+          var riseAmount = (1 / interval) * step;
           var newY = this.pos.y - riseAmount;
 
           // Check for wall collision above
           var blocked = false;
-          if (!level.risingLavaThroughBlocks) {
+          if (!this.throughBlocks) {
             var startX = Math.floor(this.pos.x);
             var endX = Math.ceil(this.pos.x + this.size.x);
             var checkY = Math.floor(newY + 0.01);
@@ -3665,6 +3686,39 @@
         }
       };
 
+      function VisualWall(pos, type) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.wallType = type; // 'flicker' or 'jump_flicker'
+        this.timer = 0;
+        this.visibleTime = 0;
+        this.isVisible = false;
+      }
+      VisualWall.prototype.type = "visual-wall";
+      VisualWall.prototype.act = function(step, level) {
+        if (this.wallType === 'flicker') {
+            this.timer += step;
+            if (this.visibleTime > 0) {
+                this.visibleTime -= step;
+                if (this.visibleTime <= 0) this.isVisible = false;
+            }
+            if (this.timer > 2) { 
+                this.timer = 0;
+                if (Math.random() < 0.33) {
+                    this.isVisible = true;
+                    this.visibleTime = 0.5;
+                }
+            }
+        } else if (this.wallType === 'jump_flicker') {
+            var p = level.player;
+            if (p) {
+                // Visible if on ground (not in air)
+                var onGround = level.obstacleAt(p.pos.plus(new Vector(0, 0.1)), p.size, p);
+                this.isVisible = !!onGround;
+            }
+        }
+      };
+
       function Spike(pos, ch) {
         // Smaller hitbox centered at bottom
         this.pos = pos.plus(new Vector(0.2, 0.5));
@@ -3672,6 +3726,13 @@
       }
       Spike.prototype.type = "spike";
       Spike.prototype.act = function (step, level) {};
+
+      function UpsideDownSpike(pos, ch) {
+        this.pos = pos.plus(new Vector(0.2, 0));
+        this.size = new Vector(0.6, 0.5);
+      }
+      UpsideDownSpike.prototype.type = "upside-down-spike";
+      UpsideDownSpike.prototype.act = function (step, level) {};
 
       var actorchars = {
         "@": Player,
@@ -3684,6 +3745,7 @@
         V: MovingBlock,
         "^": RisingLava,
         S: Spike,
+        s: UpsideDownSpike,
       };
 
       function cloneActor(actor) {
@@ -3713,8 +3775,9 @@
         this.colors = levelData.colors || {};
         this.gravity = levelData.gravity || 27; // Use level gravity or default
         this.riseInterval = levelData.riseInterval || 3;
-        this.risingLavaThroughBlocks =
-          levelData.risingLavaThroughBlocks || false;
+        this.mirrorLevel = levelData.mirrorLevel || false;
+        this.forceZoom = levelData.forceZoom || false;
+        this.disableDeathAnim = levelData.disableDeathAnim || false;
         this.levelType = levelData.levelType || "campaign"; // Track level type
         this.chapter = levelData.chapter;
         this.customLevelIndex =
@@ -3732,6 +3795,9 @@
         this.nextActorId = 0;
         this.actions = levelData.actions || [];
         this.parsedActions = this.parseActions(this.actions);
+        this.fakes = new Set(levelData.fakes || []);
+        this.risingThrough = new Set(levelData.risingThrough || []);
+        this.risingSpeeds = levelData.risingSpeeds || {};
         this.age = 0;
 
         for (var y = 0; y < this.height; y++) {
@@ -3766,19 +3832,6 @@
               );
               if (top) {
                 top.size.y += 1;
-                gridLine.push(null);
-                continue;
-              }
-            }
-            if (ch === "^") {
-              var leftRising = this.actors.find(
-                (a) =>
-                  a.type === "rising-lava" &&
-                  a.pos.y === y &&
-                  Math.abs(a.pos.x + a.size.x - x) < 0.1,
-              );
-              if (leftRising) {
-                leftRising.size.x += 1;
                 gridLine.push(null);
                 continue;
               }
@@ -3843,27 +3896,60 @@
                   this.totalBlueCoins++;
                   var actor = new Actor(new Vector(x, y), ch);
                   if (color) actor.color = color;
+                  if (this.fakes.has(x + "," + y)) actor.fake = true;
                   actor.id = this.nextActorId++;
                   this.actors.push(actor);
                 }
               } else {
                 var actor = new Actor(new Vector(x, y), ch);
                 if (color) actor.color = color;
+                if (this.fakes.has(x + "," + y)) actor.fake = true;
+                if (
+                  ch === "^" &&
+                  this.risingSpeeds[`${x},${y}`] !== undefined
+                ) {
+                  actor.riseInterval = this.risingSpeeds[`${x},${y}`];
+                }
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
-            } else if (ch === "x") fieldType = "wall";
+            } else if (ch === "x") {
+                if (color === 'flicker' || color === 'jump_flicker') {
+                    var wall = new VisualWall(new Vector(x, y), color);
+                    wall.id = this.nextActorId++;
+                    this.actors.push(wall);
+                    fieldType = "wall"; // Keep in grid for collision
+                } else {
+                    fieldType = "wall";
+                }
+            }
             else if (ch === "!") {
               var lava = new Lava(new Vector(x, y), "!");
               lava.id = this.nextActorId++;
+              if (this.fakes.has(x + "," + y)) lava.fake = true;
+              if (this.risingThrough.has(x + "," + y))
+                lava.throughBlocks = true;
               this.actors.push(lava);
             }
             gridLine.push(fieldType);
           }
           this.grid.push(gridLine);
         }
-        this.player = this.actors.filter((a) => a.type === "player")[0];
+        this.players = this.actors.filter((a) => a.type === "player");
+        this.player = this.players[0];
         this.status = this.finishDelay = null;
+
+        // Apply risingThrough to RisingLava actors
+        this.actors
+          .filter((a) => a.type === "rising-lava")
+          .forEach((a) => {
+            if (
+              this.risingThrough.has(
+                Math.round(a.pos.x) + "," + Math.round(a.pos.y),
+              )
+            )
+              a.throughBlocks = true;
+          });
 
         this.groupLavas();
 
@@ -3921,13 +4007,16 @@
             }
           } else if (t.startsWith("onBlock")) {
             const match = t.match(/onBlock\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
-            if (match && this.player) {
+            if (match && this.players.length > 0) {
               const x = parseInt(match[1]);
               const y = parseInt(match[2]);
               // Check if player center is within block
-              const cx = Math.floor(this.player.pos.x + this.player.size.x / 2);
-              const cy = Math.floor(this.player.pos.y + this.player.size.y / 2);
-              if (cx === x && cy === y && !action.executed) {
+              const triggered = this.players.some((p) => {
+                const cx = Math.floor(p.pos.x + p.size.x / 2);
+                const cy = Math.floor(p.pos.y + p.size.y / 2);
+                return cx === x && cy === y;
+              });
+              if (triggered && !action.executed) {
                 triggered = true;
                 action.executed = true;
               }
@@ -4107,12 +4196,11 @@
           }
         } else if (f.startsWith("teleport")) {
           const match = f.match(/teleport\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
-          if (match && this.player) {
-            this.player.pos = new Vector(
-              parseInt(match[1]),
-              parseInt(match[2]),
-            );
-            this.player.speed = new Vector(0, 0);
+          if (match && this.players.length > 0) {
+            this.players.forEach((p) => {
+              p.pos = new Vector(parseInt(match[1]), parseInt(match[2]));
+              p.speed = new Vector(0, 0);
+            });
           }
         } else if (f.startsWith("checkpoint")) {
           const match = f.match(/checkpoint\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
@@ -4243,13 +4331,17 @@
         if (yEnd > this.height) return "lava";
         for (var y = yStart; y < yEnd; y++) {
           for (var x = xStart; x < xEnd; x++) {
-            if (this.grid[y][x]) return this.grid[y][x];
+            if (this.grid[y][x]) {
+              if (this.fakes.has(x + "," + y)) continue;
+              return this.grid[y][x];
+            }
           }
         }
         // Check dynamic obstacles (Moving Blocks, Lava Groups)
         for (var i = 0; i < this.dynamicActors.length; i++) {
           var other = this.dynamicActors[i];
           if (other === exceptActor) continue;
+          if (other.fake) continue;
 
           if (other.type === "lava-group") {
             for (var j = 0; j < other.members.length; j++) {
@@ -4276,6 +4368,7 @@
       Level.prototype.actorAt = function (actor) {
         for (var i = 0; i < this.actors.length; i++) {
           var other = this.actors[i];
+          if (other.fake) continue;
           if (other.members) {
             for (var j = 0; j < other.members.length; j++) {
               var m = other.members[j];
@@ -4332,52 +4425,94 @@
           this.speed = this.speed.times(-1);
           return;
         }
-        // Carry player if on top
-        var player = level.player;
-        if (player) {
-          var playerBottom = player.pos.y + player.size.y;
-          var blockTop = posBefore.y;
+
+        var moveDelta = newPos.plus(posBefore.times(-1));
+
+        // Handle Riders (Players and Spikes)
+        if (this.fake) return; // Fake blocks move but don't interact
+
+        var riders = level.actors.filter((a) => {
+          if (a === this) return false;
           if (
-            Math.abs(playerBottom - blockTop) < 0.1 &&
-            player.pos.x + player.size.x > posBefore.x &&
-            player.pos.x < posBefore.x + this.size.x
-          ) {
-            var moveDelta = this.pos.plus(posBefore.times(-1));
-            var proposedPos = player.pos.plus(moveDelta);
-            var obstacle = level.obstacleAt(proposedPos, player.size, player);
-            if (!obstacle || obstacle !== "wall") {
-              player.pos = proposedPos;
-            } else if (this.speed.y < 0) {
+            a.type !== "player" &&
+            a.type !== "spike" &&
+            a.type !== "upside-down-spike"
+          )
+            return false;
+
+          if (a.type === "upside-down-spike") {
+            // Check if spike is attached to bottom of block
+            var spikeTop = a.pos.y;
+            var blockBottom = posBefore.y + this.size.y;
+            if (Math.abs(spikeTop - blockBottom) > 0.1) return false;
+            return (
+              a.pos.x + a.size.x > posBefore.x &&
+              a.pos.x < posBefore.x + this.size.x
+            );
+          } else {
+            var aBottom = a.pos.y + a.size.y;
+            var blockTop = posBefore.y;
+            if (Math.abs(aBottom - blockTop) > 0.1) return false;
+            return (
+              a.pos.x + a.size.x > posBefore.x &&
+              a.pos.x < posBefore.x + this.size.x
+            );
+          }
+        });
+
+        // Check if any rider (specifically spike) hits a wall
+        for (var i = 0; i < riders.length; i++) {
+          var r = riders[i];
+          var rNewPos = r.pos.plus(moveDelta);
+          var obstacle = level.obstacleAt(rNewPos, r.size, r);
+          if (obstacle === "wall") {
+            if (r.type === "spike" || r.type === "upside-down-spike") {
+              // Reverse block and cancel move
+              this.pos = posBefore;
+              this.speed = this.speed.times(-1);
+              return;
+            } else if (r.type === "player" && this.speed.y < 0) {
               level.status = "lost";
               level.finishDelay = 1;
             }
-          } else {
-            if (
-              this.pos.x < player.pos.x + player.size.x &&
-              this.pos.x + this.size.x > player.pos.x &&
-              this.pos.y < player.pos.y + player.size.y &&
-              this.pos.y + this.size.y > player.pos.y
-            ) {
-              if (this.speed.x !== 0) {
-                if (this.speed.x > 0)
-                  player.pos.x = this.pos.x + this.size.x + 0.01;
-                else player.pos.x = this.pos.x - player.size.x - 0.01;
-              }
-              if (this.speed.y !== 0) {
-                if (this.speed.y > 0)
-                  player.pos.y = this.pos.y + this.size.y + 0.01;
-                else {
-                  player.pos.y = this.pos.y - player.size.y - 0.01;
-                  player.speed.y = 0;
-                }
-              }
-              if (level.obstacleAt(player.pos, player.size, player)) {
-                level.status = "lost";
-                level.finishDelay = 1;
-              }
-            }
           }
         }
+
+        // Move riders
+        riders.forEach((r) => {
+          var rNewPos = r.pos.plus(moveDelta);
+          if (!level.obstacleAt(rNewPos, r.size, r)) {
+            r.pos = rNewPos;
+          }
+        });
+
+        // Push players (side/inside collision)
+        level.players.forEach((player) => {
+          if (
+            this.pos.x < player.pos.x + player.size.x &&
+            this.pos.x + this.size.x > player.pos.x &&
+            this.pos.y < player.pos.y + player.size.y &&
+            this.pos.y + this.size.y > player.pos.y
+          ) {
+            if (this.speed.x !== 0) {
+              if (this.speed.x > 0)
+                player.pos.x = this.pos.x + this.size.x + 0.01;
+              else player.pos.x = this.pos.x - player.size.x - 0.01;
+            }
+            if (this.speed.y !== 0) {
+              if (this.speed.y > 0)
+                player.pos.y = this.pos.y + this.size.y + 0.01;
+              else {
+                player.pos.y = this.pos.y - player.size.y - 0.01;
+                player.speed.y = 0;
+              }
+            }
+            if (level.obstacleAt(player.pos, player.size, player)) {
+              level.status = "lost";
+              level.finishDelay = 1;
+            }
+          }
+        });
       };
 
       Coin.prototype.act = function (step) {
@@ -4456,7 +4591,8 @@
           (type == "lava" ||
             type == "rising-lava" ||
             type == "lava-group" ||
-            type == "spike") &&
+            type == "spike" ||
+            type == "upside-down-spike") &&
           this.status == null
         ) {
           if (currentGameMode === "practice" && this.practiceState) {
@@ -4472,7 +4608,7 @@
             );
             return;
           }
-          if (currentGameMode === "deathrun") {
+          if (currentGameMode === "deathrun" || this.disableDeathAnim) {
             this.status = "lost";
             this.finishDelay = 0; // Instant fail
           } else {
@@ -4510,6 +4646,7 @@
         this.wrap = parent.appendChild(element("div", "game"));
         this.level = level;
         this.zoomedOut = globalZoomedOut;
+        if (this.level.forceZoom) this.zoomedOut = false;
 
         this.world = this.wrap.appendChild(element("div", "world"));
         this.world.style.position = "relative";
@@ -4538,6 +4675,8 @@
               var color = self.level.colors[`${x},${y}`];
               if (color === "invisible") {
                 td.style.visibility = "hidden";
+              } else if (color === 'flicker' || color === 'jump_flicker') {
+                td.style.visibility = "hidden"; // Handled by VisualWall actor
               } else if (color) {
                 td.style.backgroundColor = color;
                 td.style.borderColor = adjustColor(color, -20);
@@ -4584,11 +4723,17 @@
             // Static setup
             if (actor.color) {
               if (actor.color === "invisible" && actor.type !== "player") {
-                el.style.visibility = 0;
-              } else if (actor.type !== "spike") {
+                el.style.visibility = "hidden";
+              } else if (
+                actor.type !== "spike" &&
+                actor.type !== "upside-down-spike"
+              ) {
                 el.style.backgroundColor = actor.color;
                 el.style.borderColor = adjustColor(actor.color, -20);
               }
+            }
+            if (actor.type === 'visual-wall') {
+                el.style.visibility = actor.isVisible ? 'visible' : 'hidden';
             }
             if (actor.type === "spike") {
               var visual = document.createElement("div");
@@ -4603,7 +4748,25 @@
               visual.style.transform = "translateX(-50%)";
               if (actor.color && actor.color !== "invisible")
                 visual.style.borderBottomColor = actor.color;
-              else if (actor.color === "invisible") el.style.visibility = 0;
+              else if (actor.color === "invisible")
+                el.style.visibility = "hidden";
+              el.appendChild(visual);
+            }
+            if (actor.type === "upside-down-spike") {
+              var visual = document.createElement("div");
+              visual.className = "spike-visual spike-u";
+              visual.style.borderLeftWidth = s * 0.5 + "px";
+              visual.style.borderRightWidth = s * 0.5 + "px";
+              visual.style.borderTopWidth = s + "px";
+              visual.style.borderBottomWidth = "0px";
+              visual.style.position = "absolute";
+              visual.style.left = "50%";
+              visual.style.top = "0";
+              visual.style.transform = "translateX(-50%)";
+              if (actor.color && actor.color !== "invisible")
+                visual.style.borderTopColor = actor.color;
+              else if (actor.color === "invisible")
+                el.style.visibility = "hidden";
               el.appendChild(visual);
             }
             if (actor.text) {
@@ -4671,20 +4834,22 @@
       };
 
       DOMDisplay.prototype.drawPracticeMarker = function () {
-        var marker = this.world.querySelector(".practice-marker");
+        this.world
+          .querySelectorAll(".practice-marker")
+          .forEach((el) => el.remove());
         if (this.level.practiceState) {
-          var p = this.level.practiceState.find((a) => a.type === "player");
-          if (!marker) {
-            marker = element("div", "practice-marker");
-            this.world.appendChild(marker);
-          }
+          var players = this.level.practiceState.filter(
+            (a) => a.type === "player",
+          );
           var s = this.scale;
-          marker.style.width = p.size.x * s + "px";
-          marker.style.height = p.size.y * s + "px";
-          marker.style.left = p.pos.x * s + "px";
-          marker.style.top = p.pos.y * s + "px";
-        } else if (marker) {
-          marker.remove();
+          players.forEach((p) => {
+            var marker = element("div", "practice-marker");
+            this.world.appendChild(marker);
+            marker.style.width = p.size.x * s + "px";
+            marker.style.height = p.size.y * s + "px";
+            marker.style.left = p.pos.x * s + "px";
+            marker.style.top = p.pos.y * s + "px";
+          });
         }
       };
 
@@ -4706,7 +4871,8 @@
 
       DOMDisplay.prototype.updateScale = function () {
         const isMobile = document.body.classList.contains("mobile-mode");
-        const useCamera = gameSettings.camera || isMobile;
+        const useCamera =
+          gameSettings.camera || isMobile || this.level.forceZoom;
 
         if (this.zoomedOut) {
           this.scale = Math.min(
@@ -4726,6 +4892,7 @@
       };
 
       DOMDisplay.prototype.setZoomOut = function (state) {
+        if (this.level.forceZoom) return;
         this.zoomedOut = state;
         globalZoomedOut = state;
         this.updateScale();
@@ -4744,7 +4911,8 @@
         this.wrap.className = "game " + (this.level.status || "");
 
         const isMobile = document.body.classList.contains("mobile-mode");
-        const useCamera = gameSettings.camera || isMobile;
+        const useCamera =
+          gameSettings.camera || isMobile || this.level.forceZoom;
 
         if (this.zoomedOut) {
           this.wrap.style.display = "flex";
