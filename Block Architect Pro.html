@@ -135,6 +135,32 @@
         height: 100%;
       }
 
+      .t-fake::after {
+        content: "F";
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+      .t-spike-u {
+        background: transparent;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .t-spike-u::after {
+        content: none;
+      }
+      .spike-visual.spike-u {
+        border-bottom: 0;
+        border-top: 20px solid #94a3b8;
+      }
+      .style-modern .spike-visual.spike-u {
+        border-top-color: #cbd5e1;
+      }
       .tool-active {
         background: var(--accent) !important;
         color: white !important;
@@ -167,17 +193,33 @@
       .accordion-content {
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.3s ease-out;
+        transition: max-height 0.28s ease-out, padding 0.2s ease-out;
       }
       .accordion-open .accordion-content {
-        max-height: 500px;
+        /* large enough to accommodate content; keeps transition simple */
         max-height: 1200px;
       }
       .accordion-header svg {
-        transition: transform 0.2s;
+        transition: transform 0.2s ease;
+        transform-origin: center;
       }
       .accordion-open .accordion-header svg {
         transform: rotate(180deg);
+      }
+
+      /* Ensure header always sits above content to avoid visual nesting */
+      .accordion-header {
+        position: relative;
+        z-index: 20;
+        background: transparent;
+      }
+      .accordion-content {
+        position: relative;
+        z-index: 1;
+      }
+      /* Small visual gap between sections for clarity */
+      .border-b {
+        padding-bottom: 0.25rem;
       }
 
       /* Custom Selection Box */
@@ -386,9 +428,102 @@
         box-shadow: inset 0 0 0 2px #3b82f6;
         z-index: 50;
       }
+      /* Settings Modal Tabs */
+      .settings-tab {
+        text-align: left;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .settings-tab:hover {
+        background: rgba(30, 41, 59, 0.5);
+        color: #f1f5f9;
+      }
+      .settings-tab.active {
+        background: #3b82f6;
+        color: white;
+      }
+
+      /* Selection Popup */
+      #selection-popup {
+        transition: opacity 0.1s, transform 0.1s;
+      }
+      #selection-popup.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.95);
+      }
+      .sp-btn {
+        transition: all 0.1s;
+      }
+      .sp-btn:active {
+        transform: scale(0.95);
+      }
     </style>
   </head>
   <body class="flex flex-col">
+    <!-- Selection Popup (Floating) -->
+    <div id="selection-popup" class="hidden fixed z-50 bg-[#0f121a] border border-slate-700 rounded-lg shadow-2xl p-2 flex flex-col gap-2 w-48 select-none">
+      <div class="grid grid-cols-4 gap-1">
+          <button id="btn-sp-fill" onclick="fillSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-blue-400 flex justify-center items-center sp-btn" title="Fill">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 000 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11z"/></svg>
+          </button>
+          <button id="btn-sp-delete" onclick="deleteSelection()" class="p-1.5 bg-slate-800 hover:bg-red-900/30 rounded text-red-400 flex justify-center items-center sp-btn" title="Delete">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+          <button id="btn-sp-paint" onclick="openColorPickerForSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-purple-400 flex justify-center items-center sp-btn" title="Paint">
+              <div class="w-3 h-3 rounded-full bg-current"></div>
+          </button>
+          <button id="btn-sp-fake" onclick="toggleFakeSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-yellow-400 flex justify-center items-center sp-btn" title="Fake Block">
+              <span class="font-bold text-[10px]">F</span>
+          </button>
+      </div>
+      <div class="grid grid-cols-4 gap-1">
+          <button id="btn-sp-invisible" onclick="makeSelectionInvisible()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Invisible">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+          </button>
+          <button id="btn-sp-flicker" onclick="toggleFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Flicker">
+              <span class="font-bold text-[9px]">Fl</span>
+          </button>
+          <button id="btn-sp-jump-flicker" onclick="toggleJumpFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Jump Flicker">
+              <span class="font-bold text-[9px]">JF</span>
+          </button>
+          <div></div>
+      </div>
+      <div class="bg-slate-900/50 rounded p-1 flex flex-col gap-1">
+          <div class="flex gap-1">
+               <button onclick="shiftSelection(0, -1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button>
+               <button onclick="shiftSelection(0, 1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg></button>
+          </div>
+          <div class="flex gap-1">
+               <button onclick="shiftSelection(-1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+               <button onclick="shiftSelection(1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+      </div>
+      <button id="sp-expand-btn" onclick="toggleSPExpand()" class="w-full text-[10px] text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded py-1 transition-colors flex justify-center items-center gap-1 sp-btn">
+          <span>More Options</span>
+          <svg id="sp-expand-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="transition-transform"><path d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="sp-expanded" class="hidden flex-col gap-2 pt-1">
+          <div class="grid grid-cols-2 gap-1">
+              <button onclick="mirrorSelection('h')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror H</button>
+              <button onclick="mirrorSelection('v')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror V</button>
+          </div>
+          <div id="sp-rising-opt" class="hidden pt-2 border-t border-slate-700/50">
+               <label class="flex items-center gap-2 cursor-pointer group">
+                  <div class="relative">
+                      <input type="checkbox" id="sp-rising-check" class="sr-only peer" onchange="toggleRisingThrough()">
+                      <div class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                  </div>
+                  <span class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">Lava Through Blocks</span>
+              </label>
+          </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header
       class="h-14 border-b border-slate-800 bg-[#0f121a] flex items-center justify-between px-6 z-50"
@@ -416,7 +551,7 @@
           </svg>
         </button>
         <h1 class="font-bold text-sm tracking-tight text-slate-200 uppercase">
-          Architect <span class="text-blue-500">Pro</span>
+          Architect <span class="text-blue-500">Pro</span><span class="text-purple-500">Beta</span>
         </h1>
       </div>
 
@@ -749,9 +884,9 @@
           <div class="border-b border-slate-800 accordion-open">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200">MAIN</span>
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MAIN</span>
               <svg
                 width="12"
                 height="12"
@@ -761,9 +896,10 @@
                 viewBox="0 0 24 24"
               >
                 <path d="M19 9l-7 7-7-7" />
-              </svg>
+                </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-4">
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2"
@@ -803,6 +939,7 @@
                     id="prop-desc"
                     class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500 h-16 resize-none"
                     placeholder="Brief description of your level..."
+                    oninput="settingsManager.syncToModal()"
                   ></textarea>
                 </div>
                 <div>
@@ -828,6 +965,8 @@
                     </div>
                   </div>
                   <input type="hidden" id="prop-diff" value="1" />
+                  <input type="hidden" id="prop-force-zoom" value="false">
+                  <input type="hidden" id="prop-no-death-anim" value="false">
                 </div>
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
@@ -869,57 +1008,133 @@
                     oninput="
                       document.getElementById('gravity-val').innerText =
                         this.value
+                      settingsManager.syncToModal();
                     "
                   />
                 </div>
-                <div>
+                <div class="mt-4">
                   <div class="flex justify-between items-center mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                      <label
-                        class="text-[9px] text-slate-500 font-bold uppercase"
-                        >Rising Lava Seconds per Block</label
-                      >
-                      <div
-                        onclick="
-                          showInfo(
-                            'Lava Speed',
-                            'Determines how many seconds it takes for the lava to rise by one block height. Lower numbers mean faster lava. Set to 0 to disable rising lava.',
-                          )
-                        "
-                        class="flex items-center justify-center w-3 h-3 rounded-full border border-slate-600 text-[8px] text-slate-400 cursor-pointer hover:text-white hover:border-white transition-colors"
-                      >
-                        i
-                      </div>
-                    </div>
-                    <span
-                      id="rise-val"
-                      class="text-[10px] text-blue-400 font-mono"
-                      >Disabled</span
-                    >
+                    <label class="text-[9px] text-slate-500 font-bold uppercase">Rising Lava Speed</label>
+                    <span id="rise-val" class="text-xs text-blue-400 font-mono">Disabled</span>
                   </div>
-                  <input
-                    id="prop-rise"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value="0"
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 outline-none focus:border-blue-500"
+                  <input id="prop-rise" type="range" min="0" max="10" step="0.5" value="0" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
                     oninput="
                       const val = parseFloat(this.value);
-                      const display =
-                        val > 0
-                          ? (60 / val).toFixed(1) + ' blk/min'
-                          : 'Disabled';
-                      document.getElementById('rise-val').innerText = display;
-                    "
-                  />
+                      document.getElementById('rise-val').innerText = val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled';
+                      settingsManager.syncToModal();
+                    ">
                 </div>
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
                 >
-                  Visuals & Grid
+                  Grid Dimensions
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
+                      >Width</label
+                    >
+                    <div
+                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
+                    >
+                      <button
+                        onclick="adjustProp('prop-w', -1)"
+                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
+                      >
+                        -
+                      </button>
+                      <input
+                        id="prop-w"
+                        type="number"
+                        value="40"
+                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
+                        oninput="settingsManager.syncToModal()"
+                      />
+                      <button
+                        onclick="adjustProp('prop-w', 1)"
+                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
+                      >Height</label
+                    >
+                    <div
+                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
+                    >
+                      <button
+                        onclick="adjustProp('prop-h', -1)"
+                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
+                      >
+                        -
+                      </button>
+                      <input
+                        id="prop-h"
+                        type="number"
+                        value="20"
+                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
+                        oninput="settingsManager.syncToModal()"
+                      />
+                      <button
+                        onclick="adjustProp('prop-h', 1)"
+                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <button
+                    onclick="applyResize()"
+                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700"
+                  >
+                    Apply Resize
+                  </button>
+                  <button
+                    onclick="clearCanvas()"
+                    class="py-2 bg-red-950/30 text-red-500 text-[10px] font-bold rounded border border-red-900/40 hover:bg-red-900/30"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div class="mt-4 flex justify-end">
+                  <button onclick="settingsManager.open()" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 rounded border border-slate-700 transition-colors">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    All Settings
+                  </button>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Appearance -->
+          <div class="border-b border-slate-800">
+            <button
+              onclick="toggleAccordion(this)"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+            >
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">APPEARANCE</span>
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
+              <div class="px-5 pb-6 space-y-4">
                 <div>
                   <label
                     class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
@@ -951,112 +1166,6 @@
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                  <div>
-                    <label
-                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                      >Width</label
-                    >
-                    <div
-                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
-                    >
-                      <button
-                        onclick="adjustProp('prop-w', -1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
-                      >
-                        -
-                      </button>
-                      <input
-                        id="prop-w"
-                        type="number"
-                        value="40"
-                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
-                      />
-                      <button
-                        onclick="adjustProp('prop-w', 1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                      >Height</label
-                    >
-                    <div
-                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
-                    >
-                      <button
-                        onclick="adjustProp('prop-h', -1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
-                      >
-                        -
-                      </button>
-                      <input
-                        id="prop-h"
-                        type="number"
-                        value="20"
-                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
-                      />
-                      <button
-                        onclick="adjustProp('prop-h', 1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 pt-2">
-                  <button
-                    onclick="applyResize()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700"
-                  >
-                    Apply Resize
-                  </button>
-                  <button
-                    onclick="clearCanvas()"
-                    class="py-2 bg-red-950/30 text-red-500 text-[10px] font-bold rounded border border-red-900/40 hover:bg-red-900/30"
-                  >
-                    Clear All
-                  </button>
-                </div>
-                <div class="mt-3 pt-3 border-t border-slate-800">
-                  <label
-                    class="flex items-center justify-between cursor-pointer group"
-                  >
-                    <div class="flex items-center gap-1.5">
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Mirror Level</span
-                      >
-                      <div
-                        onclick="
-                          showInfo(
-                            'Mirror Level Mode',
-                            'In mirror level mode, you may place multiple player entities. While playing your level, these enteties will move and do other actions together, controlled by one player. ',
-                          )
-                        "
-                        class="flex items-center justify-center w-3 h-3 rounded-full border border-slate-600 text-[8px] text-slate-400 cursor-pointer hover:text-white hover:border-white transition-colors"
-                      >
-                        i
-                      </div>
-                    </div>
-                    <div class="relative">
-                      <input
-                        type="checkbox"
-                        id="opt-multiplayer"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                      ></div>
-                    </div>
-                  </label>
-                  <div
-                    class="flex items-center justify-between mt-3 pt-3 border-t border-slate-800"
-                  >
                     <label class="flex items-center gap-2 cursor-pointer group">
                       <span
                         class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
@@ -1076,7 +1185,7 @@
                       </div>
                     </label>
                     <label
-                      class="flex items-center gap-2 cursor-pointer group mt-2"
+                      class="flex items-center gap-2 cursor-pointer group"
                     >
                       <span
                         class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
@@ -1098,6 +1207,7 @@
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
@@ -1105,11 +1215,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200"
-                >STRUCTURE TEMPLATES</span
-              >
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">STRUCTURE TEMPLATES</span>
               <svg
                 width="12"
                 height="12"
@@ -1122,6 +1230,7 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-2" id="recent-templates-list">
                 <!-- Recent templates injected here -->
                 <button
@@ -1131,6 +1240,7 @@
                   Browse Full Library
                 </button>
               </div>
+              </div>
             </div>
           </div>
 
@@ -1138,9 +1248,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200">MUSIC</span>
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MUSIC</span>
               <svg
                 width="12"
                 height="12"
@@ -1153,174 +1263,10 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-2" id="music-list">
                 <!-- Music injected here -->
               </div>
-            </div>
-          </div>
-
-          <!-- Section 3: Selection Tools -->
-          <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
-            >
-              <span class="text-[11px] font-bold text-slate-200"
-                >SELECTION TOOLS</span
-              >
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
-              >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div
-                id="selection-tools"
-                class="px-5 pb-6 opacity-50 pointer-events-none transition-opacity"
-              >
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onclick="fillSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-blue-400"
-                  >
-                    Fill
-                  </button>
-                  <button
-                    onclick="deleteSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-red-900/30 text-red-400"
-                  >
-                    Delete
-                  </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onclick="openColorPickerForSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-purple-400 flex items-center justify-center gap-2"
-                  >
-                    <div class="w-3 h-3 rounded-full bg-current"></div>
-                    Paint
-                  </button>
-                  <button
-                    onclick="makeSelectionInvisible()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-slate-400"
-                  >
-                    Invisible
-                  </button>
-                </div>
-                <div class="mt-3 pt-3 border-t border-slate-800">
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                    >Mirror Selection</label
-                  >
-                  <div class="grid grid-cols-2 gap-2">
-                    <button
-                      onclick="mirrorSelection('h')"
-                      class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-1"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M8 7h8M8 17h8M12 3v18" />
-                      </svg>
-                      Horizontal
-                    </button>
-                    <button
-                      onclick="mirrorSelection('v')"
-                      class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-1"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M7 8v8M17 8v8M3 12h18" />
-                      </svg>
-                      Vertical
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                    >Move Selection</label
-                  >
-                  <div class="grid grid-cols-4 gap-1">
-                    <button
-                      onclick="shiftSelection(0, -1)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M12 19V5M5 12l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(0, 1)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M12 5v14M5 12l7 7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(-1, 0)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(1, 0)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1329,11 +1275,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200"
-                >LEVEL CHECK</span
-              >
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">LEVEL CHECK</span>
               <svg
                 width="12"
                 height="12"
@@ -1346,6 +1290,7 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6">
                 <div
                   id="stats"
@@ -1376,6 +1321,7 @@
                   id="val-feedback"
                   class="mt-3 text-[10px] p-3 rounded border border-slate-800 hidden leading-relaxed"
                 ></div>
+              </div>
               </div>
             </div>
           </div>
@@ -1796,6 +1742,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <label
@@ -1873,6 +1820,7 @@
                       </div>
                     </label>
                   </div>
+                  </div>
                 </div>
               </div>
 
@@ -1898,6 +1846,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <div class="flex justify-between mb-1.5">
@@ -1919,6 +1868,7 @@
                         class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
                       />
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -1945,6 +1895,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <div class="flex justify-between mb-1.5">
@@ -1996,6 +1947,7 @@
                       </div>
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
 
@@ -2021,6 +1973,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <label
@@ -2123,6 +2076,7 @@
                         class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
                       />
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2269,6 +2223,132 @@
       </div>
     </div>
 
+    <!-- ALL SETTINGS MODAL -->
+    <div id="settings-modal" class="fixed inset-0 z-[350] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+      <div class="bg-[#0f121a] border border-slate-800 w-full max-w-4xl h-[600px] rounded-xl shadow-2xl flex overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-64 bg-[#0a0c12] border-r border-slate-800 flex flex-col p-4">
+          <div class="mb-6">
+            <h2 class="text-lg font-bold text-white px-2 mb-4">Settings</h2>
+          </div>
+          <div class="space-y-1">
+            <button onclick="settingsManager.switchTab('metadata')" id="tab-metadata" class="settings-tab w-full active">Metadata</button>
+            <button onclick="settingsManager.switchTab('physics')" id="tab-physics" class="settings-tab w-full">Physics</button>
+            <button onclick="settingsManager.switchTab('grid')" id="tab-grid" class="settings-tab w-full">Grid</button>
+          </div>
+        </div>
+        <!-- Content -->
+        <div class="flex-1 bg-[#0f121a] flex flex-col relative">
+          <div class="absolute top-4 right-4">
+            <button onclick="settingsManager.close()" class="text-slate-500 hover:text-white p-1">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          
+          <div id="settings-content" class="flex-1 overflow-y-auto p-8">
+            <!-- Metadata Section -->
+            <div id="sec-metadata" class="space-y-6">
+              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Metadata</h3>
+              <div class="grid grid-cols-2 gap-6">
+                <div class="setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Level Identifier</label>
+                  <input id="set-prop-name" type="text" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                </div>
+                <div class="setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Creator</label>
+                  <input id="set-prop-creator" type="text" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                </div>
+                <div class="col-span-2 setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Description</label>
+                  <textarea id="set-prop-desc" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-blue-500 h-24 resize-none" oninput="settingsManager.syncFromModal()"></textarea>
+                </div>
+                <div class="setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Difficulty</label>
+                  <div class="flex gap-1 h-8" id="set-diff-bars-modal"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Physics Section -->
+            <div id="sec-physics" class="space-y-6 hidden">
+              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Physics</h3>
+              <div class="space-y-6 max-w-lg">
+                <div class="setting-item">
+                  <div class="flex justify-between mb-2">
+                    <label class="text-[10px] text-slate-500 font-bold uppercase">Gravity Constant</label>
+                    <span id="set-gravity-val" class="text-xs text-blue-400 font-mono">27</span>
+                  </div>
+                  <input id="set-prop-gravity" type="range" min="5" max="100" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500" oninput="document.getElementById('set-gravity-val').innerText = this.value; settingsManager.syncFromModal()">
+                </div>
+                <!-- Hidden input for compatibility -->
+                <input type="hidden" id="prop-rise" value="0">
+                <input type="hidden" id="set-prop-rise" value="0">
+                <div class="pt-4 border-t border-slate-800 setting-item">
+                  <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-xs font-bold text-slate-300">Mirror Level (Multiple player spawns)</span>
+                    <div class="relative">
+                      <input type="checkbox" id="set-prop-mirror" class="sr-only peer" onchange="settingsManager.syncFromModal()">
+                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                    </div>
+                  </label>
+                </div>
+                <div class="pt-4 border-t border-slate-800 setting-item">
+                  <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-xs font-bold text-slate-300">Force Zoomed Camera</span>
+                    <div class="relative">
+                      <input type="checkbox" id="set-prop-force-zoom" class="sr-only peer" onchange="settingsManager.syncFromModal()">
+                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                    </div>
+                  </label>
+                </div>
+                <div class="pt-4 border-t border-slate-800 setting-item">
+                  <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-xs font-bold text-slate-300">Disable Death Animation</span>
+                    <div class="relative">
+                      <input type="checkbox" id="set-prop-no-death-anim" class="sr-only peer" onchange="settingsManager.syncFromModal()">
+                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grid Section -->
+            <div id="sec-grid" class="space-y-6 hidden">
+              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Grid Configuration</h3>
+              <div class="grid grid-cols-2 gap-6 max-w-lg">
+                <div class="setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Width</label>
+                  <input id="set-prop-w" type="number" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                </div>
+                <div class="setting-item">
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Height</label>
+                  <input id="set-prop-h" type="number" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                </div>
+              </div>
+              <div class="flex gap-3 pt-4">
+                <button onclick="applyResize(); settingsManager.close()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg shadow-blue-600/20">
+                  Apply Resize
+                </button>
+                <button onclick="clearCanvas(); settingsManager.close()" class="px-6 py-2 bg-red-950/30 text-red-500 text-xs font-bold rounded border border-red-900/40 hover:bg-red-900/30">
+                  Clear All Blocks
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+            <button id="btn-reset-defaults" onclick="settingsManager.resetToDefaults()" class="hidden mr-auto px-4 py-2 text-red-400 hover:text-red-300 text-xs font-bold rounded hover:bg-red-900/20 transition-colors">
+              Reset to Default
+            </button>
+            <button onclick="settingsManager.close()" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded border border-slate-700">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <footer
       class="h-10 bg-slate-950 border-t border-slate-800 flex items-center px-6 justify-between text-[10px] font-medium text-slate-500 uppercase tracking-widest"
     >
@@ -2383,6 +2463,7 @@
         V: "t-moving-v",
         "^": "t-rising",
         S: "t-spike",
+        s: "t-spike-u",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -2398,6 +2479,7 @@
         V: "Vertical Moving Block",
         "^": "Rising Lava",
         S: "Spike",
+        s: "Upside Down Spike",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
@@ -2408,6 +2490,12 @@
           id: "synth",
           title: "Blockoverit",
           artist: "Block Over It",
+          file: null,
+        },
+        {
+          id: "none",
+          title: "No Music",
+          artist: "Silence",
           file: null,
         },
         {
@@ -2459,6 +2547,12 @@
           artist: "Blockoverit",
           file: "arcade.mp3",
         },
+        {
+          id: "time",
+          title: "Taking Our Time",
+          artist: "Alex Grohl",
+          file: "time.mp3",
+        },
       ];
       const minimap = {
         isCollapsed: false,
@@ -2472,6 +2566,7 @@
           V: "#777",
           "^": "#d32f2f",
           S: "#94a3b8",
+          s: "#94a3b8",
           o: "#e2e838",
           B: "#335699",
           "@": "#10b981", // Use a bright color for player on minimap
@@ -2547,6 +2642,121 @@
           }
         },
       };
+
+      const settingsManager = {
+        defaults: {
+          name: "New Level",
+          creator: "Anonymous",
+          desc: "",
+          difficulty: 1,
+          gravity: 27,
+          rise: 0,
+          forceZoom: false,
+          noDeathAnim: false,
+          w: 40,
+          h: 20
+        },
+        open() {
+          const modal = document.getElementById('settings-modal');
+          modal.classList.remove('hidden');
+          this.syncToModal();
+          this.renderDiffBarsModal();
+          this.switchTab('metadata');
+          this.checkDirty();
+        },
+        close() {
+          document.getElementById('settings-modal').classList.add('hidden');
+        },
+        switchTab(tabId) {
+          ['metadata', 'physics', 'grid'].forEach(id => {
+            document.getElementById(`sec-${id}`).classList.add('hidden');
+            document.getElementById(`tab-${id}`).classList.remove('active');
+          });
+          document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+          document.getElementById(`tab-${tabId}`).classList.add('active');
+        },
+        syncToModal() {
+          document.getElementById('set-prop-name').value = document.getElementById('prop-name').value;
+          document.getElementById('set-prop-creator').value = document.getElementById('prop-creator').value;
+          document.getElementById('set-prop-desc').value = document.getElementById('prop-desc').value;
+          document.getElementById('set-prop-gravity').value = document.getElementById('prop-gravity').value;
+          document.getElementById('set-gravity-val').innerText = document.getElementById('prop-gravity').value;
+          document.getElementById('set-prop-rise').value = document.getElementById('prop-rise').value;
+          document.getElementById('set-prop-force-zoom').checked = document.getElementById('prop-force-zoom').value === 'true';
+          document.getElementById('set-prop-no-death-anim').checked = document.getElementById('prop-no-death-anim').value === 'true';
+          document.getElementById('set-prop-w').value = document.getElementById('prop-w').value;
+          document.getElementById('set-prop-h').value = document.getElementById('prop-h').value;
+          this.checkDirty();
+        },
+        syncFromModal() {
+          document.getElementById('prop-name').value = document.getElementById('set-prop-name').value;
+          document.getElementById('prop-creator').value = document.getElementById('set-prop-creator').value;
+          document.getElementById('prop-desc').value = document.getElementById('set-prop-desc').value;
+          document.getElementById('prop-gravity').value = document.getElementById('set-prop-gravity').value;
+          document.getElementById('gravity-val').innerText = document.getElementById('set-prop-gravity').value;
+          document.getElementById('prop-rise').value = document.getElementById('set-prop-rise').value;
+          const riseVal = parseFloat(document.getElementById('prop-rise').value);
+          document.getElementById('rise-val').innerText = riseVal > 0 ? (60 / riseVal).toFixed(1) + ' blk/min' : 'Disabled';
+          document.getElementById('prop-force-zoom').value = document.getElementById('set-prop-force-zoom').checked;
+          document.getElementById('prop-no-death-anim').value = document.getElementById('set-prop-no-death-anim').checked;
+          document.getElementById('prop-w').value = document.getElementById('set-prop-w').value;
+          document.getElementById('prop-h').value = document.getElementById('set-prop-h').value;
+          this.checkDirty();
+        },
+        renderDiffBarsModal() {
+          const container = document.getElementById("set-diff-bars-modal");
+          container.innerHTML = "";
+          const n = parseInt(document.getElementById("prop-diff").value);
+          const colors = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
+
+          for (let i = 1; i <= 5; i++) {
+            const btn = document.createElement("button");
+            btn.className = `diff-btn border border-slate-800 bg-slate-900 ${i <= n ? "active" : ""}`;
+            if (i <= n) {
+              btn.style.backgroundColor = colors[i - 1];
+              btn.style.borderColor = colors[i - 1];
+              btn.style.boxShadow = `0 0 8px ${colors[i - 1]}40`;
+            }
+            btn.onclick = () => { setDifficulty(i); this.renderDiffBarsModal(); };
+            container.appendChild(btn);
+          }
+          this.checkDirty();
+        },
+        checkDirty() {
+          const current = {
+            name: document.getElementById('set-prop-name').value,
+            creator: document.getElementById('set-prop-creator').value,
+            desc: document.getElementById('set-prop-desc').value,
+            difficulty: parseInt(document.getElementById('prop-diff').value),
+            gravity: parseInt(document.getElementById('set-prop-gravity').value),
+            rise: parseFloat(document.getElementById('set-prop-rise').value || 0),
+            forceZoom: document.getElementById('set-prop-force-zoom').checked,
+            noDeathAnim: document.getElementById('set-prop-no-death-anim').checked,
+            w: parseInt(document.getElementById('set-prop-w').value),
+            h: parseInt(document.getElementById('set-prop-h').value)
+          };
+          
+          const isDirty = JSON.stringify(current) !== JSON.stringify(this.defaults);
+          const btn = document.getElementById('btn-reset-defaults');
+          if (isDirty) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        },
+        resetToDefaults() {
+          document.getElementById('set-prop-name').value = this.defaults.name;
+          document.getElementById('set-prop-creator').value = this.defaults.creator;
+          document.getElementById('set-prop-desc').value = this.defaults.desc;
+          document.getElementById('set-prop-gravity').value = this.defaults.gravity;
+          document.getElementById('set-gravity-val').innerText = this.defaults.gravity;
+          document.getElementById('set-prop-rise').value = this.defaults.rise;
+          document.getElementById('set-prop-force-zoom').checked = this.defaults.forceZoom;
+          document.getElementById('set-prop-no-death-anim').checked = this.defaults.noDeathAnim;
+          document.getElementById('set-prop-w').value = this.defaults.w;
+          document.getElementById('set-prop-h').value = this.defaults.h;
+          setDifficulty(this.defaults.difficulty);
+          this.renderDiffBarsModal();
+          this.syncFromModal();
+        }
+      };
       let currentAudio = null;
       let currentTrackId = null;
       let editorAudioCtx = null;
@@ -2570,6 +2780,8 @@
           callback: null,
           selection: [],
         },
+        fakes: new Set(),
+        risingThrough: new Set(),
       };
       let clipboard = null;
 
@@ -2605,6 +2817,8 @@
           };
           if (char === "S") {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual"></div></div>`;
+          } else if (char === "s") {
+            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual spike-u"></div></div>`;
           } else {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"></div>`;
           }
@@ -2680,6 +2894,8 @@
           currentTrackId = track.id;
           if (track.id === "synth") {
             playEditorSynth();
+          } else if (track.id === "none") {
+            // Do nothing, music stopped
           } else if (track.file) {
             currentAudio = new Audio(track.file);
             currentAudio.loop = true;
@@ -2755,6 +2971,12 @@
               if (color === 'invisible') {
                 cell.style.opacity = '0.5';
                 cell.style.border = '1px dashed rgba(255,255,255,0.5)';
+              } else if (color === 'flicker') {
+                cell.style.opacity = '0.7';
+                cell.style.border = '1px dotted rgba(255,255,255,0.5)';
+              } else if (color === 'jump_flicker') {
+                cell.style.opacity = '0.8';
+                cell.style.border = '1px solid rgba(100,255,100,0.5)';
               } else {
                 cell.style.backgroundColor = color;
                 cell.style.borderColor = adjustColor(color, -20);
@@ -2766,6 +2988,29 @@
               spike.className = "spike-visual";
               if (color) spike.style.borderBottomColor = color;
               cell.appendChild(spike);
+            } else if (state.grid[y][x] === "s") {
+              const spike = document.createElement("div");
+              spike.className = "spike-visual spike-u";
+              if (color) spike.style.borderTopColor = color;
+              cell.appendChild(spike);
+            }
+
+            if (state.fakes.has(`${x},${y}`)) {
+                cell.classList.add('t-fake');
+            }
+
+            if (color === 'flicker') {
+                const ind = document.createElement('div');
+                ind.className = 'absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white/50 pointer-events-none z-10';
+                ind.innerText = 'Fl';
+                cell.appendChild(ind);
+            }
+
+            if (color === 'jump_flicker') {
+                const ind = document.createElement('div');
+                ind.className = 'absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white/50 pointer-events-none z-10';
+                ind.innerText = 'JF';
+                cell.appendChild(ind);
             }
 
             // Picker Highlight
@@ -2826,12 +3071,22 @@
       }
 
       function toggleAccordion(btn) {
-        const wrapper = btn.closest("div");
-        const isOpen = wrapper.classList.contains("accordion-open");
-        // Close others
-        // document.querySelectorAll('#accordion-container > div').forEach(el => el.classList.remove('accordion-open'));
-        if (!isOpen) wrapper.classList.add("accordion-open");
-        else wrapper.classList.remove("accordion-open");
+        const wrapper = btn.parentElement;
+        // Find the immediate parent that groups the accordion sections
+        const container = wrapper.parentElement;
+
+        // Determine current state
+        const wasOpen = wrapper.classList.contains("accordion-open");
+
+        // Close all sibling sections within this container
+        Array.from(container.children).forEach((child) => {
+          if (child.classList && child.classList.contains("accordion-open")) {
+            child.classList.remove("accordion-open");
+          }
+        });
+
+        // If the clicked one was closed, open it (otherwise leave all closed)
+        if (!wasOpen) wrapper.classList.add("accordion-open");
       }
 
       function setupInteractions() {
@@ -3088,6 +3343,7 @@
               B: "x",
               O: "o",
               S: "S",
+              D: "s",
               L: "!",
               P: "@",
               C: "o",
@@ -3143,6 +3399,9 @@
               for (let x = x1; x <= x2; x++) {
                 state.grid[y][x] = " ";
                 delete state.colors[`${x},${y}`];
+              state.fakes.delete(`${x},${y}`);
+              state.risingThrough.delete(`${x},${y}`);
+              delete state.risingSpeeds[`${x},${y}`];
               }
             }
             render();
@@ -3150,6 +3409,22 @@
             updateStatus("Selection Cleared");
           }
         });
+      }
+
+      function toggleSPExpand() {
+        const expanded = document.getElementById('sp-expanded');
+        const btn = document.getElementById('sp-expand-btn');
+        const icon = document.getElementById('sp-expand-icon');
+        
+        if (expanded.classList.contains('hidden')) {
+            expanded.classList.remove('hidden');
+            expanded.classList.add('flex');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            expanded.classList.add('hidden');
+            expanded.classList.remove('flex');
+            icon.style.transform = 'rotate(0deg)';
+        }
       }
 
       function getNormalizedSelection() {
@@ -3165,11 +3440,11 @@
       function updateSelectionUI() {
         const overlay = document.getElementById("selection-overlay");
         overlay.innerHTML = "";
+        const popup = document.getElementById("selection-popup");
         const norm = getNormalizedSelection();
-        const tools = document.getElementById("selection-tools");
 
         if (!norm) {
-          if (tools) tools.classList.add("opacity-50", "pointer-events-none");
+          popup.classList.add("hidden");
           return;
         }
 
@@ -3181,10 +3456,75 @@
         rect.style.height = `${(norm.y2 - norm.y1 + 1) * 24}px`;
         overlay.appendChild(rect);
 
-        // Enable Selection Tools
-        if (tools) {
-          tools.classList.remove("opacity-50", "pointer-events-none");
+        // Position Popup
+        popup.classList.remove("hidden");
+        
+        // Calculate screen position
+        const gridEl = document.getElementById("level-grid");
+        const gridRect = gridEl.getBoundingClientRect();
+        
+        // Position at top right of selection
+        const left = gridRect.left + (norm.x2 + 1) * 24 * state.zoom + 10;
+        const top = gridRect.top + norm.y1 * 24 * state.zoom;
+        
+        // Keep within bounds
+        const maxLeft = window.innerWidth - popup.offsetWidth - 20;
+        const maxTop = window.innerHeight - popup.offsetHeight - 20;
+        
+        popup.style.left = `${Math.min(left, maxLeft)}px`;
+        popup.style.top = `${Math.max(20, Math.min(top, maxTop))}px`;
+
+        // Check for Rising Lava in selection
+        let hasRising = false;
+        let allThrough = true;
+        let allFake = true;
+        let allInvisible = true;
+        let allFlicker = true;
+        let allJumpFlicker = true;
+        let allPainted = true;
+        let hasBlocks = false;
+
+        for(let y = norm.y1; y <= norm.y2; y++) {
+            for(let x = norm.x1; x <= norm.x2; x++) {
+                if(state.grid[y][x] === '^') {
+                    hasRising = true;
+                    if (!state.risingThrough.has(`${x},${y}`)) {
+                        allThrough = false;
+                    }
+                }
+                if (state.grid[y][x] !== ' ') {
+                    hasBlocks = true;
+                    if (!state.fakes.has(`${x},${y}`)) allFake = false;
+                    
+                    const col = state.colors[`${x},${y}`];
+                    if (col !== 'invisible') allInvisible = false;
+                    if (col !== 'flicker') allFlicker = false;
+                    if (col !== 'jump_flicker') allJumpFlicker = false;
+                    if (!col || ['invisible', 'flicker', 'jump_flicker'].includes(col)) allPainted = false;
+                }
+            }
         }
+        
+        if (!hasBlocks) {
+            allFake = false; allInvisible = false; allFlicker = false; allJumpFlicker = false; allPainted = false;
+        }
+
+        const setBtn = (id, active) => {
+            const btn = document.getElementById(id);
+            if(btn) btn.className = active ? "p-1.5 bg-blue-600 text-white rounded flex justify-center items-center sp-btn" : "p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn";
+        };
+
+        setBtn('btn-sp-fake', allFake);
+        setBtn('btn-sp-invisible', allInvisible);
+        setBtn('btn-sp-paint', allPainted);
+        setBtn('btn-sp-flicker', allFlicker);
+        setBtn('btn-sp-jump-flicker', allJumpFlicker);
+
+        const risingOpt = document.getElementById('sp-rising-opt');
+        if(hasRising) risingOpt.classList.remove('hidden');
+        else risingOpt.classList.add('hidden');
+        document.getElementById('sp-rising-check').checked = allThrough;
+        
         minimap.render();
       }
 
@@ -3201,14 +3541,17 @@
         const hasColor = state.colors[`${x},${y}`] !== undefined;
         if (state.grid[y][x] === char && !hasColor) return;
 
+        if (char === ' ') {
+             state.fakes.delete(`${x},${y}`);
+             state.risingThrough.delete(`${x},${y}`);
+             delete state.risingSpeeds[`${x},${y}`];
+        }
+
         // Multi-player check
         if (char === "@") {
-          const allowMulti = document.getElementById("opt-multiplayer").checked;
-          if (!allowMulti) {
-            for (let ry = 0; ry < state.height; ry++) {
-              for (let rx = 0; rx < state.width; rx++) {
-                if (state.grid[ry][rx] === "@") paint(rx, ry, " ");
-              }
+          for (let ry = 0; ry < state.height; ry++) {
+            for (let rx = 0; rx < state.width; rx++) {
+              if (state.grid[ry][rx] === "@") paint(rx, ry, " ");
             }
           }
         }
@@ -3229,6 +3572,10 @@
             const spike = document.createElement("div");
             spike.className = "spike-visual";
             cell.appendChild(spike);
+          } else if (state.grid[y][x] === "s") {
+            const spike = document.createElement("div");
+            spike.className = "spike-visual spike-u";
+            cell.appendChild(spike);
           }
         }
         minimap.render();
@@ -3237,33 +3584,151 @@
       function makeSelectionInvisible() {
         const sel = getNormalizedSelection();
         if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allInvisible = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             state.colors[`${x},${y}`] = 'invisible';
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'invisible') {
+                 allInvisible = false;
+                 break;
+             }
+          }
+          if (!allInvisible) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allInvisible) {
+                     if (state.colors[`${x},${y}`] === 'invisible') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'invisible';
+                 }
+             }
           }
         }
         render();
         history.push();
+      }
+
+      function toggleFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'flicker') {
+                 allFlicker = false;
+                 break;
+             }
+          }
+          if (!allFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFlicker) {
+                     if (state.colors[`${x},${y}`] === 'flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleJumpFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allJumpFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'jump_flicker') {
+                 allJumpFlicker = false;
+                 break;
+             }
+          }
+          if (!allJumpFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allJumpFlicker) {
+                     if (state.colors[`${x},${y}`] === 'jump_flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'jump_flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleFakeSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFake = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && !state.fakes.has(`${x},${y}`)) {
+                 allFake = false;
+                 break;
+             }
+          }
+          if (!allFake) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFake) state.fakes.delete(`${x},${y}`);
+                 else state.fakes.add(`${x},${y}`);
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleRisingThrough() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        
+        const check = document.getElementById('sp-rising-check');
+        const val = check.checked;
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] === '^') {
+                 if (val) state.risingThrough.add(`${x},${y}`);
+                 else state.risingThrough.delete(`${x},${y}`);
+             }
+          }
+        }
+        // No render needed as this is invisible property, but good for consistency
+        history.push();
+        // Update UI to reflect state
+        updateSelectionUI(); 
       }
 
       function deleteSelection() {
         const b = getNormalizedSelection();
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
-          for (let x = b.x1; x <= b.x2; x++) paint(x, y, " ");
-        // Keep selection active to allow further edits
-        render();
-        history.push();
-      }
-
-      function makeSelectionInvisible() {
-        const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        for (let y = sel.y1; y <= sel.y2; y++) {
-          for (let x = sel.x1; x <= sel.x2; x++) {
-             state.colors[`${x},${y}`] = 'invisible';
+          for (let x = b.x1; x <= b.x2; x++) {
+              paint(x, y, " ");
+              state.fakes.delete(`${x},${y}`);
+              state.risingThrough.delete(`${x},${y}`);
+              delete state.risingSpeeds[`${x},${y}`];
           }
-        }
         render();
         history.push();
       }
@@ -3321,6 +3786,11 @@
             const color = temp[y][x + "_c"];
             if (color) state.colors[`${b.x1 + x},${b.y1 + y}`] = color;
             else delete state.colors[`${b.x1 + x},${b.y1 + y}`];
+            
+            // Handle fakes? Mirroring fakes is complex without storing them in temp.
+            // For now, clear fakes in mirrored area to avoid confusion or implement full mirror.
+            state.fakes.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.risingThrough.delete(`${b.x1 + x},${b.y1 + y}`);
           }
         }
         render();
@@ -3341,8 +3811,12 @@
           for (let x = b.x1; x <= b.x2; x++) {
             temp[y - b.y1][x - b.x1] = state.grid[y][x];
             temp[y - b.y1][x - b.x1 + "_c"] = state.colors[`${x},${y}`];
+            temp[y - b.y1][x - b.x1 + "_f"] = state.fakes.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(`${x},${y}`);
             state.grid[y][x] = " "; // Clear source
             delete state.colors[`${x},${y}`];
+            state.fakes.delete(`${x},${y}`);
+            state.risingThrough.delete(`${x},${y}`);
           }
         }
 
@@ -3359,6 +3833,12 @@
               if (temp[y][x + "_c"])
                 state.colors[`${tx},${ty}`] = temp[y][x + "_c"];
               else delete state.colors[`${tx},${ty}`];
+              
+              if (temp[y][x + "_f"]) state.fakes.add(`${tx},${ty}`);
+              else state.fakes.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_r"]) state.risingThrough.add(`${tx},${ty}`);
+              else state.risingThrough.delete(`${tx},${ty}`);
             }
           }
         }
@@ -3390,6 +3870,9 @@
             continue;
           state.grid[y][x] = char;
           delete state.colors[`${x},${y}`];
+          state.fakes.delete(`${x},${y}`);
+          state.risingThrough.delete(`${x},${y}`);
+          delete state.risingSpeeds[`${x},${y}`];
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
         }
         render();
@@ -3508,13 +3991,13 @@
           .fill(null)
           .map(() => Array(state.width).fill(" "));
         state.colors = {};
+        state.fakes = new Set();
+        state.risingThrough = new Set();
         state.actions = [];
         state.selection = null;
         render();
         history.push();
         updateStatus("Canvas Cleared");
-        const tools = document.getElementById("selection-tools");
-        if (tools) tools.classList.add("opacity-50", "pointer-events-none");
       }
 
       function copySelection() {
@@ -3526,6 +4009,8 @@
           for (let x = sel.x1; x <= sel.x2; x++) {
             row.push(state.grid[y][x]);
             row.push(state.colors[`${x},${y}`]); // Interleave color data? Or use object.
+            row.push(state.fakes.has(`${x},${y}`));
+            row.push(state.risingThrough.has(`${x},${y}`));
           }
           data.push(row);
         }
@@ -3544,16 +4029,23 @@
           : 0;
 
         const h = clipboard.length;
-        const w = clipboard[0].length / 2; // Adjusted for interleaved data
+        const w = clipboard[0].length / 4; // Adjusted for interleaved data
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
             const ty = startY + y;
             const tx = startX + x;
             if (ty < state.height && tx < state.width) {
-              state.grid[ty][tx] = clipboard[y][x * 2];
-              if (clipboard[y][x * 2 + 1])
-                state.colors[`${tx},${ty}`] = clipboard[y][x * 2 + 1];
+              state.grid[ty][tx] = clipboard[y][x * 4];
+              if (clipboard[y][x * 4 + 1])
+                state.colors[`${tx},${ty}`] = clipboard[y][x * 4 + 1];
+              
+              if (clipboard[y][x * 4 + 2]) state.fakes.add(`${tx},${ty}`);
+              else state.fakes.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 4 + 3]) state.risingThrough.add(`${tx},${ty}`);
+              else state.risingThrough.delete(`${tx},${ty}`);
+
               // Update visual
               const cell =
                 document.getElementById("level-grid").children[
@@ -4408,8 +4900,12 @@
               riseInterval: parseFloat(
                 document.getElementById("prop-rise").value,
               ),
+              forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+              disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
               music: state.music,
               colors: state.colors,
+              fakes: Array.from(state.fakes),
+              risingThrough: Array.from(state.risingThrough),
               plan: state.grid.map((r) => r.join("")),
             },
             null,
@@ -4601,6 +5097,13 @@
                 ctx.lineTo(px + cellSize, py + cellSize);
                 ctx.lineTo(px + cellSize / 2, py);
                 ctx.fill();
+              } else if (char === "s") {
+                ctx.fillStyle = customColor || "#94a3b8";
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + cellSize, py);
+                ctx.lineTo(px + cellSize / 2, py + cellSize);
+                ctx.fill();
               }
               ctx.globalAlpha = 1.0;
             }
@@ -4742,8 +5245,11 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
+            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
             music: state.music,
             colors: state.colors,
+            fakes: Array.from(state.fakes),
             plan: state.grid.map((r) => r.join("")),
           };
 
@@ -4781,6 +5287,8 @@
             state.grid = t.grid;
             document.getElementById("prop-gravity").value = 27;
             document.getElementById("prop-rise").value = 0;
+            document.getElementById("prop-force-zoom").value = "false";
+            document.getElementById("prop-no-death-anim").value = "false";
           } else {
             // Blank
             state.width = 40;
@@ -4789,12 +5297,16 @@
               .fill(null)
               .map(() => Array(state.width).fill(" "));
             document.getElementById("prop-gravity").value = 27;
+            document.getElementById("prop-force-zoom").value = "false";
+            document.getElementById("prop-no-death-anim").value = "false";
           }
 
           document.getElementById("prop-w").value = state.width;
           document.getElementById("prop-h").value = state.height;
           document.getElementById("gravity-val").innerText =
             document.getElementById("prop-gravity").value;
+          
+          state.fakes = new Set();
 
           render();
           history.stack = [];
@@ -4821,6 +5333,8 @@
             const riseVal = d.riseInterval || 0;
             document.getElementById("rise-val").innerText =
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+            document.getElementById("prop-force-zoom").value = d.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value = d.disableDeathAnim || false;
 
             let musicId = d.music || null;
             if (musicId && musicId.includes(".")) {
@@ -4831,6 +5345,8 @@
             renderMusic();
 
             state.colors = d.colors || {};
+            state.fakes = new Set(d.fakes || []);
+            state.risingThrough = new Set(d.risingThrough || []);
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
@@ -4873,8 +5389,12 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
+            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
             music: state.music,
             colors: state.colors,
+            fakes: Array.from(state.fakes),
+            risingThrough: Array.from(state.risingThrough),
             width: state.width,
             height: state.height,
             grid: state.grid,
@@ -4891,34 +5411,43 @@
           templateSaver.open();
         },
         load(id) {
-          const json = localStorage.getItem("boi_project_" + id);
-          if (!json) return;
-          const data = JSON.parse(json);
-          this.currentId = data.id;
-          document.getElementById("prop-name").value = data.name;
-          document.getElementById("prop-creator").value = data.creator || "Anonymous";
-          document.getElementById("prop-desc").value = data.description || "";
-          setDifficulty(data.difficulty || 1);
-          document.getElementById("prop-gravity").value = data.gravity || 27;
-          document.getElementById("gravity-val").innerText = data.gravity || 27;
-          document.getElementById("prop-rise").value = data.riseInterval || 0;
-          const riseVal = data.riseInterval || 0;
-          document.getElementById("rise-val").innerText =
-            riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+          try {
+            const json = localStorage.getItem("boi_project_" + id);
+            if (!json) throw new Error("Project not found");
+            const data = JSON.parse(json);
+            this.currentId = data.id;
+            document.getElementById("prop-name").value = data.name;
+            document.getElementById("prop-creator").value = data.creator || "Anonymous";
+            document.getElementById("prop-desc").value = data.description || "";
+            setDifficulty(data.difficulty || 1);
+            document.getElementById("prop-gravity").value = data.gravity || 27;
+            document.getElementById("gravity-val").innerText = data.gravity || 27;
+            document.getElementById("prop-rise").value = data.riseInterval || 0;
+            const riseVal = data.riseInterval || 0;
+            document.getElementById("rise-val").innerText =
+              riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+            document.getElementById("prop-force-zoom").value = data.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value = data.disableDeathAnim || false;
 
-          state.music = data.music || null;
-          renderMusic();
-          state.width = data.width;
-          state.height = data.height;
-          state.grid = data.grid;
-          state.colors = data.colors || {};
-          document.getElementById("prop-w").value = state.width;
-          document.getElementById("prop-h").value = state.height;
-          render();
-          history.stack = [];
-          history.push();
-          closeModal("start-modal");
-          autoAdjust();
+            state.music = data.music || null;
+            renderMusic();
+            state.width = data.width;
+            state.height = data.height;
+            state.grid = data.grid;
+            state.colors = data.colors || {};
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
+            document.getElementById("prop-w").value = state.width;
+            document.getElementById("prop-h").value = state.height;
+            render();
+            history.stack = [];
+            history.push();
+            closeModal("start-modal");
+            autoAdjust();
+          } catch (e) {
+            dialog.alert("Load Error", "Failed to load project: " + e.message);
+            console.error(e);
+          }
         },
         duplicate(id) {
           const p = JSON.parse(localStorage.getItem("boi_project_" + id));
@@ -5551,6 +6080,8 @@
               width: state.width,
               height: state.height,
               music: state.music,
+              fakes: Array.from(state.fakes),
+              risingThrough: Array.from(state.risingThrough),
             }),
           );
           if (this.stack.length > 50) this.stack.shift();
@@ -5564,6 +6095,8 @@
             state.width = data.width;
             state.height = data.height;
             state.music = data.music || null;
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
             renderMusic();
             render();
             updateStatus("Undo Matrix");
@@ -5577,6 +6110,8 @@
             state.width = data.width;
             state.height = data.height;
             state.music = data.music || null;
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
             renderMusic();
             render();
             updateStatus("Redo Matrix");
@@ -5615,6 +6150,7 @@
 
             renderMusic();
             state.colors = d.colors || {};
+            state.fakes = new Set(d.fakes || []);
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
