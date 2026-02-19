@@ -3695,27 +3695,31 @@
         this.isVisible = false;
       }
       VisualWall.prototype.type = "visual-wall";
-      VisualWall.prototype.act = function(step, level) {
-        if (this.wallType === 'flicker') {
-            this.timer += step;
-            if (this.visibleTime > 0) {
-                this.visibleTime -= step;
-                if (this.visibleTime <= 0) this.isVisible = false;
+      VisualWall.prototype.act = function (step, level) {
+        if (this.wallType === "flicker") {
+          this.timer += step;
+          if (this.visibleTime > 0) {
+            this.visibleTime -= step;
+            if (this.visibleTime <= 0) this.isVisible = false;
+          }
+          if (this.timer > 0.2) {
+            this.timer = 0;
+            if (Math.random() < 0.1) {
+              this.isVisible = true;
+              this.visibleTime = 0.2;
             }
-            if (this.timer > 2) { 
-                this.timer = 0;
-                if (Math.random() < 0.33) {
-                    this.isVisible = true;
-                    this.visibleTime = 0.5;
-                }
-            }
-        } else if (this.wallType === 'jump_flicker') {
-            var p = level.player;
-            if (p) {
-                // Visible if on ground (not in air)
-                var onGround = level.obstacleAt(p.pos.plus(new Vector(0, 0.1)), p.size, p);
-                this.isVisible = !!onGround;
-            }
+          }
+        } else if (this.wallType === "jump_flicker") {
+          var p = level.player;
+          if (p) {
+            // Visible if on ground (not in air)
+            var onGround = level.obstacleAt(
+              p.pos.plus(new Vector(0, 0.1)),
+              p.size,
+              p,
+            );
+            this.isVisible = !!onGround;
+          }
         }
       };
 
@@ -3807,6 +3811,9 @@
             var ch = line[x],
               fieldType = null;
 
+            var color = this.colors[`${x},${y}`];
+            var isFake = this.fakes.has(x + "," + y);
+
             // Merging Moving Blocks
             if (ch === "H") {
               var left = this.actors.find(
@@ -3814,7 +3821,9 @@
                   a.type === "moving-block" &&
                   a.text === "↔" &&
                   a.pos.y === y &&
-                  Math.abs(a.pos.x + a.size.x - x) < 0.1,
+                  Math.abs(a.pos.x + a.size.x - x) < 0.1 &&
+                  a.color === color &&
+                  !!a.fake === isFake,
               );
               if (left) {
                 left.size.x += 1;
@@ -3828,7 +3837,9 @@
                   a.type === "moving-block" &&
                   a.text === "↕" &&
                   a.pos.x === x &&
-                  Math.abs(a.pos.y + a.size.y - y) < 0.1,
+                  Math.abs(a.pos.y + a.size.y - y) < 0.1 &&
+                  a.color === color &&
+                  !!a.fake === isFake,
               );
               if (top) {
                 top.size.y += 1;
@@ -3844,7 +3855,9 @@
                   a.type === "lava" &&
                   a.speed.x !== 0 &&
                   a.pos.y === y &&
-                  Math.abs(a.pos.x + a.size.x - x) < 0.1,
+                  Math.abs(a.pos.x + a.size.x - x) < 0.1 &&
+                  a.color === color &&
+                  !!a.fake === isFake,
               );
               if (left) {
                 left.size.x += 1;
@@ -3859,7 +3872,9 @@
                   a.speed.y !== 0 &&
                   !a.repeatPos && // Exclude dripping lava
                   a.pos.x === x &&
-                  Math.abs(a.pos.y + a.size.y - y) < 0.1,
+                  Math.abs(a.pos.y + a.size.y - y) < 0.1 &&
+                  a.color === color &&
+                  !!a.fake === isFake,
               );
               if (top) {
                 top.size.y += 1;
@@ -3870,7 +3885,6 @@
 
             var Actor = actorchars[ch];
             if (Actor) {
-              var color = this.colors[`${x},${y}`];
               if (ch === "B") {
                 // Blue coin spawns if conditions are met:
                 // - Campaign: game must be beaten
@@ -3896,14 +3910,14 @@
                   this.totalBlueCoins++;
                   var actor = new Actor(new Vector(x, y), ch);
                   if (color) actor.color = color;
-                  if (this.fakes.has(x + "," + y)) actor.fake = true;
+                  if (isFake) actor.fake = true;
                   actor.id = this.nextActorId++;
                   this.actors.push(actor);
                 }
               } else {
                 var actor = new Actor(new Vector(x, y), ch);
                 if (color) actor.color = color;
-                if (this.fakes.has(x + "," + y)) actor.fake = true;
+                if (isFake) actor.fake = true;
                 if (
                   ch === "^" &&
                   this.risingSpeeds[`${x},${y}`] !== undefined
@@ -3914,19 +3928,19 @@
                 this.actors.push(actor);
               }
             } else if (ch === "x") {
-                if (color === 'flicker' || color === 'jump_flicker') {
-                    var wall = new VisualWall(new Vector(x, y), color);
-                    wall.id = this.nextActorId++;
-                    this.actors.push(wall);
-                    fieldType = "wall"; // Keep in grid for collision
-                } else {
-                    fieldType = "wall";
-                }
-            }
-            else if (ch === "!") {
+              if (color === "flicker" || color === "jump_flicker") {
+                var wall = new VisualWall(new Vector(x, y), color);
+                wall.id = this.nextActorId++;
+                this.actors.push(wall);
+                fieldType = "wall"; // Keep in grid for collision
+              } else {
+                fieldType = "wall";
+              }
+            } else if (ch === "!") {
               var lava = new Lava(new Vector(x, y), "!");
               lava.id = this.nextActorId++;
-              if (this.fakes.has(x + "," + y)) lava.fake = true;
+              if (color) lava.color = color;
+              if (isFake) lava.fake = true;
               if (this.risingThrough.has(x + "," + y))
                 lava.throughBlocks = true;
               this.actors.push(lava);
@@ -4673,10 +4687,14 @@
             var td = rowElement.appendChild(element("td", type));
             if (type === "wall") {
               var color = self.level.colors[`${x},${y}`];
-              if (color === "invisible") {
-                td.style.visibility = "hidden";
-              } else if (color === 'flicker' || color === 'jump_flicker') {
-                td.style.visibility = "hidden"; // Handled by VisualWall actor
+              if (
+                color === "invisible" ||
+                color === "flicker" ||
+                color === "jump_flicker"
+              ) {
+                td.className = "";
+                td.style.background = "transparent";
+                td.style.border = "none";
               } else if (color) {
                 td.style.backgroundColor = color;
                 td.style.borderColor = adjustColor(color, -20);
@@ -4732,9 +4750,6 @@
                 el.style.borderColor = adjustColor(actor.color, -20);
               }
             }
-            if (actor.type === 'visual-wall') {
-                el.style.visibility = actor.isVisible ? 'visible' : 'hidden';
-            }
             if (actor.type === "spike") {
               var visual = document.createElement("div");
               visual.className = "spike-visual";
@@ -4778,6 +4793,10 @@
           }
 
           // Dynamic updates
+          if (actor.type === "visual-wall") {
+            el.style.visibility = actor.isVisible ? "visible" : "hidden";
+          }
+
           if (
             actor.type === "bonus-coin" &&
             gameSettings.alternateBlueCoinStyle
