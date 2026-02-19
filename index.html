@@ -2811,6 +2811,57 @@
       }
 
       // --- Custom Level Popup ---
+      function openAwardLevelPopup(lvl) {
+        const difficulty = lvl.difficulty || 1;
+        const desc = lvl.description || "No description provided.";
+        const creator = lvl.creator || "Anonymous";
+
+        const overlay = document.createElement("div");
+        overlay.className = "cl-popup-overlay";
+
+        let diffBars = "";
+        for (let i = 1; i <= 5; i++) {
+          diffBars += `<div class="diff-seg ${i <= difficulty ? "active" : ""}"></div>`;
+        }
+
+        overlay.innerHTML = `
+            <div class="cl-popup">
+                <div class="cl-header">
+                    <div class="cl-title">
+                        ${lvl.name || "Custom Level"}
+                        <div style="font-size:0.8rem; color:#888; font-weight:normal; margin-top:5px;">by ${creator}</div>
+                    </div>
+                    <button class="cl-close" onclick="this.closest('.cl-popup-overlay').remove()">&times;</button>
+                </div>
+                <div class="cl-body">
+                    <div class="cl-meta">
+                        <div class="cl-meta-item">
+                            <span style="color:#666; font-size:0.7rem; text-transform:uppercase;">Difficulty</span>
+                            <div class="difficulty-bar">${diffBars}</div>
+                        </div>
+                    </div>
+                    <div class="cl-desc">${desc}</div>
+                    <div class="cl-stats">
+                        <div class="cl-stat-box"><div class="cl-stat-label">Size</div><div class="cl-stat-value">${lvl.plan[0].length}x${lvl.plan.length}</div></div>
+                        <div class="cl-stat-box"><div class="cl-stat-label">Gravity</div><div class="cl-stat-value">${lvl.gravity || 27}</div></div>
+                    </div>
+                </div>
+                <div class="cl-actions">
+                    <button class="btn" style="background:#335699; border-color:#2a4a7a; color:#fff; font-size:1rem; padding:10px 20px;" id="cl-add-btn">ADD TO MY LEVELS</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        document.getElementById("cl-add-btn").onclick = () => {
+          customLevels.push(JSON.parse(JSON.stringify(lvl)));
+          saveCustomLevels();
+          overlay.remove();
+          showPopup("SUCCESS", "Level added to your custom levels!", () => {});
+        };
+      }
+
       function openCustomLevelPopup(index) {
         const lvl = customLevels[index];
         const isBeaten = customLevelsProgress[index] || false;
@@ -7205,6 +7256,62 @@
               delBtn.onclick = (e) => {
                 e.stopPropagation();
                 const doDelete = () => {
+                  // Shift Custom Levels Progress
+                  const newProgress = {};
+                  Object.keys(customLevelsProgress).forEach((k) => {
+                    const kIdx = parseInt(k);
+                    if (kIdx < idx) {
+                      newProgress[k] = customLevelsProgress[k];
+                    } else if (kIdx > idx) {
+                      newProgress[kIdx - 1] = customLevelsProgress[k];
+                    }
+                  });
+                  customLevelsProgress = newProgress;
+                  saveCustomLevelsProgress();
+
+                  // Shift Blue Coins
+                  const newBlueCoins = {};
+                  Object.keys(gameState.levelBlueCoins).forEach((k) => {
+                    if (k.startsWith("custom_")) {
+                      const kIdx = parseInt(k.replace("custom_", ""));
+                      if (!isNaN(kIdx)) {
+                        if (kIdx < idx) {
+                          newBlueCoins[k] = gameState.levelBlueCoins[k];
+                        } else if (kIdx > idx) {
+                          newBlueCoins[`custom_${kIdx - 1}`] =
+                            gameState.levelBlueCoins[k];
+                        }
+                      } else {
+                        newBlueCoins[k] = gameState.levelBlueCoins[k];
+                      }
+                    } else {
+                      newBlueCoins[k] = gameState.levelBlueCoins[k];
+                    }
+                  });
+                  gameState.levelBlueCoins = newBlueCoins;
+                  saveGame();
+
+                  // Shift Highscores
+                  const newHighscores = {};
+                  Object.keys(highscores).forEach((k) => {
+                    if (k.includes("custom_")) {
+                      const suffix = k.substring(k.lastIndexOf("_") + 1);
+                      const kIdx = parseInt(suffix);
+                      if (!isNaN(kIdx) && k.endsWith(`custom_${kIdx}`)) {
+                        if (kIdx < idx) {
+                          newHighscores[k] = highscores[k];
+                        } else if (kIdx > idx) {
+                          const prefix = k.substring(0, k.lastIndexOf("_") + 1);
+                          newHighscores[`${prefix}${kIdx - 1}`] = highscores[k];
+                        }
+                        return;
+                      }
+                    }
+                    newHighscores[k] = highscores[k];
+                  });
+                  highscores = newHighscores;
+                  saveHighscores();
+
                   customLevels.splice(idx, 1);
                   saveCustomLevels();
                   showMenu("custom");
@@ -7339,6 +7446,17 @@
                         <div style="font-size:0.8rem; color:#888;">by ${lvl.creator || "Anonymous"}</div>
                     `;
 
+                      const btnGroup = document.createElement("div");
+                      btnGroup.style.display = "flex";
+                      btnGroup.style.gap = "5px";
+
+                      const infoBtn = document.createElement("button");
+                      infoBtn.className = "btn";
+                      infoBtn.style.cssText =
+                        "padding:5px 15px; font-size:0.8rem; min-width:auto; background:#555; border-color:#777;";
+                      infoBtn.textContent = "INFO";
+                      infoBtn.onclick = () => openAwardLevelPopup(lvl);
+
                       const playBtn = document.createElement("button");
                       playBtn.className = "btn";
                       playBtn.style.cssText =
@@ -7349,8 +7467,11 @@
                         startGameLevel(lvl, -1, "custom");
                       };
 
+                      btnGroup.appendChild(infoBtn);
+                      btnGroup.appendChild(playBtn);
+
                       row.appendChild(info);
-                      row.appendChild(playBtn);
+                      row.appendChild(btnGroup);
                       groupEl.appendChild(row);
                     });
 
