@@ -86,6 +86,47 @@
         font-weight: bold;
       }
 
+      .falling-block {
+        background: #777;
+        border: 3px solid #555;
+        box-sizing: border-box;
+        color: #fff;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .breakable-block {
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM2NDY0NjQiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NDQ0NDQiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+");
+        border: 3px solid #555;
+        box-sizing: border-box;
+      }
+
+      .spike-block, .wall-block, .spike-block-u {
+        background: #444;
+        border: 3px solid #333;
+        box-sizing: border-box;
+      }
+      /* Hide text content for these in game if any */
+      .spike-block, .wall-block, .spike-block-u {
+        color: transparent; 
+      }
+
+      .breakable-block.triggered {
+        animation: shake 0.4s infinite;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(1px, 1px);
+        }
+      }
+
       .rising-lava {
         background: #d32f2f;
         box-sizing: border-box;
@@ -3747,31 +3788,7 @@
       }
       VisualWall.prototype.type = "visual-wall";
       VisualWall.prototype.act = function (step, level) {
-        if (this.wallType === "flicker") {
-          this.timer += step;
-          if (this.visibleTime > 0) {
-            this.visibleTime -= step;
-            if (this.visibleTime <= 0) this.isVisible = false;
-          }
-          if (this.timer > 0.2) {
-            this.timer = 0;
-            if (Math.random() < 0.1) {
-              this.isVisible = true;
-              this.visibleTime = 0.2;
-            }
-          }
-        } else if (this.wallType === "jump_flicker") {
-          var p = level.player;
-          if (p) {
-            // Visible if on ground (not in air)
-            var onGround = level.obstacleAt(
-              p.pos.plus(new Vector(0, 0.1)),
-              p.size,
-              p,
-            );
-            this.isVisible = !!onGround;
-          }
-        }
+        // Logic moved to updateFlicker
       };
 
       function Spike(pos, ch) {
@@ -3789,6 +3806,131 @@
       UpsideDownSpike.prototype.type = "upside-down-spike";
       UpsideDownSpike.prototype.act = function (step, level) {};
 
+      function FallingBlock(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.speed = new Vector(0, 0);
+        this.repeatPos = pos;
+      }
+      FallingBlock.prototype.type = "falling-block";
+      FallingBlock.prototype.act = function (step, level) {
+        this.speed.y += level.gravity * step;
+        var newPos = this.pos.plus(this.speed.times(step));
+        
+        var player = level.player;
+        if (player) {
+             if (newPos.x < player.pos.x + player.size.x &&
+                newPos.x + this.size.x > player.pos.x &&
+                newPos.y < player.pos.y + player.size.y &&
+                newPos.y + this.size.y > player.pos.y) {
+                 level.playerTouched("crush", this);
+             }
+        }
+
+        if (level.obstacleAt(newPos, this.size, this)) {
+          this.pos = new Vector(this.repeatPos.x, this.repeatPos.y);
+          this.speed = new Vector(0, 0);
+        } else {
+          this.pos = newPos;
+        }
+      };
+
+      function BreakableBlock(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+        this.timer = -1;
+      }
+      BreakableBlock.prototype.type = "breakable-block";
+      BreakableBlock.prototype.trigger = function () {
+        if (!this.triggered) {
+          this.triggered = true;
+          this.timer = 0.4; // short delay
+        }
+      };
+      BreakableBlock.prototype.act = function (step, level) {
+        if (this.triggered) {
+          if (this.timer > 0) this.timer -= step;
+          if (this.timer <= 0) this.toRemove = true;
+        }
+      };
+
+      function SpikeBlock(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+      }
+      SpikeBlock.prototype.type = "spike-block";
+      SpikeBlock.prototype.act = function(step, level) {
+        if (this.triggered) return;
+        var p = level.player;
+        if (!p) return;
+        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
+        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 2.0) {
+            var targetPos = this.pos.plus(new Vector(0, -1));
+            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+                var spike = new Spike(targetPos);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+            }
+            this.triggered = true;
+        }
+      };
+
+      function WallBlock(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+      }
+      WallBlock.prototype.type = "wall-block";
+      WallBlock.prototype.act = function(step, level) {
+        if (this.triggered) return;
+        var p = level.player;
+        if (!p) return;
+        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
+        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 2.0) {
+            var targetPos = this.pos.plus(new Vector(0, -1));
+            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+                var wall = new VisualWall(targetPos);
+                wall.isVisible = true;
+                wall.id = level.nextActorId++;
+                level.actors.push(wall);
+            }
+            this.triggered = true;
+        }
+      };
+
+      function UpsideDownSpikeBlock(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+      }
+      UpsideDownSpikeBlock.prototype.type = "spike-block-u";
+      UpsideDownSpikeBlock.prototype.act = function(step, level) {
+        if (this.triggered) return;
+        var p = level.player;
+        if (!p) return;
+        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
+        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 2.0) {
+            var targetPos = this.pos.plus(new Vector(0, 1));
+            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+                var spike = new UpsideDownSpike(targetPos);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+            }
+            this.triggered = true;
+        }
+      };
+
       var actorchars = {
         "@": Player,
         o: Coin,
@@ -3801,6 +3943,11 @@
         "^": RisingLava,
         S: Spike,
         s: UpsideDownSpike,
+        F: FallingBlock,
+        G: BreakableBlock,
+        K: SpikeBlock,
+        W: WallBlock,
+        k: UpsideDownSpikeBlock,
       };
 
       function cloneActor(actor) {
@@ -3853,6 +4000,7 @@
         this.fakes = new Set(levelData.fakes || []);
         this.risingThrough = new Set(levelData.risingThrough || []);
         this.risingSpeeds = levelData.risingSpeeds || {};
+        this.illusions = new Set(levelData.illusions || []);
         this.age = 0;
 
         for (var y = 0; y < this.height; y++) {
@@ -3967,6 +4115,16 @@
                 }
               } else {
                 var actor = new Actor(new Vector(x, y), ch);
+                if (ch === "G" && this.illusions.has(x + "," + y)) {
+                  actor.isIllusion = true;
+                }
+                // Flicker logic for all actors
+                if (color === "flicker" || color === "jump_flicker") {
+                    actor.flickerType = color;
+                    actor.isVisible = false;
+                    actor.flickerTimer = 0;
+                    actor.flickerVisibleTime = 0;
+                }
                 if (color) actor.color = color;
                 if (isFake) actor.fake = true;
                 if (
@@ -3981,6 +4139,10 @@
             } else if (ch === "x") {
               if (color === "flicker" || color === "jump_flicker") {
                 var wall = new VisualWall(new Vector(x, y), color);
+                wall.flickerType = color; // Explicitly set for VisualWall too
+                wall.isVisible = false;
+                wall.flickerTimer = 0;
+                wall.flickerVisibleTime = 0;
                 wall.id = this.nextActorId++;
                 this.actors.push(wall);
                 fieldType = "wall"; // Keep in grid for collision
@@ -4402,30 +4564,41 @@
             }
           }
         }
-        // Check dynamic obstacles (Moving Blocks, Lava Groups)
-        for (var i = 0; i < this.dynamicActors.length; i++) {
-          var other = this.dynamicActors[i];
+        // Check all actors now
+        for (var i = 0; i < this.actors.length; i++) {
+          var other = this.actors[i];
           if (other === exceptActor) continue;
+          if (other.flickerType && !other.isVisible) continue;
           if (other.fake) continue;
 
-          if (other.type === "lava-group") {
-            for (var j = 0; j < other.members.length; j++) {
-              var member = other.members[j];
+          var members = other.members || [other];
+          for (var j = 0; j < members.length; j++) {
+            var member = members[j];
+            if (member.fake) continue;
+
+            if (
+              pos.x + size.x > member.pos.x &&
+              pos.x < member.pos.x + member.size.x &&
+              pos.y + size.y > member.pos.y &&
+              pos.y < member.pos.y + member.size.y
+            ) {
               if (
-                pos.x + size.x > member.pos.x &&
-                pos.x < member.pos.x + member.size.x &&
-                pos.y + size.y > member.pos.y &&
-                pos.y < member.pos.y + member.size.y
+                member.type === "moving-block" ||
+                member.type === "breakable-block" ||
+                member.type === "falling-block" ||
+                member.type === "spike-block" ||
+                member.type === "wall-block" ||
+                member.type === "spike-block-u" ||
+                (member.type === "visual-wall" && member.isVisible)
               )
-                return "lava";
+                return member;
+              if (member.type === "lava") return "lava";
+              if (
+                member.type === "spike" ||
+                member.type === "upside-down-spike"
+              )
+                return member.type;
             }
-          } else if (
-            pos.x + size.x > other.pos.x &&
-            pos.x < other.pos.x + other.size.x &&
-            pos.y + size.y > other.pos.y &&
-            pos.y < other.pos.y + other.size.y
-          ) {
-            return other.type === "lava" ? "lava" : "wall";
           }
         }
       };
@@ -4459,6 +4632,34 @@
         }
       };
 
+      function updateFlicker(actor, step, level) {
+        if (actor.flickerType === "flicker") {
+          actor.flickerTimer += step;
+          if (actor.flickerVisibleTime > 0) {
+            actor.flickerVisibleTime -= step;
+            if (actor.flickerVisibleTime <= 0) actor.isVisible = false;
+          }
+          if (actor.flickerTimer > 0.2) {
+            actor.flickerTimer = 0;
+            if (Math.random() < 0.1) {
+              actor.isVisible = true;
+              actor.flickerVisibleTime = 0.2;
+            }
+          }
+        } else if (actor.flickerType === "jump_flicker") {
+          var p = level.player;
+          if (p) {
+            // Visible if on ground (not in air)
+            var onGround = level.obstacleAt(
+              p.pos.plus(new Vector(0, 0.1)),
+              p.size,
+              p,
+            );
+            actor.isVisible = !!onGround;
+          }
+        }
+      }
+
       Level.prototype.animate = function (step, keys) {
         if (this.status != null) this.finishDelay -= step;
 
@@ -4468,9 +4669,22 @@
         while (step > 0) {
           var thisStep = Math.min(step, 0.05);
           this.actors.forEach(function (actor) {
+            if (actor.flickerType) updateFlicker(actor, thisStep, this);
             actor.act(thisStep, this, keys);
           }, this);
           step -= thisStep;
+        }
+
+        var actorsToRemove = this.actors.filter((actor) => actor.toRemove);
+        if (actorsToRemove.length > 0) {
+          this.actors = this.actors.filter((actor) => !actor.toRemove);
+          // Re-cache dynamic actors if needed, though the main loop now iterates all actors
+          this.dynamicActors = this.actors.filter(
+            (a) =>
+              a.type === "moving-block" ||
+              a.type === "lava-group" ||
+              (a.type === "lava" && a.speed),
+          );
         }
       };
 
@@ -4596,6 +4810,8 @@
         if (keys.left) this.speed.x -= playerXSpeed;
         if (keys.right) this.speed.x += playerXSpeed;
         var motion = new Vector(this.speed.x * step, 0);
+        if (this.speed.x === 0 && (keys.left || keys.right))
+          motion.x = (keys.right ? 1 : -1) * 0.001;
         var newPos = this.pos.plus(motion);
         var obstacle = level.obstacleAt(newPos, this.size, this);
 
@@ -4611,6 +4827,12 @@
         var newPos = this.pos.plus(motion);
         var obstacle = level.obstacleAt(newPos, this.size, this);
         if (obstacle) {
+          var obstacleType =
+            typeof obstacle === "string" ? obstacle : obstacle.type;
+          if (obstacleType === "breakable-block") {
+            obstacle.trigger();
+          }
+
           level.playerTouched(obstacle);
           if (keys.up && this.speed.y > 0) this.speed.y = -jumpSpeed;
           else this.speed.y = 0;
@@ -4640,7 +4862,18 @@
         }
         this.moveX(step, level, keys);
         this.moveY(step, level, keys);
+
         var otherActor = level.actorAt(this);
+        if (
+          otherActor &&
+          otherActor.type === "breakable-block" &&
+          otherActor.timer <= 0 &&
+          otherActor.triggered
+        ) {
+          otherActor.toRemove = true;
+          otherActor = null;
+        }
+
         if (otherActor) level.playerTouched(otherActor.type, otherActor);
         if (level.status == "lost") {
           this.pos.y += step;
@@ -4652,7 +4885,13 @@
       const CLEAR_CODE = "clear";
 
       Level.prototype.playerTouched = function (type, actor) {
-        if (
+        if (type === "crush") {
+             this.status = "lost";
+             this.finishDelay = 0;
+             return;
+        } else if (type === "breakable-block" && actor && actor.timer > 0) {
+          // Don't die on a breakable block that hasn't broken yet
+        } else if (
           (type == "lava" ||
             type == "rising-lava" ||
             type == "lava-group" ||
@@ -4784,8 +5023,13 @@
           let el = this.actorElements.get(actor.id);
 
           if (!el) {
+            let className = "actor " + actor.type;
+            if (actor.type === "breakable-block" && actor.isIllusion) {
+              className = "actor wall";
+            }
+
             // Create new element
-            el = element("div", "actor " + actor.type);
+            el = element("div", className);
             this.actorLayer.appendChild(el);
             this.actorElements.set(actor.id, el);
 
@@ -4793,12 +5037,22 @@
             if (actor.color) {
               if (actor.color === "invisible" && actor.type !== "player") {
                 el.style.visibility = "hidden";
+              } else if (actor.flickerType) {
+                 // Initial state for flicker
+                 el.style.visibility = actor.isVisible ? "visible" : "hidden";
+                 el.style.backgroundColor = actor.color;
+                 el.style.borderColor = adjustColor(actor.color, -20);
               } else if (
                 actor.type !== "spike" &&
                 actor.type !== "upside-down-spike"
               ) {
-                el.style.backgroundColor = actor.color;
-                el.style.borderColor = adjustColor(actor.color, -20);
+                if (
+                  actor.color !== "flicker" &&
+                  actor.color !== "jump_flicker"
+                ) {
+                  el.style.backgroundColor = actor.color;
+                  el.style.borderColor = adjustColor(actor.color, -20);
+                }
               }
             }
             if (actor.type === "spike") {
@@ -4841,11 +5095,14 @@
               el.style.alignItems = "center";
               el.style.justifyContent = "center";
             }
+            if (actor.type === "falling-block") {
+              el.textContent = "▼";
+            }
           }
 
           // Dynamic updates
-          if (actor.type === "visual-wall") {
-            el.style.visibility = actor.isVisible ? "visible" : "hidden";
+          if (actor.flickerType) {
+             el.style.visibility = actor.isVisible ? "visible" : "hidden";
           }
 
           if (
@@ -4855,6 +5112,14 @@
             el.classList.add("bonus-coin-alt-visuals");
           } else {
             el.classList.remove("bonus-coin-alt-visuals");
+          }
+
+          if (actor.type === "breakable-block") {
+            if (actor.triggered) {
+              el.classList.add("triggered");
+            } else {
+              el.classList.remove("triggered");
+            }
           }
 
           var visualW = actor.size.x;
@@ -4927,14 +5192,20 @@
         var width = this.wrap.clientWidth;
         var height = this.wrap.clientHeight;
         var player = this.level.player;
-        if (!player) return;
+
+        var targetX, targetY;
+        if (player) {
+          targetX = (player.pos.x + player.size.x / 2) * this.scale;
+          targetY = (player.pos.y + player.size.y / 2) * this.scale;
+        } else {
+          targetX = (this.level.width * this.scale) / 2;
+          targetY = (this.level.height * this.scale) / 2;
+        }
 
         // Camera Follow using Transform (Centers player perfectly)
-        var playerCX = (player.pos.x + player.size.x / 2) * this.scale;
-        var playerCY = (player.pos.y + player.size.y / 2) * this.scale;
 
-        var offsetX = width / 2 - playerCX;
-        var offsetY = height / 2 - playerCY;
+        var offsetX = width / 2 - targetX;
+        var offsetY = height / 2 - targetY;
 
         this.world.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
       };
