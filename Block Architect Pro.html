@@ -646,10 +646,10 @@
                   <span class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">Lava Through Blocks</span>
               </label>
           </div>
-          <div id="sp-rising-speed-opt" class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2">
-              <span class="text-[9px] font-bold text-slate-400 uppercase">Speed</span>
-              <input type="number" id="sp-rising-speed-input" step="0.1" min="0" class="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500" onchange="updateRisingSpeed(this.value)" placeholder="Global">
-              <span class="text-[8px] text-slate-600">0=Global</span>
+          <div id="sp-block-config-opt" class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2">
+              <span class="text-[9px] font-bold text-slate-400 uppercase">Blocks Produced</span>
+              <input type="number" id="sp-block-count-input" min="1" max="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500" onchange="updateBlockConfig(this.value)" placeholder="1">
+              <span class="text-[8px] text-slate-600">Default: 1</span>
           </div>
       </div>
     </div>
@@ -2928,6 +2928,7 @@
         risingThrough: new Set(),
         risingSpeeds: {},
         illusions: new Set(),
+        blockConfigs: {},
       };
       let clipboard = null;
 
@@ -3631,6 +3632,7 @@
         let hasBreakable = false;
         let onlyBreakable = true;
         let allIllusion = true;
+        let hasConfigurable = false;
         let allPainted = true;
         let hasBlocks = false;
 
@@ -3648,6 +3650,9 @@
                     if (!state.illusions.has(`${x},${y}`)) allIllusion = false;
                 } else if (char !== ' ') {
                     onlyBreakable = false;
+                }
+                if (['W', 'K', 'k'].includes(char)) {
+                    hasConfigurable = true;
                 }
                 if (state.grid[y][x] !== ' ') {
                     hasBlocks = true;
@@ -3691,26 +3696,26 @@
         else risingOpt.classList.add('hidden');
         document.getElementById('sp-rising-check').checked = allThrough;
 
-        const speedOpt = document.getElementById('sp-rising-speed-opt');
-        if(hasRising) {
-            speedOpt.classList.remove('hidden');
-            speedOpt.classList.add('flex');
+        const configOpt = document.getElementById('sp-block-config-opt');
+        if(hasConfigurable) {
+            configOpt.classList.remove('hidden');
+            configOpt.classList.add('flex');
             // Check if all selected have same speed
-            let commonSpeed = null;
+            let commonCount = null;
             let first = true;
             for(let y = norm.y1; y <= norm.y2; y++) {
                 for(let x = norm.x1; x <= norm.x2; x++) {
-                    if(state.grid[y][x] === '^') {
-                        const s = state.risingSpeeds[`${x},${y}`] || 0;
-                        if (first) { commonSpeed = s; first = false; }
-                        else if (commonSpeed !== s) commonSpeed = '';
+                    if(['W', 'K', 'k'].includes(state.grid[y][x])) {
+                        const c = state.blockConfigs[`${x},${y}`]?.count || 1;
+                        if (first) { commonCount = c; first = false; }
+                        else if (commonCount !== c) commonCount = '';
                     }
                 }
             }
-            document.getElementById('sp-rising-speed-input').value = commonSpeed !== null ? commonSpeed : '';
+            document.getElementById('sp-block-count-input').value = commonCount !== null ? commonCount : '';
         } else {
-            speedOpt.classList.add('hidden');
-            speedOpt.classList.remove('flex');
+            configOpt.classList.add('hidden');
+            configOpt.classList.remove('flex');
         }
         
         minimap.render();
@@ -3725,7 +3730,7 @@
         }
       }
 
-      function paint(x, y, char = state.selectedChar) {
+      function paint(x, y, char = state.selectedChar, updateView = true) {
         const hasColor = state.colors[`${x},${y}`] !== undefined;
         if (state.grid[y][x] === char && !hasColor) return;
 
@@ -3734,13 +3739,14 @@
              state.risingThrough.delete(`${x},${y}`);
              delete state.risingSpeeds[`${x},${y}`];
              state.illusions.delete(`${x},${y}`);
+             delete state.blockConfigs[`${x},${y}`];
         }
 
         // Multi-player check
         if (char === "@") {
           for (let ry = 0; ry < state.height; ry++) {
             for (let rx = 0; rx < state.width; rx++) {
-              if (state.grid[ry][rx] === "@") paint(rx, ry, " ");
+              if (state.grid[ry][rx] === "@") paint(rx, ry, " ", updateView);
             }
           }
         }
@@ -3748,27 +3754,12 @@
         state.grid[y][x] = char;
         delete state.colors[`${x},${y}`]; // Reset color on overwrite
         state.illusions.delete(`${x},${y}`);
-        // Ensure we are targeting the correct child index (overlay is 0)
-        const cell =
-          document.getElementById("level-grid").children[
-            y * state.width + x + 1
-          ]; // +1 for overlay div
-        if (cell) {
-          cell.className = `cell ${TILE_MAP[state.grid[y][x]]}`;
-          cell.style.backgroundColor = "";
-          cell.style.borderColor = "";
-          cell.innerHTML = "";
-          if (state.grid[y][x] === "S") {
-            const spike = document.createElement("div");
-            spike.className = "spike-visual";
-            cell.appendChild(spike);
-          } else if (state.grid[y][x] === "s") {
-            const spike = document.createElement("div");
-            spike.className = "spike-visual spike-u";
-            cell.appendChild(spike);
-          }
+        
+        if (updateView) {
+            const cell = document.getElementById("level-grid").children[y * state.width + x + 1];
+            if (cell) renderCell(cell, x, y);
+            minimap.render();
         }
-        minimap.render();
       }
 
       function makeSelectionInvisible() {
@@ -4072,16 +4063,16 @@
         history.push();
       }
 
-      function updateRisingSpeed(val) {
+      function updateBlockConfig(val) {
         const sel = getNormalizedSelection();
         if (!sel) return;
-        const speed = parseFloat(val);
+        const count = parseInt(val);
         
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] === '^') {
-                 if (speed > 0) state.risingSpeeds[`${x},${y}`] = speed;
-                 else delete state.risingSpeeds[`${x},${y}`];
+             if (['W', 'K', 'k'].includes(state.grid[y][x])) {
+                 if (count > 1) state.blockConfigs[`${x},${y}`] = { count: count };
+                 else delete state.blockConfigs[`${x},${y}`];
              }
           }
         }
@@ -4093,13 +4084,14 @@
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
           for (let x = b.x1; x <= b.x2; x++) {
-              paint(x, y, " ");
+              paint(x, y, " ", false);
               state.fakes.delete(`${x},${y}`);
               state.risingThrough.delete(`${x},${y}`);
               state.illusions.delete(`${x},${y}`);
               delete state.risingSpeeds[`${x},${y}`];
+              delete state.blockConfigs[`${x},${y}`];
           }
-        render();
+        render(); // Batch render
         history.push();
 
       }
@@ -4108,8 +4100,8 @@
         const b = getNormalizedSelection();
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
-          for (let x = b.x1; x <= b.x2; x++) paint(x, y, state.selectedChar);
-        render();
+          for (let x = b.x1; x <= b.x2; x++) paint(x, y, state.selectedChar, false);
+        render(); // Batch render
         history.push();
       }
 
@@ -4186,6 +4178,7 @@
             temp[y - b.y1][x - b.x1 + "_f"] = state.fakes.has(`${x},${y}`);
             temp[y - b.y1][x - b.x1 + "_i"] = state.illusions.has(`${x},${y}`);
             temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_cfg"] = state.blockConfigs[`${x},${y}`];
             state.grid[y][x] = " "; // Clear source
             delete state.colors[`${x},${y}`];
             state.fakes.delete(`${x},${y}`);
@@ -4216,6 +4209,9 @@
 
               if (temp[y][x + "_r"]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_cfg"]) state.blockConfigs[`${tx},${ty}`] = temp[y][x + "_cfg"];
+              else delete state.blockConfigs[`${tx},${ty}`];
             }
           }
         }
@@ -4250,6 +4246,7 @@
           state.risingThrough.delete(`${x},${y}`);
           state.illusions.delete(`${x},${y}`);
           delete state.risingSpeeds[`${x},${y}`];
+          delete state.blockConfigs[`${x},${y}`];
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
         }
         render();
@@ -4373,6 +4370,7 @@
         state.risingThrough = new Set();
         state.illusions = new Set();
         state.actions = [];
+        state.blockConfigs = {};
         state.selection = null;
         render();
         history.push();
@@ -4391,6 +4389,7 @@
             row.push(state.fakes.has(`${x},${y}`));
             row.push(state.illusions.has(`${x},${y}`));
             row.push(state.risingThrough.has(`${x},${y}`));
+            row.push(state.blockConfigs[`${x},${y}`]);
           }
           data.push(row);
         }
@@ -4409,7 +4408,7 @@
           : 0;
 
         const h = clipboard.length;
-        const w = clipboard[0].length / 5; // Adjusted for interleaved data
+        const w = clipboard[0].length / 6; // Adjusted for interleaved data
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
@@ -4428,6 +4427,9 @@
 
               if (clipboard[y][x * 5 + 4]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 6 + 5]) state.blockConfigs[`${tx},${ty}`] = clipboard[y][x * 6 + 5];
+              else delete state.blockConfigs[`${tx},${ty}`];
 
               // Update visual
               const cell =
@@ -5291,6 +5293,7 @@
               risingThrough: Array.from(state.risingThrough),
               illusions: Array.from(state.illusions),
               risingSpeeds: state.risingSpeeds,
+              blockConfigs: state.blockConfigs,
               plan: state.grid.map((r) => r.join("")),
             },
             null,
@@ -5741,6 +5744,7 @@
             state.risingThrough = new Set(d.risingThrough || []);
             state.illusions = new Set(d.illusions || []);
             state.risingSpeeds = d.risingSpeeds || {};
+            state.blockConfigs = d.blockConfigs || {};
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
@@ -5791,6 +5795,7 @@
             risingThrough: Array.from(state.risingThrough),
             illusions: Array.from(state.illusions),
             risingSpeeds: state.risingSpeeds,
+            blockConfigs: state.blockConfigs,
             width: state.width,
             height: state.height,
             grid: state.grid,
@@ -5835,6 +5840,7 @@
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
             document.getElementById("prop-w").value = state.width;
             document.getElementById("prop-h").value = state.height;
             render();
@@ -6482,6 +6488,7 @@
               risingThrough: Array.from(state.risingThrough),
               illusions: Array.from(state.illusions),
               risingSpeeds: state.risingSpeeds,
+              blockConfigs: state.blockConfigs,
             }),
           );
           if (this.stack.length > 50) this.stack.shift();
@@ -6499,6 +6506,7 @@
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
             renderMusic();
             render();
             updateStatus("Undo Matrix");
@@ -6516,6 +6524,7 @@
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
             renderMusic();
             render();
             updateStatus("Redo Matrix");
