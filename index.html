@@ -1975,7 +1975,7 @@
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
-      const LATEST_NEWS_VERSION = "1.4.3"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
       }
@@ -3974,9 +3974,14 @@
         if (dist < 2.0) {
           var targetPos = this.pos.plus(new Vector(0, -1));
           if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-            var spike = new Spike(targetPos);
-            spike.id = level.nextActorId++;
-            level.actors.push(spike);
+            for (let i = 0; i < (this.produceCount || 1); i++) {
+              var p = targetPos.plus(new Vector(0, -i));
+              if (!level.obstacleAt(p, new Vector(1, 1), null)) {
+                var spike = new Spike(p);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+              }
+            }
           }
           this.triggered = true;
         }
@@ -3998,11 +4003,38 @@
 
         if (dist < 2.0) {
           var targetPos = this.pos.plus(new Vector(0, -1));
-          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-            var wall = new VisualWall(targetPos);
-            wall.isVisible = true;
-            wall.id = level.nextActorId++;
-            level.actors.push(wall);
+          
+          // Check first block (ignoring player to allow bump)
+          var firstObs = level.obstacleAt(targetPos, new Vector(1, 1), null);
+          if (firstObs && firstObs.type === 'player') firstObs = null;
+
+          if (!firstObs) {
+            var spawned = [];
+            for (let i = 0; i < (this.produceCount || 1); i++) {
+                var p = targetPos.plus(new Vector(0, -i));
+                var obs = level.obstacleAt(p, new Vector(1, 1), null);
+                if (obs && obs.type === 'player') obs = null;
+                
+                if (!obs) {
+                    var wall = new VisualWall(p);
+                    wall.isVisible = true;
+                    wall.id = level.nextActorId++;
+                    level.actors.push(wall);
+                    spawned.push(wall);
+                } else {
+                    break;
+                }
+            }
+            // Bump player up if they are inside any spawned wall
+            if (spawned.length > 0 && level.player) {
+                for (var w of spawned) {
+                    if (level.player.pos.x < w.pos.x + w.size.x && level.player.pos.x + level.player.size.x > w.pos.x &&
+                        level.player.pos.y < w.pos.y + w.size.y && level.player.pos.y + level.player.size.y > w.pos.y) {
+                        level.player.pos.y = w.pos.y - level.player.size.y - 0.01;
+                        if (level.player.speed.y > 0) level.player.speed.y = 0;
+                    }
+                }
+            }
           }
           this.triggered = true;
         }
@@ -4025,9 +4057,14 @@
         if (dist < 2.0) {
           var targetPos = this.pos.plus(new Vector(0, 1));
           if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-            var spike = new UpsideDownSpike(targetPos);
-            spike.id = level.nextActorId++;
-            level.actors.push(spike);
+            for (let i = 0; i < (this.produceCount || 1); i++) {
+              var p = targetPos.plus(new Vector(0, i));
+              if (!level.obstacleAt(p, new Vector(1, 1), null)) {
+                var spike = new UpsideDownSpike(p);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+              }
+            }
           }
           this.triggered = true;
         }
@@ -4053,8 +4090,8 @@
       };
 
       function Grinder(pos) {
-        this.pos = pos.plus(new Vector(0, -2));
-        this.size = new Vector(1, 3);
+        this.pos = pos;
+        this.size = new Vector(1, 1);
         this.speed = new Vector(0, 0);
         this.grinding = false;
       }
@@ -4186,6 +4223,7 @@
         this.risingThrough = new Set(levelData.risingThrough || []);
         this.risingSpeeds = levelData.risingSpeeds || {};
         this.illusions = new Set(levelData.illusions || []);
+        this.blockConfigs = levelData.blockConfigs || {};
         this.age = 0;
         this.playerHasMoved = false;
 
@@ -4267,6 +4305,21 @@
                 continue;
               }
             }
+            
+            // Merging Grinders
+            if (ch === "C") {
+              var top = this.actors.find(
+                (a) =>
+                  a.type === "grinder" &&
+                  a.pos.x === x &&
+                  Math.abs(a.pos.y + a.size.y - y) < 0.1
+              );
+              if (top) {
+                top.size.y += 1;
+                gridLine.push(null);
+                continue;
+              }
+            }
 
             var Actor = actorchars[ch];
             if (Actor) {
@@ -4319,6 +4372,9 @@
                 ) {
                   actor.riseInterval = this.risingSpeeds[`${x},${y}`];
                 }
+                if (['W', 'K', 'k'].includes(ch) && this.blockConfigs && this.blockConfigs[`${x},${y}`]) {
+                    actor.produceCount = this.blockConfigs[`${x},${y}`].count || 1;
+                }
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
@@ -4365,11 +4421,13 @@
           });
 
         this.groupLavas();
+        this.groupMovingBlocks();
 
         // Optimization: Cache dynamic actors
         this.dynamicActors = this.actors.filter(
           (a) =>
-            a.type === "moving-block" ||
+                  a.type === "moving-block" || 
+                  a.type === "moving-group" ||
             a.type === "lava-group" ||
             (a.type === "lava" && a.speed),
         );
@@ -4540,7 +4598,8 @@
               // Re-cache dynamic actors
               this.dynamicActors = this.actors.filter(
                 (a) =>
-                  a.type === "moving-block" ||
+                a.type === "moving-block" || 
+                a.type === "moving-group" ||
                   a.type === "lava-group" ||
                   (a.type === "lava" && a.speed),
               );
@@ -4580,7 +4639,8 @@
               this.backgroundDirty = true;
               this.dynamicActors = this.actors.filter(
                 (a) =>
-                  a.type === "moving-block" ||
+                a.type === "moving-block" || 
+                a.type === "moving-group" ||
                   a.type === "lava-group" ||
                   (a.type === "lava" && a.speed),
               );
@@ -4735,6 +4795,144 @@
         this.actors = others.concat(newActors);
       };
 
+      // Moving Block Grouping Logic
+      function MovingGroup(members) {
+        this.members = members;
+        this.type = "moving-group";
+        this.speed = members[0].speed;
+      }
+      
+      MovingGroup.prototype.act = function(step, level) {
+          var posBeforeList = this.members.map(m => m.pos);
+          var newPosList = this.members.map(m => m.pos.plus(this.speed.times(step)));
+          var collision = false;
+
+          for (var i = 0; i < newPosList.length; i++) {
+              if (level.obstacleAt(newPosList[i], this.members[i].size, this)) {
+                  collision = true;
+                  break;
+              }
+          }
+
+          if (collision) {
+              this.speed = this.speed.times(-1);
+              return;
+          }
+
+          // Move all members
+          for (var i = 0; i < this.members.length; i++) {
+              this.members[i].pos = newPosList[i];
+          }
+
+          var moveDelta = newPosList[0].plus(posBeforeList[0].times(-1));
+          var riders = new Set();
+          var group = this;
+          
+          level.actors.forEach(a => {
+              if (a === group) return;
+              if (a.type !== "player" && a.type !== "spike" && a.type !== "upside-down-spike") return;
+              
+              // Check if 'a' is riding ANY member
+              for(var m of group.members) {
+                  if (m.fake) continue;
+                  var isRiding = false;
+                  if (a.type === "upside-down-spike") {
+                      if (Math.abs(a.pos.y - (m.pos.y + m.size.y)) < 0.1 && 
+                          a.pos.x + a.size.x > m.pos.x && a.pos.x < m.pos.x + m.size.x) isRiding = true;
+                  } else {
+                      if (Math.abs((a.pos.y + a.size.y) - m.pos.y) < 0.1 &&
+                          a.pos.x + a.size.x > m.pos.x && a.pos.x < m.pos.x + m.size.x) isRiding = true;
+                  }
+                  if (isRiding) {
+                      riders.add(a);
+                      break; 
+                  }
+              }
+          });
+
+          // Check wall collision for riders
+          for (let r of riders) {
+              var rNewPos = r.pos.plus(moveDelta);
+              if (level.obstacleAt(rNewPos, r.size, r) === "wall") {
+                  if (r.type === "spike" || r.type === "upside-down-spike") {
+                      // Reverse group
+                      for(var i=0; i<this.members.length; i++) this.members[i].pos = posBeforeList[i];
+                      this.speed = this.speed.times(-1);
+                      return;
+                  } else if (r.type === "player" && this.speed.y < 0) {
+                      level.status = "lost"; level.finishDelay = 1;
+                  }
+              }
+          }
+
+          // Move riders
+          for (let r of riders) {
+              var rNewPos = r.pos.plus(moveDelta);
+              if (!level.obstacleAt(rNewPos, r.size, r)) r.pos = rNewPos;
+          }
+
+          // Push players
+          level.players.forEach(player => {
+              for(var m of group.members) {
+                  if (m.fake) continue;
+                  // Standard AABB overlap check with push logic
+                  if (m.pos.x < player.pos.x + player.size.x && m.pos.x + m.size.x > player.pos.x &&
+                      m.pos.y < player.pos.y + player.size.y && m.pos.y + m.size.y > player.pos.y) {
+                      
+                      if (this.speed.x > 0) player.pos.x = m.pos.x + m.size.x + 0.01;
+                      else if (this.speed.x < 0) player.pos.x = m.pos.x - player.size.x - 0.01;
+                      
+                      if (this.speed.y > 0) player.pos.y = m.pos.y + m.size.y + 0.01;
+                      else if (this.speed.y < 0) { player.pos.y = m.pos.y - player.size.y - 0.01; player.speed.y = 0; }
+
+                      if (level.obstacleAt(player.pos, player.size, player)) {
+                          level.status = "lost"; level.finishDelay = 1;
+                      }
+                  }
+              }
+          });
+      };
+
+      Level.prototype.groupMovingBlocks = function() {
+          var visited = new Set();
+          var newActors = [];
+          var movers = this.actors.filter(a => a.type === "moving-block");
+          var others = this.actors.filter(a => a.type !== "moving-block");
+
+          for (var i = 0; i < movers.length; i++) {
+              var m1 = movers[i];
+              if (visited.has(m1)) continue;
+              
+              var group = [m1];
+              visited.add(m1);
+              var queue = [m1];
+              
+              while(queue.length > 0) {
+                  var curr = queue.pop();
+                  for(var j=0; j<movers.length; j++) {
+                      var m2 = movers[j];
+                      if (!visited.has(m2) && m2.speed.x === curr.speed.x && m2.speed.y === curr.speed.y) {
+                          // Check adjacency
+                          var expanded = {
+                              pos: new Vector(curr.pos.x - 0.1, curr.pos.y - 0.1),
+                              size: new Vector(curr.size.x + 0.2, curr.size.y + 0.2)
+                          };
+                          if (expanded.pos.x < m2.pos.x + m2.size.x && expanded.pos.x + expanded.size.x > m2.pos.x &&
+                              expanded.pos.y < m2.pos.y + m2.size.y && expanded.pos.y + expanded.size.y > m2.pos.y) {
+                              visited.add(m2);
+                              group.push(m2);
+                              queue.push(m2);
+                          }
+                      }
+                  }
+              }
+              
+              if (group.length > 1) newActors.push(new MovingGroup(group));
+              else newActors.push(group[0]);
+          }
+          this.actors = others.concat(newActors);
+      };
+
       Level.prototype.obstacleAt = function (pos, size, exceptActor) {
         var xStart = Math.floor(pos.x),
           xEnd = Math.ceil(pos.x + size.x);
@@ -4775,7 +4973,8 @@
                 member.type === "spike-block" ||
                 member.type === "wall-block" ||
                 member.type === "spike-block-u" ||
-                member.type === "grinder" ||
+                member.type === "grinder" || 
+                member.type === "moving-group" ||
                 (member.type === "visual-wall" && member.isVisible)
               )
                 return member;
@@ -4786,7 +4985,7 @@
               ) {
                 if (
                   exceptActor &&
-                  (exceptActor.type === "moving-block" ||
+                  (exceptActor.type === "moving-block" || exceptActor.type === "moving-group" ||
                     exceptActor.type === "falling-block")
                 )
                   continue;
@@ -4875,7 +5074,8 @@
           // Re-cache dynamic actors if needed, though the main loop now iterates all actors
           this.dynamicActors = this.actors.filter(
             (a) =>
-              a.type === "moving-block" ||
+              a.type === "moving-block" || 
+              a.type === "moving-group" ||
               a.type === "lava-group" ||
               (a.type === "lava" && a.speed),
           );
@@ -5102,7 +5302,8 @@
             // Re-cache dynamic actors
             this.dynamicActors = this.actors.filter(
               (a) =>
-                a.type === "moving-block" ||
+                a.type === "moving-block" || 
+                a.type === "moving-group" ||
                 a.type === "lava-group" ||
                 (a.type === "lava" && a.speed),
             );
@@ -6806,6 +7007,11 @@
             "width:100%; max-width:600px; max-height:60vh; overflow-y:auto; background:#222; border:2px solid #444; padding:20px; text-align:left;";
 
           const updates = [
+            {
+              v: "1.5.1",
+              t: "1.5 Patch",
+              d: "Fixed various bugs from the 1.5 update and enhanced customization by allowing the user to choose the amount of blocks in the wall block. Also made wall blocks bump you up when activated right when the player lands on them and changed the way grinders are spawned, allowing different grinder sizes.",
+            },
             {
               v: "1.5",
               t: "The Grinder",
