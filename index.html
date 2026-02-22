@@ -2359,6 +2359,7 @@
 
         // Determine target track logic
         if (specificTrackId) {
+          // User clicked a specific track
           targetId = specificTrackId;
           const libItem = MUSIC_LIBRARY.find((t) => t.id === targetId);
           if (libItem) {
@@ -2368,6 +2369,7 @@
             targetFile = targetId.includes(".") ? targetId : null;
           }
         } else if (activeLevelDisplay) {
+          // In a level, automatic music
           if (
             currentGameMode === "speedrun" ||
             currentGameMode === "deathrun" ||
@@ -2400,15 +2402,12 @@
             targetId = "synth";
           }
         } else {
+          // In the menu, automatic music
           // Menu Mode
-          if (!specificTrackId) {
-            targetId = menuMusicState.trackId || getNextPlaylistTrack();
-          }
-
+          targetId = menuMusicState.trackId || getNextPlaylistTrack();
           if (targetId !== "synth") {
             const t = MUSIC_LIBRARY.find((x) => x.id === targetId);
-            if (t) targetFile = t.file;
-            else targetId = "synth";
+            targetFile = t ? t.file : null;
           }
         }
 
@@ -6708,17 +6707,6 @@
         // Top Right Back Button for sub-menus
         const existingBack = document.getElementById("top-right-back-btn");
         if (existingBack) existingBack.remove();
-
-        if (view !== "main") {
-          const btn = document.createElement("button");
-          btn.id = "top-right-back-btn";
-          btn.className = "btn";
-          btn.textContent = "MENU";
-          btn.style.cssText =
-            "position: absolute; top: 20px; right: 20px; z-index: 150; padding: 10px 20px; font-size: 1rem; min-width: auto;";
-          btn.onclick = () => showMenu("main");
-          document.getElementById("main-menu").appendChild(btn);
-        }
 
         if (view === "main") {
           subtitle.textContent = "";
