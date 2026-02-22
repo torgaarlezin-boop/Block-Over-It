@@ -87,14 +87,9 @@
       }
 
       .falling-block {
-        background: #777;
-        border: 3px solid #555;
+        background: #444;
+        border: 3px solid #333;
         box-sizing: border-box;
-        color: #fff;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
       }
 
       .breakable-block {
@@ -103,18 +98,86 @@
         box-sizing: border-box;
       }
 
-      .spike-block, .wall-block, .spike-block-u {
+      .spike-block,
+      .wall-block,
+      .spike-block-u {
         background: #444;
         border: 3px solid #333;
         box-sizing: border-box;
       }
       /* Hide text content for these in game if any */
-      .spike-block, .wall-block, .spike-block-u {
-        color: transparent; 
+      .spike-block,
+      .wall-block,
+      .spike-block-u {
+        color: transparent;
       }
 
       .breakable-block.triggered {
         animation: shake 0.4s infinite;
+      }
+
+      .jump-pad {
+        background: #590059;
+        border: 2px solid #d946ef;
+        box-sizing: border-box;
+        border-radius: 4px;
+        position: relative;
+        box-shadow: inset 0 0 10px #d946ef;
+      }
+      .jump-pad::after {
+        content: "";
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        right: 20%;
+        bottom: 20%;
+        background: #d946ef;
+        border-radius: 50%;
+        box-shadow: 0 0 5px #f0abfc;
+      }
+      .grinder {
+        background-color: #333;
+        background-image:
+          linear-gradient(
+            90deg,
+            transparent 30%,
+            #888 30%,
+            #888 70%,
+            transparent 70%
+          ),
+          repeating-linear-gradient(
+            0deg,
+            #222 0px,
+            #222 4px,
+            #aaa 4px,
+            #aaa 8px
+          );
+        background-size:
+          100% 100%,
+          40% 100%;
+        background-position:
+          center center,
+          center 0;
+        background-repeat: no-repeat;
+        border: none;
+        z-index: 5;
+        animation: sawSpin 0.05s linear infinite;
+      }
+      .grinder.grinding {
+        animation: shake 0.1s infinite;
+      }
+
+      @keyframes sawSpin {
+        0% {
+          background-position:
+            center center,
+            center 0px;
+        }
+        100% {
+          background-position:
+            center center,
+            center 8px;
+        }
       }
 
       @keyframes shake {
@@ -1007,11 +1070,33 @@
         transform: scale(1.05);
       }
 
+      /* Credits Button */
+      .credits-btn {
+        position: absolute;
+        bottom: 20px;
+        right: 300px; /* Positioned between Beats and News */
+        background: #333;
+        border: 2px solid #555;
+        color: white;
+        font-family: inherit;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 10px 20px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+        z-index: 110;
+      }
+      .credits-btn:hover {
+        background: #444;
+        border-color: #335699;
+        transform: scale(1.05);
+      }
+
       /* News Button */
       .news-btn {
         position: absolute;
         bottom: 20px;
-        right: 300px;
+        right: 440px;
         background: #333;
         border: 2px solid #555;
         color: white;
@@ -1696,6 +1781,14 @@
         </button>
 
         <button
+          class="credits-btn btn"
+          style="min-width: auto; padding: 10px 20px; font-size: 1rem"
+          onclick="showMenu('credits')"
+        >
+          <span>Credits</span>
+        </button>
+
+        <button
           class="beats-btn btn"
           style="min-width: auto; padding: 10px 20px; font-size: 1rem"
           onclick="showMenu('beats-menu')"
@@ -1777,13 +1870,7 @@
 
     <div id="game-container"></div>
     <div class="hud" id="hud">ESC</div>
-    <button id="restart-btn" class="btn" onclick="restartCurrentLevel()">
-      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-        <path
-          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
-        />
-      </svg>
-    </button>
+
     <button
       id="zoom-btn"
       class="btn"
@@ -1807,6 +1894,13 @@
       <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
         <path
           d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"
+        />
+      </svg>
+    </button>
+    <button id="restart-btn" class="btn" onclick="restartCurrentLevel()">
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path
+          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
         />
       </svg>
     </button>
@@ -1908,15 +2002,18 @@
         }
       }
 
-      async function fetchLevelLeaderboard(key) {
+      async function fetchLevelLeaderboard(key, limit = 10) {
         if (!_supabase) return [];
         try {
-          const { data, error } = await _supabase
+          let query = _supabase
             .from("leaderboard")
             .select("username, time_ms")
             .eq("level_key", key)
-            .order("time_ms", { ascending: true })
-            .limit(10);
+            .order("time_ms", { ascending: true });
+
+          if (limit > 0) query = query.limit(limit);
+
+          const { data, error } = await query;
 
           if (error) {
             console.warn("Supabase leaderboard error:", error);
@@ -1930,6 +2027,7 @@
 
       async function submitHighscoreToCloud(key, time) {
         if (!_supabase || !currentUser) return;
+        if (currentUser.toLowerCase() === "anonymous") return;
         try {
           await _supabase.from("highscores").insert([
             {
@@ -2183,6 +2281,7 @@
       }
 
       // Synth
+
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       let bgmOscillator = null;
       let synthGainNode = null;
@@ -2542,6 +2641,7 @@
       let gameTimer = 0;
       let gameTimerRunning = false;
       let gameTimerStart = 0;
+      let speedrunEndTime = 0;
 
       // Highscores
       const HIGHSCORES_KEY = "blockoverit_highscores";
@@ -3816,15 +3916,17 @@
       FallingBlock.prototype.act = function (step, level) {
         this.speed.y += level.gravity * step;
         var newPos = this.pos.plus(this.speed.times(step));
-        
+
         var player = level.player;
         if (player) {
-             if (newPos.x < player.pos.x + player.size.x &&
-                newPos.x + this.size.x > player.pos.x &&
-                newPos.y < player.pos.y + player.size.y &&
-                newPos.y + this.size.y > player.pos.y) {
-                 level.playerTouched("crush", this);
-             }
+          if (
+            newPos.x < player.pos.x + player.size.x &&
+            newPos.x + this.size.x > player.pos.x &&
+            newPos.y < player.pos.y + player.size.y &&
+            newPos.y + this.size.y > player.pos.y
+          ) {
+            level.playerTouched("crush", this);
+          }
         }
 
         if (level.obstacleAt(newPos, this.size, this)) {
@@ -3861,22 +3963,22 @@
         this.triggered = false;
       }
       SpikeBlock.prototype.type = "spike-block";
-      SpikeBlock.prototype.act = function(step, level) {
+      SpikeBlock.prototype.act = function (step, level) {
         if (this.triggered) return;
         var p = level.player;
         if (!p) return;
-        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
-        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
-        var dist = Math.sqrt(dx*dx + dy*dy);
-        
+        var dx = p.pos.x + p.size.x / 2 - (this.pos.x + this.size.x / 2);
+        var dy = p.pos.y + p.size.y / 2 - (this.pos.y + this.size.y / 2);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
         if (dist < 2.0) {
-            var targetPos = this.pos.plus(new Vector(0, -1));
-            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-                var spike = new Spike(targetPos);
-                spike.id = level.nextActorId++;
-                level.actors.push(spike);
-            }
-            this.triggered = true;
+          var targetPos = this.pos.plus(new Vector(0, -1));
+          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+            var spike = new Spike(targetPos);
+            spike.id = level.nextActorId++;
+            level.actors.push(spike);
+          }
+          this.triggered = true;
         }
       };
 
@@ -3886,23 +3988,23 @@
         this.triggered = false;
       }
       WallBlock.prototype.type = "wall-block";
-      WallBlock.prototype.act = function(step, level) {
+      WallBlock.prototype.act = function (step, level) {
         if (this.triggered) return;
         var p = level.player;
         if (!p) return;
-        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
-        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
-        var dist = Math.sqrt(dx*dx + dy*dy);
-        
+        var dx = p.pos.x + p.size.x / 2 - (this.pos.x + this.size.x / 2);
+        var dy = p.pos.y + p.size.y / 2 - (this.pos.y + this.size.y / 2);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
         if (dist < 2.0) {
-            var targetPos = this.pos.plus(new Vector(0, -1));
-            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-                var wall = new VisualWall(targetPos);
-                wall.isVisible = true;
-                wall.id = level.nextActorId++;
-                level.actors.push(wall);
-            }
-            this.triggered = true;
+          var targetPos = this.pos.plus(new Vector(0, -1));
+          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+            var wall = new VisualWall(targetPos);
+            wall.isVisible = true;
+            wall.id = level.nextActorId++;
+            level.actors.push(wall);
+          }
+          this.triggered = true;
         }
       };
 
@@ -3912,22 +4014,103 @@
         this.triggered = false;
       }
       UpsideDownSpikeBlock.prototype.type = "spike-block-u";
-      UpsideDownSpikeBlock.prototype.act = function(step, level) {
+      UpsideDownSpikeBlock.prototype.act = function (step, level) {
         if (this.triggered) return;
         var p = level.player;
         if (!p) return;
-        var dx = (p.pos.x + p.size.x/2) - (this.pos.x + this.size.x/2);
-        var dy = (p.pos.y + p.size.y/2) - (this.pos.y + this.size.y/2);
-        var dist = Math.sqrt(dx*dx + dy*dy);
-        
+        var dx = p.pos.x + p.size.x / 2 - (this.pos.x + this.size.x / 2);
+        var dy = p.pos.y + p.size.y / 2 - (this.pos.y + this.size.y / 2);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
         if (dist < 2.0) {
-            var targetPos = this.pos.plus(new Vector(0, 1));
-            if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
-                var spike = new UpsideDownSpike(targetPos);
-                spike.id = level.nextActorId++;
-                level.actors.push(spike);
+          var targetPos = this.pos.plus(new Vector(0, 1));
+          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+            var spike = new UpsideDownSpike(targetPos);
+            spike.id = level.nextActorId++;
+            level.actors.push(spike);
+          }
+          this.triggered = true;
+        }
+      };
+
+      function JumpPad(pos) {
+        this.pos = pos.plus(new Vector(0, 0.5));
+        this.size = new Vector(1, 0.5);
+      }
+      JumpPad.prototype.type = "jump-pad";
+      JumpPad.prototype.act = function (step, level) {
+        var p = level.player;
+        if (p) {
+          if (
+            p.pos.x + p.size.x > this.pos.x &&
+            p.pos.x < this.pos.x + this.size.x &&
+            p.pos.y + p.size.y > this.pos.y &&
+            p.pos.y < this.pos.y + this.size.y
+          ) {
+            p.speed.y = -35;
+          }
+        }
+      };
+
+      function Grinder(pos) {
+        this.pos = pos.plus(new Vector(0, -2));
+        this.size = new Vector(1, 3);
+        this.speed = new Vector(0, 0);
+        this.grinding = false;
+      }
+      Grinder.prototype.type = "grinder";
+      Grinder.prototype.act = function (step, level) {
+        if (!level.playerHasMoved) return;
+        var p = level.player;
+        if (!p) return;
+
+        var myCenterY = this.pos.y + this.size.y / 2;
+        var pCenterY = p.pos.y + p.size.y / 2;
+
+        if (pCenterY >= this.pos.y && pCenterY <= this.pos.y + this.size.y) {
+          var dir = p.pos.x > this.pos.x ? 1 : -1;
+          var speed = 8;
+          var motion = new Vector(dir * speed * step, 0);
+          var newPos = this.pos.plus(motion);
+          var blocked = false;
+
+          var xStart = Math.floor(newPos.x);
+          var xEnd = Math.ceil(newPos.x + this.size.x);
+          var yStart = Math.floor(newPos.y);
+          var yEnd = Math.ceil(newPos.y + this.size.y);
+          for (var y = yStart; y < yEnd; y++) {
+            for (var x = xStart; x < xEnd; x++) {
+              if (y >= 0 && y < level.height && x >= 0 && x < level.width) {
+                if (level.grid[y][x] === "wall") {
+                  level.grid[y][x] = null;
+                  level.backgroundDirty = true;
+                  this.grinding = true;
+                  blocked = true;
+                }
+              }
             }
-            this.triggered = true;
+          }
+          var other = level.obstacleAt(newPos, this.size, this);
+          if (other && typeof other !== "string") {
+            if (other.type === "player") {
+              level.playerTouched("grinder", this);
+            } else if (
+              other.type === "breakable-block" ||
+              other.type === "moving-block"
+            ) {
+              other.toRemove = true;
+              this.grinding = true;
+              blocked = true;
+            }
+          }
+          if (blocked) {
+            this.pos = this.pos.plus(motion.times(0.2));
+          } else {
+            this.grinding = false;
+            this.pos = newPos;
+          }
+        } else {
+          this.grinding = false;
         }
       };
 
@@ -3948,6 +4131,8 @@
         K: SpikeBlock,
         W: WallBlock,
         k: UpsideDownSpikeBlock,
+        J: JumpPad,
+        C: Grinder,
       };
 
       function cloneActor(actor) {
@@ -4002,6 +4187,7 @@
         this.risingSpeeds = levelData.risingSpeeds || {};
         this.illusions = new Set(levelData.illusions || []);
         this.age = 0;
+        this.playerHasMoved = false;
 
         for (var y = 0; y < this.height; y++) {
           var line = plan[y],
@@ -4120,10 +4306,10 @@
                 }
                 // Flicker logic for all actors
                 if (color === "flicker" || color === "jump_flicker") {
-                    actor.flickerType = color;
-                    actor.isVisible = false;
-                    actor.flickerTimer = 0;
-                    actor.flickerVisibleTime = 0;
+                  actor.flickerType = color;
+                  actor.isVisible = false;
+                  actor.flickerTimer = 0;
+                  actor.flickerVisibleTime = 0;
                 }
                 if (color) actor.color = color;
                 if (isFake) actor.fake = true;
@@ -4589,6 +4775,7 @@
                 member.type === "spike-block" ||
                 member.type === "wall-block" ||
                 member.type === "spike-block-u" ||
+                member.type === "grinder" ||
                 (member.type === "visual-wall" && member.isVisible)
               )
                 return member;
@@ -4596,8 +4783,15 @@
               if (
                 member.type === "spike" ||
                 member.type === "upside-down-spike"
-              )
+              ) {
+                if (
+                  exceptActor &&
+                  (exceptActor.type === "moving-block" ||
+                    exceptActor.type === "falling-block")
+                )
+                  continue;
                 return member.type;
+              }
             }
           }
         }
@@ -4860,6 +5054,7 @@
           level.practiceState = level.actors.map((a) => cloneActor(a));
           // Visual feedback is handled by drawPracticeMarker
         }
+        if (keys.left || keys.right || keys.up) level.playerHasMoved = true;
         this.moveX(step, level, keys);
         this.moveY(step, level, keys);
 
@@ -4886,9 +5081,9 @@
 
       Level.prototype.playerTouched = function (type, actor) {
         if (type === "crush") {
-             this.status = "lost";
-             this.finishDelay = 0;
-             return;
+          this.status = "lost";
+          this.finishDelay = 0;
+          return;
         } else if (type === "breakable-block" && actor && actor.timer > 0) {
           // Don't die on a breakable block that hasn't broken yet
         } else if (
@@ -4896,7 +5091,8 @@
             type == "rising-lava" ||
             type == "lava-group" ||
             type == "spike" ||
-            type == "upside-down-spike") &&
+            type == "upside-down-spike" ||
+            type == "grinder") &&
           this.status == null
         ) {
           if (currentGameMode === "practice" && this.practiceState) {
@@ -4922,6 +5118,11 @@
         } else if (type == "coin") {
           this.actors = this.actors.filter((other) => other != actor);
           if (!this.actors.some((actor) => actor.type == "coin")) {
+            if (currentGameMode === "speedrun") {
+              gameTimerRunning = false;
+              speedrunEndTime = Date.now(); // Immediate stop
+              gameTimer = speedrunEndTime - gameTimerStart;
+            }
             this.status = "won";
             this.finishDelay = 1;
           }
@@ -4961,39 +5162,55 @@
         this.updateScale();
         this.world.insertBefore(this.drawBackground(), this.actorLayer);
         this.drawFrame();
+
+        this.resizeHandler = () => {
+          this.updateScale();
+          this.level.backgroundDirty = true;
+          this.drawFrame();
+        };
+        window.addEventListener("resize", this.resizeHandler);
       }
 
       DOMDisplay.prototype.drawBackground = function () {
-        if (this.bgTable) this.bgTable.remove();
-        var table = element("table", "background");
-        table.style.width = "100%";
-        table.style.height = "100%";
+        if (this.bgLayer) this.bgLayer.remove();
+        this.bgLayer = element("div", "background-layer");
+        this.bgLayer.style.position = "absolute";
+        this.bgLayer.style.top = "0";
+        this.bgLayer.style.left = "0";
+        this.bgLayer.style.width = "100%";
+        this.bgLayer.style.height = "100%";
+
         var s = this.scale;
         var self = this;
-        this.level.grid.forEach(function (row, y) {
-          var rowElement = table.appendChild(element("tr"));
-          rowElement.style.height = s + "px";
-          row.forEach(function (type, x) {
-            var td = rowElement.appendChild(element("td", type));
+
+        for (var y = 0; y < this.level.height; y++) {
+          for (var x = 0; x < this.level.width; x++) {
+            var type = this.level.grid[y][x];
             if (type === "wall") {
+              var el = element("div", "wall");
+              el.style.position = "absolute";
+              el.style.left = x * s + "px";
+              el.style.top = y * s + "px";
+              el.style.width = s + "px";
+              el.style.height = s + "px";
+
               var color = self.level.colors[`${x},${y}`];
               if (
                 color === "invisible" ||
                 color === "flicker" ||
                 color === "jump_flicker"
               ) {
-                td.className = "";
-                td.style.background = "transparent";
-                td.style.border = "none";
+                el.style.background = "transparent";
+                el.style.border = "none";
               } else if (color) {
-                td.style.backgroundColor = color;
-                td.style.borderColor = adjustColor(color, -20);
+                el.style.backgroundColor = color;
+                el.style.borderColor = adjustColor(color, -20);
               }
+              this.bgLayer.appendChild(el);
             }
-          });
-        });
-        this.bgTable = table;
-        return table;
+          }
+        }
+        return this.bgLayer;
       };
 
       DOMDisplay.prototype.syncActors = function () {
@@ -5038,10 +5255,10 @@
               if (actor.color === "invisible" && actor.type !== "player") {
                 el.style.visibility = "hidden";
               } else if (actor.flickerType) {
-                 // Initial state for flicker
-                 el.style.visibility = actor.isVisible ? "visible" : "hidden";
-                 el.style.backgroundColor = actor.color;
-                 el.style.borderColor = adjustColor(actor.color, -20);
+                // Initial state for flicker
+                el.style.visibility = actor.isVisible ? "visible" : "hidden";
+                el.style.backgroundColor = actor.color;
+                el.style.borderColor = adjustColor(actor.color, -20);
               } else if (
                 actor.type !== "spike" &&
                 actor.type !== "upside-down-spike"
@@ -5095,14 +5312,11 @@
               el.style.alignItems = "center";
               el.style.justifyContent = "center";
             }
-            if (actor.type === "falling-block") {
-              el.textContent = "▼";
-            }
           }
 
           // Dynamic updates
           if (actor.flickerType) {
-             el.style.visibility = actor.isVisible ? "visible" : "hidden";
+            el.style.visibility = actor.isVisible ? "visible" : "hidden";
           }
 
           if (
@@ -5120,6 +5334,11 @@
             } else {
               el.classList.remove("triggered");
             }
+          }
+
+          if (actor.type === "grinder") {
+            if (actor.grinding) el.classList.add("grinding");
+            else el.classList.remove("grinding");
           }
 
           var visualW = actor.size.x;
@@ -5273,6 +5492,7 @@
       };
 
       DOMDisplay.prototype.clear = function () {
+        window.removeEventListener("resize", this.resizeHandler);
         this.wrap.parentNode.removeChild(this.wrap);
       };
 
@@ -5567,6 +5787,7 @@
           gameTimer = 0;
           gameTimerRunning = false;
           gameTimerStart = 0;
+          speedrunEndTime = 0; // Reset
         }
 
         document.getElementById("main-menu").style.display = "none";
@@ -5607,6 +5828,7 @@
         runLevel(
           new Level(levelData),
           DOMDisplay,
+
           function (status, levelInstance) {
             if (status == "lost") {
               if (currentGameMode === "deathrun") {
@@ -5709,7 +5931,7 @@
               if (currentGameMode === "speedrun") {
                 gameTimerRunning = false;
                 if (gameTimerStart > 0) {
-                  gameTimer = Date.now() - gameTimerStart;
+                  gameTimer = (speedrunEndTime || Date.now()) - gameTimerStart; // Use stopped time
                   const ms = String(gameTimer % 1000).padStart(3, "0");
                   const s = String(Math.floor(gameTimer / 1000) % 60).padStart(
                     2,
@@ -6003,6 +6225,7 @@
         const container = document.getElementById("menu-content");
         const subtitle = document.getElementById("menu-subtitle");
         container.innerHTML = "";
+        container.style.overflow = "";
 
         const mainTitle = document.querySelector("#main-menu h1");
         if (mainTitle)
@@ -6330,6 +6553,14 @@
           userItems.push(accountBtn);
 
           // Skin Selector
+          const creditsBtn = document.createElement("button");
+          creditsBtn.className = "btn";
+          creditsBtn.textContent = "CREDITS";
+          creditsBtn.style.width = "100%";
+          creditsBtn.style.marginTop = "10px";
+          creditsBtn.onclick = () => showCredits();
+          userItems.push(creditsBtn);
+
           const skins = getAvailableSkins();
           if (skins.length > 1) {
             const skinRow = document.createElement("div");
@@ -6382,15 +6613,18 @@
           container.appendChild(closeBtn);
         } else if (view === "mobile-settings") {
           subtitle.textContent = "SETTINGS";
-          container.style.maxWidth = "400px";
+          container.style.maxWidth = "100%";
+          container.style.padding = "20px";
 
           const settingsContent = document.createElement("div");
-          settingsContent.className = "settings-grid"; // For landscape layout
+          settingsContent.style.cssText =
+            "display: flex; flex-direction: column; gap: 15px; width: 100%;";
 
           // Volume
           const volDiv = document.createElement("div");
-          volDiv.style.cssText = "width:100%; margin-bottom:20px;";
-          volDiv.innerHTML = `<div style="margin-bottom:5px; font-weight:bold;">VOLUME: <span id="m-vol-val">${gameSettings.volume}%</span></div>`;
+          volDiv.style.cssText =
+            "background: #222; padding: 15px; border-radius: 12px; border: 1px solid #333;";
+          volDiv.innerHTML = `<div style="margin-bottom:10px; font-weight:bold; color: #ccc; font-size: 0.9rem;">VOLUME <span id="m-vol-val" style="float:right; color: #335699;">${gameSettings.volume}%</span></div>`;
           const volSlider = document.createElement("input");
           volSlider.type = "range";
           volSlider.min = "0";
@@ -6409,7 +6643,7 @@
           // Alt Coin
           const altCoinDiv = document.createElement("div");
           altCoinDiv.style.cssText =
-            "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:10px; border-radius:4px;";
+            "display:flex; justify-content:space-between; align-items:center; background:#222; padding:15px; border-radius:12px; border:1px solid #333;";
           altCoinDiv.innerHTML = "<span>ALT BLUE COIN</span>";
           const acToggle = document.createElement("div");
           acToggle.className =
@@ -6432,7 +6666,7 @@
           if (skins.length > 1) {
             const skinDiv = document.createElement("div");
             skinDiv.style.cssText =
-              "width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#222; padding:15px; border-radius:4px; border:1px solid #444;";
+              "display:flex; justify-content:space-between; align-items:center; background:#222; padding:15px; border-radius:12px; border:1px solid #333;";
 
             const currentSkin = gameSettings.currentSkin || "default";
 
@@ -6455,12 +6689,32 @@
             settingsContent.appendChild(skinDiv);
           }
 
+          // Credits
+          const credBtn = document.createElement("button");
+          credBtn.className = "btn";
+          credBtn.textContent = "CREDITS";
+          credBtn.style.cssText =
+            "background: #333; border: 1px solid #555; padding: 15px; border-radius: 12px; font-size: 1rem; width: 100%;";
+          credBtn.onclick = showCredits;
+          settingsContent.appendChild(credBtn);
+
           // Feedback
           const fbBtn = document.createElement("button");
           fbBtn.className = "btn";
           fbBtn.textContent = "SEND FEEDBACK";
+          fbBtn.style.cssText =
+            "background: #333; border: 1px solid #555; padding: 15px; border-radius: 12px; font-size: 1rem; width: 100%;";
           fbBtn.onclick = openFeedbackModal;
           settingsContent.appendChild(fbBtn);
+
+          // Back Button (Large at bottom)
+          const backBtn = document.createElement("button");
+          backBtn.className = "btn";
+          backBtn.textContent = "BACK";
+          backBtn.style.cssText =
+            "background: #335699; border: 1px solid #5588cc; padding: 15px; border-radius: 12px; font-size: 1rem; width: 100%; margin-top: 10px;";
+          backBtn.onclick = () => showMenu("main");
+          settingsContent.appendChild(backBtn);
 
           container.appendChild(settingsContent);
 
@@ -6553,6 +6807,11 @@
 
           const updates = [
             {
+              v: "1.5",
+              t: "The Grinder",
+              d: "Multiple bug fixes. Win animations now have no time penalty in speedruns. Added upside down spikes, breakable blocks, spike blocks, upside down spike blocks, wall blocks, falling blocks, jump pads, and grinders. Added credits and a new option in the level awards UI to see the level info and add the level to your levels. Added new block mods: flicker, jump flicker, and illusion (only for breakable blocks). Various other changes. ",
+            },
+            {
               v: "1.4.3",
               t: "Mobile Fixes",
               d: "Fixed multiple bugs and improved the interface on mobile. Added custom levels to mobile. Added the zoom out toggle to desktop (also z on the keyboard) and replaced the previous two zoom modes with three new ones.  Progress in chapter speedruns now counts as progress in the campaign, even if you don't finish the chapter speedrun. Also added a new song: Taking Our Time by Alex Grohl.",
@@ -6620,6 +6879,72 @@
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
           btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("main");
+          container.appendChild(btnBack);
+        } else if (view === "credits") {
+          subtitle.textContent = "CREDITS";
+          container.style.overflow = "hidden"; // Hide scrollbars for the effect
+
+          const creditsContainer = document.createElement("div");
+          creditsContainer.style.cssText =
+            "width: 100%; height: 60vh; position: relative; overflow: hidden; mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);";
+
+          const scrollContent = document.createElement("div");
+          scrollContent.style.cssText =
+            "position: absolute; width: 100%; text-align: center; animation: scrollCredits 20s linear infinite; top: 100%;";
+          scrollContent.innerHTML = `
+            <style>
+              @keyframes scrollCredits {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-150%); }
+              }
+              .cred-role { color: #335699; font-weight: bold; font-size: 1.2rem; margin-top: 30px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+              .cred-name { color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+              .cred-list { color: #ccc; font-size: 1.1rem; line-height: 1.6; }
+            </style>
+            <div style="padding-bottom: 100px;">
+              <div class="cred-role">Originally Created By</div>
+              <div class="cred-name">Torgaar</div>
+              <div class="cred-name">Abhay557</div>
+
+              <div class="cred-role">Music</div>
+              <div class="cred-list">
+                Noah Mark Hansen<br>
+                Noodlez Studios<br>
+                Alex Grohl<br>
+                Torgaar
+              </div>
+
+              <div class="cred-role">Art & Skins</div>
+              <div class="cred-list">
+                Torgaar <br>
+                Chairlord
+                </div>
+
+              <div class="cred-role">Cloud Data</div>
+              <div class="cred-list">
+                Supabase and AWS<br>
+                </div>
+
+                <div class="cred-role">Special Thanks</div>
+              <div class="cred-list">
+                The Blockoverit Discord Server <br>
+                Every Player of Block Over It, for all the feedback given
+                </div>
+
+              <div class="cred-role">By Sellwood Studios</div>
+              </div>
+            </div>
+          `;
+
+          creditsContainer.appendChild(scrollContent);
+          container.appendChild(creditsContainer);
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.style.zIndex = "10";
           btnBack.onclick = () => showMenu("main");
           container.appendChild(btnBack);
         } else if (view === "beats-menu") {
@@ -7024,7 +7349,7 @@
                 key = `${prefix}campaign_${ch}_${lvlIdx}`;
               }
 
-              const scores = await fetchLevelLeaderboard(key);
+              const scores = await fetchLevelLeaderboard(key, 10);
               if (scores.length === 0) {
                 list.innerHTML =
                   "<div style='text-align:center; color:#666; margin-top:20px;'>No records found.</div>";
@@ -7198,7 +7523,7 @@
               key = `${prefix}campaign_${ch}_${lvlIdx}`;
             }
 
-            const scores = await fetchLevelLeaderboard(key);
+            const scores = await fetchLevelLeaderboard(key, 100);
             if (scores.length === 0) {
               resultsDiv.innerHTML =
                 "<div style='text-align:center; color:#888;'>No records found.</div>";
@@ -7827,6 +8152,10 @@
             btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
           }
         }
+      }
+
+      function showCredits() {
+        showMenu("credits");
       }
 
       // --- File Upload Handling ---
