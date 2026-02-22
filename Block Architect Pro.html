@@ -134,6 +134,110 @@
         justify-content: center;
         height: 100%;
       }
+      .t-falling {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-falling::after {
+        content: "▼";
+        color: white;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+      .t-breakable {
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM2NDY0NjQiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NDQ0NDQiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+');
+        border: 3px solid #555;
+      }
+      .t-spike-block {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block::after {
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M12 2L2 22h20L12 2z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
+        height: 100%;
+        display: block;
+      }
+      .t-spike-block-u {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block-u::after {
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M12 22L22 2H2L12 22z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .t-wall-block {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-wall-block::after {
+        content: "W";
+        color: #aaa;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+      .t-jump-pad {
+        background: #590059;
+        border: 2px solid #d946ef;
+        position: relative;
+      }
+      .t-jump-pad::before {
+        content: '';
+        position: absolute;
+        top: 20%; left: 20%; right: 20%; bottom: 20%;
+        background: #d946ef;
+        border-radius: 50%;
+      }
+      .t-jump-pad::after {
+        content: "J";
+        color: white;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+        position: relative;
+        z-index: 2;
+      }
+      .t-grinder {
+        background-color: #333;
+        background-image: linear-gradient(90deg, transparent 30%, #888 30%, #888 70%, transparent 70%), repeating-linear-gradient(0deg, #222 0px, #222 4px, #aaa 4px, #aaa 8px);
+        background-size: 100% 100%, 40% 100%;
+        background-position: center center, center 0;
+        position: relative;
+      }
+      .t-grinder::after {
+        content: "C";
+        color: white;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
 
       .t-spike-u {
         background: transparent;
@@ -164,8 +268,8 @@
       .right-sidebar {
         width: 320px;
         transition:
-          transform 0.3s ease,
-          margin-right 0.3s ease;
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .template-card {
@@ -181,13 +285,12 @@
       }
 
       .accordion-content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.28s ease-out, padding 0.2s ease-out;
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s ease-out;
       }
       .accordion-open .accordion-content {
-        /* large enough to accommodate content; keeps transition simple */
-        max-height: 1200px;
+        grid-template-rows: 1fr;
       }
       .accordion-header svg {
         transition: transform 0.2s ease;
@@ -302,6 +405,36 @@
         background: #ef4444;
         border: 1px solid #b91c1c;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .style-modern .t-falling {
+        background: #64748b;
+        border: 1px solid #475569;
+        border-radius: 4px;
+      }
+      .style-modern .t-breakable {
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM3MTg1OWYiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NzU1NjkiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PC9zdmc+');
+        border: 1px solid #475569;
+        border-radius: 2px;
+      }
+      .style-modern .t-spike-block {
+        background: #334155;
+        border: 1px solid #1e293b;
+        border-radius: 2px;
+      }
+      .style-modern .t-wall-block {
+        background: #334155;
+        border: 1px solid #1e293b;
+        border-radius: 2px;
+      }
+      .style-modern .t-jump-pad {
+        background: #701a75;
+        border: 1px solid #d946ef;
+        border-radius: 2px;
+      }
+      .style-modern .t-grinder {
+        background: #1e293b;
+        border: 1px solid #0f172a;
+        border-radius: 2px;
       }
       .t-spike {
         background: transparent;
@@ -481,7 +614,9 @@
           <button id="btn-sp-jump-flicker" onclick="toggleJumpFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Jump Flicker">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" /><path d="M12 8v12" /></svg>
           </button>
-          <div></div>
+          <button id="btn-sp-illusion" onclick="toggleIllusionSelection()" class="hidden p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400 flex justify-center items-center sp-btn" title="Toggle Illusion">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M5 17v4M3 19h4M19 3v4M17 5h4M19 17v4M17 19h4M12 5v14"></path></svg>
+          </button>
       </div>
       <div class="bg-slate-900/50 rounded p-1 flex flex-col gap-1">
           <div class="flex gap-1">
@@ -2456,6 +2591,13 @@
         v: "t-lava-drip",
         H: "t-moving-h",
         V: "t-moving-v",
+        F: "t-falling",
+        G: "t-breakable",
+        K: "t-spike-block",
+        k: "t-spike-block-u",
+        W: "t-wall-block",
+        J: "t-jump-pad",
+        C: "t-grinder",
         "^": "t-rising",
         S: "t-spike",
         s: "t-spike-u",
@@ -2472,6 +2614,13 @@
         v: "Dripping Lava",
         H: "Horizontal Moving Block",
         V: "Vertical Moving Block",
+        F: "Falling Block",
+        G: "Breakable Block",
+        K: "Spike Block",
+        k: "Upside Down Spike Block",
+        W: "Wall Block",
+        J: "Jump Pad",
+        C: "The Grinder",
         "^": "Rising Lava",
         S: "Spike",
         s: "Upside Down Spike",
@@ -2778,6 +2927,7 @@
         fakes: new Set(),
         risingThrough: new Set(),
         risingSpeeds: {},
+        illusions: new Set(),
       };
       let clipboard = null;
 
@@ -3009,6 +3159,15 @@
                 const ind = document.createElement('div');
                 ind.className = 'absolute bottom-0 left-0 text-[8px] font-bold text-green-400 px-0.5 leading-none pointer-events-none z-10';
                 ind.innerText = '⬆';
+                cell.appendChild(ind);
+            }
+
+            const isIllusion = state.illusions.has(`${x},${y}`);
+            if (isIllusion) {
+                cell.className = `cell ${TILE_MAP['x']}`;
+                const ind = document.createElement('div');
+                ind.className = 'absolute top-0 left-0 text-[8px] font-bold text-cyan-400 px-0.5 leading-none pointer-events-none z-10';
+                ind.innerText = 'I';
                 cell.appendChild(ind);
             }
 
@@ -3469,16 +3628,26 @@
         let allInvisible = true;
         let allFlicker = true;
         let allJumpFlicker = true;
+        let hasBreakable = false;
+        let onlyBreakable = true;
+        let allIllusion = true;
         let allPainted = true;
         let hasBlocks = false;
 
         for(let y = norm.y1; y <= norm.y2; y++) {
             for(let x = norm.x1; x <= norm.x2; x++) {
-                if(state.grid[y][x] === '^') {
+                const char = state.grid[y][x];
+                if(char === '^') {
                     hasRising = true;
                     if (!state.risingThrough.has(`${x},${y}`)) {
                         allThrough = false;
                     }
+                }
+                if (char === 'G') {
+                    hasBreakable = true;
+                    if (!state.illusions.has(`${x},${y}`)) allIllusion = false;
+                } else if (char !== ' ') {
+                    onlyBreakable = false;
                 }
                 if (state.grid[y][x] !== ' ') {
                     hasBlocks = true;
@@ -3494,6 +3663,7 @@
         }
         
         if (!hasBlocks) {
+            allIllusion = false;
             allFake = false; allInvisible = false; allFlicker = false; allJumpFlicker = false; allPainted = false;
         }
 
@@ -3507,6 +3677,14 @@
         setBtn('btn-sp-paint', allPainted);
         setBtn('btn-sp-flicker', allFlicker);
         setBtn('btn-sp-jump-flicker', allJumpFlicker);
+
+        const illusionBtn = document.getElementById('btn-sp-illusion');
+        if (hasBreakable && onlyBreakable) {
+            illusionBtn.classList.remove('hidden');
+            setBtn('btn-sp-illusion', allIllusion);
+        } else {
+            illusionBtn.classList.add('hidden');
+        }
 
         const risingOpt = document.getElementById('sp-rising-opt');
         if(hasRising) risingOpt.classList.remove('hidden');
@@ -3555,6 +3733,7 @@
              state.fakes.delete(`${x},${y}`);
              state.risingThrough.delete(`${x},${y}`);
              delete state.risingSpeeds[`${x},${y}`];
+             state.illusions.delete(`${x},${y}`);
         }
 
         // Multi-player check
@@ -3568,6 +3747,7 @@
 
         state.grid[y][x] = char;
         delete state.colors[`${x},${y}`]; // Reset color on overwrite
+        state.illusions.delete(`${x},${y}`);
         // Ensure we are targeting the correct child index (overlay is 0)
         const cell =
           document.getElementById("level-grid").children[
@@ -3676,6 +3856,33 @@
                  }
              }
           }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleIllusionSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        
+        let allAreIllusions = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+            for (let x = sel.x1; x <= sel.x2; x++) {
+                if (state.grid[y][x] === 'G' && !state.illusions.has(`${x},${y}`)) {
+                    allAreIllusions = false;
+                    break;
+                }
+            }
+            if (!allAreIllusions) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+            for (let x = sel.x1; x <= sel.x2; x++) {
+                if (state.grid[y][x] === 'G') {
+                    if (allAreIllusions) state.illusions.delete(`${x},${y}`);
+                    else state.illusions.add(`${x},${y}`);
+                }
+            }
         }
         render();
         history.push();
@@ -3889,6 +4096,7 @@
               paint(x, y, " ");
               state.fakes.delete(`${x},${y}`);
               state.risingThrough.delete(`${x},${y}`);
+              state.illusions.delete(`${x},${y}`);
               delete state.risingSpeeds[`${x},${y}`];
           }
         render();
@@ -3954,6 +4162,7 @@
             // For now, clear fakes in mirrored area to avoid confusion or implement full mirror.
             state.fakes.delete(`${b.x1 + x},${b.y1 + y}`);
             state.risingThrough.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.illusions.delete(`${b.x1 + x},${b.y1 + y}`);
           }
         }
         render();
@@ -3975,10 +4184,12 @@
             temp[y - b.y1][x - b.x1] = state.grid[y][x];
             temp[y - b.y1][x - b.x1 + "_c"] = state.colors[`${x},${y}`];
             temp[y - b.y1][x - b.x1 + "_f"] = state.fakes.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_i"] = state.illusions.has(`${x},${y}`);
             temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(`${x},${y}`);
             state.grid[y][x] = " "; // Clear source
             delete state.colors[`${x},${y}`];
             state.fakes.delete(`${x},${y}`);
+            state.illusions.delete(`${x},${y}`);
             state.risingThrough.delete(`${x},${y}`);
           }
         }
@@ -3999,6 +4210,9 @@
               
               if (temp[y][x + "_f"]) state.fakes.add(`${tx},${ty}`);
               else state.fakes.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_i"]) state.illusions.add(`${tx},${ty}`);
+              else state.illusions.delete(`${tx},${ty}`);
 
               if (temp[y][x + "_r"]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
@@ -4034,6 +4248,7 @@
           delete state.colors[`${x},${y}`];
           state.fakes.delete(`${x},${y}`);
           state.risingThrough.delete(`${x},${y}`);
+          state.illusions.delete(`${x},${y}`);
           delete state.risingSpeeds[`${x},${y}`];
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
         }
@@ -4156,6 +4371,7 @@
         state.colors = {};
         state.fakes = new Set();
         state.risingThrough = new Set();
+        state.illusions = new Set();
         state.actions = [];
         state.selection = null;
         render();
@@ -4173,6 +4389,7 @@
             row.push(state.grid[y][x]);
             row.push(state.colors[`${x},${y}`]); // Interleave color data? Or use object.
             row.push(state.fakes.has(`${x},${y}`));
+            row.push(state.illusions.has(`${x},${y}`));
             row.push(state.risingThrough.has(`${x},${y}`));
           }
           data.push(row);
@@ -4192,7 +4409,7 @@
           : 0;
 
         const h = clipboard.length;
-        const w = clipboard[0].length / 4; // Adjusted for interleaved data
+        const w = clipboard[0].length / 5; // Adjusted for interleaved data
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
@@ -4200,13 +4417,16 @@
             const tx = startX + x;
             if (ty < state.height && tx < state.width) {
               state.grid[ty][tx] = clipboard[y][x * 4];
-              if (clipboard[y][x * 4 + 1])
-                state.colors[`${tx},${ty}`] = clipboard[y][x * 4 + 1];
+              if (clipboard[y][x * 5 + 1])
+                state.colors[`${tx},${ty}`] = clipboard[y][x * 5 + 1];
               
-              if (clipboard[y][x * 4 + 2]) state.fakes.add(`${tx},${ty}`);
+              if (clipboard[y][x * 5 + 2]) state.fakes.add(`${tx},${ty}`);
               else state.fakes.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 4 + 3]) state.risingThrough.add(`${tx},${ty}`);
+              if (clipboard[y][x * 5 + 3]) state.illusions.add(`${tx},${ty}`);
+              else state.illusions.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 5 + 4]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
 
               // Update visual
@@ -5069,6 +5289,7 @@
               colors: state.colors,
               fakes: Array.from(state.fakes),
               risingThrough: Array.from(state.risingThrough),
+              illusions: Array.from(state.illusions),
               risingSpeeds: state.risingSpeeds,
               plan: state.grid.map((r) => r.join("")),
             },
@@ -5414,6 +5635,7 @@
             music: state.music,
             colors: state.colors,
             fakes: Array.from(state.fakes),
+            illusions: Array.from(state.illusions),
             plan: state.grid.map((r) => r.join("")),
             risingSpeeds: state.risingSpeeds,
           };
@@ -5474,6 +5696,7 @@
           state.colors = {};
           state.fakes = new Set();
           state.risingThrough = new Set();
+            state.illusions = new Set();
           state.risingSpeeds = {};
 
           render();
@@ -5514,7 +5737,9 @@
 
             state.colors = d.colors || {};
             state.fakes = new Set(d.fakes || []);
+
             state.risingThrough = new Set(d.risingThrough || []);
+            state.illusions = new Set(d.illusions || []);
             state.risingSpeeds = d.risingSpeeds || {};
 
             state.grid = d.plan.map((line) => line.split(""));
@@ -5564,6 +5789,7 @@
             colors: state.colors,
             fakes: Array.from(state.fakes),
             risingThrough: Array.from(state.risingThrough),
+            illusions: Array.from(state.illusions),
             risingSpeeds: state.risingSpeeds,
             width: state.width,
             height: state.height,
@@ -5607,6 +5833,7 @@
             state.colors = data.colors || {};
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
             document.getElementById("prop-w").value = state.width;
             document.getElementById("prop-h").value = state.height;
@@ -6253,6 +6480,7 @@
               music: state.music,
               fakes: Array.from(state.fakes),
               risingThrough: Array.from(state.risingThrough),
+              illusions: Array.from(state.illusions),
               risingSpeeds: state.risingSpeeds,
             }),
           );
@@ -6269,6 +6497,7 @@
             state.music = data.music || null;
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
             renderMusic();
             render();
@@ -6285,6 +6514,7 @@
             state.music = data.music || null;
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
             state.risingSpeeds = data.risingSpeeds || {};
             renderMusic();
             render();
@@ -6324,6 +6554,7 @@
 
             renderMusic();
             state.colors = d.colors || {};
+            state.illusions = new Set(d.illusions || []);
             state.fakes = new Set(d.fakes || []);
 
             state.grid = d.plan.map((line) => line.split(""));
