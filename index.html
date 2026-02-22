@@ -2227,6 +2227,23 @@
         if (btns) btns.style.display = "none";
       }
 
+      function openChangePasswordModal() {
+        const html = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <input id="cp-old" type="password" placeholder="Current Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
+                <input id="cp-new" type="password" placeholder="New Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                    <button class="popup-btn" onclick="changePassword(document.getElementById('cp-old').value, document.getElementById('cp-new').value); document.querySelector('.popup-overlay').remove()">UPDATE</button>
+                </div>
+            </div>
+        `;
+        showPopup("CHANGE PASSWORD", "", () => {});
+        const msgEl = document.querySelector(".popup-message");
+        if (msgEl) msgEl.innerHTML = html;
+        const btns = document.querySelector(".popup-buttons");
+        if (btns) btns.style.display = "none";
+      }
+
       async function changePassword(oldPass, newPass) {
         if (!_supabase || !currentUser) return;
         if (!newPass)
@@ -2715,6 +2732,36 @@
           artist: "Alex Grohl",
           file: "time.mp3",
         },
+        {
+          id: "darkness",
+          title: "Darkness",
+          artist: "Dmitrii Spis",
+          file: "darkness.mp3",
+        },
+        {
+          id: "last_point",
+          title: "The Last Point",
+          artist: "Rasberry Music",
+          file: "last_point.mp3",
+        },
+        {
+          id: "drift",
+          title: "Drift",
+          artist: "DELOsound",
+          file: "drift.mp3",
+        },
+        {
+          id: "night",
+          title: "Night",
+          artist: "DELOsound",
+          file: "night.mp3",
+        },
+        {
+          id: "showcase",
+          title: "Showcase",
+          artist: "DELOsound",
+          file: "showcase.mp3",
+        },
       ];
 
       const SETTINGS_KEY = "blockoverit_settings";
@@ -2729,6 +2776,7 @@
         showEditorButton: false,
         editorNewTab: false,
         currentSkin: "default",
+        showHitboxes: false,
         playlist: [
           "synth",
           "joyful",
@@ -2747,6 +2795,16 @@
         gameSettings.playlist.push("arcade");
       if (!gameSettings.playlist.includes("time"))
         gameSettings.playlist.push("time");
+      if (!gameSettings.playlist.includes("darkness"))
+        gameSettings.playlist.push("darkness");
+      if (!gameSettings.playlist.includes("last_point"))
+        gameSettings.playlist.push("last_point");
+      if (!gameSettings.playlist.includes("drift"))
+        gameSettings.playlist.push("drift");
+      if (!gameSettings.playlist.includes("night"))
+        gameSettings.playlist.push("night");
+      if (!gameSettings.playlist.includes("showcase"))
+        gameSettings.playlist.push("showcase");
 
       if (gameSettings.shuffleMusic === undefined)
         gameSettings.shuffleMusic = true;
@@ -2757,6 +2815,8 @@
         gameSettings.showEditorButton = false;
       if (gameSettings.editorNewTab === undefined)
         gameSettings.editorNewTab = false;
+      if (gameSettings.showHitboxes === undefined)
+        gameSettings.showHitboxes = false;
       if (gameSettings.currentSkin === undefined)
         gameSettings.currentSkin = "default";
       if (!gameSettings.playlist)
@@ -3914,7 +3974,7 @@
       }
       FallingBlock.prototype.type = "falling-block";
       FallingBlock.prototype.act = function (step, level) {
-        this.speed.y += level.gravity * step;
+        this.speed.y = 3; // Constant speed matching dripping lava
         var newPos = this.pos.plus(this.speed.times(step));
 
         var player = level.player;
@@ -4003,37 +4063,41 @@
 
         if (dist < 2.0) {
           var targetPos = this.pos.plus(new Vector(0, -1));
-          
+
           // Check first block (ignoring player to allow bump)
           var firstObs = level.obstacleAt(targetPos, new Vector(1, 1), null);
-          if (firstObs && firstObs.type === 'player') firstObs = null;
+          if (firstObs && firstObs.type === "player") firstObs = null;
 
           if (!firstObs) {
             var spawned = [];
             for (let i = 0; i < (this.produceCount || 1); i++) {
-                var p = targetPos.plus(new Vector(0, -i));
-                var obs = level.obstacleAt(p, new Vector(1, 1), null);
-                if (obs && obs.type === 'player') obs = null;
-                
-                if (!obs) {
-                    var wall = new VisualWall(p);
-                    wall.isVisible = true;
-                    wall.id = level.nextActorId++;
-                    level.actors.push(wall);
-                    spawned.push(wall);
-                } else {
-                    break;
-                }
+              var p = targetPos.plus(new Vector(0, -i));
+              var obs = level.obstacleAt(p, new Vector(1, 1), null);
+              if (obs && obs.type === "player") obs = null;
+
+              if (!obs) {
+                var wall = new VisualWall(p);
+                wall.isVisible = true;
+                wall.id = level.nextActorId++;
+                level.actors.push(wall);
+                spawned.push(wall);
+              } else {
+                break;
+              }
             }
             // Bump player up if they are inside any spawned wall
             if (spawned.length > 0 && level.player) {
-                for (var w of spawned) {
-                    if (level.player.pos.x < w.pos.x + w.size.x && level.player.pos.x + level.player.size.x > w.pos.x &&
-                        level.player.pos.y < w.pos.y + w.size.y && level.player.pos.y + level.player.size.y > w.pos.y) {
-                        level.player.pos.y = w.pos.y - level.player.size.y - 0.01;
-                        if (level.player.speed.y > 0) level.player.speed.y = 0;
-                    }
+              for (var w of spawned) {
+                if (
+                  level.player.pos.x < w.pos.x + w.size.x &&
+                  level.player.pos.x + level.player.size.x > w.pos.x &&
+                  level.player.pos.y < w.pos.y + w.size.y &&
+                  level.player.pos.y + level.player.size.y > w.pos.y
+                ) {
+                  level.player.pos.y = w.pos.y - level.player.size.y - 0.01;
+                  if (level.player.speed.y > 0) level.player.speed.y = 0;
                 }
+              }
             }
           }
           this.triggered = true;
@@ -4223,6 +4287,9 @@
         this.risingThrough = new Set(levelData.risingThrough || []);
         this.risingSpeeds = levelData.risingSpeeds || {};
         this.illusions = new Set(levelData.illusions || []);
+        this.flickers = new Set(levelData.flickers || []);
+        this.touchFlickers = new Set(levelData.touchFlickers || []);
+        this.jumpFlickers = new Set(levelData.jumpFlickers || []);
         this.blockConfigs = levelData.blockConfigs || {};
         this.age = 0;
         this.playerHasMoved = false;
@@ -4305,14 +4372,14 @@
                 continue;
               }
             }
-            
+
             // Merging Grinders
             if (ch === "C") {
               var top = this.actors.find(
                 (a) =>
                   a.type === "grinder" &&
                   a.pos.x === x &&
-                  Math.abs(a.pos.y + a.size.y - y) < 0.1
+                  Math.abs(a.pos.y + a.size.y - y) < 0.1,
               );
               if (top) {
                 top.size.y += 1;
@@ -4358,7 +4425,22 @@
                   actor.isIllusion = true;
                 }
                 // Flicker logic for all actors
-                if (color === "flicker" || color === "jump_flicker") {
+                if (this.flickers.has(`${x},${y}`)) actor.isFlicker = true;
+                if (this.touchFlickers.has(`${x},${y}`))
+                  actor.isTouchFlicker = true;
+                if (this.jumpFlickers.has(`${x},${y}`))
+                  actor.isJumpFlicker = true;
+
+                // Legacy support
+                if (color === "flicker") actor.isFlicker = true;
+                if (color === "jump_flicker") actor.isJumpFlicker = true;
+                if (color === "touch_flicker") actor.isTouchFlicker = true;
+
+                if (
+                  actor.isFlicker ||
+                  actor.isJumpFlicker ||
+                  actor.isTouchFlicker
+                ) {
                   actor.flickerType = color;
                   actor.isVisible = false;
                   actor.flickerTimer = 0;
@@ -4372,16 +4454,32 @@
                 ) {
                   actor.riseInterval = this.risingSpeeds[`${x},${y}`];
                 }
-                if (['W', 'K', 'k'].includes(ch) && this.blockConfigs && this.blockConfigs[`${x},${y}`]) {
-                    actor.produceCount = this.blockConfigs[`${x},${y}`].count || 1;
+                if (
+                  ["W", "K", "k"].includes(ch) &&
+                  this.blockConfigs &&
+                  this.blockConfigs[`${x},${y}`]
+                ) {
+                  actor.produceCount =
+                    this.blockConfigs[`${x},${y}`].count || 1;
                 }
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
             } else if (ch === "x") {
-              if (color === "flicker" || color === "jump_flicker") {
+              let isFlicker =
+                this.flickers.has(`${x},${y}`) || color === "flicker";
+              let isTouchFlicker =
+                this.touchFlickers.has(`${x},${y}`) ||
+                color === "touch_flicker";
+              let isJumpFlicker =
+                this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
+
+              if (isFlicker || isTouchFlicker || isJumpFlicker) {
                 var wall = new VisualWall(new Vector(x, y), color);
-                wall.flickerType = color; // Explicitly set for VisualWall too
+                wall.isFlicker = isFlicker;
+                wall.isTouchFlicker = isTouchFlicker;
+                wall.isJumpFlicker = isJumpFlicker;
+                wall.flickerType = "combined";
                 wall.isVisible = false;
                 wall.flickerTimer = 0;
                 wall.flickerVisibleTime = 0;
@@ -4426,8 +4524,8 @@
         // Optimization: Cache dynamic actors
         this.dynamicActors = this.actors.filter(
           (a) =>
-                  a.type === "moving-block" || 
-                  a.type === "moving-group" ||
+            a.type === "moving-block" ||
+            a.type === "moving-group" ||
             a.type === "lava-group" ||
             (a.type === "lava" && a.speed),
         );
@@ -4598,8 +4696,8 @@
               // Re-cache dynamic actors
               this.dynamicActors = this.actors.filter(
                 (a) =>
-                a.type === "moving-block" || 
-                a.type === "moving-group" ||
+                  a.type === "moving-block" ||
+                  a.type === "moving-group" ||
                   a.type === "lava-group" ||
                   (a.type === "lava" && a.speed),
               );
@@ -4639,8 +4737,8 @@
               this.backgroundDirty = true;
               this.dynamicActors = this.actors.filter(
                 (a) =>
-                a.type === "moving-block" || 
-                a.type === "moving-group" ||
+                  a.type === "moving-block" ||
+                  a.type === "moving-group" ||
                   a.type === "lava-group" ||
                   (a.type === "lava" && a.speed),
               );
@@ -4801,136 +4899,169 @@
         this.type = "moving-group";
         this.speed = members[0].speed;
       }
-      
-      MovingGroup.prototype.act = function(step, level) {
-          var posBeforeList = this.members.map(m => m.pos);
-          var newPosList = this.members.map(m => m.pos.plus(this.speed.times(step)));
-          var collision = false;
 
-          for (var i = 0; i < newPosList.length; i++) {
-              if (level.obstacleAt(newPosList[i], this.members[i].size, this)) {
-                  collision = true;
-                  break;
-              }
+      MovingGroup.prototype.act = function (step, level) {
+        var posBeforeList = this.members.map((m) => m.pos);
+        var newPosList = this.members.map((m) =>
+          m.pos.plus(this.speed.times(step)),
+        );
+        var collision = false;
+
+        for (var i = 0; i < newPosList.length; i++) {
+          if (level.obstacleAt(newPosList[i], this.members[i].size, this)) {
+            collision = true;
+            break;
           }
+        }
 
-          if (collision) {
+        if (collision) {
+          this.speed = this.speed.times(-1);
+          return;
+        }
+
+        // Move all members
+        for (var i = 0; i < this.members.length; i++) {
+          this.members[i].pos = newPosList[i];
+        }
+
+        var moveDelta = newPosList[0].plus(posBeforeList[0].times(-1));
+        var riders = new Set();
+        var group = this;
+
+        level.actors.forEach((a) => {
+          if (a === group) return;
+          if (
+            a.type !== "player" &&
+            a.type !== "spike" &&
+            a.type !== "upside-down-spike"
+          )
+            return;
+
+          // Check if 'a' is riding ANY member
+          for (var m of group.members) {
+            if (m.fake) continue;
+            var isRiding = false;
+            if (a.type === "upside-down-spike") {
+              if (
+                Math.abs(a.pos.y - (m.pos.y + m.size.y)) < 0.1 &&
+                a.pos.x + a.size.x > m.pos.x &&
+                a.pos.x < m.pos.x + m.size.x
+              )
+                isRiding = true;
+            } else {
+              if (
+                Math.abs(a.pos.y + a.size.y - m.pos.y) < 0.1 &&
+                a.pos.x + a.size.x > m.pos.x &&
+                a.pos.x < m.pos.x + m.size.x
+              )
+                isRiding = true;
+            }
+            if (isRiding) {
+              riders.add(a);
+              break;
+            }
+          }
+        });
+
+        // Check wall collision for riders
+        for (let r of riders) {
+          var rNewPos = r.pos.plus(moveDelta);
+          if (level.obstacleAt(rNewPos, r.size, r) === "wall") {
+            if (r.type === "spike" || r.type === "upside-down-spike") {
+              // Reverse group
+              for (var i = 0; i < this.members.length; i++)
+                this.members[i].pos = posBeforeList[i];
               this.speed = this.speed.times(-1);
               return;
+            } else if (r.type === "player" && this.speed.y < 0) {
+              level.status = "lost";
+              level.finishDelay = 1;
+            }
           }
+        }
 
-          // Move all members
-          for (var i = 0; i < this.members.length; i++) {
-              this.members[i].pos = newPosList[i];
-          }
+        // Move riders
+        for (let r of riders) {
+          var rNewPos = r.pos.plus(moveDelta);
+          if (!level.obstacleAt(rNewPos, r.size, r)) r.pos = rNewPos;
+        }
 
-          var moveDelta = newPosList[0].plus(posBeforeList[0].times(-1));
-          var riders = new Set();
-          var group = this;
-          
-          level.actors.forEach(a => {
-              if (a === group) return;
-              if (a.type !== "player" && a.type !== "spike" && a.type !== "upside-down-spike") return;
-              
-              // Check if 'a' is riding ANY member
-              for(var m of group.members) {
-                  if (m.fake) continue;
-                  var isRiding = false;
-                  if (a.type === "upside-down-spike") {
-                      if (Math.abs(a.pos.y - (m.pos.y + m.size.y)) < 0.1 && 
-                          a.pos.x + a.size.x > m.pos.x && a.pos.x < m.pos.x + m.size.x) isRiding = true;
-                  } else {
-                      if (Math.abs((a.pos.y + a.size.y) - m.pos.y) < 0.1 &&
-                          a.pos.x + a.size.x > m.pos.x && a.pos.x < m.pos.x + m.size.x) isRiding = true;
-                  }
-                  if (isRiding) {
-                      riders.add(a);
-                      break; 
-                  }
+        // Push players
+        level.players.forEach((player) => {
+          for (var m of group.members) {
+            if (m.fake) continue;
+            // Standard AABB overlap check with push logic
+            if (
+              m.pos.x < player.pos.x + player.size.x &&
+              m.pos.x + m.size.x > player.pos.x &&
+              m.pos.y < player.pos.y + player.size.y &&
+              m.pos.y + m.size.y > player.pos.y
+            ) {
+              if (this.speed.x > 0) player.pos.x = m.pos.x + m.size.x + 0.01;
+              else if (this.speed.x < 0)
+                player.pos.x = m.pos.x - player.size.x - 0.01;
+
+              if (this.speed.y > 0) player.pos.y = m.pos.y + m.size.y + 0.01;
+              else if (this.speed.y < 0) {
+                player.pos.y = m.pos.y - player.size.y - 0.01;
+                player.speed.y = 0;
               }
-          });
 
-          // Check wall collision for riders
-          for (let r of riders) {
-              var rNewPos = r.pos.plus(moveDelta);
-              if (level.obstacleAt(rNewPos, r.size, r) === "wall") {
-                  if (r.type === "spike" || r.type === "upside-down-spike") {
-                      // Reverse group
-                      for(var i=0; i<this.members.length; i++) this.members[i].pos = posBeforeList[i];
-                      this.speed = this.speed.times(-1);
-                      return;
-                  } else if (r.type === "player" && this.speed.y < 0) {
-                      level.status = "lost"; level.finishDelay = 1;
-                  }
+              if (level.obstacleAt(player.pos, player.size, player)) {
+                level.status = "lost";
+                level.finishDelay = 1;
               }
+            }
           }
-
-          // Move riders
-          for (let r of riders) {
-              var rNewPos = r.pos.plus(moveDelta);
-              if (!level.obstacleAt(rNewPos, r.size, r)) r.pos = rNewPos;
-          }
-
-          // Push players
-          level.players.forEach(player => {
-              for(var m of group.members) {
-                  if (m.fake) continue;
-                  // Standard AABB overlap check with push logic
-                  if (m.pos.x < player.pos.x + player.size.x && m.pos.x + m.size.x > player.pos.x &&
-                      m.pos.y < player.pos.y + player.size.y && m.pos.y + m.size.y > player.pos.y) {
-                      
-                      if (this.speed.x > 0) player.pos.x = m.pos.x + m.size.x + 0.01;
-                      else if (this.speed.x < 0) player.pos.x = m.pos.x - player.size.x - 0.01;
-                      
-                      if (this.speed.y > 0) player.pos.y = m.pos.y + m.size.y + 0.01;
-                      else if (this.speed.y < 0) { player.pos.y = m.pos.y - player.size.y - 0.01; player.speed.y = 0; }
-
-                      if (level.obstacleAt(player.pos, player.size, player)) {
-                          level.status = "lost"; level.finishDelay = 1;
-                      }
-                  }
-              }
-          });
+        });
       };
 
-      Level.prototype.groupMovingBlocks = function() {
-          var visited = new Set();
-          var newActors = [];
-          var movers = this.actors.filter(a => a.type === "moving-block");
-          var others = this.actors.filter(a => a.type !== "moving-block");
+      Level.prototype.groupMovingBlocks = function () {
+        var visited = new Set();
+        var newActors = [];
+        var movers = this.actors.filter((a) => a.type === "moving-block");
+        var others = this.actors.filter((a) => a.type !== "moving-block");
 
-          for (var i = 0; i < movers.length; i++) {
-              var m1 = movers[i];
-              if (visited.has(m1)) continue;
-              
-              var group = [m1];
-              visited.add(m1);
-              var queue = [m1];
-              
-              while(queue.length > 0) {
-                  var curr = queue.pop();
-                  for(var j=0; j<movers.length; j++) {
-                      var m2 = movers[j];
-                      if (!visited.has(m2) && m2.speed.x === curr.speed.x && m2.speed.y === curr.speed.y) {
-                          // Check adjacency
-                          var expanded = {
-                              pos: new Vector(curr.pos.x - 0.1, curr.pos.y - 0.1),
-                              size: new Vector(curr.size.x + 0.2, curr.size.y + 0.2)
-                          };
-                          if (expanded.pos.x < m2.pos.x + m2.size.x && expanded.pos.x + expanded.size.x > m2.pos.x &&
-                              expanded.pos.y < m2.pos.y + m2.size.y && expanded.pos.y + expanded.size.y > m2.pos.y) {
-                              visited.add(m2);
-                              group.push(m2);
-                              queue.push(m2);
-                          }
-                      }
-                  }
+        for (var i = 0; i < movers.length; i++) {
+          var m1 = movers[i];
+          if (visited.has(m1)) continue;
+
+          var group = [m1];
+          visited.add(m1);
+          var queue = [m1];
+
+          while (queue.length > 0) {
+            var curr = queue.pop();
+            for (var j = 0; j < movers.length; j++) {
+              var m2 = movers[j];
+              if (
+                !visited.has(m2) &&
+                m2.speed.x === curr.speed.x &&
+                m2.speed.y === curr.speed.y
+              ) {
+                // Check adjacency
+                var expanded = {
+                  pos: new Vector(curr.pos.x - 0.1, curr.pos.y - 0.1),
+                  size: new Vector(curr.size.x + 0.2, curr.size.y + 0.2),
+                };
+                if (
+                  expanded.pos.x < m2.pos.x + m2.size.x &&
+                  expanded.pos.x + expanded.size.x > m2.pos.x &&
+                  expanded.pos.y < m2.pos.y + m2.size.y &&
+                  expanded.pos.y + expanded.size.y > m2.pos.y
+                ) {
+                  visited.add(m2);
+                  group.push(m2);
+                  queue.push(m2);
+                }
               }
-              
-              if (group.length > 1) newActors.push(new MovingGroup(group));
-              else newActors.push(group[0]);
+            }
           }
-          this.actors = others.concat(newActors);
+
+          if (group.length > 1) newActors.push(new MovingGroup(group));
+          else newActors.push(group[0]);
+        }
+        this.actors = others.concat(newActors);
       };
 
       Level.prototype.obstacleAt = function (pos, size, exceptActor) {
@@ -4973,7 +5104,7 @@
                 member.type === "spike-block" ||
                 member.type === "wall-block" ||
                 member.type === "spike-block-u" ||
-                member.type === "grinder" || 
+                member.type === "grinder" ||
                 member.type === "moving-group" ||
                 (member.type === "visual-wall" && member.isVisible)
               )
@@ -4985,7 +5116,8 @@
               ) {
                 if (
                   exceptActor &&
-                  (exceptActor.type === "moving-block" || exceptActor.type === "moving-group" ||
+                  (exceptActor.type === "moving-block" ||
+                    exceptActor.type === "moving-group" ||
                     exceptActor.type === "falling-block")
                 )
                   continue;
@@ -5026,20 +5158,24 @@
       };
 
       function updateFlicker(actor, step, level) {
-        if (actor.flickerType === "flicker") {
+        let shouldBeVisible = false;
+
+        if (actor.isFlicker) {
           actor.flickerTimer += step;
           if (actor.flickerVisibleTime > 0) {
             actor.flickerVisibleTime -= step;
-            if (actor.flickerVisibleTime <= 0) actor.isVisible = false;
+            shouldBeVisible = true;
           }
           if (actor.flickerTimer > 0.2) {
             actor.flickerTimer = 0;
             if (Math.random() < 0.1) {
-              actor.isVisible = true;
               actor.flickerVisibleTime = 0.2;
+              shouldBeVisible = true;
             }
           }
-        } else if (actor.flickerType === "jump_flicker") {
+        }
+
+        if (actor.isJumpFlicker) {
           var p = level.player;
           if (p) {
             // Visible if on ground (not in air)
@@ -5048,9 +5184,25 @@
               p.size,
               p,
             );
-            actor.isVisible = !!onGround;
+            if (onGround) shouldBeVisible = true;
           }
         }
+
+        if (actor.isTouchFlicker) {
+          var p = level.player;
+          if (p) {
+            var margin = 0.1;
+            var touching = !(
+              p.pos.x > actor.pos.x + actor.size.x + margin ||
+              p.pos.x + p.size.x < actor.pos.x - margin ||
+              p.pos.y > actor.pos.y + actor.size.y + margin ||
+              p.pos.y + p.size.y < actor.pos.y - margin
+            );
+            if (touching) shouldBeVisible = true;
+          }
+        }
+
+        actor.isVisible = shouldBeVisible;
       }
 
       Level.prototype.animate = function (step, keys) {
@@ -5074,7 +5226,7 @@
           // Re-cache dynamic actors if needed, though the main loop now iterates all actors
           this.dynamicActors = this.actors.filter(
             (a) =>
-              a.type === "moving-block" || 
+              a.type === "moving-block" ||
               a.type === "moving-group" ||
               a.type === "lava-group" ||
               (a.type === "lava" && a.speed),
@@ -5302,7 +5454,7 @@
             // Re-cache dynamic actors
             this.dynamicActors = this.actors.filter(
               (a) =>
-                a.type === "moving-block" || 
+                a.type === "moving-block" ||
                 a.type === "moving-group" ||
                 a.type === "lava-group" ||
                 (a.type === "lava" && a.speed),
@@ -5359,6 +5511,8 @@
 
         this.actorLayer = this.world.appendChild(element("div"));
         this.actorElements = new Map();
+        this.hitboxLayer = this.world.appendChild(element("div"));
+        this.hitboxElements = new Map();
 
         this.updateScale();
         this.world.insertBefore(this.drawBackground(), this.actorLayer);
@@ -5398,8 +5552,12 @@
               var color = self.level.colors[`${x},${y}`];
               if (
                 color === "invisible" ||
+                self.level.flickers.has(`${x},${y}`) ||
+                self.level.jumpFlickers.has(`${x},${y}`) ||
+                self.level.touchFlickers.has(`${x},${y}`) ||
                 color === "flicker" ||
-                color === "jump_flicker"
+                color === "jump_flicker" ||
+                color === "touch_flicker"
               ) {
                 el.style.background = "transparent";
                 el.style.border = "none";
@@ -5407,6 +5565,8 @@
                 el.style.backgroundColor = color;
                 el.style.borderColor = adjustColor(color, -20);
               }
+              el.style.borderWidth =
+                (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
               this.bgLayer.appendChild(el);
             }
           }
@@ -5465,8 +5625,10 @@
                 actor.type !== "upside-down-spike"
               ) {
                 if (
+                  !actor.flickerType &&
                   actor.color !== "flicker" &&
-                  actor.color !== "jump_flicker"
+                  actor.color !== "jump_flicker" &&
+                  actor.color !== "touch_flicker"
                 ) {
                   el.style.backgroundColor = actor.color;
                   el.style.borderColor = adjustColor(actor.color, -20);
@@ -5542,6 +5704,32 @@
             else el.classList.remove("grinding");
           }
 
+          if (actor.type === "spike" || actor.type === "upside-down-spike") {
+            var visual = el.firstChild;
+            if (visual && visual.classList.contains("spike-visual")) {
+              visual.style.borderLeftWidth = s * 0.5 + "px";
+              visual.style.borderRightWidth = s * 0.5 + "px";
+              if (actor.type === "spike") {
+                visual.style.borderBottomWidth = s + "px";
+              } else {
+                visual.style.borderTopWidth = s + "px";
+              }
+            }
+          } else if (
+            [
+              "moving-block",
+              "falling-block",
+              "breakable-block",
+              "spike-block",
+              "wall-block",
+              "visual-wall",
+            ].includes(actor.type)
+          ) {
+            el.style.borderWidth = (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
+          } else if (actor.type === "jump-pad") {
+            el.style.borderWidth = (s < 25 ? Math.max(1, s * 0.08) : 2) + "px";
+          }
+
           var visualW = actor.size.x;
           var visualH = actor.size.y;
           var visualX = actor.pos.x;
@@ -5570,6 +5758,16 @@
               visualW = 1.0;
               visualH = 1.0;
               visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
+
+              if (this.level.status === "lost") {
+                el.style.filter =
+                  "grayscale(100%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)";
+              } else if (this.level.status === "won") {
+                el.style.filter =
+                  "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
+              } else {
+                el.style.filter = "";
+              }
             }
           }
 
@@ -5577,6 +5775,26 @@
           el.style.height = visualH * s + "px";
           el.style.left = visualX * s + "px";
           el.style.top = visualY * s + "px";
+
+          // Hitbox Debugging
+          if (gameSettings.showHitboxes) {
+            let hb = this.hitboxElements.get(actor.id);
+            if (!hb) {
+              hb = element("div");
+              hb.style.position = "absolute";
+              hb.style.border = "1px solid rgba(255, 0, 0, 0.8)";
+              hb.style.backgroundColor = "rgba(255, 0, 0, 0.2)";
+              hb.style.boxSizing = "border-box";
+              hb.style.zIndex = "100";
+              hb.style.pointerEvents = "none";
+              this.hitboxLayer.appendChild(hb);
+              this.hitboxElements.set(actor.id, hb);
+            }
+            hb.style.left = actor.pos.x * s + "px";
+            hb.style.top = actor.pos.y * s + "px";
+            hb.style.width = actor.size.x * s + "px";
+            hb.style.height = actor.size.y * s + "px";
+          }
         });
 
         // Remove unused elements
@@ -5584,6 +5802,12 @@
           if (!activeIds.has(id)) {
             el.remove();
             this.actorElements.delete(id);
+          }
+        }
+        for (const [id, hb] of this.hitboxElements) {
+          if (!activeIds.has(id) || !gameSettings.showHitboxes) {
+            hb.remove();
+            this.hitboxElements.delete(id);
           }
         }
       };
@@ -6481,6 +6705,21 @@
           document.getElementById("news-notif").style.display = "block";
         }
 
+        // Top Right Back Button for sub-menus
+        const existingBack = document.getElementById("top-right-back-btn");
+        if (existingBack) existingBack.remove();
+
+        if (view !== "main") {
+          const btn = document.createElement("button");
+          btn.id = "top-right-back-btn";
+          btn.className = "btn";
+          btn.textContent = "MENU";
+          btn.style.cssText =
+            "position: absolute; top: 20px; right: 20px; z-index: 150; padding: 10px 20px; font-size: 1rem; min-width: auto;";
+          btn.onclick = () => showMenu("main");
+          document.getElementById("main-menu").appendChild(btn);
+        }
+
         if (view === "main") {
           subtitle.textContent = "";
 
@@ -6653,6 +6892,24 @@
           cdRow.appendChild(confirmDelToggle);
           gameplayItems.push(cdRow);
 
+          // Hitbox Toggle
+          const hbRow = document.createElement("div");
+          hbRow.style.cssText =
+            "display:flex; align-items:center; justify-content:space-between;";
+          hbRow.innerHTML = `<span style="font-size:1.2rem;">SHOW HITBOXES</span>`;
+          const hbToggle = document.createElement("div");
+          hbToggle.className =
+            "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
+          hbToggle.innerHTML = '<div class="toggle-slider"></div>';
+          hbToggle.onclick = () => {
+            gameSettings.showHitboxes = !gameSettings.showHitboxes;
+            hbToggle.className =
+              "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
+            saveSettings();
+          };
+          hbRow.appendChild(hbToggle);
+          gameplayItems.push(hbRow);
+
           // Editor Button Toggle
           const edRow = document.createElement("div");
           edRow.style.cssText =
@@ -6752,15 +7009,6 @@
             else openLoginModal();
           };
           userItems.push(accountBtn);
-
-          // Skin Selector
-          const creditsBtn = document.createElement("button");
-          creditsBtn.className = "btn";
-          creditsBtn.textContent = "CREDITS";
-          creditsBtn.style.width = "100%";
-          creditsBtn.style.marginTop = "10px";
-          creditsBtn.onclick = () => showCredits();
-          userItems.push(creditsBtn);
 
           const skins = getAvailableSkins();
           if (skins.length > 1) {
@@ -6907,15 +7155,6 @@
             "background: #333; border: 1px solid #555; padding: 15px; border-radius: 12px; font-size: 1rem; width: 100%;";
           fbBtn.onclick = openFeedbackModal;
           settingsContent.appendChild(fbBtn);
-
-          // Back Button (Large at bottom)
-          const backBtn = document.createElement("button");
-          backBtn.className = "btn";
-          backBtn.textContent = "BACK";
-          backBtn.style.cssText =
-            "background: #335699; border: 1px solid #5588cc; padding: 15px; border-radius: 12px; font-size: 1rem; width: 100%; margin-top: 10px;";
-          backBtn.onclick = () => showMenu("main");
-          settingsContent.appendChild(backBtn);
 
           container.appendChild(settingsContent);
 
@@ -7368,21 +7607,21 @@
             <div style="width:1px; background:#333;"></div>
             <div style="text-align:center;">
                 <div style="font-size:3rem; font-weight:bold; color:#fff; line-height:1;">${totalHighscores}</div>
-                <div style="font-size:0.8rem; color:#888; letter-spacing:1px;">RECORDS</div>
+                <div style="font-size:0.8rem; color:#888; letter-spacing:1px;">PERSONAL BESTS</div>
             </div>
           `;
           container.appendChild(statsDiv);
 
-          // Manage Account Button
-          const manageBtn = document.createElement("button");
-          manageBtn.className = "btn";
-          manageBtn.textContent = "MANAGE ACCOUNT";
-          manageBtn.style.fontSize = "1rem";
-          manageBtn.style.padding = "10px";
-          manageBtn.style.width = "100%";
-          manageBtn.style.marginBottom = "10px";
-          manageBtn.onclick = () => showMenu("settings", "user");
-          container.appendChild(manageBtn);
+          // Change Password Button
+          const changePassBtn = document.createElement("button");
+          changePassBtn.className = "btn";
+          changePassBtn.textContent = "CHANGE PASSWORD";
+          changePassBtn.style.fontSize = "1rem";
+          changePassBtn.style.padding = "10px";
+          changePassBtn.style.width = "100%";
+          changePassBtn.style.marginBottom = "10px";
+          changePassBtn.onclick = openChangePasswordModal;
+          container.appendChild(changePassBtn);
 
           // Recent Activity (Highscores)
           const scoresContainer = document.createElement("div");
@@ -7396,7 +7635,7 @@
               "<div style='color:#888; text-align:center;'>No highscores yet.</div>";
           } else {
             let html =
-              "<div style='color:#335699; font-weight:bold; margin-bottom:5px; font-size:0.8rem; text-transform:uppercase;'>Recent Records</div>";
+              "<div style='color:#335699; font-weight:bold; margin-bottom:5px; font-size:0.8rem; text-transform:uppercase;'>Recent Personal Records</div>";
             Object.keys(highscores).forEach((key) => {
               const time = highscores[key];
               const ms = String(time % 1000).padStart(3, "0");
