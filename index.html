@@ -3834,7 +3834,10 @@
       function getAvailableSkins() {
         const skins = ["default"];
         if (currentUser === "chairlord") skins.push("chairlord");
-        if (["seppe", "Seppe"].includes(currentUser)) skins.push("tv");
+        if (["seppe", "Seppe"].includes(currentUser)) {
+          skins.push("tv");
+          skins.push("burningheart");
+        }
         if (["torgaar", "novalis", "Seppe", "seppe"].includes(currentUser))
           skins.push("cubemouth");
         return skins;
@@ -5430,6 +5433,7 @@
 
       let cheatCodeInput = "";
       const CLEAR_CODE = "clear";
+      const CHEAT_CODE = "unlock";
 
       Level.prototype.playerTouched = function (type, actor) {
         if (type === "crush") {
@@ -5747,7 +5751,7 @@
             el.style.backgroundPosition = "";
             el.style.backgroundColor = actor.color || "";
 
-            if (skin === "chairlord" || skin === "cubemouth" || skin === "tv") {
+            if (skin === "chairlord" || skin === "cubemouth" || skin === "tv" || skin === "burningheart") {
               el.style.backgroundImage = `url('${skin}.png')`;
               el.style.backgroundSize = "contain";
               el.style.backgroundRepeat = "no-repeat";
