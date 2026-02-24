@@ -1827,8 +1827,8 @@
         class="editor-btn"
         onclick="
           if (gameSettings.editorNewTab)
-            window.open('Block Architect Pro.html', '_blank');
-          else window.location.href = 'Block Architect Pro.html';
+            window.open('Block%20Architect%20Pro.html', '_blank');
+          else window.location.href = 'Block%20Architect%20Pro.html';
         "
       >
         <span>Level Editor</span>
@@ -8902,8 +8902,10 @@
           if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
             return;
 
-          const key = e.key.toLowerCase();
-          cheatCodeInput += key;
+          if (e.key.length === 1) {
+            const key = e.key.toLowerCase();
+            cheatCodeInput += key;
+          }
 
           // Keep only last 5 characters (length of "clear")
           if (
