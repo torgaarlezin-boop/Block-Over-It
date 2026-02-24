@@ -5751,7 +5751,12 @@
             el.style.backgroundPosition = "";
             el.style.backgroundColor = actor.color || "";
 
-            if (skin === "chairlord" || skin === "cubemouth" || skin === "tv" || skin === "burningheart") {
+            if (
+              skin === "chairlord" ||
+              skin === "cubemouth" ||
+              skin === "tv" ||
+              skin === "burningheart"
+            ) {
               el.style.backgroundImage = `url('${skin}.png')`;
               el.style.backgroundSize = "contain";
               el.style.backgroundRepeat = "no-repeat";
@@ -8911,7 +8916,7 @@
           }
 
           // Check if clear code was entered
-          if (cheatCodeInput === CLEAR_CODE) {
+          if (cheatCodeInput.endsWith(CLEAR_CODE)) {
             showConfirmPopup(
               "CLEAR PROGRESS",
               "Are you sure you want to clear all progress?",
@@ -8919,6 +8924,21 @@
                 clearAllProgress();
               },
             );
+            cheatCodeInput = ""; // Reset
+          }
+
+          // Check if cheat code was entered
+          if (cheatCodeInput.endsWith(CHEAT_CODE)) {
+            showPopup("CHEAT ACTIVATED", "All levels unlocked!", () => {
+              gameState.chapter1Beaten = true;
+              gameState.chapter2Beaten = true;
+              gameState.chapter3Beaten = true;
+              gameState.unlockedLevel = 99;
+              gameState.unlockedLevelCh2 = 99;
+              gameState.unlockedLevelCh3 = 99;
+              saveGame();
+              location.reload();
+            });
             cheatCodeInput = ""; // Reset
           }
         }
