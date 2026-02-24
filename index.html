@@ -3847,7 +3847,11 @@
 
       function getAvailableSkins() {
         const skins = ["default"];
-        if (currentUser === "chairlord") skins.push("chairlord");
+        if (currentUser === "chairlord") {
+          skins.push("chairlord");
+          skins.push("sunset");
+          skins.push("rainbowmonster");
+        }
         if (["seppe", "Seppe"].includes(currentUser)) {
           skins.push("tv");
           skins.push("burningheart");
@@ -5769,7 +5773,9 @@
               skin === "chairlord" ||
               skin === "cubemouth" ||
               skin === "tv" ||
-              skin === "burningheart"
+              skin === "burningheart" ||
+              skin === "rainbowmonster" ||
+              skin === "sunset"
             ) {
               el.style.backgroundImage = `url('${skin}.png')`;
               el.style.backgroundSize = "contain";
