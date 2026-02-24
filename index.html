@@ -3834,6 +3834,7 @@
       function getAvailableSkins() {
         const skins = ["default"];
         if (currentUser === "chairlord") skins.push("chairlord");
+        if (["seppe", "Seppe"].includes(currentUser)) skins.push("tv");
         if (["torgaar", "novalis", "Seppe", "seppe"].includes(currentUser))
           skins.push("cubemouth");
         return skins;
@@ -5746,7 +5747,7 @@
             el.style.backgroundPosition = "";
             el.style.backgroundColor = actor.color || "";
 
-            if (skin === "chairlord" || skin === "cubemouth") {
+            if (skin === "chairlord" || skin === "cubemouth" || skin === "tv") {
               el.style.backgroundImage = `url('${skin}.png')`;
               el.style.backgroundSize = "contain";
               el.style.backgroundRepeat = "no-repeat";
@@ -7345,7 +7346,10 @@
                 Noah Mark Hansen<br>
                 Noodlez Studios<br>
                 Alex Grohl<br>
-                Torgaar
+                Torgaar<br>
+                Dmitrii Spis<br>
+                Rasberry Music<br>
+                DELOsound<br>
               </div>
 
               <div class="cred-role">Art & Skins</div>
