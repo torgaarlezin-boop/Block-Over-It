@@ -2789,6 +2789,18 @@
           "level6",
         ],
       };
+      if (!gameSettings.playlist) {
+        gameSettings.playlist = [
+          "synth",
+          "joyful",
+          "ant",
+          "byte",
+          "peaceful",
+          "cold",
+          "champions",
+          "level6",
+        ];
+      }
       // Add new songs to default playlist for new users
       if (!gameSettings.playlist.includes("skate"))
         gameSettings.playlist.push("skate");
