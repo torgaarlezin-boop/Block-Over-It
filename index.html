@@ -1977,6 +1977,17 @@
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
+      let currentUserSkins = ["default"];
+      const SKIN_DEFINITIONS = {
+        "default": { name: "Default", copies: "Unlimited" },
+        "chairlord": { name: "Chairlord", copies: "1/1" },
+        "sunset": { name: "Sunset", copies: "1/10" },
+        "rainbowmonster": { name: "Rainbow Monster", copies: "1/5" },
+        "burningheart": { name: "Burning Heart", copies: "1/5" },
+        "tv": { name: "TV", copies: "1/5" },
+        "cubemouth": { name: "Cube Mouth", copies: "1/5" },
+        "blue_coin": { name: "Blue Coin", copies: "Unlockable" },
+      };
       const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -2055,7 +2066,7 @@
         try {
           await _supabase
             .from("users")
-            .update({ data: saveData })
+            .update({ data: saveData, skins: currentUserSkins })
             .eq("username", currentUser);
         } catch (e) {
           console.warn("Cloud sync error:", e);
@@ -2092,7 +2103,7 @@
             };
             const { error } = await _supabase
               .from("users")
-              .insert([{ username, password, data: saveData }]);
+              .insert([{ username, password, data: saveData, skins: ["default"] }]);
             if (error) throw error;
 
             currentUser = username;
@@ -2108,6 +2119,7 @@
               return showPopup("ERROR", "Invalid credentials.", () => {});
 
             currentUser = username;
+            if (data.skins) currentUserSkins = data.skins;
             if (data.data) {
               // Load data
               const d = data.data;
@@ -2123,6 +2135,7 @@
               saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
+              checkBlueCoinSkinUnlock();
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -2138,10 +2151,11 @@
         try {
           const { data, error } = await _supabase
             .from("users")
-            .select("data")
+            .select("data, skins")
             .eq("username", currentUser)
             .single();
 
+          if (data && data.skins) currentUserSkins = data.skins;
           if (data && data.data) {
             const d = data.data;
             if (d.gameState) {
@@ -2190,6 +2204,7 @@
             saveCustomLevelsProgress();
             saveHighscores();
             saveSettings();
+            checkBlueCoinSkinUnlock();
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -3846,19 +3861,44 @@
       }
 
       function getAvailableSkins() {
-        const skins = ["default"];
-        if (currentUser === "chairlord") {
-          skins.push("chairlord");
-          skins.push("sunset");
-          skins.push("rainbowmonster");
+        return currentUserSkins;
+      }
+
+      function checkBlueCoinSkinUnlock() {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("blue_coin")) return;
+
+        let total = 0;
+        let collected = 0;
+
+        const checkChapter = (chapter, prefix) => {
+          chapter.forEach((lvl, idx) => {
+            let hasBlue = false;
+            if (lvl.plan) {
+              for (let row of lvl.plan) {
+                if (row.includes('B')) {
+                  hasBlue = true;
+                  break;
+                }
+              }
+            }
+            if (hasBlue) {
+              total++;
+              const key = prefix ? `${prefix}_${idx}` : idx;
+              if (gameState.levelBlueCoins[key]) collected++;
+            }
+          });
+        };
+
+        if (typeof CHAPTER_1 !== 'undefined') checkChapter(CHAPTER_1, "");
+        if (typeof CHAPTER_2 !== 'undefined') checkChapter(CHAPTER_2, "ch2");
+        if (typeof CHAPTER_3 !== 'undefined') checkChapter(CHAPTER_3, "ch3");
+
+        if (total > 0 && collected >= total) {
+          currentUserSkins.push("blue_coin");
+          syncDataToCloud();
+          showPopup("SKIN UNLOCKED", "You unlocked the Blue Coin skin!", () => {});
         }
-        if (["seppe", "Seppe"].includes(currentUser)) {
-          skins.push("tv");
-          skins.push("burningheart");
-        }
-        if (["torgaar", "novalis", "Seppe", "seppe"].includes(currentUser))
-          skins.push("cubemouth");
-        return skins;
       }
 
       function Vector(x, y) {
@@ -5494,9 +5534,11 @@
           this.actors = this.actors.filter((other) => other != actor);
           if (!this.actors.some((actor) => actor.type == "coin")) {
             if (currentGameMode === "speedrun") {
-              gameTimerRunning = false;
-              speedrunEndTime = Date.now(); // Immediate stop
-              gameTimer = speedrunEndTime - gameTimerStart;
+              if (gameTimerStart > 0) {
+                speedrunEndTime = Date.now(); // Immediate stop
+                gameTimer = speedrunEndTime - gameTimerStart;
+                gameTimerRunning = false;
+              }
             }
             this.status = "won";
             this.finishDelay = 1;
@@ -5769,13 +5811,7 @@
             el.style.backgroundPosition = "";
             el.style.backgroundColor = actor.color || "";
 
-            if (
-              skin === "chairlord" ||
-              skin === "cubemouth" ||
-              skin === "tv" ||
-              skin === "burningheart" ||
-              skin === "rainbowmonster" ||
-              skin === "sunset"
+            if (skin != "default"
             ) {
               el.style.backgroundImage = `url('${skin}.png')`;
               el.style.backgroundSize = "contain";
@@ -6453,6 +6489,7 @@
                   levelInstance.totalBlueCoins > 0
                 )
                   gameState.levelBlueCoins[blueCoinKey] = true;
+                  checkBlueCoinSkinUnlock();
 
                 if (ch === 1 && index >= gameState.unlockedLevel)
                   gameState.unlockedLevel = index + 1;
@@ -6524,6 +6561,7 @@
                   if (!gameState.levelBlueCoins[`custom_${index}`]) {
                     gameState.levelBlueCoins[`custom_${index}`] = true;
                     saveGame();
+                    checkBlueCoinSkinUnlock();
                   }
                 }
                 exitToMenu();
@@ -6670,6 +6708,100 @@
         section.appendChild(header);
         section.appendChild(content);
         return section;
+      }
+
+      function renderSkinGrid(container, skins, isInteractive) {
+        const grid = document.createElement("div");
+        grid.style.cssText =
+          "display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; margin-top: 20px; padding: 10px; box-sizing: border-box;";
+
+        skins.forEach((skinId) => {
+          const meta = SKIN_DEFINITIONS[skinId] || {
+            name: skinId,
+            copies: "Unknown",
+          };
+          const el = document.createElement("div");
+          el.style.cssText =
+            "background: #222; border: 2px solid #333; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s; position: relative;";
+
+          if (isInteractive) {
+            if (gameSettings.currentSkin === skinId) {
+              el.style.borderColor = "#335699";
+              el.style.background = "#1a2a40";
+              el.style.boxShadow = "0 0 15px rgba(51, 86, 153, 0.3)";
+            }
+            el.onclick = () => {
+              gameSettings.currentSkin = skinId;
+              saveSettings();
+              showMenu("account");
+            };
+          }
+
+          const preview = document.createElement("div");
+          // 1:2 Aspect Ratio (60x120)
+          preview.style.width = "60px";
+          preview.style.height = "120px";
+          
+          if (skinId === "default") {
+            preview.style.background = "#335699";
+            preview.style.borderRadius = "4px";
+            preview.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
+          } else {
+            preview.style.backgroundImage = `url('${skinId}.png')`;
+            preview.style.backgroundSize = "contain";
+            preview.style.backgroundRepeat = "no-repeat";
+            preview.style.backgroundPosition = "center";
+            preview.style.filter = "drop-shadow(0 4px 5px rgba(0,0,0,0.5))";
+          }
+          el.appendChild(preview);
+
+          const infoDiv = document.createElement("div");
+          infoDiv.style.textAlign = "center";
+
+          const name = document.createElement("div");
+          name.innerText = meta.name;
+          name.style.fontSize = "0.9rem";
+          name.style.fontWeight = "bold";
+          name.style.color = "#fff";
+          name.style.marginBottom = "5px";
+          infoDiv.appendChild(name);
+
+          const copies = document.createElement("div");
+          copies.innerText = meta.copies;
+          copies.style.fontSize = "0.6rem";
+          if (meta.copies === "1/1") {
+            copies.style.color = "#ffd700";
+            copies.style.fontWeight = "bold";
+            copies.style.textShadow = "0 0 5px rgba(255, 215, 0, 0.5)";
+          } else {
+            copies.style.color = "#888";
+          }
+          infoDiv.appendChild(copies);
+          
+          el.appendChild(infoDiv);
+
+          grid.appendChild(el);
+        });
+        container.appendChild(grid);
+      }
+
+      async function openUserProfile(username) {
+        if (!_supabase) return;
+        
+        // Optimistic UI: Show loading state immediately
+        showMenu("user-profile", { username, loading: true });
+
+        const { data, error } = await _supabase
+          .from("users")
+          .select("skins")
+          .eq("username", username)
+          .single();
+
+        if (error || !data) {
+          showPopup("ERROR", "Could not load profile.", () => showMenu("leaderboards-new"));
+          return;
+        }
+        showMenu("user-profile", { username, skins: data.skins || ["default"] });
       }
 
       // Views: 'main', 'campaign', 'chapter1', 'chapter2', 'custom'
@@ -7028,33 +7160,6 @@
           };
           userItems.push(accountBtn);
 
-          const skins = getAvailableSkins();
-          if (skins.length > 1) {
-            const skinRow = document.createElement("div");
-            skinRow.style.cssText =
-              "display:flex; align-items:center; justify-content:space-between; padding:15px; background:#222; border:1px solid #444; border-radius:4px; margin-bottom:10px;";
-
-            const currentSkin = gameSettings.currentSkin || "default";
-
-            skinRow.innerHTML = `<span style="color:#ccc; font-weight:bold; font-size:0.9rem;">SKIN</span>`;
-
-            const skinBtn = document.createElement("button");
-            skinBtn.className = "btn";
-            skinBtn.style.cssText =
-              "padding:5px 10px; font-size:0.8rem; min-width:100px;";
-            skinBtn.textContent = currentSkin.toUpperCase();
-            skinBtn.onclick = () => {
-              const idx = skins.indexOf(gameSettings.currentSkin || "default");
-              const nextIdx = (idx + 1) % skins.length;
-              gameSettings.currentSkin = skins[nextIdx];
-              saveSettings();
-              skinBtn.textContent = gameSettings.currentSkin.toUpperCase();
-            };
-
-            skinRow.appendChild(skinBtn);
-            userItems.push(skinRow);
-          }
-
           if (currentUser) {
             const passDiv = document.createElement("div");
             passDiv.style.cssText =
@@ -7127,34 +7232,6 @@
           };
           altCoinDiv.appendChild(acToggle);
           settingsContent.appendChild(altCoinDiv);
-
-          // Skin Selector
-          const skins = getAvailableSkins();
-          if (skins.length > 1) {
-            const skinDiv = document.createElement("div");
-            skinDiv.style.cssText =
-              "display:flex; justify-content:space-between; align-items:center; background:#222; padding:15px; border-radius:12px; border:1px solid #333;";
-
-            const currentSkin = gameSettings.currentSkin || "default";
-
-            skinDiv.innerHTML = `<span style="font-weight:bold;">SKIN</span>`;
-
-            const skinBtn = document.createElement("button");
-            skinBtn.className = "btn";
-            skinBtn.style.cssText =
-              "padding:5px 10px; font-size:0.8rem; min-width:80px;";
-            skinBtn.textContent = currentSkin.toUpperCase();
-            skinBtn.onclick = () => {
-              const idx = skins.indexOf(gameSettings.currentSkin || "default");
-              const nextIdx = (idx + 1) % skins.length;
-              gameSettings.currentSkin = skins[nextIdx];
-              saveSettings();
-              skinBtn.textContent = gameSettings.currentSkin.toUpperCase();
-            };
-
-            skinDiv.appendChild(skinBtn);
-            settingsContent.appendChild(skinDiv);
-          }
 
           // Credits
           const credBtn = document.createElement("button");
@@ -7597,7 +7674,14 @@
           container.appendChild(btnBack);
         } else if (view === "account") {
           subtitle.textContent = currentUser.toUpperCase();
-          container.style.maxWidth = "800px";
+          
+          const isMobile = document.body.classList.contains("mobile-mode");
+          if (isMobile) {
+            container.style.width = "100%";
+            container.style.padding = "20px";
+          } else {
+            container.style.maxWidth = "1000px";
+          }
 
           const closeBtn = document.createElement("button");
           closeBtn.className = "settings-close-btn";
@@ -7613,71 +7697,40 @@
               totalBlue++;
             }
           });
-          let totalHighscores = Object.keys(highscores).length;
-          let completionPct = Math.round((totalBlue / 60) * 100); // Approx total blue coins
 
           // Stats Grid
           const statsDiv = document.createElement("div");
           statsDiv.style.cssText =
-            "display:flex; gap:20px; justify-content:center; margin-bottom:30px;";
+            "display:flex; gap:20px; justify-content:center; margin-bottom:30px; background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #333;";
           statsDiv.innerHTML = `
             <div style="text-align:center;">
-                <div style="font-size:3rem; font-weight:bold; color:#335699; line-height:1;">${totalBlue}</div>
+                <div style="font-size:0.9rem; color:#aaa; margin-bottom:5px;">COLLECTION</div>
+                <div style="font-size:3.5rem; font-weight:bold; color:#335699; line-height:1;">${totalBlue}</div>
                 <div style="font-size:0.8rem; color:#888; letter-spacing:1px;">BLUE COINS</div>
-            </div>
-            <div style="width:1px; background:#333;"></div>
-            <div style="text-align:center;">
-                <div style="font-size:3rem; font-weight:bold; color:#fff; line-height:1;">${totalHighscores}</div>
-                <div style="font-size:0.8rem; color:#888; letter-spacing:1px;">PERSONAL BESTS</div>
             </div>
           `;
           container.appendChild(statsDiv);
+
+          const skinHeader = document.createElement("div");
+          skinHeader.innerText = "MY SKINS";
+          skinHeader.style.cssText = "color: #fff; font-weight: bold; font-size: 1.5rem; margin-top: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; width: 100%; text-align: center; letter-spacing: 2px;";
+          container.appendChild(skinHeader);
+
+          renderSkinGrid(container, getAvailableSkins(), true);
 
           // Change Password Button
           const changePassBtn = document.createElement("button");
           changePassBtn.className = "btn";
           changePassBtn.textContent = "CHANGE PASSWORD";
-          changePassBtn.style.fontSize = "1rem";
-          changePassBtn.style.padding = "10px";
-          changePassBtn.style.width = "100%";
-          changePassBtn.style.marginBottom = "10px";
+          changePassBtn.style.cssText = "font-size: 1rem; padding: 15px; width: 100%; margin-top: 30px; background: #333; border: 1px solid #555;";
           changePassBtn.onclick = openChangePasswordModal;
           container.appendChild(changePassBtn);
-
-          // Recent Activity (Highscores)
-          const scoresContainer = document.createElement("div");
-          scoresContainer.style.cssText =
-            "width:100%; background:#1a1a1a; border:2px solid #333; border-radius:4px; padding:15px; max-height:250px; overflow-y:auto; margin-bottom:20px; text-align:left;";
-
-          scoresContainer.innerHTML =
-            "<h3 style='margin:0 0 10px 0; color:#ccc; font-size:1rem; border-bottom:1px solid #333; padding-bottom:5px;'>RECENT ACTIVITY</h3>";
-          if (totalHighscores === 0) {
-            scoresContainer.innerHTML =
-              "<div style='color:#888; text-align:center;'>No highscores yet.</div>";
-          } else {
-            let html =
-              "<div style='color:#335699; font-weight:bold; margin-bottom:5px; font-size:0.8rem; text-transform:uppercase;'>Recent Personal Records</div>";
-            Object.keys(highscores).forEach((key) => {
-              const time = highscores[key];
-              const ms = String(time % 1000).padStart(3, "0");
-              const s = String(Math.floor(time / 1000) % 60).padStart(2, "0");
-              const m = String(Math.floor(time / 60000)).padStart(2, "0");
-              let displayKey = key
-                .replace(/_/g, " ")
-                .replace("campaign", "Ch")
-                .replace("custom", "Custom");
-              html += `<div style="display:flex; justify-content:space-between; font-size:0.8rem; border-bottom:1px solid #333; padding:2px 0;"><span style="color:#aaa; text-transform:capitalize;">${displayKey}</span><span style="color:#fff; font-family:monospace;">${m}:${s}.${ms}</span></div>`;
-            });
-            scoresContainer.innerHTML = html;
-          }
-          container.appendChild(scoresContainer);
 
           // Logout
           const logoutBtn = document.createElement("button");
           logoutBtn.className = "btn";
           logoutBtn.textContent = "LOG OUT";
-          logoutBtn.style.background = "#a44";
-          logoutBtn.style.borderColor = "#822";
+          logoutBtn.style.cssText = "background: #a44; border-color: #822; width: 100%; margin-top: 10px; padding: 15px;";
           logoutBtn.onclick = () => {
             showConfirmPopup(
               "LOG OUT",
@@ -7690,6 +7743,30 @@
             );
           };
           container.appendChild(logoutBtn);
+        } else if (view === "user-profile") {
+          const data = context || {};
+          
+          if (data.loading) {
+            container.innerHTML = "<div style='color:#888; font-size:1.5rem; margin-top:50px;'>Loading Profile...</div>";
+            return;
+          }
+
+          subtitle.textContent = (data.username || "USER").toUpperCase();
+          container.style.maxWidth = "800px";
+
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "settings-close-btn";
+          closeBtn.innerHTML = "&times;";
+          closeBtn.style.top = "20px";
+          closeBtn.onclick = () => showMenu("leaderboards-new");
+          container.appendChild(closeBtn);
+
+          const skinHeader = document.createElement("div");
+          skinHeader.innerText = "SKINS COLLECTION";
+          skinHeader.style.cssText = "color: #ccc; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px; width: 100%;";
+          container.appendChild(skinHeader);
+
+          renderSkinGrid(container, data.skins || ["default"], false);
         } else if (view === "leaderboards-new") {
           subtitle.textContent = "LEADERBOARDS";
 
@@ -7834,7 +7911,7 @@
                       <div style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:1.2rem; font-weight:bold; color:#666; width:25px;">${i + 1}</span>
-                            <span style="font-weight:bold; color:${isMe ? "#fff" : "#ccc"}">${s.username}</span>
+                            <span style="font-weight:bold; color:${isMe ? "#fff" : "#ccc"}; cursor:pointer; text-decoration:underline;" onclick="openUserProfile('${s.username}')">${s.username}</span>
                         </div>
                         <span style="font-family:monospace; font-size:1.1rem; color:#fff;">${min}:${sec}.${ms}</span>
                       </div>
@@ -8005,7 +8082,7 @@
                   const min = String(Math.floor(t / 60000)).padStart(2, "0");
                   return `
                   <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333; ${s.username === currentUser ? "color:#335699; font-weight:bold;" : "color:#ccc;"}">
-                    <span>${i + 1}. ${s.username}</span>
+                    <span>${i + 1}. <span style="cursor:pointer; text-decoration:underline;" onclick="openUserProfile('${s.username}')">${s.username}</span></span>
                     <span style="font-family:monospace;">${min}:${sec}.${ms}</span>
                   </div>
                 `;
