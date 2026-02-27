@@ -1765,7 +1765,10 @@
 
       /* Leaderboard Hover Effects */
       .leaderboard-card {
-        transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+        transition:
+          transform 0.2s,
+          background-color 0.2s,
+          border-color 0.2s;
       }
       .leaderboard-card:hover {
         transform: scale(1.02);
@@ -1777,7 +1780,9 @@
         border-color: #4466aa !important;
       }
       .leaderboard-list-item {
-        transition: background-color 0.2s, padding-left 0.2s;
+        transition:
+          background-color 0.2s,
+          padding-left 0.2s;
         border-radius: 4px;
       }
       .leaderboard-list-item:hover {
@@ -2011,7 +2016,10 @@
         bluecoin: { name: "Blue Coin", copies: "Unlockable" },
         firstplacedaddy: { name: "First Place Daddy", copies: "1/1" },
         dino: { name: "Dino", copies: "1/2" },
-        emo: { name: "Emotion", copies: "1/3" },
+        emo: { name: "Emotions", copies: "1/3" },
+        emo2: { name: "Emotions 2", copies: "1/3" },
+        emo3: { name: "Emotions 3", copies: "1/3" },
+        kingbanana: { name: "King Banana", copies: "1/2" },
       };
       const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
@@ -5853,6 +5861,24 @@
                   el.style.backgroundImage = `url('emo.png')`;
                 }
                 el.style.filter = "";
+              } else if (skin === "emo2") {
+                if (this.level.status === "lost") {
+                  el.style.backgroundImage = `url('emo2death.png')`;
+                } else if (this.level.status === "won") {
+                  el.style.backgroundImage = `url('emo2win.png')`;
+                } else {
+                  el.style.backgroundImage = `url('emo2.png')`;
+                }
+                el.style.filter = "";
+              } else if (skin === "emo3") {
+                if (this.level.status === "lost") {
+                  el.style.backgroundImage = `url('emo3death.png')`;
+                } else if (this.level.status === "won") {
+                  el.style.backgroundImage = `url('emo3win.png')`;
+                } else {
+                  el.style.backgroundImage = `url('emo3.png')`;
+                }
+                el.style.filter = "";
               } else {
                 el.style.backgroundImage = `url('${skin}.png')`;
                 if (this.level.status === "lost") {
@@ -5872,7 +5898,6 @@
 
               // Adjust visuals for custom skins
               visualW = 1.0;
-              visualH = 1.0;
               visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
             }
           }
@@ -7817,7 +7842,8 @@
             let blueCoins = 0;
             if (gs.levelBlueCoins) {
               Object.keys(gs.levelBlueCoins).forEach((k) => {
-                if (gs.levelBlueCoins[k] && !k.startsWith("custom_")) blueCoins++;
+                if (gs.levelBlueCoins[k] && !k.startsWith("custom_"))
+                  blueCoins++;
               });
             }
             let chapterText = "CHAPTER 1";
@@ -7836,8 +7862,10 @@
               levelText = `LEVEL ${(gs.unlockedLevel || 0) + 1}`;
             }
             const statsDiv = document.createElement("div");
-            statsDiv.style.cssText = "display:flex; gap:10px; justify-content:center; margin-bottom:20px; width: 100%;";
-            const boxStyle = "background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align:center; flex: 1; min-width: 120px; display: flex; flex-direction: column; justify-content: center;";
+            statsDiv.style.cssText =
+              "display:flex; gap:10px; justify-content:center; margin-bottom:20px; width: 100%;";
+            const boxStyle =
+              "background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align:center; flex: 1; min-width: 120px; display: flex; flex-direction: column; justify-content: center;";
             statsDiv.innerHTML = `
                 <div style="${boxStyle}">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">BLUE COINS</div>
