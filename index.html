@@ -5891,14 +5891,14 @@
                   el.style.filter = "";
                 }
               }
-              el.style.backgroundSize = "100% 100%";
+              el.style.backgroundSize = "contain";
               el.style.backgroundRepeat = "no-repeat";
               el.style.backgroundPosition = "center";
               el.style.backgroundColor = "transparent";
 
               // Adjust visuals for custom skins
-              visualW = actor.size.y;
-              visualX = actor.pos.x - (actor.size.y - actor.size.x) / 2;
+              visualW = 1.0;
+              visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
             }
           }
 
