@@ -1854,8 +1854,8 @@
         class="editor-btn"
         onclick="
           if (gameSettings.editorNewTab)
-            window.open('Block%20Architect%20Pro.html', '_blank');
-          else window.location.href = 'Block%20Architect%20Pro.html';
+            window.open('Block Architect Pro.html', '_blank');
+          else window.location.href = 'Block Architect Pro.html';
             window.open('editor.html', '_blank');
           else window.location.href = 'editor.html';
         "
@@ -5891,7 +5891,7 @@
                   el.style.filter = "";
                 }
               }
-              el.style.backgroundSize = "contain";
+              el.style.backgroundSize = "100% 100%";
               el.style.backgroundRepeat = "no-repeat";
               el.style.backgroundPosition = "center";
               el.style.backgroundColor = "transparent";
@@ -6214,7 +6214,7 @@
 
       async function updateHighscoreDisplay() {
         if (
-          (currentGameMode !== "speedrun" && currentGameMode !== "deathrun") ||
+          (currentGameMode !== "speedrun" && currentGameMode !== "deathrun" && currentGameMode !== "chapter_speedrun") ||
           !currentLevelData
         )
           return;
