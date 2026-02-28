@@ -5897,8 +5897,8 @@
               el.style.backgroundColor = "transparent";
 
               // Adjust visuals for custom skins
-              visualW = 1.0;
-              visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
+              visualW = actor.size.y;
+              visualX = actor.pos.x - (actor.size.y - actor.size.x) / 2;
             }
           }
 
