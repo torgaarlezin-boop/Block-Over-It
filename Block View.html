@@ -1,0 +1,537 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Trophy, Clock, Skull, TrendingUp, Users, Activity, 
+  ChevronRight, Search, LayoutDashboard, Crown, Target, 
+  Gamepad2, ChevronDown, BarChart3
+} from 'lucide-react';
+// If using a bundler (Vite/Webpack), uncomment the import below and install @supabase/supabase-js
+// import { createClient } from '@supabase/supabase-js';
+
+// ============================================================================
+// ⚙️ SUPABASE CONFIGURATION
+// Replace these with the exact credentials from your index.html
+// ============================================================================
+const SUPABASE_URL = "https://heqmnluegbbglmhtublu.supabase.co";
+const SUPABASEKEY = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
+const TABLE_NAME = 'leaderboard'; // Update to your exact table name
+
+// Initialize Supabase (Mocked for safety in preview if keys are missing)
+// const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================================
+// 🧪 MOCK DATA (Used if Supabase is not configured)
+// ============================================================================
+const generateMockData = () => {
+  const players = ['Neo', 'Trinity', 'Morpheus', 'Cipher', 'Smith', 'Oracle', 'Dozer', 'Tank'];
+  const data = [];
+  for (let i = 0; i < 200; i++) {
+    const player = players[Math.floor(Math.random() * players.length)];
+    const chapter = Math.floor(Math.random() * 3) + 1;
+    const level = Math.floor(Math.random() * 10) + 1;
+    data.push({
+      id: i,
+      username: player,
+      chapter: chapter,
+      level: level,
+      time: (Math.random() * 45 + 15).toFixed(2), // 15s to 60s
+      deaths: Math.floor(Math.random() * 15),
+      created_at: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+    });
+  }
+  return data;
+};
+
+// ============================================================================
+// 🎨 UI COMPONENTS (Liquid Glass Design)
+// ============================================================================
+
+const GlassCard = ({ children, className = '', noPadding = false }) => (
+  <div className={`bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-2xl ${noPadding ? '' : 'p-6'} ${className}`}>
+    {children}
+  </div>
+);
+
+const StatCard = ({ title, value, icon: Icon, trend, trendUp }) => (
+  <GlassCard className="flex flex-col gap-4 relative overflow-hidden group hover:bg-white-[0.15] transition-all duration-300">
+    <div className="absolute -right-6 -top-6 text-white/5 group-hover:text-white/10 transition-colors duration-300">
+      <Icon size={100} />
+    </div>
+    <div className="flex justify-between items-start z-10">
+      <div className="p-3 bg-white/10 rounded-xl border border-white/10 backdrop-blur-md">
+        <Icon className="text-cyan-300" size={24} />
+      </div>
+      {trend && (
+        <span className={`text-sm font-semibold px-2 py-1 rounded-lg bg-white/5 border border-white/10 ${trendUp ? 'text-green-400' : 'text-rose-400'}`}>
+          {trend}
+        </span>
+      )}
+    </div>
+    <div className="z-10 mt-2">
+      <h3 className="text-white/60 text-sm font-medium mb-1 tracking-wider uppercase">{title}</h3>
+      <div className="text-3xl font-bold text-white drop-shadow-md">{value}</div>
+    </div>
+  </GlassCard>
+);
+
+const BackgroundEffects = () => (
+  <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-slate-950">
+    {/* Animated Blobs */}
+    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/30 mix-blend-screen blur-[120px] animate-blob"></div>
+    <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/20 mix-blend-screen blur-[120px] animate-blob animation-delay-2000"></div>
+    <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] rounded-full bg-blue-600/20 mix-blend-screen blur-[120px] animate-blob animation-delay-4000"></div>
+    {/* Grid Overlay */}
+    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgwVjB6bTIwIDIwaDIwdjIwaC0yMFYyMHptMCAwaC0yMFYwaDIwdjIweiIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjAxNSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+')] opacity-50"></div>
+  </div>
+);
+
+// ============================================================================
+// 🚀 MAIN APP
+// ============================================================================
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedChapter, setSelectedChapter] = useState('All');
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  // Fetch Data (Simulated or Real)
+  useEffect(() => {
+    const fetchGameData = async () => {
+      setLoading(true);
+      try {
+        if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+          // LIVE SUPABASE FETCH
+          // const { data: error, error: fetchError } = await supabase.from(TABLE_NAME).select('*');
+          // if (fetchError) throw fetchError;
+          // setData(data);
+          console.log("Supabase logic would run here if configured.");
+        } else {
+          // MOCK FETCH
+          setTimeout(() => {
+            setData(generateMockData());
+            setLoading(false);
+          }, 800);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+    fetchGameData();
+  }, []);
+
+  // Analytics Calculations
+  const analytics = useMemo(() => {
+    if (!data.length) return { totalPlayers: 0, avgTime: 0, totalDeaths: 0, totalRuns: 0 };
+    
+    const uniquePlayers = new Set(data.map(d => d.username)).size;
+    const totalRuns = data.length;
+    const totalDeaths = data.reduce((acc, curr) => acc + curr.deaths, 0);
+    const avgTime = data.reduce((acc, curr) => acc + parseFloat(curr.time), 0) / totalRuns;
+
+    // Top Players logic
+    const playerStats = data.reduce((acc, curr) => {
+      if (!acc[curr.username]) {
+        acc[curr.username] = { runs: 0, deaths: 0, bestTime: Infinity, totalTime: 0 };
+      }
+      acc[curr.username].runs += 1;
+      acc[curr.username].deaths += curr.deaths;
+      acc[curr.username].totalTime += parseFloat(curr.time);
+      if (parseFloat(curr.time) < acc[curr.username].bestTime) {
+        acc[curr.username].bestTime = parseFloat(curr.time);
+      }
+      return acc;
+    }, {});
+
+    const topPlayers = Object.entries(playerStats)
+      .map(([username, stats]) => ({ username, ...stats }))
+      .sort((a, b) => b.runs - a.runs) // Sort by most active for generic leaderboard
+      .slice(0, 10);
+
+    return { totalPlayers: uniquePlayers, avgTime: avgTime.toFixed(2), totalDeaths, totalRuns, topPlayers };
+  }, [data]);
+
+  // Filtered Leaderboard Data
+  const filteredData = useMemo(() => {
+    let filtered = data;
+    if (selectedChapter !== 'All') {
+      filtered = filtered.filter(d => d.chapter.toString() === selectedChapter);
+    }
+    // Sort by best time
+    return [...filtered].sort((a, b) => parseFloat(a.time) - parseFloat(b.time)).slice(0, 50);
+  }, [data, selectedChapter]);
+
+  // Views
+  const renderDashboard = () => (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Top Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Total Players" value={analytics.totalPlayers} icon={Users} trend="+12%" trendUp={true} />
+        <StatCard title="Total Runs Logged" value={analytics.totalRuns} icon={Gamepad2} trend="+34%" trendUp={true} />
+        <StatCard title="Average Clear Time" value={`${analytics.avgTime}s`} icon={Clock} trend="-2.1s" trendUp={true} />
+        <StatCard title="Total Deaths" value={analytics.totalDeaths.toLocaleString()} icon={Skull} trend="+5%" trendUp={false} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Global Activity Chart (Simulated visually) */}
+        <GlassCard className="lg:col-span-2 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Activity className="text-cyan-400" />
+              Global Activity
+            </h2>
+            <select className="bg-white/5 border border-white/10 text-white text-sm rounded-lg px-3 py-1.5 outline-none focus:border-cyan-400/50">
+              <option className="bg-slate-900">Last 7 Days</option>
+              <option className="bg-slate-900">Last 30 Days</option>
+            </select>
+          </div>
+          <div className="flex-1 min-h-[250px] flex items-end gap-2 pt-4">
+            {/* Simple CSS Bar Chart for aesthetics */}
+            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 100, 75, 50, 85, 65].map((h, i) => (
+              <div key={i} className="flex-1 flex flex-col justify-end group">
+                <div 
+                  className="w-full bg-gradient-to-t from-cyan-500/20 to-cyan-400/50 rounded-t-md transition-all duration-300 group-hover:to-cyan-300" 
+                  style={{ height: `${h}%` }}
+                ></div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Most Active Players */}
+        <GlassCard className="flex flex-col">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            <Crown className="text-yellow-400" />
+            Top Operatives
+          </h2>
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+            {analytics.topPlayers.slice(0, 5).map((player, idx) => (
+              <div 
+                key={player.username} 
+                className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                onClick={() => { setSelectedPlayer(player); setActiveTab('player'); }}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg
+                  ${idx === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 
+                    idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-300/50' : 
+                    idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/50' : 
+                    'bg-white/10 text-white/50 border border-white/10'}`}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-medium">{player.username}</h4>
+                  <p className="text-white/50 text-xs">{player.runs} total runs</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-cyan-300 font-mono text-sm">{player.bestTime}s</div>
+                  <div className="text-white/40 text-[10px] uppercase">Best Time</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </div>
+    </div>
+  );
+
+  const renderLeaderboards = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <Trophy className="text-yellow-400" />
+          Global Rankings
+        </h2>
+        
+        <div className="flex flex-wrap gap-2">
+          {['All', '1', '2', '3'].map(chap => (
+            <button
+              key={chap}
+              onClick={() => setSelectedChapter(chap)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
+                ${selectedChapter === chap 
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]' 
+                  : 'bg-white/5 text-white/60 border-white/5 hover:bg-white/10 hover:text-white'}`}
+            >
+              {chap === 'All' ? 'All Chapters' : `Chapter ${chap}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <GlassCard noPadding className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white/5 border-b border-white/10">
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Rank</th>
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Player</th>
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Chapter-Level</th>
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Time</th>
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Deaths</th>
+                <th className="p-4 text-white/60 font-medium text-sm tracking-wider uppercase">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filteredData.map((row, idx) => (
+                <tr 
+                  key={row.id} 
+                  className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                  onClick={() => {
+                    const p = analytics.topPlayers.find(pl => pl.username === row.username);
+                    if(p) { setSelectedPlayer(p); setActiveTab('player'); }
+                  }}
+                >
+                  <td className="p-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                      ${idx === 0 ? 'text-yellow-400 bg-yellow-400/10' : 
+                        idx === 1 ? 'text-slate-300 bg-slate-300/10' : 
+                        idx === 2 ? 'text-amber-600 bg-amber-600/10' : 'text-white/40'}`}>
+                      #{idx + 1}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="font-medium text-white group-hover:text-cyan-300 transition-colors">
+                      {row.username}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="px-2 py-1 bg-white/5 rounded text-white/80 text-xs border border-white/10">
+                      Ch {row.chapter} - Lv {row.level}
+                    </span>
+                  </td>
+                  <td className="p-4 font-mono text-cyan-200">
+                    {row.time}s
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-1.5 text-rose-300/80">
+                      <Skull size={14} />
+                      {row.deaths}
+                    </div>
+                  </td>
+                  <td className="p-4 text-white/40 text-sm">
+                    {new Date(row.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+              {filteredData.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-white/40">
+                    No data found for this filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  );
+
+  const renderPlayerProfile = () => {
+    if (!selectedPlayer) return null;
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm"
+        >
+          <ChevronRight className="rotate-180" size={16} /> Back to Dashboard
+        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Identity Card */}
+          <GlassCard className="flex flex-col items-center text-center p-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent"></div>
+            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-500 p-1 mb-4 z-10 shadow-lg shadow-cyan-500/20">
+              <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-900">
+                <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-cyan-400 to-purple-400">
+                  {selectedPlayer.username.charAt(0)}
+                </span>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white z-10 mb-1">{selectedPlayer.username}</h2>
+            <span className="px-3 py-1 bg-white/10 rounded-full text-xs text-white/70 border border-white/10 z-10">
+              Veteran Operative
+            </span>
+            
+            <div className="w-full grid grid-cols-2 gap-4 mt-8 z-10">
+              <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="text-white/50 text-xs uppercase mb-1">Win Rate</div>
+                <div className="text-xl font-bold text-green-400">
+                  {Math.max(10, 100 - (selectedPlayer.deaths / selectedPlayer.runs * 5)).toFixed(1)}%
+                </div>
+              </div>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="text-white/50 text-xs uppercase mb-1">Total Time</div>
+                <div className="text-xl font-bold text-cyan-400">
+                  {(selectedPlayer.totalTime / 60).toFixed(1)}m
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Deep Stats */}
+          <GlassCard className="lg:col-span-2 space-y-6">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2 border-b border-white/10 pb-4">
+              <Target className="text-purple-400" />
+              Performance Metrics
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 text-white/60 mb-2">
+                  <Gamepad2 size={16} /> Total Runs
+                </div>
+                <div className="text-2xl font-bold text-white">{selectedPlayer.runs}</div>
+              </div>
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 text-white/60 mb-2">
+                  <Clock size={16} /> Best Time
+                </div>
+                <div className="text-2xl font-mono text-cyan-300">{selectedPlayer.bestTime}s</div>
+              </div>
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-2 text-white/60 mb-2">
+                  <Skull size={16} /> Total Deaths
+                </div>
+                <div className="text-2xl font-bold text-rose-400">{selectedPlayer.deaths}</div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h4 className="text-sm font-medium text-white/60 uppercase mb-4">Recent Activity (Last 5 Runs)</h4>
+              <div className="space-y-3">
+                {data.filter(d => d.username === selectedPlayer.username).slice(0,5).map((run, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 bg-white/[0.02] border border-white/5 rounded-lg hover:bg-white/[0.05] transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded bg-cyan-500/10 text-cyan-400 flex flex-col items-center justify-center font-bold text-xs border border-cyan-500/20">
+                        <span>CH{run.chapter}</span>
+                      </div>
+                      <div>
+                        <div className="text-white text-sm font-medium">Level {run.level}</div>
+                        <div className="text-white/40 text-xs">{new Date(run.created_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-rose-300 text-sm flex items-center justify-end gap-1"><Skull size={12}/> {run.deaths}</div>
+                      </div>
+                      <div className="text-right w-20">
+                        <div className="text-cyan-200 font-mono text-sm">{run.time}s</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      </div>
+    );
+  };
+
+  // Global Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+        <BackgroundEffects />
+        <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+        <div className="text-cyan-400 font-mono tracking-widest animate-pulse">ESTABLISHING UPLINK...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen text-slate-200 font-sans selection:bg-cyan-500/30">
+      <BackgroundEffects />
+      
+      {/* Sidebar / Navigation */}
+      <nav className="fixed top-0 left-0 h-full w-20 lg:w-64 bg-slate-950/50 backdrop-blur-2xl border-r border-white/10 flex flex-col transition-all duration-300 z-50">
+        <div className="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-white/10">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
+            <Trophy className="text-white" size={20} />
+          </div>
+          <span className="hidden lg:block font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 tracking-tight">
+            Block Stats
+          </span>
+        </div>
+
+        <div className="flex-1 py-6 flex flex-col gap-2 px-3">
+          <button 
+            onClick={() => { setActiveTab('dashboard'); setSelectedPlayer(null); }}
+            className={`flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl transition-all duration-300 group
+              ${activeTab === 'dashboard' ? 'bg-white/10 text-white shadow-inner border border-white/5' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}
+          >
+            <LayoutDashboard size={20} className={activeTab === 'dashboard' ? 'text-cyan-400' : 'group-hover:text-cyan-400 transition-colors'} />
+            <span className="hidden lg:block font-medium">Dashboard</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('leaderboards')}
+            className={`flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl transition-all duration-300 group
+              ${activeTab === 'leaderboards' ? 'bg-white/10 text-white shadow-inner border border-white/5' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}
+          >
+            <BarChart3 size={20} className={activeTab === 'leaderboards' ? 'text-purple-400' : 'group-hover:text-purple-400 transition-colors'} />
+            <span className="hidden lg:block font-medium">Leaderboards</span>
+          </button>
+        </div>
+        
+        <div className="p-4 border-t border-white/10 hidden lg:block">
+          <div className="bg-white/5 rounded-xl p-4 border border-white/5 text-sm text-white/50 text-center">
+            System Online <br/>
+            <span className="text-cyan-400 animate-pulse inline-block mt-1">● Live Sync</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="ml-20 lg:ml-64 p-6 lg:p-10 min-h-screen flex flex-col">
+        {/* Top Header */}
+        <header className="flex justify-between items-center mb-10 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md relative z-40">
+          <div className="relative w-full max-w-md hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search operative logs..." 
+              className="w-full bg-black/20 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-white/30"
+            />
+          </div>
+          
+          <div className="flex items-center gap-4 ml-auto">
+            <button className="relative p-2 text-white/60 hover:text-white transition-colors">
+              <Activity size={20} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+            </button>
+            <div className="h-8 w-px bg-white/10 mx-2"></div>
+            <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="text-right hidden sm:block">
+                <div className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">Admin</div>
+                <div className="text-[10px] text-white/40 uppercase tracking-wider">Command Level</div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-2 border-slate-600 flex items-center justify-center">
+                <Crown size={16} className="text-slate-400" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic View Rendering */}
+        <div className="flex-1 relative z-10">
+          {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'leaderboards' && renderLeaderboards()}
+          {activeTab === 'player' && renderPlayerProfile()}
+        </div>
+        
+      </main>
+
+      {/* Custom Global Scrollbar Styles inserted securely */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+      `}} />
+    </div>
+  );
+}
