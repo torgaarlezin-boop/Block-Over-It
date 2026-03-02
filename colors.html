@@ -137,7 +137,8 @@
 
     <!-- Deck Configuration -->
     <div id="deck-menu">
-        <h2 class="text-4xl font-black mb-12 italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500">DECK SLOTS</h2>
+        <h2 class="text-4xl font-black mb-4 italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500">DECK SLOTS</h2>
+        <p class="text-slate-400 text-sm mb-12 uppercase tracking-widest">Wild & +4 always in pool • Choose your specials</p>
         <div class="flex flex-wrap justify-center gap-8 mb-16 w-full max-w-4xl px-8">
             <div class="flex flex-col items-center gap-4">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Common</span>
@@ -185,6 +186,7 @@
         <div class="absolute left-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-6">
             <div id="current-color-dot" class="w-16 h-16 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] border-4 border-white/20 transition-all duration-500"></div>
             <div id="turn-badge" class="px-6 py-2 rounded-full border border-white/10 bg-white/5 font-bold text-xs tracking-widest transition-all duration-500">YOUR TURN</div>
+
         </div>
 
         <div id="player-hand" class="hand-container"></div>
@@ -203,6 +205,16 @@
         </div>
     </div>
 
+    <!-- Reveal Modal: shows opponent hand, waits for continue -->
+    <div id="reveal-modal" class="modal-overlay">
+        <div class="text-center max-w-3xl w-full px-8">
+            <h2 class="text-3xl font-black mb-2 uppercase tracking-widest text-white drop-shadow-lg">Opponent's Hand</h2>
+            <p class="text-white/40 text-sm mb-8 uppercase tracking-widest">You peeked!</p>
+            <div id="reveal-hand-display" class="flex flex-wrap justify-center gap-3 mb-10"></div>
+            <button onclick="closeRevealModal()" class="px-16 py-4 bg-white text-slate-900 rounded-full font-black text-xl hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)]">CONTINUE</button>
+        </div>
+    </div>
+
     <!-- Standard Win Modal -->
     <div id="win-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[6000] flex flex-col items-center justify-center backdrop-blur-md">
         <div class="text-center">
@@ -217,13 +229,15 @@
         const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', '+2'];
         
         // Card definitions with rarity strictly enforced for deck building
+        // NOTE: 'wild' and 'plus4' are ALWAYS in the draw pool automatically — not selectable here
         const WILD_DATABASE = [
-            { id: 'wild', name: 'WILD', val: 'Wild', rarity: 'common' },
             { id: 'reveal', name: 'REVEAL', val: 'Reveal', rarity: 'common' },
-            { id: 'plus4', name: '+4', val: '+4', rarity: 'rare' },
-            { id: 'plus2wild', name: 'WILD +2', val: 'W+2', rarity: 'rare' },
-            { id: 'wildskip', name: 'WILD SKIP', val: 'WSkip', rarity: 'epic' },
-            { id: 'h13', name: 'HAND 13', val: 'H13', rarity: 'legendary' }
+            { id: 'reflect', name: 'REFLECT', val: 'Reflect', rarity: 'rare' },
+            { id: 'doubleedge', name: 'DOUBLE EDGE', val: 'DoubleEdge', rarity: 'rare' },
+            { id: 'disarm', name: 'DISARM', val: 'Disarm', rarity: 'epic' },
+            { id: 'handswap', name: 'HAND SWAP', val: 'HandSwap', rarity: 'epic' },
+            { id: 'h13', name: 'HAND 13', val: 'H13', rarity: 'legendary' },
+            { id: 'doubleturn', name: 'DOUBLE TURN', val: 'DoubleTurn', rarity: 'legendary' }
         ];
 
         const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
@@ -233,7 +247,7 @@
             turn: 'player', gameActive: false, activeColor: '',
             pendingWild: null, revealState: null, penaltyPool: 0,
             activePenaltyType: null,
-            userDeckSlots: ['wild', 'plus4', 'wildskip', 'h13'] // Common, Rare, Epic, Legendary slots
+            userDeckSlots: ['reveal', 'reflect', 'disarm', 'doubleturn'] // Common, Rare, Epic, Legendary slots
         };
 
         // --- Core UI & Menu Handlers ---
@@ -330,7 +344,8 @@
         function init() {
             state.deck = []; state.discard = []; state.playerHand = []; state.aiHand = [];
             state.turn = 'player'; state.penaltyPool = 0; state.activePenaltyType = null;
-            state.revealState = null; state.pendingWild = null;
+            state.revealState = null; state.pendingWild = null; state.doubleTurnPending = false;
+
             createDeck();
             shuffle(state.deck);
             deal();
@@ -370,7 +385,7 @@
 
         function drawFromDeck() {
             if (state.deck.length === 0) {
-                if(state.discard.length <= 1) return { color: 'black', val: 'Wild' }; // Failsafe
+                if(state.discard.length <= 1) return { color: 'black', val: 'Wild' };
                 const top = state.discard.pop();
                 state.deck = [...state.discard];
                 state.discard = [top];
@@ -378,13 +393,20 @@
             }
             let card = state.deck.pop();
             if (card.val === 'WILD_GENERIC') {
-                // Determine wild from custom slots
-                // The prompt specified: "regular wild, +4, and their 3 selections"
-                // However, due to the 4 explicit graphical slots, we use all 4 selections to provide equal chances.
-                const pool = ['wild', 'plus4', ...state.userDeckSlots];
-                const pickedId = pool[Math.floor(Math.random() * pool.length)];
-                const data = WILD_DATABASE.find(d => d.id === pickedId);
-                return { color: 'black', val: data.val };
+                // Wild and +4 always in pool (weighted 2x), plus user custom slots
+                const alwaysCards = [
+                    { color: 'black', val: 'Wild' },
+                    { color: 'black', val: 'Wild' },
+                    { color: 'black', val: '+4' },
+                    { color: 'black', val: '+4' }
+                ];
+                const customCards = state.userDeckSlots.map(id => {
+                    const data = WILD_DATABASE.find(d => d.id === id);
+                    return { color: 'black', val: data ? data.val : 'Wild' };
+                });
+                const pool = [...alwaysCards, ...customCards];
+                const picked = pool[Math.floor(Math.random() * pool.length)];
+                return { color: picked.color, val: picked.val };
             }
             return card;
         }
@@ -410,18 +432,29 @@
             if (index !== -1) el.style.marginLeft = index === 0 ? '0' : '-55px'; // Increased overlap for cleaner hand
 
             let valContent = card.val;
+            if (card.val === '+4') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><rect x="4" y="14" width="22" height="28" rx="3" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="10" y="8" width="22" height="28" rx="3" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/><rect x="16" y="2" width="22" height="28" rx="3" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/><text x="27" y="21" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="900" fill="white">+4</text></svg>`;
+            } else
             
             // Custom Icons & Aesthetics (No Rarities!)
             if (card.val === 'H13') {
-                valContent = `<div class="w-12 h-16 border-[3px] border-white/80 rounded flex items-center justify-center bg-black/20 shadow-inner"><span class="font-black text-2xl italic tracking-tighter text-white">13</span></div>`;
+                valContent = `<svg width="52" height="44" viewBox="0 0 52 44"><text x="26" y="34" text-anchor="middle" font-family="sans-serif" font-size="38" font-weight="900" fill="rgba(255,255,255,0.15)" letter-spacing="-2">13</text><text x="26" y="32" text-anchor="middle" font-family="sans-serif" font-size="34" font-weight="900" fill="white" letter-spacing="-2" style="filter:drop-shadow(0 0 8px rgba(255,255,255,0.8))">13</text></svg>`;
             } else if (card.val === 'Reveal') {
-                valContent = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="opacity-90"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
-            } else if (card.val === 'WSkip') {
-                valContent = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="opacity-90"><path d="m13 18 6-6-6-6"/><path d="m5 18 6-6-6-6"/></svg>`;
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><path d="M4 22 C10 10, 34 10, 40 22 C34 34, 10 34, 4 22Z" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/><circle cx="22" cy="22" r="7" fill="white" opacity="0.9"/><circle cx="22" cy="22" r="3.5" fill="#1e293b"/><line x1="22" y1="2" x2="22" y2="8" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/><line x1="22" y1="36" x2="22" y2="42" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="10" x2="10" y2="14" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/><line x1="34" y1="30" x2="38" y2="34" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/><line x1="38" y1="10" x2="34" y2="14" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="30" x2="6" y2="34" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/></svg>`;
+            } else if (card.val === 'Reflect') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><path d="M22 4 L36 10 L36 24 C36 32 22 40 22 40 C22 40 8 32 8 24 L8 10 Z" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/><path d="M14 22 L22 14 L30 22" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 14 L22 30" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+            } else if (card.val === 'HandSwap') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><rect x="4" y="14" width="16" height="20" rx="3" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><rect x="24" y="10" width="16" height="20" rx="3" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/><path d="M16 8 L22 4 L28 8" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 4 L22 12" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M28 36 L22 40 L16 36" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 40 L22 32" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`;
+            } else if (card.val === 'DoubleEdge') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><path d="M8 36 L20 14 L22 18 L36 8" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 8 L32 12 M36 8 L38 13" stroke="rgba(255,255,255,0.9)" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="32" r="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><text x="12" y="35.5" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="900" fill="white">+2</text><circle cx="32" cy="30" r="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/><text x="32" y="33.5" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="900" fill="white">+5</text></svg>`;
+            } else if (card.val === 'Disarm') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><rect x="6" y="8" width="14" height="20" rx="2" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" transform="rotate(-15 13 18)"/><rect x="24" y="6" width="14" height="20" rx="2" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" transform="rotate(15 31 16)"/><circle cx="22" cy="30" r="8" fill="rgba(239,68,68,0.2)" stroke="rgba(239,68,68,0.8)" stroke-width="1.5"/><path d="M17 25 L27 35 M27 25 L17 35" stroke="rgba(239,68,68,0.9)" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+            } else if (card.val === 'DoubleTurn') {
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><path d="M8 16 C8 8 36 8 36 16 L36 20 L40 16 L36 12" stroke="rgba(255,255,255,0.8)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 28 C36 36 8 36 8 28 L8 24 L4 28 L8 32" stroke="rgba(255,255,255,0.8)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22" cy="22" r="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/><path d="M20 22 L23 19 L23 25 Z" fill="white" opacity="0.8"/></svg>`;
             } else if (card.val === 'Skip') {
-                valContent = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" class="opacity-90"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+                valContent = `<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"/><path d="M8 8 L32 32" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/></svg>`;
             } else if (card.val === 'Wild') {
-                valContent = `<div class="w-8 h-8 rounded-full border-4 border-white/80" style="background: conic-gradient(#ff4757 0deg 90deg, #2e86de 90deg 180deg, #2ed573 180deg 270deg, #ffa502 270deg 360deg)"></div>`;
+                valContent = `<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/><path d="M22 4 A18 18 0 0 1 40 22" stroke="#ff4757" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M40 22 A18 18 0 0 1 22 40" stroke="#2e86de" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M22 40 A18 18 0 0 1 4 22" stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M4 22 A18 18 0 0 1 22 4" stroke="#ffa502" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="22" cy="22" r="5" fill="white" opacity="0.9"/></svg>`;
             }
 
             el.innerHTML = `
@@ -473,7 +506,7 @@
                 badge.className = "px-6 py-2 rounded-full border border-green-500/50 bg-green-500/10 text-green-400 font-bold text-xs shadow-[0_0_15px_rgba(34,197,94,0.3)]";
                 
                 // Deck pulse if forced to draw
-                if (!state.playerHand.some(isCardPlayable) || state.penaltyPool > 0) {
+                if (state.penaltyPool > 0) {
                     deckEl.classList.add('animate-pulse', 'border-yellow-400', 'shadow-[0_0_20px_rgba(251,191,36,0.6)]');
                     deckEl.classList.remove('border-[#334155]');
                 } else {
@@ -527,8 +560,10 @@
         // --- Game Logic ---
         function isCardPlayable(card) {
             if (state.penaltyPool > 0) {
+                // Can reflect +2 or +4
+                if (card.val === 'Reflect') return true;
                 // Mandatory Stacking Logic
-                if (state.activePenaltyType === '+2') return card.val === '+2' || card.val === 'W+2';
+                if (state.activePenaltyType === '+2') return card.val === '+2';
                 if (state.activePenaltyType === '+4') return card.val === '+4';
                 return false;
             }
@@ -572,48 +607,87 @@
                     showFloatingText(`${chosen.toUpperCase()}`, 'center');
                 }
             } else {
-                state.activeColor = card.color;
+                if (card.color !== 'black') state.activeColor = card.color;
             }
 
             handleEffectsAndFinish(card, currentPlayer);
         }
 
         function selectWildColor(c) {
-            state.pendingWild.assignedColor = c;
+            const card = state.pendingWild;
+            card.assignedColor = c;
             state.activeColor = c;
             document.getElementById('wild-modal').style.display = 'none';
-            handleEffectsAndFinish(state.pendingWild, 'player');
+            state.pendingWild = null;
+            handleEffectsAndFinish(card, 'player');
         }
 
         function handleEffectsAndFinish(card, currentPlayer) {
             let nextTurn = currentPlayer === 'player' ? 'ai' : 'player';
             let skipTurn = false;
+            let extraTurn = false;
 
             // Apply specific card effects
-            if (card.val === 'Skip' || card.val === 'WSkip') {
+            if (card.val === 'Skip') {
                 skipTurn = true;
                 showFloatingText('SKIPPED!', currentPlayer === 'player' ? 'ai-area' : 'player-area');
-            } else if (card.val === '+2' || card.val === 'W+2') {
+            } else if (card.val === '+2') {
                 state.penaltyPool += 2;
-                state.activePenaltyType = '+2'; // W+2 stacks on +2 pool
+                state.activePenaltyType = '+2';
             } else if (card.val === '+4') {
                 state.penaltyPool += 4;
                 state.activePenaltyType = '+4';
+            } else if (card.val === 'Reflect') {
+                // Reflect: penalty stays, bounces to opponent — nextTurn (opponent) now faces it
+                showFloatingText('REFLECTED!', currentPlayer === 'player' ? 'player-area' : 'ai-area');
+            } else if (card.val === 'Disarm') {
+                // Disarm: all players discard their wild (black) cards
+                const discardWilds = (hand) => {
+                    const wilds = hand.filter(c => c.color === 'black');
+                    wilds.forEach(c => state.discard.push(c));
+                    return hand.filter(c => c.color !== 'black');
+                };
+                const pBefore = state.playerHand.length;
+                const aBefore = state.aiHand.length;
+                state.playerHand = discardWilds(state.playerHand);
+                state.aiHand = discardWilds(state.aiHand);
+                const pLost = pBefore - state.playerHand.length;
+                const aLost = aBefore - state.aiHand.length;
+                showFloatingText(`DISARMED! -${pLost}/-${aLost} WILDS`, 'center');
+            } else if (card.val === 'HandSwap') {
+                // Hand Swap: exchange hands with opponent
+                const temp = state.playerHand;
+                state.playerHand = state.aiHand;
+                state.aiHand = temp;
+                showFloatingText('HANDS SWAPPED!', 'center');
+            } else if (card.val === 'DoubleEdge') {
+                // Double Edge: you draw 2, opponent draws 5
+                if (currentPlayer === 'player') {
+                    for (let i = 0; i < 2; i++) state.playerHand.push(drawFromDeck());
+                    for (let i = 0; i < 5; i++) state.aiHand.push(drawFromDeck());
+                } else {
+                    for (let i = 0; i < 2; i++) state.aiHand.push(drawFromDeck());
+                    for (let i = 0; i < 5; i++) state.playerHand.push(drawFromDeck());
+                }
+                showFloatingText('DOUBLE EDGE!', currentPlayer === 'player' ? 'player-area' : 'ai-area');
             } else if (card.val === 'Reveal') {
                 triggerReveal();
+            } else if (card.val === 'DoubleTurn') {
+                extraTurn = true;
+                showFloatingText('DOUBLE TURN!', currentPlayer === 'player' ? 'player-area' : 'ai-area');
             }
 
             // UNO Callout
             const currentHand = currentPlayer === 'player' ? state.playerHand : state.aiHand;
             if (currentHand.length === 1) {
-                showFloatingText('UNO!', currentPlayer === 'player' ? 'player-area' : 'ai-area');
+                showFloatingText('ONE CARD!', currentPlayer === 'player' ? 'player-area' : 'ai-area');
             }
 
             if (checkWin()) return;
 
             // Resolve Turn State
-            if (skipTurn) {
-                state.turn = currentPlayer; // Player goes again
+            if (skipTurn || extraTurn) {
+                state.turn = currentPlayer; // Same player goes again
             } else {
                 state.turn = nextTurn;
             }
@@ -623,12 +697,19 @@
         }
 
         function triggerReveal() {
-            state.revealState = state.turn === 'player' ? 'player-sees-ai' : 'ai-sees-player';
-            updateUI();
-            setTimeout(() => {
-                state.revealState = null;
-                updateUI();
-            }, 3000);
+            // Show the opponent's hand in a modal — game pauses until player presses Continue
+            const modal = document.getElementById('reveal-modal');
+            const display = document.getElementById('reveal-hand-display');
+            display.innerHTML = '';
+            const opponentHand = state.turn === 'player' ? state.aiHand : state.playerHand;
+            opponentHand.forEach(c => {
+                display.appendChild(createCardUI(c, -1, false, true));
+            });
+            modal.style.display = 'flex';
+        }
+
+        function closeRevealModal() {
+            document.getElementById('reveal-modal').style.display = 'none';
         }
 
         function handleManualDraw() {
@@ -641,7 +722,7 @@
                 state.activePenaltyType = null;
                 state.turn = 'ai';
             } else {
-                if (state.playerHand.some(isCardPlayable)) return; // Don't draw if playable
+                // Draw anytime is always enabled
                 state.playerHand.push(drawFromDeck());
                 state.turn = 'ai'; // Drawing 1 normal card ends turn immediately
             }
@@ -654,8 +735,12 @@
             const playable = state.aiHand.map((c, i) => ({c, i})).filter(item => isCardPlayable(item.c));
             
             if (playable.length > 0) {
-                // AI picks first playable card
-                const item = playable[0];
+                // AI prefers Reflect when penalty is incoming
+                let item = playable[0];
+                if (state.penaltyPool > 0) {
+                    const reflect = playable.find(p => p.c.val === 'Reflect');
+                    if (reflect) item = reflect;
+                }
                 state.aiHand.splice(item.i, 1);
                 executePlay(item.c, 'ai');
             } else {
@@ -668,6 +753,7 @@
                     state.aiHand.push(drawFromDeck());
                 }
                 state.turn = 'player';
+                if (checkWin()) return;
                 updateUI();
             }
         }
