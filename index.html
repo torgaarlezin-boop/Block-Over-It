@@ -2172,7 +2172,14 @@
               saveSettings();
               checkBlueCoinSkinUnlock();
             }
-            showPopup("SUCCESS", "Logged in! Data synced.", () => {});
+            showPopup("SUCCESS", "Logged in! Data synced.", () => {
+              const now = new Date();
+              const hour = now.getHours();
+              const minute = now.getMinutes();
+              if (hour < 9 || (hour === 9 && minute < 15) || hour >= 16) {
+                showAfterSchoolReward();
+              }
+            });
           }
           updateLoginButton();
           safeStorage.setItem("blockoverit_username", currentUser);
@@ -2277,6 +2284,27 @@
         if (msgEl) msgEl.innerHTML = html;
         const btns = document.querySelector(".popup-buttons");
         if (btns) btns.style.display = "none";
+      }
+
+      function showAfterSchoolReward() {
+        if (currentUserSkins.includes("rainbowmonster")) return;
+
+        const html = `
+            Thanks for playing outside of school! Here's your reward:
+            <div style="width: 100%; display: flex; justify-content: center; margin: 20px 0;">
+                <div style="width: 80px; height: 160px; background-image: url('rainbowmonster.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));"></div>
+            </div>
+        `;
+        showPopup("AFTER SCHOOL REWARD", "", () => {
+          if (!currentUserSkins.includes("rainbowmonster")) {
+            currentUserSkins.push("rainbowmonster");
+            syncDataToCloud();
+          }
+        });
+        const msgEl = document.querySelector(".popup-message");
+        if (msgEl) msgEl.innerHTML = html;
+        const okBtn = document.querySelector(".popup-buttons .popup-btn");
+        if (okBtn) okBtn.textContent = "CLAIM";
       }
 
       function openChangePasswordModal() {
@@ -5852,44 +5880,30 @@
             el.style.backgroundColor = actor.color || "";
 
             if (skin != "default") {
-              if (skin === "emo") {
-                if (this.level.status === "lost") {
-                  el.style.backgroundImage = `url('emodeath.png')`;
-                } else if (this.level.status === "won") {
+              if (this.level.status === "won") {
+                if (skin === "emo") {
                   el.style.backgroundImage = `url('emowin.png')`;
-                } else {
-                  el.style.backgroundImage = `url('emo.png')`;
-                }
-                el.style.filter = "";
-              } else if (skin === "emo2") {
-                if (this.level.status === "lost") {
-                  el.style.backgroundImage = `url('emo2death.png')`;
-                } else if (this.level.status === "won") {
+                } else if (skin === "emo2") {
                   el.style.backgroundImage = `url('emo2win.png')`;
-                } else {
-                  el.style.backgroundImage = `url('emo2.png')`;
-                }
-                el.style.filter = "";
-              } else if (skin === "emo3") {
-                if (this.level.status === "lost") {
-                  el.style.backgroundImage = `url('emo3death.png')`;
-                } else if (this.level.status === "won") {
+                } else if (skin === "emo3") {
                   el.style.backgroundImage = `url('emo3win.png')`;
                 } else {
-                  el.style.backgroundImage = `url('emo3.png')`;
-                }
-                el.style.filter = "";
-              } else {
-                el.style.backgroundImage = `url('${skin}.png')`;
-                if (this.level.status === "lost") {
-                  el.style.filter =
-                    "grayscale(100%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)";
-                } else if (this.level.status === "won") {
+                  el.style.backgroundImage = `url('${skin}.png')`;
                   el.style.filter =
                     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
-                } else {
-                  el.style.filter = "";
                 }
+              } else {
+                // Default state (playing or lost)
+                if (skin === "emo") {
+                  el.style.backgroundImage = `url('emo.png')`;
+                } else if (skin === "emo2") {
+                  el.style.backgroundImage = `url('emo2.png')`;
+                } else if (skin === "emo3") {
+                  el.style.backgroundImage = `url('emo3.png')`;
+                } else {
+                  el.style.backgroundImage = `url('${skin}.png')`;
+                }
+                el.style.filter = "";
               }
               el.style.backgroundSize = "contain";
               el.style.backgroundRepeat = "no-repeat";
@@ -8892,7 +8906,14 @@
       if (savedUser) {
         currentUser = savedUser;
         updateLoginButton();
-        fetchAndSyncUserData();
+        fetchAndSyncUserData().then(() => {
+          const now = new Date();
+          const hour = now.getHours();
+          const minute = now.getMinutes();
+          if (hour < 9 || (hour === 9 && minute < 15) || hour >= 16) {
+            showAfterSchoolReward();
+          }
+        });
       } else {
         if (!safeStorage.getItem("hasSeenLoginPrompt")) {
           safeStorage.setItem("hasSeenLoginPrompt", "true");
