@@ -2020,7 +2020,6 @@
         emo2: { name: "Emotions 2", copies: "1/3" },
         emo3: { name: "Emotions 3", copies: "1/3" },
         kingbanana: { name: "King Banana", copies: "1/2" },
-        j_imbo: {name: "J_imbo", copies: "1/1"},
       };
       const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
@@ -2842,6 +2841,12 @@
           artist: "DELOsound",
           file: "showcase.mp3",
         },
+        {
+          id: "breakcore",
+          title: "[BREAKCORE]In-tHE-mInD__!",
+          artist: "Chairlord",
+          file: "[BREAKCORE]In-tHE-mInD__!.mp3",
+        },
       ];
 
       const SETTINGS_KEY = "blockoverit_settings";
@@ -2897,6 +2902,8 @@
         gameSettings.playlist.push("night");
       if (!gameSettings.playlist.includes("showcase"))
         gameSettings.playlist.push("showcase");
+      if (!gameSettings.playlist.includes("breakcore"))
+        gameSettings.playlist.push("breakcore");
 
       if (gameSettings.shuffleMusic === undefined)
         gameSettings.shuffleMusic = true;
@@ -5896,11 +5903,20 @@
               } else {
                 // Default state (playing or lost)
                 if (skin === "emo") {
-                  el.style.backgroundImage = `url('emo.png')`;
+                  el.style.backgroundImage =
+                    this.level.status === "lost"
+                      ? `url('emodead.png')`
+                      : `url('emo.png')`;
                 } else if (skin === "emo2") {
-                  el.style.backgroundImage = `url('emo2.png')`;
+                  el.style.backgroundImage =
+                    this.level.status === "lost"
+                      ? `url('emo2dead.png')`
+                      : `url('emo2.png')`;
                 } else if (skin === "emo3") {
-                  el.style.backgroundImage = `url('emo3.png')`;
+                  el.style.backgroundImage =
+                    this.level.status === "lost"
+                      ? `url('emo3dead.png')`
+                      : `url('emo3.png')`;
                 } else {
                   el.style.backgroundImage = `url('${skin}.png')`;
                 }
@@ -6229,7 +6245,9 @@
 
       async function updateHighscoreDisplay() {
         if (
-          (currentGameMode !== "speedrun" && currentGameMode !== "deathrun" && currentGameMode !== "chapter_speedrun") ||
+          (currentGameMode !== "speedrun" &&
+            currentGameMode !== "deathrun" &&
+            currentGameMode !== "chapter_speedrun") ||
           !currentLevelData
         )
           return;
@@ -9187,4 +9205,3 @@
     </script>
   </body>
 </html>
-
