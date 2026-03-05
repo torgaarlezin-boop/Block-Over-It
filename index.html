@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <title>Block Over It</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="icon" href="blockoverit.png" />
     <style>
       body {
         background: #111;
@@ -1789,6 +1790,51 @@
         background-color: #333;
         padding-left: 12px !important;
       }
+
+      /* Epic Profile Animation */
+      @keyframes epic-border-pulse {
+        0% {
+          box-shadow: 0 0 10px #ffd700;
+          border-color: #ffd700;
+        }
+        50% {
+          box-shadow:
+            0 0 30px #ffd700,
+            0 0 60px #ffaa00;
+          border-color: #ffaa00;
+        }
+        100% {
+          box-shadow: 0 0 10px #ffd700;
+          border-color: #ffd700;
+        }
+      }
+      .epic-profile-container {
+        animation: epic-border-pulse 2s infinite;
+        position: relative;
+        overflow: hidden;
+      }
+      .epic-profile-container::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          transparent 20%,
+          rgba(255, 215, 0, 0.1) 50%,
+          transparent 70%
+        );
+        animation: spin 10s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -1856,8 +1902,6 @@
           if (gameSettings.editorNewTab)
             window.open('Block Architect Pro.html', '_blank');
           else window.location.href = 'Block Architect Pro.html';
-            window.open('editor.html', '_blank');
-          else window.location.href = 'editor.html';
         "
       >
         <span>Level Editor</span>
@@ -2013,15 +2057,80 @@
         burningheart: { name: "Burning Heart", copies: "1/3" },
         tv: { name: "TV", copies: "1/2" },
         cubemouth: { name: "Cube Mouth", copies: "1/5" },
-        bluecoin: { name: "Blue Coin", copies: "Unlockable" },
         firstplacedaddy: { name: "First Place Daddy", copies: "1/1" },
         dino: { name: "Dino", copies: "1/2" },
         emo: { name: "Emotions", copies: "1/3" },
         emo2: { name: "Emotions 2", copies: "1/3" },
         emo3: { name: "Emotions 3", copies: "1/3" },
         kingbanana: { name: "King Banana", copies: "1/2" },
+        j_imbo: { name: "J_imbo", copies: "1/1" },
+        bluecoin: { name: "Blue Gem", copies: "N/A" },
       };
       const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
+      const NEWS_UPDATES = [
+        {
+          v: "1.5.2",
+          t: "Bug FIx",
+          d: "Many improvements to the UI, including for popups and for the leaderboard. You can now click on a username on the leaderboard to view that user's profile. Also improved support for skins, and added a new Blue Gem skin, obtained by collecting every blue coin (currently 10). In addition, added a favicon for the site (pretty much a logo right right next to the tab title) and simplified the editor button settings, to improve access of the editor. A new song by Chairlord was also added. Many bugs were fixed and improvements to gameplay were also made.",
+        },
+
+        {
+          v: "1.5.1",
+          t: "1.5 Patch",
+          d: "Fixed various bugs from the 1.5 update and enhanced customization by allowing the user to choose the amount of blocks in the wall block. Also made wall blocks bump you up when activated right when the player lands on them and changed the way grinders are spawned, allowing different grinder sizes.",
+        },
+        {
+          v: "1.5",
+          t: "The Grinder",
+          d: "Multiple bug fixes. Win animations now have no time penalty in speedruns. Added upside down spikes, breakable blocks, spike blocks, upside down spike blocks, wall blocks, falling blocks, jump pads, and grinders. Added credits and a new option in the level awards UI to see the level info and add the level to your levels. Added new block mods: flicker, jump flicker, and illusion (only for breakable blocks). Various other changes. ",
+        },
+        {
+          v: "1.4.3",
+          t: "Mobile Fixes",
+          d: "Fixed multiple bugs and improved the interface on mobile. Added custom levels to mobile. Added the zoom out toggle to desktop (also z on the keyboard) and replaced the previous two zoom modes with three new ones.  Progress in chapter speedruns now counts as progress in the campaign, even if you don't finish the chapter speedrun. Also added a new song: Taking Our Time by Alex Grohl.",
+        },
+        {
+          v: "1.4.2",
+          t: "Mobile",
+          d: "Completely redesigned the mobile UI to be mobile-friendly. Certain features not supported yet. ",
+        },
+        {
+          v: "1.4.1",
+          t: "Bug Fix",
+          d: "Various changes to multiple chapter two levels and improvements on the physics of moving bocks.",
+        },
+        {
+          v: "1.4",
+          t: "Leaderboards & Cloud Storage",
+          d: "Added blockoverit accounts. Once signed in, you can sync your game to all devices. Also added a global highscores list under a new leaderboard interface (the top left button). Leaderboards for every campaign level in speedruns and deathruns and chapter speedruns are included. Also added notifications (disable in settings) and a button to go straight to the level editor (in settings). Refined the practice mode to work better. ",
+        },
+        {
+          v: "1.3",
+          t: "Blockoverit Beats & Customization",
+          d: "Added Blockoverit Beats, a way of customizing the main menu music. Included are multiple tracks, which are also used as background music for campaign levels and can be used as background music for custom levels. Also added for customization is full support for rising lava, moving blocks, and colored blocks, as well as spikes for a more visually appealing obstacle on a flat path. Added a update overview (this current interface). Also added the ability to specify a difficulty and add a description for custom levels. Reworked the interface for the custom levels menu to support these new features for sharing levels. Added a new 'Chapter Speedrun' mode. Fixed various bugs, including a deathrun bug that didn't keep track of the highscore. ",
+        },
+        {
+          v: "1.2",
+          t: "Zero Gravity Update",
+          d: "Added Chapter 2 with zero gravity mechanics. Custom levels can now have a custom gravity. In addition, added two new modes: speedrun and deathrun, and added a settings menu. Added options in settings to change the blue coin style and add a camera to follow the player.",
+        },
+        {
+          v: "1.1.1",
+          t: "Custom Level Update",
+          d: "Added support for custom levels and redesigned the interface. Blue coins were also redesigned.",
+        },
+        {
+          v: "1.1",
+          t: "Blue Coin Update",
+          d: "Added Blue Coins, which are unlocked for a chapter when you beat the entire chapter. Added a main menu, completely redesigning the interface. This allows players to replay levels.",
+        },
+        {
+          v: "1.0",
+          t: "Initial Release",
+          d: "Game launch with Chapter 1.",
+        },
+      ];
+
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
       }
@@ -2170,7 +2279,7 @@
               saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
-              checkBlueCoinSkinUnlock();
+              checkBlueCoinSkinUnlock(true);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {
               const now = new Date();
@@ -2246,7 +2355,7 @@
             saveCustomLevelsProgress();
             saveHighscores();
             saveSettings();
-            checkBlueCoinSkinUnlock();
+            checkBlueCoinSkinUnlock(true);
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -2273,17 +2382,19 @@
       }
 
       function openFeedbackModal() {
-        const html = `
-            <textarea id="feedback-text" placeholder="Enter your feedback here..." style="width: 100%; height: 150px; background: #333; color: white; border: 1px solid #555; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; margin-bottom: 15px;"></textarea>
-            <div style="display:flex; justify-content:center;">
-                <button class="popup-btn" onclick="submitFeedback(document.getElementById('feedback-text').value); document.querySelector('.popup-overlay').remove()">SEND</button>
-            </div>
-        `;
-        showPopup("FEEDBACK", "", () => {});
-        const msgEl = document.querySelector(".popup-message");
-        if (msgEl) msgEl.innerHTML = html;
-        const btns = document.querySelector(".popup-buttons");
-        if (btns) btns.style.display = "none";
+        const html = `<textarea id="feedback-text" placeholder="Enter your feedback here..." style="width: 100%; height: 150px; background: #333; color: white; border: 1px solid #555; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; margin-bottom: 15px;"></textarea>`;
+        popupManager.show({
+          title: "FEEDBACK",
+          html: html,
+          buttons: [
+            {
+              text: "SEND",
+              onClick: () => {
+                submitFeedback(document.getElementById("feedback-text").value);
+              },
+            },
+          ],
+        });
       }
 
       function showAfterSchoolReward() {
@@ -2295,16 +2406,21 @@
                 <div style="width: 80px; height: 160px; background-image: url('rainbowmonster.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));"></div>
             </div>
         `;
-        showPopup("AFTER SCHOOL REWARD", "", () => {
-          if (!currentUserSkins.includes("rainbowmonster")) {
-            currentUserSkins.push("rainbowmonster");
-            syncDataToCloud();
-          }
+        popupManager.show({
+          title: "AFTER SCHOOL REWARD",
+          html: html,
+          buttons: [
+            {
+              text: "CLAIM",
+              onClick: () => {
+                if (!currentUserSkins.includes("rainbowmonster")) {
+                  currentUserSkins.push("rainbowmonster");
+                  syncDataToCloud();
+                }
+              },
+            },
+          ],
         });
-        const msgEl = document.querySelector(".popup-message");
-        if (msgEl) msgEl.innerHTML = html;
-        const okBtn = document.querySelector(".popup-buttons .popup-btn");
-        if (okBtn) okBtn.textContent = "CLAIM";
       }
 
       function openChangePasswordModal() {
@@ -2313,15 +2429,23 @@
                 <input id="cp-old" type="password" placeholder="Current Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
                 <input id="cp-new" type="password" placeholder="New Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
                 <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
-                    <button class="popup-btn" onclick="changePassword(document.getElementById('cp-old').value, document.getElementById('cp-new').value); document.querySelector('.popup-overlay').remove()">UPDATE</button>
                 </div>
             </div>
         `;
-        showPopup("CHANGE PASSWORD", "", () => {});
-        const msgEl = document.querySelector(".popup-message");
-        if (msgEl) msgEl.innerHTML = html;
-        const btns = document.querySelector(".popup-buttons");
-        if (btns) btns.style.display = "none";
+        popupManager.show({
+          title: "CHANGE PASSWORD",
+          html: html,
+          buttons: [
+            {
+              text: "UPDATE",
+              onClick: () =>
+                changePassword(
+                  document.getElementById("cp-old").value,
+                  document.getElementById("cp-new").value,
+                ),
+            },
+          ],
+        });
       }
 
       async function changePassword(oldPass, newPass) {
@@ -2664,9 +2788,13 @@
 
           // Synth duration limit (1.5 mins)
           if (Date.now() - synthStartTime > 90000) {
-            currentPlayingTrackId = null;
-            playMusic(getNextPlaylistTrack());
-            return;
+            if (activeLevelDisplay) {
+              synthStartTime = Date.now();
+            } else {
+              currentPlayingTrackId = null;
+              playMusic(getNextPlaylistTrack());
+              return;
+            }
           }
 
           const osc = audioCtx.createOscillator();
@@ -2748,12 +2876,6 @@
           id: "synth",
           title: "Blockoverit",
           artist: "Block Over It",
-          file: null,
-        },
-        {
-          id: "none",
-          title: "No Music",
-          artist: "Silence",
           file: null,
         },
         {
@@ -3020,96 +3142,128 @@
       }
 
       // --- Popup System ---
+      const popupManager = {
+        queue: [],
+        isActive: false,
+
+        show(options) {
+          this.queue.push(options);
+          if (!this.isActive) {
+            this.processQueue();
+          }
+        },
+
+        processQueue() {
+          if (this.queue.length === 0) {
+            this.isActive = false;
+            return;
+          }
+          this.isActive = true;
+          const options = this.queue.shift();
+
+          const overlay = document.createElement("div");
+          overlay.className = "popup-overlay";
+
+          const popup = document.createElement("div");
+          popup.className = "popup";
+
+          const titleEl = document.createElement("div");
+          titleEl.className = "popup-title";
+          titleEl.textContent = options.title;
+
+          const messageEl = document.createElement("div");
+          messageEl.className = "popup-message";
+          if (options.html) {
+            messageEl.innerHTML = options.html;
+          } else {
+            messageEl.textContent = options.message;
+          }
+
+          const buttonsDiv = document.createElement("div");
+          buttonsDiv.className = "popup-buttons";
+
+          const close = (callback) => {
+            try {
+              if (callback) callback();
+            } catch (e) {
+              console.error("Popup callback error:", e);
+            }
+            overlay.remove();
+            // Use a small timeout to prevent UI flicker if another popup is in the queue
+            setTimeout(() => this.processQueue(), 50);
+          };
+
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "popup-close";
+          closeBtn.innerHTML = "&times;";
+          closeBtn.onclick = () => close(options.onCancel);
+
+          popup.appendChild(closeBtn);
+          popup.appendChild(titleEl);
+          popup.appendChild(messageEl);
+          popup.appendChild(buttonsDiv);
+          overlay.appendChild(popup);
+
+          if (options.buttons && options.buttons.length > 0) {
+            options.buttons.forEach((btnConfig) => {
+              const btn = document.createElement("button");
+              btn.className = `popup-btn ${btnConfig.class || ""}`;
+              btn.textContent = btnConfig.text;
+              btn.onclick = () => close(btnConfig.onClick);
+              buttonsDiv.appendChild(btn);
+            });
+          } else {
+            buttonsDiv.style.display = "none";
+          }
+
+          document.body.appendChild(overlay);
+        },
+      };
+
       function showPopup(title, message, onConfirm) {
-        const overlay = document.createElement("div");
-        overlay.className = "popup-overlay";
-
-        const popup = document.createElement("div");
-        popup.className = "popup";
-
-        const titleEl = document.createElement("div");
-        titleEl.className = "popup-title";
-        titleEl.textContent = title;
-
-        const messageEl = document.createElement("div");
-        messageEl.className = "popup-message";
-        messageEl.textContent = message;
-
-        const buttonsDiv = document.createElement("div");
-        buttonsDiv.className = "popup-buttons";
-
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "popup-close";
-        closeBtn.innerHTML = "&times;";
-        closeBtn.onclick = () => overlay.remove();
-
-        const confirmBtn = document.createElement("button");
-        confirmBtn.className = "popup-btn";
-        confirmBtn.textContent = "OK";
-        confirmBtn.onclick = () => {
-          overlay.remove();
-          onConfirm();
-        };
-
-        buttonsDiv.appendChild(confirmBtn);
-        popup.appendChild(closeBtn);
-        popup.appendChild(titleEl);
-        popup.appendChild(messageEl);
-        popup.appendChild(buttonsDiv);
-        overlay.appendChild(popup);
-        document.body.appendChild(overlay);
+        popupManager.show({
+          title,
+          message,
+          buttons: [
+            {
+              text: "OK",
+              onClick: onConfirm,
+            },
+          ],
+        });
       }
 
       // --- Confirmation Popup ---
       function showConfirmPopup(title, message, onConfirm, onCancel) {
-        const overlay = document.createElement("div");
-        overlay.className = "popup-overlay";
-
-        const popup = document.createElement("div");
-        popup.className = "popup";
-
-        const titleEl = document.createElement("div");
-        titleEl.className = "popup-title";
-        titleEl.textContent = title;
-
-        const messageEl = document.createElement("div");
-        messageEl.className = "popup-message";
-        messageEl.textContent = message;
-
-        const buttonsDiv = document.createElement("div");
-        buttonsDiv.className = "popup-buttons";
-
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "popup-close";
-        closeBtn.innerHTML = "&times;";
-        closeBtn.onclick = () => overlay.remove();
-
-        const confirmBtn = document.createElement("button");
-        confirmBtn.className = "popup-btn";
-        confirmBtn.textContent = "YES";
-        confirmBtn.onclick = () => {
-          overlay.remove();
-          onConfirm();
-        };
-
-        const cancelBtn = document.createElement("button");
-        cancelBtn.className = "popup-btn secondary";
-        cancelBtn.textContent = "NO";
-        cancelBtn.onclick = () => {
-          overlay.remove();
-          if (onCancel) onCancel();
-        };
-
-        buttonsDiv.appendChild(confirmBtn);
-        buttonsDiv.appendChild(cancelBtn);
-        popup.appendChild(closeBtn);
-        popup.appendChild(titleEl);
-        popup.appendChild(messageEl);
-        popup.appendChild(buttonsDiv);
-        overlay.appendChild(popup);
-        document.body.appendChild(overlay);
+        popupManager.show({
+          title,
+          message,
+          onCancel, // for the 'x' button
+          buttons: [
+            {
+              text: "YES",
+              onClick: onConfirm,
+            },
+            {
+              text: "NO",
+              class: "secondary",
+              onClick: onCancel,
+            },
+          ],
+        });
       }
 
+      function formatMSToHHMMSS(t) {
+        if (!t) return "00:00:00";
+        const totalSeconds = Math.floor(t / 1000);
+        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(
+          2,
+          "0",
+        );
+        const seconds = String(totalSeconds % 60).padStart(2, "0");
+        return `${hours}:${minutes}:${seconds}`;
+      }
       // --- Custom Level Popup ---
       function openAwardLevelPopup(lvl) {
         const difficulty = lvl.difficulty || 1;
@@ -3935,9 +4089,9 @@
         return currentUserSkins;
       }
 
-      function checkBlueCoinSkinUnlock() {
+      function checkBlueCoinSkinUnlock(silent = false) {
         if (!currentUser) return;
-        if (currentUserSkins.includes("blue_coin")) return;
+        if (currentUserSkins.includes("bluecoin")) return;
 
         let total = 0;
         let collected = 0;
@@ -3963,16 +4117,16 @@
 
         if (typeof CHAPTER_1 !== "undefined") checkChapter(CHAPTER_1, "");
         if (typeof CHAPTER_2 !== "undefined") checkChapter(CHAPTER_2, "ch2");
-        if (typeof CHAPTER_3 !== "undefined") checkChapter(CHAPTER_3, "ch3");
 
         if (total > 0 && collected >= total) {
-          currentUserSkins.push("blue_coin");
+          currentUserSkins.push("bluecoin");
           syncDataToCloud();
-          showPopup(
-            "SKIN UNLOCKED",
-            "You unlocked the Blue Coin skin!",
-            () => {},
-          );
+          if (!silent)
+            showPopup(
+              "SKIN UNLOCKED",
+              "You unlocked the Blue Coin skin!",
+              () => {},
+            );
         }
       }
 
@@ -5905,7 +6059,7 @@
                 if (skin === "emo") {
                   el.style.backgroundImage =
                     this.level.status === "lost"
-                      ? `url('emodeath.png')`
+                      ? `url('emodead.png')`
                       : `url('emo.png')`;
                 } else if (skin === "emo2") {
                   el.style.backgroundImage =
@@ -6359,7 +6513,8 @@
         // Save menu music state if starting from menu
         if (!wasInLevel) {
           menuMusicState.trackId = currentPlayingTrackId;
-          if (currentAudio) menuMusicState.time = currentAudio.currentTime;
+          if (currentAudio && !currentAudio.loop)
+            menuMusicState.time = currentAudio.currentTime;
           else menuMusicState.time = 0;
         }
 
@@ -6939,8 +7094,7 @@
 
         const editorBtn = document.querySelector(".editor-btn");
         if (editorBtn)
-          editorBtn.style.display =
-            view === "main" && gameSettings.showEditorButton ? "block" : "none";
+          editorBtn.style.display = view === "main" ? "block" : "none";
 
         const loginBtn = document.querySelector(".login-btn");
         if (loginBtn)
@@ -7165,44 +7319,12 @@
           hbRow.appendChild(hbToggle);
           gameplayItems.push(hbRow);
 
-          // Editor Button Toggle
-          const edRow = document.createElement("div");
-          edRow.style.cssText =
-            "display:flex; align-items:center; justify-content:space-between;";
-          edRow.innerHTML = `<span style="font-size:1.2rem;">SHOW EDITOR BUTTON</span>`;
-
-          // Open in New Tab Toggle (Dependent)
+          // Open in New Tab Toggle
           const newTabRow = document.createElement("div");
 
-          const editorBtnToggle = document.createElement("div");
-          editorBtnToggle.className =
-            "toggle-btn" + (gameSettings.showEditorButton ? " active" : "");
-          editorBtnToggle.innerHTML = '<div class="toggle-slider"></div>';
-          editorBtnToggle.onclick = () => {
-            gameSettings.showEditorButton = !gameSettings.showEditorButton;
-            editorBtnToggle.className =
-              "toggle-btn" + (gameSettings.showEditorButton ? " active" : "");
-
-            // Update dependent toggle
-            if (gameSettings.showEditorButton) {
-              newTabRow.style.opacity = "1";
-              newTabRow.style.pointerEvents = "auto";
-            } else {
-              newTabRow.style.opacity = "0.5";
-              newTabRow.style.pointerEvents = "none";
-            }
-            saveSettings();
-          };
-          edRow.appendChild(editorBtnToggle);
-          gameplayItems.push(edRow);
-
           newTabRow.style.cssText =
-            "display:flex; align-items:center; justify-content:space-between; margin-left:20px;";
-          if (!gameSettings.showEditorButton) {
-            newTabRow.style.opacity = "0.5";
-            newTabRow.style.pointerEvents = "none";
-          }
-          newTabRow.innerHTML = `<span style="font-size:1rem; color:#aaa;">OPEN IN NEW TAB</span>`;
+            "display:flex; align-items:center; justify-content:space-between;";
+          newTabRow.innerHTML = `<span style="font-size:1.2rem;">EDITOR: NEW TAB</span>`;
           const newTabToggle = document.createElement("div");
           newTabToggle.className =
             "toggle-btn" + (gameSettings.editorNewTab ? " active" : "");
@@ -7445,65 +7567,7 @@
           newsContent.style.cssText =
             "width:100%; max-width:600px; max-height:60vh; overflow-y:auto; background:#222; border:2px solid #444; padding:20px; text-align:left;";
 
-          const updates = [
-            {
-              v: "1.5.1",
-              t: "1.5 Patch",
-              d: "Fixed various bugs from the 1.5 update and enhanced customization by allowing the user to choose the amount of blocks in the wall block. Also made wall blocks bump you up when activated right when the player lands on them and changed the way grinders are spawned, allowing different grinder sizes.",
-            },
-            {
-              v: "1.5",
-              t: "The Grinder",
-              d: "Multiple bug fixes. Win animations now have no time penalty in speedruns. Added upside down spikes, breakable blocks, spike blocks, upside down spike blocks, wall blocks, falling blocks, jump pads, and grinders. Added credits and a new option in the level awards UI to see the level info and add the level to your levels. Added new block mods: flicker, jump flicker, and illusion (only for breakable blocks). Various other changes. ",
-            },
-            {
-              v: "1.4.3",
-              t: "Mobile Fixes",
-              d: "Fixed multiple bugs and improved the interface on mobile. Added custom levels to mobile. Added the zoom out toggle to desktop (also z on the keyboard) and replaced the previous two zoom modes with three new ones.  Progress in chapter speedruns now counts as progress in the campaign, even if you don't finish the chapter speedrun. Also added a new song: Taking Our Time by Alex Grohl.",
-            },
-            {
-              v: "1.4.2",
-              t: "Mobile",
-              d: "Completely redesigned the mobile UI to be mobile-friendly. Certain features not supported yet. ",
-            },
-            {
-              v: "1.4.1",
-              t: "Bug Fix",
-              d: "Various changes to multiple chapter two levels and improvements on the physics of moving bocks.",
-            },
-            {
-              v: "1.4",
-              t: "Leaderboards & Cloud Storage",
-              d: "Added blockoverit accounts. Once signed in, you can sync your game to all devices. Also added a global highscores list under a new leaderboard interface (the top left button). Leaderboards for every campaign level in speedruns and deathruns and chapter speedruns are included. Also added notifications (disable in settings) and a button to go straight to the level editor (in settings). Refined the practice mode to work better. ",
-            },
-            {
-              v: "1.3",
-              t: "Blockoverit Beats & Customization",
-              d: "Added Blockoverit Beats, a way of customizing the main menu music. Included are multiple tracks, which are also used as background music for campaign levels and can be used as background music for custom levels. Also added for customization is full support for rising lava, moving blocks, and colored blocks, as well as spikes for a more visually appealing obstacle on a flat path. Added a update overview (this current interface). Also added the ability to specify a difficulty and add a description for custom levels. Reworked the interface for the custom levels menu to support these new features for sharing levels. Added a new 'Chapter Speedrun' mode. Fixed various bugs, including a deathrun bug that didn't keep track of the highscore. ",
-            },
-            {
-              v: "1.2",
-              t: "Zero Gravity Update",
-              d: "Added Chapter 2 with zero gravity mechanics. Custom levels can now have a custom gravity. In addition, added two new modes: speedrun and deathrun, and added a settings menu. Added options in settings to change the blue coin style and add a camera to follow the player.",
-            },
-            {
-              v: "1.1.1",
-              t: "Custom Level Update",
-              d: "Added support for custom levels and redesigned the interface. Blue coins were also redesigned.",
-            },
-            {
-              v: "1.1",
-              t: "Blue Coin Update",
-              d: "Added Blue Coins, which are unlocked for a chapter when you beat the entire chapter. Added a main menu, completely redesigning the interface. This allows players to replay levels.",
-            },
-            {
-              v: "1.0",
-              t: "Initial Release",
-              d: "Game launch with Chapter 1.",
-            },
-          ];
-
-          updates.forEach((u) => {
+          NEWS_UPDATES.forEach((u) => {
             const row = document.createElement("div");
             row.style.marginBottom = "15px";
             row.style.borderBottom = "1px solid #333";
@@ -7561,12 +7625,17 @@
                 Dmitrii Spis<br>
                 Rasberry Music<br>
                 DELOsound<br>
+                Chairlord <br>
               </div>
 
               <div class="cred-role">Art & Skins</div>
               <div class="cred-list">
                 Torgaar <br>
-                Chairlord
+                Chairlord <br>
+                Ejohson <br>
+                Seppe <br>
+                Abhay557 <br>
+                Mcdongos
                 </div>
 
               <div class="cred-role">Cloud Data</div>
@@ -7680,9 +7749,6 @@
                         <span class="track-artist">${track.artist}</span>
                     </div>
                     <div style="display:flex; gap:10px;">
-                        <button class="btn btn-small" style="padding:5px 10px; font-size:0.8rem; ${inPlaylist ? "background:#335699;" : ""}" onclick="event.stopPropagation(); togglePlaylist('${track.id}')">
-                            ${inPlaylist ? "IN LIST" : "ADD"}
-                        </button>
                         <button class="btn btn-small" style="padding:5px 10px; font-size:0.8rem;" onclick="event.stopPropagation(); playMusic('${track.id}', true)">
                             PLAY
                         </button>
@@ -7870,6 +7936,19 @@
           closeBtn.onclick = () => showMenu("leaderboards-new");
           container.appendChild(closeBtn);
 
+          // Calculate total blue coins in game
+          let totalBlueCoinsInGame = 0;
+          [CHAPTER_1, CHAPTER_2].forEach((ch) => {
+            ch.forEach((lvl) => {
+              if (lvl.plan && lvl.plan.some((r) => r.includes("B")))
+                totalBlueCoinsInGame++;
+            });
+          });
+
+          // Check if user has all blue coins
+          let userBlueCoins = 0;
+          let isEpic = false;
+
           if (data.userData && data.userData.gameState) {
             const gs = data.userData.gameState;
             let blueCoins = 0;
@@ -7879,6 +7958,16 @@
                   blueCoins++;
               });
             }
+            userBlueCoins = blueCoins;
+            if (
+              userBlueCoins >= totalBlueCoinsInGame &&
+              totalBlueCoinsInGame > 0
+            ) {
+              isEpic = true;
+              container.classList.add("epic-profile-container");
+              triggerConfetti();
+            }
+
             let chapterText = "CHAPTER 1";
             let levelText = "LEVEL 1";
             if (gs.gameBeaten || gs.chapter3Beaten) {
@@ -7902,7 +7991,7 @@
             statsDiv.innerHTML = `
                 <div style="${boxStyle}">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">BLUE COINS</div>
-                    <div style="font-size:1.5rem; font-weight:bold; color:#335699;">${blueCoins}</div>
+                    <div style="font-size:1.5rem; font-weight:bold; color:${isEpic ? "#ffd700" : "#335699"};">${blueCoins} / ${totalBlueCoinsInGame}</div>
                 </div>
                 <div style="${boxStyle}">
                     <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">CAMPAIGN</div>
@@ -7958,7 +8047,7 @@
             const chapSelect = document.createElement("select");
             chapSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-            [1, 2, 3].forEach((c) => {
+            [1, 2].forEach((c) => {
               const opt = document.createElement("option");
               opt.value = c;
               opt.text = "Ch " + c;
@@ -7999,7 +8088,6 @@
               const ch = parseInt(chapSelect.value);
               const levels =
                 ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
-
               if (modeSelect.value === "chapter_speedrun") {
                 levelSelect.style.display = "none";
                 levelSelect.disabled = true;
@@ -8041,7 +8129,7 @@
                 key = `chapter_speedrun_${ch}`;
 
               if (!key) {
-                if (cat === "blue" && mode !== "deathrun") prefix += "blue_";
+                if (cat === "blue" && mode === "speedrun") prefix += "blue_";
                 key = `${prefix}campaign_${ch}_${lvlIdx}`;
               }
 
@@ -8053,20 +8141,23 @@
                 list.innerHTML = scores
                   .map((s, i) => {
                     const t = s.time_ms;
+                    let timeString;
                     const ms = String(t % 1000).padStart(3, "0");
                     const sec = String(Math.floor(t / 1000) % 60).padStart(
                       2,
                       "0",
                     );
                     const min = String(Math.floor(t / 60000)).padStart(2, "0");
+                    timeString = `${min}:${sec}.${ms}`;
+
                     const isMe = s.username === currentUser;
                     return `
-                      <div class="leaderboard-card ${isMe ? "is-me" : ""}" style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;">
+                      <div class="leaderboard-card ${isMe ? "is-me" : ""}" style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;" onclick="openUserProfile('${s.username}')">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-size:1.2rem; font-weight:bold; color:#666; width:25px;">${i + 1}</span>
                             <span style="font-weight:bold; color:${isMe ? "#fff" : "#ccc"}; cursor:pointer;" onclick="openUserProfile('${s.username}')">${s.username}</span>
                         </div>
-                        <span style="font-family:monospace; font-size:1.1rem; color:#fff;">${min}:${sec}.${ms}</span>
+                        <span style="font-family:monospace; font-size:1.1rem; color:#fff;">${timeString}</span>
                       </div>
                       `;
                   })
@@ -8126,7 +8217,7 @@
           chapSelect.style.background = "#333";
           chapSelect.style.color = "white";
           chapSelect.style.border = "1px solid #555";
-          [1, 2, 3].forEach((c) => {
+          [1, 2].forEach((c) => {
             const opt = document.createElement("option");
             opt.value = c;
             opt.text = "Chapter " + c;
@@ -8215,7 +8306,7 @@
             }
 
             if (!key) {
-              if (cat === "blue" && mode !== "deathrun") prefix += "blue_";
+              if (cat === "blue" && mode === "speedrun") prefix += "blue_";
               key = `${prefix}campaign_${ch}_${lvlIdx}`;
             }
 
@@ -8227,16 +8318,18 @@
               resultsDiv.innerHTML = scores
                 .map((s, i) => {
                   const t = s.time_ms;
+                  let timeString;
                   const ms = String(t % 1000).padStart(3, "0");
                   const sec = String(Math.floor(t / 1000) % 60).padStart(
                     2,
                     "0",
                   );
                   const min = String(Math.floor(t / 60000)).padStart(2, "0");
+                  timeString = `${min}:${sec}.${ms}`;
                   return `
                   <div class="leaderboard-list-item" style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333; ${s.username === currentUser ? "color:#335699; font-weight:bold;" : "color:#ccc;"}">
                     <span>${i + 1}. <span style="cursor:pointer;" onclick="openUserProfile('${s.username}')">${s.username}</span></span>
-                    <span style="font-family:monospace;">${min}:${sec}.${ms}</span>
+                    <span style="font-family:monospace;">${timeString}</span>
                   </div>
                 `;
                 })
@@ -8296,12 +8389,6 @@
           if (!gameState.chapter1Beaten) btnCh2.disabled = true;
           btnCh2.onclick = () => startChapterRun(2);
 
-          const btnCh3 = document.createElement("button");
-          // btnCh3.className = "btn";
-          // btnCh3.textContent = "Chapter III";
-          // if (!gameState.chapter2Beaten) btnCh3.disabled = true;
-          // btnCh3.onclick = () => startChapterRun(3);
-
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "Back";
@@ -8313,7 +8400,6 @@
 
           container.appendChild(btnCh1);
           container.appendChild(btnCh2);
-          // container.appendChild(btnCh3); // Removed Chapter 3 Speedrun
           container.appendChild(btnBack);
         } else if (view === "campaign") {
           subtitle.textContent = "Select Chapter";
@@ -8327,12 +8413,6 @@
           btnCh2.className = "btn";
           btnCh2.textContent = "Chapter II";
           btnCh2.onclick = () => showMenu("chapter2");
-
-          const btnCh3 = document.createElement("button");
-          btnCh3.className = "btn";
-          btnCh3.textContent = "Chapter III";
-          btnCh3.disabled = true;
-          btnCh3.onclick = () => showMenu("chapter3");
 
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
@@ -8352,7 +8432,6 @@
 
           container.appendChild(btnCh1);
           container.appendChild(btnCh2);
-          container.appendChild(btnCh3);
           container.appendChild(btnBack);
         } else if (view === "chapter1") {
           subtitle.textContent = "Chapter I";
@@ -8899,20 +8978,35 @@
       // --- Auth UI ---
       function openLoginModal() {
         const html = `
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <input id="auth-user" placeholder="Username" style="padding:10px; background:#333; color:white; border:1px solid #555;">
-            <input id="auth-pass" type="password" placeholder="Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
-              <button class="btn" style="font-size:1rem; padding:10px;" onclick="handleAuth('signin', document.getElementById('auth-user').value, document.getElementById('auth-pass').value); document.querySelector('.popup-overlay').remove()">Sign In</button>
-              <button class="btn" style="font-size:1rem; padding:10px;" onclick="handleAuth('signup', document.getElementById('auth-user').value, document.getElementById('auth-pass').value); document.querySelector('.popup-overlay').remove()">Sign Up</button>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <input id="auth-user" placeholder="Username" style="padding:10px; background:#333; color:white; border:1px solid #555;">
+              <input id="auth-pass" type="password" placeholder="Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
             </div>
-          </div>
-        `;
-        showPopup("ACCOUNT", "", () => {});
-        const msgEl = document.querySelector(".popup-message");
-        if (msgEl) msgEl.innerHTML = html;
-        const okBtn = document.querySelector(".popup-buttons");
-        if (okBtn) okBtn.style.display = "none";
+          `;
+        popupManager.show({
+          title: "ACCOUNT",
+          html: html,
+          buttons: [
+            {
+              text: "Sign In",
+              onClick: () =>
+                handleAuth(
+                  "signin",
+                  document.getElementById("auth-user").value,
+                  document.getElementById("auth-pass").value,
+                ),
+            },
+            {
+              text: "Sign Up",
+              onClick: () =>
+                handleAuth(
+                  "signup",
+                  document.getElementById("auth-user").value,
+                  document.getElementById("auth-pass").value,
+                ),
+            },
+          ],
+        });
       }
 
       function openAccountModal() {
@@ -9114,95 +9208,46 @@
         showMenu("main");
         setTimeout(() => {
           if (!currentPlayingTrackId) playMusic();
+
+          // Check News
+          const lastRead = safeStorage.getItem("lastReadNews");
+          if (lastRead !== LATEST_NEWS_VERSION) {
+            const latestUpdate = NEWS_UPDATES.find(
+              (u) => u.v === LATEST_NEWS_VERSION,
+            );
+            if (latestUpdate) {
+              const html = `
+                <div style="text-align:left; margin-bottom:20px;">
+                  <div style="color:#335699; font-weight:bold; font-size:1.2rem; margin-bottom:5px;">v${latestUpdate.v} - ${latestUpdate.t}</div>
+                  <div style="color:#ccc; font-size:0.9rem; line-height:1.4;">${latestUpdate.d}</div>
+                </div>
+              `;
+              const setRead = () => {
+                safeStorage.setItem("lastReadNews", LATEST_NEWS_VERSION);
+                document.getElementById("news-notif").style.display = "none";
+              };
+              popupManager.show({
+                title: "NEW UPDATE",
+                html: html,
+                buttons: [
+                  {
+                    text: "OK",
+                    onClick: setRead,
+                  },
+                  {
+                    text: "ALL NEWS",
+                    class: "secondary",
+                    onClick: () => {
+                      setRead();
+                      showMenu("news");
+                    },
+                  },
+                ],
+              });
+            }
+          }
         }, 100);
       }
-
-      // Ensure music starts on first interaction if blocked by browser
-      document.addEventListener(
-        "click",
-        () => {
-          if (audioCtx.state === "suspended") audioCtx.resume();
-          if (!currentPlayingTrackId && !isMusicPaused) playMusic();
-        },
-        { once: true },
-      );
-
-      // HUD Click (ESC)
-      document.getElementById("hud").onclick = () => {
-        if (activeLevelDisplay) exitToMenu();
-      };
-
-      // Add cheat code detection
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          // Close popup if open
-          const popup = document.querySelector(".popup-overlay");
-          if (popup) {
-            popup.remove();
-            return;
-          }
-
-          if (activeLevelDisplay) {
-            exitToMenu();
-          } else {
-            handleMenuBack();
-          }
-        }
-
-        if (e.key.toLowerCase() === "z" && activeLevelDisplay) {
-          activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
-        }
-
-        // Only detect when not playing
-        if (document.getElementById("main-menu").style.display === "flex") {
-          // Ignore cheat codes when typing in inputs
-          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
-            return;
-
-          if (e.key.length === 1) {
-            const key = e.key.toLowerCase();
-            cheatCodeInput += key;
-          }
-
-          // Keep only last 5 characters (length of "clear")
-          if (
-            cheatCodeInput.length >
-            Math.max(CHEAT_CODE.length, CLEAR_CODE.length)
-          ) {
-            cheatCodeInput = cheatCodeInput.slice(
-              -Math.max(CHEAT_CODE.length, CLEAR_CODE.length),
-            );
-          }
-
-          // Check if clear code was entered
-          if (cheatCodeInput.endsWith(CLEAR_CODE)) {
-            showConfirmPopup(
-              "CLEAR PROGRESS",
-              "Are you sure you want to clear all progress?",
-              () => {
-                clearAllProgress();
-              },
-            );
-            cheatCodeInput = ""; // Reset
-          }
-
-          // Check if cheat code was entered
-          if (cheatCodeInput.endsWith(CHEAT_CODE)) {
-            showPopup("CHEAT ACTIVATED", "All levels unlocked!", () => {
-              gameState.chapter1Beaten = true;
-              gameState.chapter2Beaten = true;
-              gameState.chapter3Beaten = true;
-              gameState.unlockedLevel = 99;
-              gameState.unlockedLevelCh2 = 99;
-              gameState.unlockedLevelCh3 = 99;
-              saveGame();
-              location.reload();
-            });
-            cheatCodeInput = ""; // Reset
-          }
-        }
-      });
     </script>
   </body>
 </html>
-
