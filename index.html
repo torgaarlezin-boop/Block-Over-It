@@ -1790,51 +1790,6 @@
         background-color: #333;
         padding-left: 12px !important;
       }
-
-      /* Epic Profile Animation */
-      @keyframes epic-border-pulse {
-        0% {
-          box-shadow: 0 0 10px #ffd700;
-          border-color: #ffd700;
-        }
-        50% {
-          box-shadow:
-            0 0 30px #ffd700,
-            0 0 60px #ffaa00;
-          border-color: #ffaa00;
-        }
-        100% {
-          box-shadow: 0 0 10px #ffd700;
-          border-color: #ffd700;
-        }
-      }
-      .epic-profile-container {
-        animation: epic-border-pulse 2s infinite;
-        position: relative;
-        overflow: hidden;
-      }
-      .epic-profile-container::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(
-          circle,
-          transparent 20%,
-          rgba(255, 215, 0, 0.1) 50%,
-          transparent 70%
-        );
-        animation: spin 10s linear infinite;
-        pointer-events: none;
-        z-index: 0;
-      }
-      @keyframes spin {
-        100% {
-          transform: rotate(360deg);
-        }
-      }
     </style>
   </head>
   <body>
@@ -6059,17 +6014,17 @@
                 if (skin === "emo") {
                   el.style.backgroundImage =
                     this.level.status === "lost"
-                      ? `url('emodead.png')`
+                      ? `url('emodeath.png')`
                       : `url('emo.png')`;
                 } else if (skin === "emo2") {
                   el.style.backgroundImage =
                     this.level.status === "lost"
-                      ? `url('emo2dead.png')`
+                      ? `url('emo2death.png')`
                       : `url('emo2.png')`;
                 } else if (skin === "emo3") {
                   el.style.backgroundImage =
                     this.level.status === "lost"
-                      ? `url('emo3dead.png')`
+                      ? `url('emo3death.png')`
                       : `url('emo3.png')`;
                 } else {
                   el.style.backgroundImage = `url('${skin}.png')`;
@@ -6271,6 +6226,33 @@
       }
       var arrows = trackKeys(arrowCodes);
       var activeAnimationFrame = null;
+
+      // Global Escape Handler
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        if (e.key === "Escape") {
+          const popup = document.querySelector(".popup-overlay");
+          const clPopup = document.querySelector(".cl-popup-overlay");
+          
+          if (popup) {
+            const closeBtn = popup.querySelector(".popup-close");
+            if (closeBtn) closeBtn.click();
+            else {
+               const btn = Array.from(popup.querySelectorAll("button")).find(b => b.textContent === "CLOSE");
+               if (btn) btn.click();
+               else popup.remove();
+            }
+            return;
+          }
+          if (clPopup) {
+            clPopup.remove();
+            return;
+          }
+
+          if (activeLevelDisplay) exitToMenu();
+          else handleMenuBack();
+        }
+      });
 
       // Gamepad Support
       const reusableInputs = {
@@ -7964,8 +7946,6 @@
               totalBlueCoinsInGame > 0
             ) {
               isEpic = true;
-              container.classList.add("epic-profile-container");
-              triggerConfetti();
             }
 
             let chapterText = "CHAPTER 1";
