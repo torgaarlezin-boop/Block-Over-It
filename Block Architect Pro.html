@@ -150,7 +150,7 @@
         font-weight: bold;
       }
       .t-breakable {
-        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM2NDY0NjQiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NDQ0NDQiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+');
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM2NDY0NjQiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NDQ0NDQiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+");
         border: 3px solid #555;
       }
       .t-spike-block {
@@ -203,9 +203,12 @@
         position: relative;
       }
       .t-jump-pad::before {
-        content: '';
+        content: "";
         position: absolute;
-        top: 20%; left: 20%; right: 20%; bottom: 20%;
+        top: 20%;
+        left: 20%;
+        right: 20%;
+        bottom: 20%;
         background: #d946ef;
         border-radius: 50%;
       }
@@ -223,9 +226,27 @@
       }
       .t-grinder {
         background-color: #333;
-        background-image: linear-gradient(90deg, transparent 30%, #888 30%, #888 70%, transparent 70%), repeating-linear-gradient(0deg, #222 0px, #222 4px, #aaa 4px, #aaa 8px);
-        background-size: 100% 100%, 40% 100%;
-        background-position: center center, center 0;
+        background-image:
+          linear-gradient(
+            90deg,
+            transparent 30%,
+            #888 30%,
+            #888 70%,
+            transparent 70%
+          ),
+          repeating-linear-gradient(
+            0deg,
+            #222 0px,
+            #222 4px,
+            #aaa 4px,
+            #aaa 8px
+          );
+        background-size:
+          100% 100%,
+          40% 100%;
+        background-position:
+          center center,
+          center 0;
         position: relative;
       }
       .t-grinder::after {
@@ -412,7 +433,7 @@
         border-radius: 4px;
       }
       .style-modern .t-breakable {
-        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM3MTg1OWYiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NzU1NjkiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PC9zdmc+');
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM3MTg1OWYiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NzU1NjkiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PC9zdmc+");
         border: 1px solid #475569;
         border-radius: 2px;
       }
@@ -572,7 +593,9 @@
 
       /* Selection Popup */
       #selection-popup {
-        transition: opacity 0.1s, transform 0.1s;
+        transition:
+          opacity 0.1s,
+          transform 0.1s;
       }
       #selection-popup.hidden {
         opacity: 0;
@@ -589,68 +612,304 @@
   </head>
   <body class="flex flex-col">
     <!-- Selection Popup (Floating) -->
-    <div id="selection-popup" class="hidden fixed z-50 bg-[#0f121a] border border-slate-700 rounded-lg shadow-2xl p-2 flex flex-col gap-2 w-48 select-none">
+    <div
+      id="selection-popup"
+      class="hidden fixed z-50 bg-[#0f121a] border border-slate-700 rounded-lg shadow-2xl p-2 flex flex-col gap-2 w-48 select-none"
+    >
       <div class="grid grid-cols-4 gap-1">
-          <button id="btn-sp-fill" onclick="fillSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-blue-400 flex justify-center items-center sp-btn" title="Fill">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 000 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11z"/></svg>
-          </button>
-          <button id="btn-sp-delete" onclick="deleteSelection()" class="p-1.5 bg-slate-800 hover:bg-red-900/30 rounded text-red-400 flex justify-center items-center sp-btn" title="Delete">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          </button>
-          <button id="btn-sp-paint" onclick="openColorPickerForSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-purple-400 flex justify-center items-center sp-btn" title="Paint">
-              <div class="w-3 h-3 rounded-full bg-current"></div>
-          </button>
-          <button id="btn-sp-fake" onclick="toggleFakeSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-yellow-400 flex justify-center items-center sp-btn" title="Fake Block">
-              <span class="font-bold text-[10px]">F</span>
-          </button>
+        <button
+          id="btn-sp-fill"
+          onclick="fillSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-blue-400 flex justify-center items-center sp-btn"
+          title="Fill"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="m19 11-8-8-8.6 8.6a2 2 0 000 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11z"
+            />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-delete"
+          onclick="deleteSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-red-900/30 rounded text-red-400 flex justify-center items-center sp-btn"
+          title="Delete"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-paint"
+          onclick="openColorPickerForSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-purple-400 flex justify-center items-center sp-btn"
+          title="Paint"
+        >
+          <div class="w-3 h-3 rounded-full bg-current"></div>
+        </button>
+        <button
+          id="btn-sp-fake"
+          onclick="toggleFakeSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-yellow-400 flex justify-center items-center sp-btn"
+          title="Fake Block"
+        >
+          <span class="font-bold text-[10px]">F</span>
+        </button>
       </div>
-      <div class="grid grid-cols-4 gap-1">
-          <button id="btn-sp-invisible" onclick="makeSelectionInvisible()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Invisible">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-          </button>
-          <button id="btn-sp-flicker" onclick="toggleFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Flicker">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-dasharray="4 4" /></svg>
-          </button>
-          <button id="btn-sp-jump-flicker" onclick="toggleJumpFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Jump Flicker">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" /><path d="M12 8v12" /></svg>
-          </button>
-          <button id="btn-sp-illusion" onclick="toggleIllusionSelection()" class="hidden p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400 flex justify-center items-center sp-btn" title="Toggle Illusion">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M5 17v4M3 19h4M19 3v4M17 5h4M19 17v4M17 19h4M12 5v14"></path></svg>
-          </button>
+      <div class="grid grid-cols-5 gap-1">
+        <button
+          id="btn-sp-invisible"
+          onclick="makeSelectionInvisible()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
+          title="Invisible"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+            />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-flicker"
+          onclick="toggleFlickerSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
+          title="Flicker"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              stroke-dasharray="4 4"
+            />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-jump-flicker"
+          onclick="toggleJumpFlickerSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
+          title="Jump Flicker"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 15l7-7 7 7" />
+            <path d="M12 8v12" />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-touch-flicker"
+          onclick="toggleTouchFlickerSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
+          title="Touch Flicker"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
+            />
+          </svg>
+        </button>
+        <button
+          id="btn-sp-illusion"
+          onclick="toggleIllusionSelection()"
+          class="hidden p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400 flex justify-center items-center sp-btn"
+          title="Toggle Illusion"
+        >
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M5 3v4M3 5h4M5 17v4M3 19h4M19 3v4M17 5h4M19 17v4M17 19h4M12 5v14"
+            ></path>
+          </svg>
+        </button>
       </div>
       <div class="bg-slate-900/50 rounded p-1 flex flex-col gap-1">
-          <div class="flex gap-1">
-               <button onclick="shiftSelection(0, -1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button>
-               <button onclick="shiftSelection(0, 1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg></button>
-          </div>
-          <div class="flex gap-1">
-               <button onclick="shiftSelection(-1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
-               <button onclick="shiftSelection(1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-          </div>
+        <div class="flex gap-1">
+          <button
+            onclick="shiftSelection(0, -1)"
+            class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"
+          >
+            <svg
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+          <button
+            onclick="shiftSelection(0, 1)"
+            class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"
+          >
+            <svg
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+        <div class="flex gap-1">
+          <button
+            onclick="shiftSelection(-1, 0)"
+            class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"
+          >
+            <svg
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onclick="shiftSelection(1, 0)"
+            class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"
+          >
+            <svg
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <button id="sp-expand-btn" onclick="toggleSPExpand()" class="w-full text-[10px] text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded py-1 transition-colors flex justify-center items-center gap-1 sp-btn">
-          <span>More Options</span>
-          <svg id="sp-expand-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="transition-transform"><path d="M19 9l-7 7-7-7"/></svg>
+      <button
+        id="sp-expand-btn"
+        onclick="toggleSPExpand()"
+        class="w-full text-[10px] text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded py-1 transition-colors flex justify-center items-center gap-1 sp-btn"
+      >
+        <span>More Options</span>
+        <svg
+          id="sp-expand-icon"
+          width="10"
+          height="10"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          class="transition-transform"
+        >
+          <path d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
       <div id="sp-expanded" class="hidden flex-col gap-2 pt-1">
-          <div class="grid grid-cols-2 gap-1">
-              <button onclick="mirrorSelection('h')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror H</button>
-              <button onclick="mirrorSelection('v')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror V</button>
-          </div>
-          <div id="sp-rising-opt" class="hidden pt-2 border-t border-slate-700/50">
-               <label class="flex items-center gap-2 cursor-pointer group">
-                  <div class="relative">
-                      <input type="checkbox" id="sp-rising-check" class="sr-only peer" onchange="toggleRisingThrough()">
-                      <div class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
-                  </div>
-                  <span class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">Lava Through Blocks</span>
-              </label>
-          </div>
-          <div id="sp-block-config-opt" class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2">
-              <span class="text-[9px] font-bold text-slate-400 uppercase">Blocks Produced</span>
-              <input type="number" id="sp-block-count-input" min="1" max="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500" onchange="updateBlockConfig(this.value)" placeholder="1">
-              <span class="text-[8px] text-slate-600">Default: 1</span>
-          </div>
+        <div class="grid grid-cols-2 gap-1">
+          <button
+            onclick="mirrorSelection('h')"
+            class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn"
+          >
+            Mirror H
+          </button>
+          <button
+            onclick="mirrorSelection('v')"
+            class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn"
+          >
+            Mirror V
+          </button>
+        </div>
+        <div
+          id="sp-rising-opt"
+          class="hidden pt-2 border-t border-slate-700/50"
+        >
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <div class="relative">
+              <input
+                type="checkbox"
+                id="sp-rising-check"
+                class="sr-only peer"
+                onchange="toggleRisingThrough()"
+              />
+              <div
+                class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+              ></div>
+            </div>
+            <span
+              class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase"
+              >Lava Through Blocks</span
+            >
+          </label>
+        </div>
+        <div
+          id="sp-block-config-opt"
+          class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2"
+        >
+          <span class="text-[9px] font-bold text-slate-400 uppercase"
+            >Blocks Produced</span
+          >
+          <input
+            type="number"
+            id="sp-block-count-input"
+            min="1"
+            max="20"
+            class="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500"
+            onchange="updateBlockConfig(this.value)"
+            placeholder="1"
+          />
+          <span class="text-[8px] text-slate-600">Default: 1</span>
+        </div>
       </div>
     </div>
 
@@ -681,7 +940,8 @@
           </svg>
         </button>
         <h1 class="font-bold text-sm tracking-tight text-slate-200 uppercase">
-          Architect <span class="text-blue-500">Pro</span><span class="text-purple-500">Beta</span>
+          Architect <span class="text-blue-500">Pro</span
+          ><span class="text-purple-500">Beta</span>
         </h1>
       </div>
 
@@ -1011,448 +1271,410 @@
 
         <div class="flex-1 overflow-y-auto" id="accordion-container">
           <!-- Section 1: Properties -->
-          <div class="border-b border-slate-800 accordion-open">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+          <div class="border-b border-slate-800">
+            <div
+              class="w-full px-5 py-3 flex justify-between items-center bg-slate-900/20"
             >
-              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MAIN</span>
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
+              <span
+                class="text-[10px] font-bold text-blue-400 uppercase tracking-widest"
+                >MAIN</span
               >
-                <path d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            <div class="accordion-content">
-              <div class="min-h-0 overflow-hidden">
-              <div class="px-5 pb-6 space-y-4">
-                <div
-                  class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2"
+            </div>
+            <div class="px-5 pb-6 space-y-4 pt-4">
+              <div
+                class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2"
+              >
+                Metadata
+              </div>
+              <div>
+                <label
+                  class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                  >Level Identifier</label
                 >
-                  Metadata
-                </div>
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                    >Level Identifier</label
+                <input
+                  id="prop-name"
+                  type="text"
+                  value="New Level"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label
+                  class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                  >Creator</label
+                >
+                <input
+                  id="prop-creator"
+                  type="text"
+                  value="Anonymous"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label
+                  class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                  >Description</label
+                >
+                <textarea
+                  id="prop-desc"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500 h-16 resize-none"
+                  placeholder="Brief description of your level..."
+                  oninput="settingsManager.syncToModal()"
+                ></textarea>
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="text-[9px] text-slate-500 font-bold uppercase"
+                    >Difficulty</label
                   >
-                  <input
-                    id="prop-name"
-                    type="text"
-                    value="New Level"
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                    >Creator</label
+                  <span id="diff-val" class="text-xs text-blue-400 font-mono"
+                    >1</span
                   >
-                  <input
-                    id="prop-creator"
-                    type="text"
-                    value="Anonymous"
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
-                  />
                 </div>
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                    >Description</label
-                  >
-                  <textarea
-                    id="prop-desc"
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500 h-16 resize-none"
-                    placeholder="Brief description of your level..."
-                    oninput="settingsManager.syncToModal()"
-                  ></textarea>
-                </div>
-                <div>
-                  <div class="flex justify-between items-center mb-1.5">
-                    <label class="text-[9px] text-slate-500 font-bold uppercase"
-                      >Difficulty</label
-                    >
-                    <span id="diff-val" class="text-xs text-blue-400 font-mono"
-                      >1</span
-                    >
+                <div
+                  class="flex flex-col gap-1 mt-2 bg-slate-950 p-1.5 rounded border border-slate-800"
+                >
+                  <div class="flex gap-1 h-4" id="diff-bars">
+                    <!-- Injected via JS -->
                   </div>
                   <div
-                    class="flex flex-col gap-1 mt-2 bg-slate-950 p-1.5 rounded border border-slate-800"
+                    class="flex justify-between text-[8px] font-bold text-slate-600 uppercase px-0.5"
                   >
-                    <div class="flex gap-1 h-4" id="diff-bars">
-                      <!-- Injected via JS -->
-                    </div>
-                    <div
-                      class="flex justify-between text-[8px] font-bold text-slate-600 uppercase px-0.5"
+                    <span>Easy</span><span>Medium</span><span>Hard</span
+                    ><span>Expert</span><span>Extreme</span>
+                  </div>
+                </div>
+                <input type="hidden" id="prop-diff" value="1" />
+                <input type="hidden" id="prop-force-zoom" value="false" />
+                <input type="hidden" id="prop-no-death-anim" value="false" />
+              </div>
+              <div
+                class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
+              >
+                Physics
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1.5">
+                  <div class="flex items-center gap-1.5">
+                    <label class="text-[9px] text-slate-500 font-bold uppercase"
+                      >Gravity Constant</label
                     >
-                      <span>Easy</span><span>Medium</span><span>Hard</span
-                      ><span>Expert</span><span>Extreme</span>
+                    <div
+                      onclick="
+                        showInfo(
+                          'Gravity Constant',
+                          'Controls jump height and fall speed. Lower values increase jump height and decrease fall speed, while higher values do the opposite. The default Block Over It gravity is 27.',
+                        )
+                      "
+                      class="flex items-center justify-center w-3 h-3 rounded-full border border-slate-600 text-[8px] text-slate-400 cursor-pointer hover:text-white hover:border-white transition-colors"
+                    >
+                      i
                     </div>
                   </div>
-                  <input type="hidden" id="prop-diff" value="1" />
-                  <input type="hidden" id="prop-force-zoom" value="false">
-                  <input type="hidden" id="prop-no-death-anim" value="false">
+                  <span id="gravity-val" class="text-xs text-blue-400 font-mono"
+                    >27</span
+                  >
                 </div>
-                <div
-                  class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
-                >
-                  Physics
+                <input
+                  id="prop-gravity"
+                  type="range"
+                  min="5"
+                  max="100"
+                  value="27"
+                  class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                  oninput="
+                    document.getElementById('gravity-val').innerText =
+                      this.value;
+                    settingsManager.syncToModal();
+                  "
+                />
+              </div>
+              <div class="mt-4">
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="text-[9px] text-slate-500 font-bold uppercase"
+                    >Rising Lava Speed</label
+                  >
+                  <span id="rise-val" class="text-xs text-blue-400 font-mono"
+                    >Disabled</span
+                  >
+                </div>
+                <input
+                  id="prop-rise"
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  value="0"
+                  class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                  oninput="
+                    const val = parseFloat(this.value);
+                    document.getElementById('rise-val').innerText =
+                      val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled';
+                    settingsManager.syncToModal();
+                  "
+                />
+              </div>
+              <div
+                class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
+              >
+                Grid Dimensions
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
+                    >Width</label
+                  >
+                  <div
+                    class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
+                  >
+                    <button
+                      onclick="adjustProp('prop-w', -1)"
+                      class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
+                    >
+                      -
+                    </button>
+                    <input
+                      id="prop-w"
+                      type="number"
+                      value="40"
+                      class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
+                      oninput="settingsManager.syncToModal()"
+                    />
+                    <button
+                      onclick="adjustProp('prop-w', 1)"
+                      class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div>
-                  <div class="flex justify-between items-center mb-1.5">
-                    <div class="flex items-center gap-1.5">
-                      <label
-                        class="text-[9px] text-slate-500 font-bold uppercase"
-                        >Gravity Constant</label
-                      >
-                      <div
-                        onclick="
-                          showInfo(
-                            'Gravity Constant',
-                            'Controls jump height and fall speed. Lower values increase jump height and decrease fall speed, while higher values do the opposite. The default Block Over It gravity is 27.',
-                          )
-                        "
-                        class="flex items-center justify-center w-3 h-3 rounded-full border border-slate-600 text-[8px] text-slate-400 cursor-pointer hover:text-white hover:border-white transition-colors"
-                      >
-                        i
-                      </div>
-                    </div>
-                    <span
-                      id="gravity-val"
-                      class="text-xs text-blue-400 font-mono"
-                      >27</span
-                    >
-                  </div>
-                  <input
-                    id="prop-gravity"
-                    type="range"
-                    min="5"
-                    max="100"
-                    value="27"
-                    class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                    oninput="
-                      document.getElementById('gravity-val').innerText =
-                        this.value
-                      settingsManager.syncToModal();
-                    "
-                  />
-                </div>
-                <div class="mt-4">
-                  <div class="flex justify-between items-center mb-1.5">
-                    <label class="text-[9px] text-slate-500 font-bold uppercase">Rising Lava Speed</label>
-                    <span id="rise-val" class="text-xs text-blue-400 font-mono">Disabled</span>
-                  </div>
-                  <input id="prop-rise" type="range" min="0" max="10" step="0.5" value="0" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                    oninput="
-                      const val = parseFloat(this.value);
-                      document.getElementById('rise-val').innerText = val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled';
-                      settingsManager.syncToModal();
-                    ">
-                </div>
-                <div
-                  class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
-                >
-                  Grid Dimensions
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                  <div>
-                    <label
-                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                      >Width</label
-                    >
-                    <div
-                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
-                    >
-                      <button
-                        onclick="adjustProp('prop-w', -1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
-                      >
-                        -
-                      </button>
-                      <input
-                        id="prop-w"
-                        type="number"
-                        value="40"
-                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
-                        oninput="settingsManager.syncToModal()"
-                      />
-                      <button
-                        onclick="adjustProp('prop-w', 1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                      >Height</label
-                    >
-                    <div
-                      class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
-                    >
-                      <button
-                        onclick="adjustProp('prop-h', -1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
-                      >
-                        -
-                      </button>
-                      <input
-                        id="prop-h"
-                        type="number"
-                        value="20"
-                        class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
-                        oninput="settingsManager.syncToModal()"
-                      />
-                      <button
-                        onclick="adjustProp('prop-h', 1)"
-                        class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 pt-2">
-                  <button
-                    onclick="applyResize()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700"
+                  <label
+                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
+                    >Height</label
                   >
-                    Apply Resize
-                  </button>
-                  <button
-                    onclick="clearCanvas()"
-                    class="py-2 bg-red-950/30 text-red-500 text-[10px] font-bold rounded border border-red-900/40 hover:bg-red-900/30"
+                  <div
+                    class="flex items-center bg-slate-950 border border-slate-800 rounded hover:border-slate-600 transition-colors"
                   >
-                    Clear All
-                  </button>
-                </div>
-                <div class="mt-4 flex justify-end">
-                  <button onclick="settingsManager.open()" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 rounded border border-slate-700 transition-colors">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    All Settings
-                  </button>
+                    <button
+                      onclick="adjustProp('prop-h', -1)"
+                      class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-l h-full"
+                    >
+                      -
+                    </button>
+                    <input
+                      id="prop-h"
+                      type="number"
+                      value="20"
+                      class="w-full bg-transparent text-center py-1.5 text-xs text-slate-200 outline-none"
+                      oninput="settingsManager.syncToModal()"
+                    />
+                    <button
+                      onclick="adjustProp('prop-h', 1)"
+                      class="px-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-r h-full"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
+              <div class="grid grid-cols-2 gap-2 pt-2">
+                <button
+                  onclick="applyResize()"
+                  class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700"
+                >
+                  Apply Resize
+                </button>
+                <button
+                  onclick="clearCanvas()"
+                  class="py-2 bg-red-950/30 text-red-500 text-[10px] font-bold rounded border border-red-900/40 hover:bg-red-900/30"
+                >
+                  Clear All
+                </button>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button
+                  onclick="settingsManager.open()"
+                  class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 rounded border border-slate-700 transition-colors"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  All Settings
+                </button>
               </div>
             </div>
           </div>
 
           <!-- Section: Appearance -->
           <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+            <div
+              class="w-full px-5 py-3 flex justify-between items-center bg-slate-900/20"
             >
-              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">APPEARANCE</span>
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
+              <span
+                class="text-[10px] font-bold text-blue-400 uppercase tracking-widest"
+                >APPEARANCE</span
               >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div class="min-h-0 overflow-hidden">
-              <div class="px-5 pb-6 space-y-4">
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                    >Block Style</label
+            </div>
+            <div class="px-5 pb-6 space-y-4 pt-4">
+              <div>
+                <label
+                  class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                  >Block Style</label
+                >
+                <div class="relative">
+                  <select
+                    id="prop-style"
+                    onchange="updateStyle()"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500 appearance-none cursor-pointer hover:border-blue-500 transition-colors"
                   >
-                  <div class="relative">
-                    <select
-                      id="prop-style"
-                      onchange="updateStyle()"
-                      class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500 appearance-none cursor-pointer hover:border-blue-500 transition-colors"
+                    <option value="original">Original</option>
+                    <option value="modern">Block Architect Pro</option>
+                  </select>
+                  <div
+                    class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500"
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
                     >
-                      <option value="original">Original</option>
-                      <option value="modern">Block Architect Pro</option>
-                    </select>
-                    <div
-                      class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500"
-                    >
-                      <svg
-                        width="10"
-                        height="10"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Show Grid</span
-                      >
-                      <div class="relative">
-                        <input
-                          type="checkbox"
-                          id="opt-showgrid"
-                          class="sr-only peer"
-                          checked
-                          onchange="toggleGrid()"
-                        />
-                        <div
-                          class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                        ></div>
-                      </div>
-                    </label>
-                    <label
-                      class="flex items-center gap-2 cursor-pointer group"
-                    >
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Show Minimap</span
-                      >
-                      <div class="relative">
-                        <input
-                          type="checkbox"
-                          id="opt-minimap"
-                          class="sr-only peer"
-                          checked
-                          onchange="minimap.toggleVisibility()"
-                        />
-                        <div
-                          class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                        ></div>
-                      </div>
-                    </label>
+                      <path d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               </div>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <span
+                    class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                    >Show Grid</span
+                  >
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      id="opt-showgrid"
+                      class="sr-only peer"
+                      checked
+                      onchange="toggleGrid()"
+                    />
+                    <div
+                      class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                    ></div>
+                  </div>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <span
+                    class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                    >Show Minimap</span
+                  >
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      id="opt-minimap"
+                      class="sr-only peer"
+                      checked
+                      onchange="minimap.toggleVisibility()"
+                    />
+                    <div
+                      class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                    ></div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
 
           <!-- Section 2: Templates -->
           <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+            <div
+              class="w-full px-5 py-3 flex justify-between items-center bg-slate-900/20"
             >
-              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">STRUCTURE TEMPLATES</span>
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
+              <span
+                class="text-[10px] font-bold text-blue-400 uppercase tracking-widest"
+                >STRUCTURE TEMPLATES</span
               >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div class="min-h-0 overflow-hidden">
-              <div class="px-5 pb-6 space-y-2" id="recent-templates-list">
-                <!-- Recent templates injected here -->
-                <button
-                  onclick="openTemplatesModal()"
-                  class="w-full py-2 mt-3 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-blue-400"
-                >
-                  Browse Full Library
-                </button>
-              </div>
-              </div>
+            </div>
+            <div class="px-5 pb-6 space-y-2 pt-4" id="recent-templates-list">
+              <!-- Recent templates injected here -->
+              <button
+                onclick="openTemplatesModal()"
+                class="w-full py-2 mt-3 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-blue-400"
+              >
+                Browse Full Library
+              </button>
             </div>
           </div>
 
           <!-- Section: Music -->
           <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+            <div
+              class="w-full px-5 py-3 flex justify-between items-center bg-slate-900/20"
             >
-              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MUSIC</span>
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
+              <span
+                class="text-[10px] font-bold text-blue-400 uppercase tracking-widest"
+                >MUSIC</span
               >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div class="min-h-0 overflow-hidden">
-              <div class="px-5 pb-6 space-y-2" id="music-list">
-                <!-- Music injected here -->
-              </div>
-              </div>
+            </div>
+            <div class="px-5 pb-6 space-y-2 pt-4" id="music-list">
+              <!-- Music injected here -->
             </div>
           </div>
 
           <!-- Section 4: Diagnostics -->
           <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
+            <div
+              class="w-full px-5 py-3 flex justify-between items-center bg-slate-900/20"
             >
-              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">LEVEL CHECK</span>
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
+              <span
+                class="text-[10px] font-bold text-blue-400 uppercase tracking-widest"
+                >LEVEL CHECK</span
               >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div class="min-h-0 overflow-hidden">
-              <div class="px-5 pb-6">
-                <div
-                  id="stats"
-                  class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-[11px] space-y-2 mb-4"
-                >
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Collectibles</span
-                    ><span id="stat-coins" class="text-white font-mono">0</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Blue Coins</span
-                    ><span id="stat-blue" class="text-white font-mono">NO</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Spawn Point</span
-                    ><span id="stat-player" class="text-slate-500 italic"
-                      >None</span
-                    >
-                  </div>
+            </div>
+            <div class="px-5 pb-6 pt-4">
+              <div
+                id="stats"
+                class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-[11px] space-y-2 mb-4"
+              >
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Collectibles</span
+                  ><span id="stat-coins" class="text-white font-mono">0</span>
                 </div>
-                <button
-                  onclick="validateLevel()"
-                  class="w-full py-2 bg-blue-600/10 text-blue-400 font-bold rounded border border-blue-600/30 hover:bg-blue-600/20 text-xs"
-                >
-                  Check Level
-                </button>
-                <div
-                  id="val-feedback"
-                  class="mt-3 text-[10px] p-3 rounded border border-slate-800 hidden leading-relaxed"
-                ></div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Blue Coins</span
+                  ><span id="stat-blue" class="text-white font-mono">NO</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Spawn Point</span
+                  ><span id="stat-player" class="text-slate-500 italic"
+                    >None</span
+                  >
+                </div>
               </div>
-              </div>
+              <button
+                onclick="validateLevel()"
+                class="w-full py-2 bg-blue-600/10 text-blue-400 font-bold rounded border border-blue-600/30 hover:bg-blue-600/20 text-xs"
+              >
+                Check Level
+              </button>
+              <div
+                id="val-feedback"
+                class="mt-3 text-[10px] p-3 rounded border border-slate-800 hidden leading-relaxed"
+              ></div>
             </div>
           </div>
         </div>
@@ -1873,83 +2095,83 @@
                 </button>
                 <div class="accordion-content">
                   <div class="min-h-0 overflow-hidden">
-                  <div class="p-5 space-y-3">
-                    <div>
+                    <div class="p-5 space-y-3">
+                      <div>
+                        <label
+                          class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                          >Theme</label
+                        >
+                        <select
+                          id="exp-style"
+                          onchange="exportManager.update()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500"
+                        >
+                          <option value="original">Original (Classic)</option>
+                          <option value="modern">Modern (Flat)</option>
+                        </select>
+                      </div>
+
                       <label
-                        class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                        >Theme</label
+                        class="flex items-center justify-between cursor-pointer group"
                       >
-                      <select
-                        id="exp-style"
-                        onchange="exportManager.update()"
-                        class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500"
+                        <span
+                          class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                          >Show Grid Lines</span
+                        >
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            id="exp-grid"
+                            onchange="exportManager.update()"
+                            class="sr-only peer"
+                          />
+                          <div
+                            class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                          ></div>
+                        </div>
+                      </label>
+
+                      <label
+                        class="flex items-center justify-between cursor-pointer group"
                       >
-                        <option value="original">Original (Classic)</option>
-                        <option value="modern">Modern (Flat)</option>
-                      </select>
+                        <span
+                          class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                          >Show Player</span
+                        >
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            id="exp-show-player"
+                            onchange="exportManager.update()"
+                            checked
+                            class="sr-only peer"
+                          />
+                          <div
+                            class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                          ></div>
+                        </div>
+                      </label>
+
+                      <label
+                        class="flex items-center justify-between cursor-pointer group"
+                      >
+                        <span
+                          class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                          >Alt Blue Coin Style</span
+                        >
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            id="exp-alt-coin"
+                            onchange="exportManager.update()"
+                            class="sr-only peer"
+                          />
+                          <div
+                            class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                          ></div>
+                        </div>
+                      </label>
                     </div>
-
-                    <label
-                      class="flex items-center justify-between cursor-pointer group"
-                    >
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Show Grid Lines</span
-                      >
-                      <div class="relative">
-                        <input
-                          type="checkbox"
-                          id="exp-grid"
-                          onchange="exportManager.update()"
-                          class="sr-only peer"
-                        />
-                        <div
-                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                        ></div>
-                      </div>
-                    </label>
-
-                    <label
-                      class="flex items-center justify-between cursor-pointer group"
-                    >
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Show Player</span
-                      >
-                      <div class="relative">
-                        <input
-                          type="checkbox"
-                          id="exp-show-player"
-                          onchange="exportManager.update()"
-                          checked
-                          class="sr-only peer"
-                        />
-                        <div
-                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                        ></div>
-                      </div>
-                    </label>
-
-                    <label
-                      class="flex items-center justify-between cursor-pointer group"
-                    >
-                      <span
-                        class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
-                        >Alt Blue Coin Style</span
-                      >
-                      <div class="relative">
-                        <input
-                          type="checkbox"
-                          id="exp-alt-coin"
-                          onchange="exportManager.update()"
-                          class="sr-only peer"
-                        />
-                        <div
-                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                        ></div>
-                      </div>
-                    </label>
-                  </div>
                   </div>
                 </div>
               </div>
@@ -1977,28 +2199,28 @@
                 </button>
                 <div class="accordion-content">
                   <div class="min-h-0 overflow-hidden">
-                  <div class="p-5 space-y-3">
-                    <div>
-                      <div class="flex justify-between mb-1.5">
-                        <label
-                          class="text-[9px] text-slate-500 font-bold uppercase"
-                          >Simulation</label
-                        >
-                        <span class="text-[10px] text-blue-400 font-mono"
-                          ><span id="exp-ticks-val">0</span> ticks</span
-                        >
+                    <div class="p-5 space-y-3">
+                      <div>
+                        <div class="flex justify-between mb-1.5">
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase"
+                            >Simulation</label
+                          >
+                          <span class="text-[10px] text-blue-400 font-mono"
+                            ><span id="exp-ticks-val">0</span> ticks</span
+                          >
+                        </div>
+                        <input
+                          type="range"
+                          id="exp-ticks"
+                          min="0"
+                          max="200"
+                          value="0"
+                          oninput="exportManager.update()"
+                          class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        id="exp-ticks"
-                        min="0"
-                        max="200"
-                        value="0"
-                        oninput="exportManager.update()"
-                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                      />
                     </div>
-                  </div>
                   </div>
                 </div>
               </div>
@@ -2026,57 +2248,57 @@
                 </button>
                 <div class="accordion-content">
                   <div class="min-h-0 overflow-hidden">
-                  <div class="p-5 space-y-3">
-                    <div>
-                      <div class="flex justify-between mb-1.5">
+                    <div class="p-5 space-y-3">
+                      <div>
+                        <div class="flex justify-between mb-1.5">
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase"
+                            >Padding</label
+                          >
+                          <span class="text-[10px] text-blue-400 font-mono"
+                            ><span id="exp-pad-val">20</span>px</span
+                          >
+                        </div>
+                        <input
+                          type="range"
+                          id="exp-padding"
+                          min="0"
+                          max="100"
+                          value="20"
+                          oninput="exportManager.update()"
+                          class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                        />
+                      </div>
+                      <div>
                         <label
-                          class="text-[9px] text-slate-500 font-bold uppercase"
-                          >Padding</label
+                          class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                          >Output Scale</label
                         >
-                        <span class="text-[10px] text-blue-400 font-mono"
-                          ><span id="exp-pad-val">20</span>px</span
-                        >
-                      </div>
-                      <input
-                        type="range"
-                        id="exp-padding"
-                        min="0"
-                        max="100"
-                        value="20"
-                        oninput="exportManager.update()"
-                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                        >Output Scale</label
-                      >
-                      <div class="grid grid-cols-3 gap-2">
-                        <button
-                          onclick="exportManager.setScale(1)"
-                          id="btn-scale-1"
-                          class="py-2 bg-blue-600 text-white text-[10px] font-bold rounded border border-blue-500"
-                        >
-                          1x
-                        </button>
-                        <button
-                          onclick="exportManager.setScale(2)"
-                          id="btn-scale-2"
-                          class="py-2 bg-slate-900 text-slate-400 hover:text-white text-[10px] font-bold rounded border border-slate-800"
-                        >
-                          2x
-                        </button>
-                        <button
-                          onclick="exportManager.setScale(4)"
-                          id="btn-scale-4"
-                          class="py-2 bg-slate-900 text-slate-400 hover:text-white text-[10px] font-bold rounded border border-slate-800"
-                        >
-                          4x
-                        </button>
+                        <div class="grid grid-cols-3 gap-2">
+                          <button
+                            onclick="exportManager.setScale(1)"
+                            id="btn-scale-1"
+                            class="py-2 bg-blue-600 text-white text-[10px] font-bold rounded border border-blue-500"
+                          >
+                            1x
+                          </button>
+                          <button
+                            onclick="exportManager.setScale(2)"
+                            id="btn-scale-2"
+                            class="py-2 bg-slate-900 text-slate-400 hover:text-white text-[10px] font-bold rounded border border-slate-800"
+                          >
+                            2x
+                          </button>
+                          <button
+                            onclick="exportManager.setScale(4)"
+                            id="btn-scale-4"
+                            class="py-2 bg-slate-900 text-slate-400 hover:text-white text-[10px] font-bold rounded border border-slate-800"
+                          >
+                            4x
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   </div>
                 </div>
               </div>
@@ -2104,109 +2326,112 @@
                 </button>
                 <div class="accordion-content">
                   <div class="min-h-0 overflow-hidden">
-                  <div class="p-5 space-y-3">
-                    <div>
-                      <label
-                        class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                        >Text</label
-                      >
-                      <input
-                        type="text"
-                        id="exp-watermark"
-                        placeholder="Enter text..."
-                        oninput="exportManager.update()"
-                        class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="p-5 space-y-3">
                       <div>
                         <label
                           class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                          >Color</label
+                          >Text</label
                         >
-                        <button
-                          id="exp-wm-color-btn"
-                          onclick="openColorPickerForWatermark()"
-                          class="w-full h-8 bg-slate-950 border border-slate-800 rounded flex items-center justify-center gap-2 hover:border-blue-500 transition-colors"
-                        >
-                          <div
-                            id="exp-wm-color-preview"
-                            class="w-4 h-4 rounded-full bg-white border border-slate-700"
-                          ></div>
-                          <span class="text-[10px] text-slate-400">Select</span>
-                        </button>
+                        <input
+                          type="text"
+                          id="exp-watermark"
+                          placeholder="Enter text..."
+                          oninput="exportManager.update()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500"
+                        />
                       </div>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <div>
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                            >Color</label
+                          >
+                          <button
+                            id="exp-wm-color-btn"
+                            onclick="openColorPickerForWatermark()"
+                            class="w-full h-8 bg-slate-950 border border-slate-800 rounded flex items-center justify-center gap-2 hover:border-blue-500 transition-colors"
+                          >
+                            <div
+                              id="exp-wm-color-preview"
+                              class="w-4 h-4 rounded-full bg-white border border-slate-700"
+                            ></div>
+                            <span class="text-[10px] text-slate-400"
+                              >Select</span
+                            >
+                          </button>
+                        </div>
+                        <div>
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                            >Position</label
+                          >
+                          <select
+                            id="exp-wm-position"
+                            onchange="exportManager.update()"
+                            class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[10px] text-slate-300 outline-none focus:border-blue-500"
+                          >
+                            <option value="bottom-right">Bottom Right</option>
+                            <option value="bottom-left">Bottom Left</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="top-left">Top Left</option>
+                          </select>
+                        </div>
+                      </div>
+
                       <div>
-                        <label
-                          class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
-                          >Position</label
-                        >
-                        <select
-                          id="exp-wm-position"
-                          onchange="exportManager.update()"
-                          class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[10px] text-slate-300 outline-none focus:border-blue-500"
-                        >
-                          <option value="bottom-right">Bottom Right</option>
-                          <option value="bottom-left">Bottom Left</option>
-                          <option value="top-right">Top Right</option>
-                          <option value="top-left">Top Left</option>
-                        </select>
+                        <div class="flex justify-between mb-1.5">
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase"
+                            >Size</label
+                          >
+                          <span class="text-[10px] text-blue-400 font-mono"
+                            ><span id="exp-wm-size-val">20</span>px</span
+                          >
+                        </div>
+                        <input
+                          type="range"
+                          id="exp-wm-size"
+                          min="10"
+                          max="100"
+                          value="20"
+                          oninput="
+                            exportManager.update();
+                            document.getElementById(
+                              'exp-wm-size-val',
+                            ).innerText = this.value;
+                          "
+                          class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                        />
                       </div>
-                    </div>
 
-                    <div>
-                      <div class="flex justify-between mb-1.5">
-                        <label
-                          class="text-[9px] text-slate-500 font-bold uppercase"
-                          >Size</label
-                        >
-                        <span class="text-[10px] text-blue-400 font-mono"
-                          ><span id="exp-wm-size-val">20</span>px</span
-                        >
+                      <div>
+                        <div class="flex justify-between mb-1.5">
+                          <label
+                            class="text-[9px] text-slate-500 font-bold uppercase"
+                            >Opacity</label
+                          >
+                          <span class="text-[10px] text-blue-400 font-mono"
+                            ><span id="exp-wm-opacity-val">100</span>%</span
+                          >
+                        </div>
+                        <input
+                          type="range"
+                          id="exp-wm-opacity"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value="1"
+                          oninput="
+                            exportManager.update();
+                            document.getElementById(
+                              'exp-wm-opacity-val',
+                            ).innerText = Math.round(this.value * 100);
+                          "
+                          class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        id="exp-wm-size"
-                        min="10"
-                        max="100"
-                        value="20"
-                        oninput="
-                          exportManager.update();
-                          document.getElementById('exp-wm-size-val').innerText =
-                            this.value;
-                        "
-                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                      />
                     </div>
-
-                    <div>
-                      <div class="flex justify-between mb-1.5">
-                        <label
-                          class="text-[9px] text-slate-500 font-bold uppercase"
-                          >Opacity</label
-                        >
-                        <span class="text-[10px] text-blue-400 font-mono"
-                          ><span id="exp-wm-opacity-val">100</span>%</span
-                        >
-                      </div>
-                      <input
-                        type="range"
-                        id="exp-wm-opacity"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value="1"
-                        oninput="
-                          exportManager.update();
-                          document.getElementById(
-                            'exp-wm-opacity-val',
-                          ).innerText = Math.round(this.value * 100);
-                        "
-                        class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                      />
-                    </div>
-                  </div>
                   </div>
                 </div>
               </div>
@@ -2354,46 +2579,113 @@
     </div>
 
     <!-- ALL SETTINGS MODAL -->
-    <div id="settings-modal" class="fixed inset-0 z-[350] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
-      <div class="bg-[#0f121a] border border-slate-800 w-full max-w-4xl h-[600px] rounded-xl shadow-2xl flex overflow-hidden">
+    <div
+      id="settings-modal"
+      class="fixed inset-0 z-[350] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+    >
+      <div
+        class="bg-[#0f121a] border border-slate-800 w-full max-w-4xl h-[600px] rounded-xl shadow-2xl flex overflow-hidden"
+      >
         <!-- Sidebar -->
-        <div class="w-64 bg-[#0a0c12] border-r border-slate-800 flex flex-col p-4">
+        <div
+          class="w-64 bg-[#0a0c12] border-r border-slate-800 flex flex-col p-4"
+        >
           <div class="mb-6">
             <h2 class="text-lg font-bold text-white px-2 mb-4">Settings</h2>
           </div>
           <div class="space-y-1">
-            <button onclick="settingsManager.switchTab('metadata')" id="tab-metadata" class="settings-tab w-full active">Metadata</button>
-            <button onclick="settingsManager.switchTab('physics')" id="tab-physics" class="settings-tab w-full">Physics</button>
-            <button onclick="settingsManager.switchTab('grid')" id="tab-grid" class="settings-tab w-full">Grid</button>
+            <button
+              onclick="settingsManager.switchTab('metadata')"
+              id="tab-metadata"
+              class="settings-tab w-full active"
+            >
+              Metadata
+            </button>
+            <button
+              onclick="settingsManager.switchTab('physics')"
+              id="tab-physics"
+              class="settings-tab w-full"
+            >
+              Physics
+            </button>
+            <button
+              onclick="settingsManager.switchTab('grid')"
+              id="tab-grid"
+              class="settings-tab w-full"
+            >
+              Grid
+            </button>
           </div>
         </div>
         <!-- Content -->
         <div class="flex-1 bg-[#0f121a] flex flex-col relative">
           <div class="absolute top-4 right-4">
-            <button onclick="settingsManager.close()" class="text-slate-500 hover:text-white p-1">
-              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            <button
+              onclick="settingsManager.close()"
+              class="text-slate-500 hover:text-white p-1"
+            >
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          
+
           <div id="settings-content" class="flex-1 overflow-y-auto p-8">
             <!-- Metadata Section -->
             <div id="sec-metadata" class="space-y-6">
-              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Metadata</h3>
+              <h3
+                class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
+              >
+                Metadata
+              </h3>
               <div class="grid grid-cols-2 gap-6">
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Level Identifier</label>
-                  <input id="set-prop-name" type="text" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Level Identifier</label
+                  >
+                  <input
+                    id="set-prop-name"
+                    type="text"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                    oninput="settingsManager.syncFromModal()"
+                  />
                 </div>
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Creator</label>
-                  <input id="set-prop-creator" type="text" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Creator</label
+                  >
+                  <input
+                    id="set-prop-creator"
+                    type="text"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                    oninput="settingsManager.syncFromModal()"
+                  />
                 </div>
                 <div class="col-span-2 setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Description</label>
-                  <textarea id="set-prop-desc" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-blue-500 h-24 resize-none" oninput="settingsManager.syncFromModal()"></textarea>
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Description</label
+                  >
+                  <textarea
+                    id="set-prop-desc"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-blue-500 h-24 resize-none"
+                    oninput="settingsManager.syncFromModal()"
+                  ></textarea>
                 </div>
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Difficulty</label>
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Difficulty</label
+                  >
                   <div class="flex gap-1 h-8" id="set-diff-bars-modal"></div>
                 </div>
               </div>
@@ -2401,42 +2693,97 @@
 
             <!-- Physics Section -->
             <div id="sec-physics" class="space-y-6 hidden">
-              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Physics</h3>
+              <h3
+                class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
+              >
+                Physics
+              </h3>
               <div class="space-y-6 max-w-lg">
                 <div class="setting-item">
                   <div class="flex justify-between mb-2">
-                    <label class="text-[10px] text-slate-500 font-bold uppercase">Gravity Constant</label>
-                    <span id="set-gravity-val" class="text-xs text-blue-400 font-mono">27</span>
+                    <label
+                      class="text-[10px] text-slate-500 font-bold uppercase"
+                      >Gravity Constant</label
+                    >
+                    <span
+                      id="set-gravity-val"
+                      class="text-xs text-blue-400 font-mono"
+                      >27</span
+                    >
                   </div>
-                  <input id="set-prop-gravity" type="range" min="5" max="100" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500" oninput="document.getElementById('set-gravity-val').innerText = this.value; settingsManager.syncFromModal()">
+                  <input
+                    id="set-prop-gravity"
+                    type="range"
+                    min="5"
+                    max="100"
+                    class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                    oninput="
+                      document.getElementById('set-gravity-val').innerText =
+                        this.value;
+                      settingsManager.syncFromModal();
+                    "
+                  />
                 </div>
                 <!-- Hidden input for compatibility -->
-                <input type="hidden" id="prop-rise" value="0">
-                <input type="hidden" id="set-prop-rise" value="0">
+                <input type="hidden" id="prop-rise" value="0" />
+                <input type="hidden" id="set-prop-rise" value="0" />
                 <div class="pt-4 border-t border-slate-800 setting-item">
-                  <label class="flex items-center justify-between cursor-pointer group">
-                    <span class="text-xs font-bold text-slate-300">Mirror Level (Multiple player spawns)</span>
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Mirror Level (Multiple player spawns)</span
+                    >
                     <div class="relative">
-                      <input type="checkbox" id="set-prop-mirror" class="sr-only peer" onchange="settingsManager.syncFromModal()">
-                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                      <input
+                        type="checkbox"
+                        id="set-prop-mirror"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
                     </div>
                   </label>
                 </div>
                 <div class="pt-4 border-t border-slate-800 setting-item">
-                  <label class="flex items-center justify-between cursor-pointer group">
-                    <span class="text-xs font-bold text-slate-300">Force Zoomed Camera</span>
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Force Zoomed Camera</span
+                    >
                     <div class="relative">
-                      <input type="checkbox" id="set-prop-force-zoom" class="sr-only peer" onchange="settingsManager.syncFromModal()">
-                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                      <input
+                        type="checkbox"
+                        id="set-prop-force-zoom"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
                     </div>
                   </label>
                 </div>
                 <div class="pt-4 border-t border-slate-800 setting-item">
-                  <label class="flex items-center justify-between cursor-pointer group">
-                    <span class="text-xs font-bold text-slate-300">Disable Death Animation</span>
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Disable Death Animation</span
+                    >
                     <div class="relative">
-                      <input type="checkbox" id="set-prop-no-death-anim" class="sr-only peer" onchange="settingsManager.syncFromModal()">
-                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                      <input
+                        type="checkbox"
+                        id="set-prop-no-death-anim"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
                     </div>
                   </label>
                 </div>
@@ -2445,33 +2792,74 @@
 
             <!-- Grid Section -->
             <div id="sec-grid" class="space-y-6 hidden">
-              <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4">Grid Configuration</h3>
+              <h3
+                class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
+              >
+                Grid Configuration
+              </h3>
               <div class="grid grid-cols-2 gap-6 max-w-lg">
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Width</label>
-                  <input id="set-prop-w" type="number" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Width</label
+                  >
+                  <input
+                    id="set-prop-w"
+                    type="number"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                    oninput="settingsManager.syncFromModal()"
+                  />
                 </div>
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Height</label>
-                  <input id="set-prop-h" type="number" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" oninput="settingsManager.syncFromModal()">
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Height</label
+                  >
+                  <input
+                    id="set-prop-h"
+                    type="number"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                    oninput="settingsManager.syncFromModal()"
+                  />
                 </div>
               </div>
               <div class="flex gap-3 pt-4">
-                <button onclick="applyResize(); settingsManager.close()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg shadow-blue-600/20">
+                <button
+                  onclick="
+                    applyResize();
+                    settingsManager.close();
+                  "
+                  class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg shadow-blue-600/20"
+                >
                   Apply Resize
                 </button>
-                <button onclick="clearCanvas(); settingsManager.close()" class="px-6 py-2 bg-red-950/30 text-red-500 text-xs font-bold rounded border border-red-900/40 hover:bg-red-900/30">
+                <button
+                  onclick="
+                    clearCanvas();
+                    settingsManager.close();
+                  "
+                  class="px-6 py-2 bg-red-950/30 text-red-500 text-xs font-bold rounded border border-red-900/40 hover:bg-red-900/30"
+                >
                   Clear All Blocks
                 </button>
               </div>
             </div>
           </div>
-          
-          <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
-            <button id="btn-reset-defaults" onclick="settingsManager.resetToDefaults()" class="hidden mr-auto px-4 py-2 text-red-400 hover:text-red-300 text-xs font-bold rounded hover:bg-red-900/20 transition-colors">
+
+          <div
+            class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end"
+          >
+            <button
+              id="btn-reset-defaults"
+              onclick="settingsManager.resetToDefaults()"
+              class="hidden mr-auto px-4 py-2 text-red-400 hover:text-red-300 text-xs font-bold rounded hover:bg-red-900/20 transition-colors"
+            >
               Reset to Default
             </button>
-            <button onclick="settingsManager.close()" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded border border-slate-700">
+            <button
+              onclick="settingsManager.close()"
+              class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded border border-slate-700"
+            >
               Close
             </button>
           </div>
@@ -2697,9 +3085,40 @@
           artist: "Alex Grohl",
           file: "time.mp3",
         },
+        {
+          id: "darkness",
+          title: "Darkness",
+          artist: "Dmitrii Spis",
+          file: "darkness.mp3",
+        },
+        {
+          id: "last_point",
+          title: "The Last Point",
+          artist: "Rasberry Music",
+          file: "last_point.mp3",
+        },
+        {
+          id: "drift",
+          title: "Drift",
+          artist: "DELOsound",
+          file: "drift.mp3",
+        },
+        {
+          id: "night",
+          title: "Night",
+          artist: "DELOsound",
+          file: "night.mp3",
+        },
+        {
+          id: "showcase",
+          title: "Showcase",
+          artist: "DELOsound",
+          file: "showcase.mp3",
+        },
       ];
       const minimap = {
         isCollapsed: false,
+        pendingRender: null,
         colorMap: {
           x: "#444",
           "!": "#e55",
@@ -2730,6 +3149,13 @@
             : "none";
         },
         render() {
+          if (this.pendingRender) return;
+          this.pendingRender = requestAnimationFrame(() => {
+            this.doRender();
+            this.pendingRender = null;
+          });
+        },
+        doRender() {
           const canvas = document.getElementById("minimap-canvas");
           if (!canvas) return;
           const ctx = canvas.getContext("2d");
@@ -2798,60 +3224,89 @@
           forceZoom: false,
           noDeathAnim: false,
           w: 40,
-          h: 20
+          h: 20,
         },
         open() {
-          const modal = document.getElementById('settings-modal');
-          modal.classList.remove('hidden');
+          const modal = document.getElementById("settings-modal");
+          modal.classList.remove("hidden");
           this.syncToModal();
           this.renderDiffBarsModal();
-          this.switchTab('metadata');
+          this.switchTab("metadata");
           this.checkDirty();
         },
         close() {
-          document.getElementById('settings-modal').classList.add('hidden');
+          document.getElementById("settings-modal").classList.add("hidden");
         },
         switchTab(tabId) {
-          ['metadata', 'physics', 'grid'].forEach(id => {
-            document.getElementById(`sec-${id}`).classList.add('hidden');
-            document.getElementById(`tab-${id}`).classList.remove('active');
+          ["metadata", "physics", "grid"].forEach((id) => {
+            document.getElementById(`sec-${id}`).classList.add("hidden");
+            document.getElementById(`tab-${id}`).classList.remove("active");
           });
-          document.getElementById(`sec-${tabId}`).classList.remove('hidden');
-          document.getElementById(`tab-${tabId}`).classList.add('active');
+          document.getElementById(`sec-${tabId}`).classList.remove("hidden");
+          document.getElementById(`tab-${tabId}`).classList.add("active");
         },
         syncToModal() {
-          document.getElementById('set-prop-name').value = document.getElementById('prop-name').value;
-          document.getElementById('set-prop-creator').value = document.getElementById('prop-creator').value;
-          document.getElementById('set-prop-desc').value = document.getElementById('prop-desc').value;
-          document.getElementById('set-prop-gravity').value = document.getElementById('prop-gravity').value;
-          document.getElementById('set-gravity-val').innerText = document.getElementById('prop-gravity').value;
-          document.getElementById('set-prop-rise').value = document.getElementById('prop-rise').value;
-          document.getElementById('set-prop-force-zoom').checked = document.getElementById('prop-force-zoom').value === 'true';
-          document.getElementById('set-prop-no-death-anim').checked = document.getElementById('prop-no-death-anim').value === 'true';
-          document.getElementById('set-prop-w').value = document.getElementById('prop-w').value;
-          document.getElementById('set-prop-h').value = document.getElementById('prop-h').value;
+          document.getElementById("set-prop-name").value =
+            document.getElementById("prop-name").value;
+          document.getElementById("set-prop-creator").value =
+            document.getElementById("prop-creator").value;
+          document.getElementById("set-prop-desc").value =
+            document.getElementById("prop-desc").value;
+          document.getElementById("set-prop-gravity").value =
+            document.getElementById("prop-gravity").value;
+          document.getElementById("set-gravity-val").innerText =
+            document.getElementById("prop-gravity").value;
+          document.getElementById("set-prop-rise").value =
+            document.getElementById("prop-rise").value;
+          document.getElementById("set-prop-force-zoom").checked =
+            document.getElementById("prop-force-zoom").value === "true";
+          document.getElementById("set-prop-no-death-anim").checked =
+            document.getElementById("prop-no-death-anim").value === "true";
+          document.getElementById("set-prop-w").value =
+            document.getElementById("prop-w").value;
+          document.getElementById("set-prop-h").value =
+            document.getElementById("prop-h").value;
           this.checkDirty();
         },
         syncFromModal() {
-          document.getElementById('prop-name').value = document.getElementById('set-prop-name').value;
-          document.getElementById('prop-creator').value = document.getElementById('set-prop-creator').value;
-          document.getElementById('prop-desc').value = document.getElementById('set-prop-desc').value;
-          document.getElementById('prop-gravity').value = document.getElementById('set-prop-gravity').value;
-          document.getElementById('gravity-val').innerText = document.getElementById('set-prop-gravity').value;
-          document.getElementById('prop-rise').value = document.getElementById('set-prop-rise').value;
-          const riseVal = parseFloat(document.getElementById('prop-rise').value);
-          document.getElementById('rise-val').innerText = riseVal > 0 ? (60 / riseVal).toFixed(1) + ' blk/min' : 'Disabled';
-          document.getElementById('prop-force-zoom').value = document.getElementById('set-prop-force-zoom').checked;
-          document.getElementById('prop-no-death-anim').value = document.getElementById('set-prop-no-death-anim').checked;
-          document.getElementById('prop-w').value = document.getElementById('set-prop-w').value;
-          document.getElementById('prop-h').value = document.getElementById('set-prop-h').value;
+          document.getElementById("prop-name").value =
+            document.getElementById("set-prop-name").value;
+          document.getElementById("prop-creator").value =
+            document.getElementById("set-prop-creator").value;
+          document.getElementById("prop-desc").value =
+            document.getElementById("set-prop-desc").value;
+          document.getElementById("prop-gravity").value =
+            document.getElementById("set-prop-gravity").value;
+          document.getElementById("gravity-val").innerText =
+            document.getElementById("set-prop-gravity").value;
+          document.getElementById("prop-rise").value =
+            document.getElementById("set-prop-rise").value;
+          const riseVal = parseFloat(
+            document.getElementById("prop-rise").value,
+          );
+          document.getElementById("rise-val").innerText =
+            riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+          document.getElementById("prop-force-zoom").value =
+            document.getElementById("set-prop-force-zoom").checked;
+          document.getElementById("prop-no-death-anim").value =
+            document.getElementById("set-prop-no-death-anim").checked;
+          document.getElementById("prop-w").value =
+            document.getElementById("set-prop-w").value;
+          document.getElementById("prop-h").value =
+            document.getElementById("set-prop-h").value;
           this.checkDirty();
         },
         renderDiffBarsModal() {
           const container = document.getElementById("set-diff-bars-modal");
           container.innerHTML = "";
           const n = parseInt(document.getElementById("prop-diff").value);
-          const colors = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
+          const colors = [
+            "#22c55e",
+            "#84cc16",
+            "#eab308",
+            "#f97316",
+            "#ef4444",
+          ];
 
           for (let i = 1; i <= 5; i++) {
             const btn = document.createElement("button");
@@ -2861,45 +3316,59 @@
               btn.style.borderColor = colors[i - 1];
               btn.style.boxShadow = `0 0 8px ${colors[i - 1]}40`;
             }
-            btn.onclick = () => { setDifficulty(i); this.renderDiffBarsModal(); };
+            btn.onclick = () => {
+              setDifficulty(i);
+              this.renderDiffBarsModal();
+            };
             container.appendChild(btn);
           }
           this.checkDirty();
         },
         checkDirty() {
           const current = {
-            name: document.getElementById('set-prop-name').value,
-            creator: document.getElementById('set-prop-creator').value,
-            desc: document.getElementById('set-prop-desc').value,
-            difficulty: parseInt(document.getElementById('prop-diff').value),
-            gravity: parseInt(document.getElementById('set-prop-gravity').value),
-            rise: parseFloat(document.getElementById('set-prop-rise').value || 0),
-            forceZoom: document.getElementById('set-prop-force-zoom').checked,
-            noDeathAnim: document.getElementById('set-prop-no-death-anim').checked,
-            w: parseInt(document.getElementById('set-prop-w').value),
-            h: parseInt(document.getElementById('set-prop-h').value)
+            name: document.getElementById("set-prop-name").value,
+            creator: document.getElementById("set-prop-creator").value,
+            desc: document.getElementById("set-prop-desc").value,
+            difficulty: parseInt(document.getElementById("prop-diff").value),
+            gravity: parseInt(
+              document.getElementById("set-prop-gravity").value,
+            ),
+            rise: parseFloat(
+              document.getElementById("set-prop-rise").value || 0,
+            ),
+            forceZoom: document.getElementById("set-prop-force-zoom").checked,
+            noDeathAnim: document.getElementById("set-prop-no-death-anim")
+              .checked,
+            w: parseInt(document.getElementById("set-prop-w").value),
+            h: parseInt(document.getElementById("set-prop-h").value),
           };
-          
-          const isDirty = JSON.stringify(current) !== JSON.stringify(this.defaults);
-          const btn = document.getElementById('btn-reset-defaults');
-          if (isDirty) btn.classList.remove('hidden');
-          else btn.classList.add('hidden');
+
+          const isDirty =
+            JSON.stringify(current) !== JSON.stringify(this.defaults);
+          const btn = document.getElementById("btn-reset-defaults");
+          if (isDirty) btn.classList.remove("hidden");
+          else btn.classList.add("hidden");
         },
         resetToDefaults() {
-          document.getElementById('set-prop-name').value = this.defaults.name;
-          document.getElementById('set-prop-creator').value = this.defaults.creator;
-          document.getElementById('set-prop-desc').value = this.defaults.desc;
-          document.getElementById('set-prop-gravity').value = this.defaults.gravity;
-          document.getElementById('set-gravity-val').innerText = this.defaults.gravity;
-          document.getElementById('set-prop-rise').value = this.defaults.rise;
-          document.getElementById('set-prop-force-zoom').checked = this.defaults.forceZoom;
-          document.getElementById('set-prop-no-death-anim').checked = this.defaults.noDeathAnim;
-          document.getElementById('set-prop-w').value = this.defaults.w;
-          document.getElementById('set-prop-h').value = this.defaults.h;
+          document.getElementById("set-prop-name").value = this.defaults.name;
+          document.getElementById("set-prop-creator").value =
+            this.defaults.creator;
+          document.getElementById("set-prop-desc").value = this.defaults.desc;
+          document.getElementById("set-prop-gravity").value =
+            this.defaults.gravity;
+          document.getElementById("set-gravity-val").innerText =
+            this.defaults.gravity;
+          document.getElementById("set-prop-rise").value = this.defaults.rise;
+          document.getElementById("set-prop-force-zoom").checked =
+            this.defaults.forceZoom;
+          document.getElementById("set-prop-no-death-anim").checked =
+            this.defaults.noDeathAnim;
+          document.getElementById("set-prop-w").value = this.defaults.w;
+          document.getElementById("set-prop-h").value = this.defaults.h;
           setDifficulty(this.defaults.difficulty);
           this.renderDiffBarsModal();
           this.syncFromModal();
-        }
+        },
       };
       let currentAudio = null;
       let currentTrackId = null;
@@ -2928,6 +3397,9 @@
         risingThrough: new Set(),
         risingSpeeds: {},
         illusions: new Set(),
+        flickers: new Set(),
+        touchFlickers: new Set(),
+        jumpFlickers: new Set(),
         blockConfigs: {},
       };
       let clipboard = null;
@@ -2988,7 +3460,9 @@
         helpManager.init();
 
         // Global click to close context menu
-        document.addEventListener("click", () => document.getElementById("context-menu").classList.add("hidden"));
+        document.addEventListener("click", () =>
+          document.getElementById("context-menu").classList.add("hidden"),
+        );
       }
 
       function renderMusic() {
@@ -3093,102 +3567,139 @@
         renderMusic();
       }
 
-      function render() {
-        const gridEl = document.getElementById("level-grid");
-        gridEl.style.gridTemplateColumns = `repeat(${state.width}, 24px)`;
-        gridEl.style.width = `${state.width * 24}px`;
-        gridEl.style.height = `${state.height * 24}px`;
-        gridEl.innerHTML = "";
-        const frag = document.createDocumentFragment();
-        const overlay = document.createElement("div");
-        overlay.id = "selection-overlay";
-        frag.appendChild(overlay);
+      function renderCell(cell, x, y) {
+        const char = state.grid[y][x];
+        cell.className = `cell ${TILE_MAP[char]}`;
+        cell.innerHTML = "";
+        cell.style.backgroundColor = "";
+        cell.style.borderColor = "";
+        cell.style.opacity = "";
+        cell.style.border = "";
+        cell.style.boxShadow = "";
+        cell.style.cursor = "";
 
-        for (let y = 0; y < state.height; y++) {
-          for (let x = 0; x < state.width; x++) {
-            const cell = document.createElement("div");
-            cell.className = `cell ${TILE_MAP[state.grid[y][x]]}`;
-            cell.dataset.x = x;
-            cell.dataset.y = y;
-
-            const color = state.colors[`${x},${y}`];
-            if (color) {
-              cell.style.backgroundColor = color;
-              cell.style.borderColor = adjustColor(color, -20);
-              if (color === 'invisible') {
-                cell.style.opacity = '0.5';
-                cell.style.border = '1px dashed rgba(255,255,255,0.5)';
-              } else if (color === 'flicker') {
-                cell.style.opacity = '0.7';
-                cell.style.border = '1px dotted rgba(255,255,255,0.5)';
-              } else if (color === 'jump_flicker') {
-                cell.style.opacity = '0.8';
-                cell.style.border = '1px solid rgba(100,255,100,0.5)';
-              } else {
-                cell.style.backgroundColor = color;
-                cell.style.borderColor = adjustColor(color, -20);
-              }
-            }
-
-            if (state.grid[y][x] === "S") {
-              const spike = document.createElement("div");
-              spike.className = "spike-visual";
-              if (color) spike.style.borderBottomColor = color;
-              cell.appendChild(spike);
-            } else if (state.grid[y][x] === "s") {
-              const spike = document.createElement("div");
-              spike.className = "spike-visual spike-u";
-              if (color) spike.style.borderTopColor = color;
-              cell.appendChild(spike);
-            }
-
-            if (state.fakes.has(`${x},${y}`)) {
-                const ind = document.createElement('div');
-                ind.className = 'absolute top-0 right-0 text-[8px] font-bold text-yellow-400 px-0.5 leading-none pointer-events-none z-10';
-                ind.innerText = 'F';
-                cell.appendChild(ind);
-            }
-
-            if (color === 'flicker') {
-                const ind = document.createElement('div');
-                ind.className = 'absolute bottom-0 left-0 text-[8px] font-bold text-white/70 px-0.5 leading-none pointer-events-none z-10';
-                ind.innerText = '👁';
-                cell.appendChild(ind);
-            }
-
-            if (color === 'jump_flicker') {
-                const ind = document.createElement('div');
-                ind.className = 'absolute bottom-0 left-0 text-[8px] font-bold text-green-400 px-0.5 leading-none pointer-events-none z-10';
-                ind.innerText = '⬆';
-                cell.appendChild(ind);
-            }
-
-            const isIllusion = state.illusions.has(`${x},${y}`);
-            if (isIllusion) {
-                cell.className = `cell ${TILE_MAP['x']}`;
-                const ind = document.createElement('div');
-                ind.className = 'absolute top-0 left-0 text-[8px] font-bold text-cyan-400 px-0.5 leading-none pointer-events-none z-10';
-                ind.innerText = 'I';
-                cell.appendChild(ind);
-            }
-
-            // Picker Highlight
-            if (state.picker.active) {
-              if (
-                state.picker.mode === "multi" &&
-                state.picker.selection.some((p) => p.x === x && p.y === y)
-              ) {
-                cell.style.boxShadow =
-                  "inset 0 0 0 2px #3b82f6, 0 0 10px rgba(59, 130, 246, 0.5)";
-              } else if (state.picker.mode === "single") {
-                cell.style.cursor = "crosshair";
-              }
-            }
-
-            frag.appendChild(cell);
+        const color = state.colors[`${x},${y}`];
+        if (color) {
+          cell.style.backgroundColor = color;
+          cell.style.borderColor = adjustColor(color, -20);
+          if (color === "invisible") {
+            cell.style.opacity = "0.5";
+            cell.style.border = "1px dashed rgba(255,255,255,0.5)";
+          } else if (color === "flicker") {
+            cell.style.opacity = "0.7";
+            cell.style.border = "1px dotted rgba(255,255,255,0.5)";
+          } else if (color === "jump_flicker") {
+            cell.style.opacity = "0.8";
+            cell.style.border = "1px solid rgba(100,255,100,0.5)";
+          } else {
+            cell.style.backgroundColor = color;
+            cell.style.borderColor = adjustColor(color, -20);
           }
         }
-        gridEl.appendChild(frag);
+
+        if (char === "S") {
+          const spike = document.createElement("div");
+          spike.className = "spike-visual";
+          if (color) spike.style.borderBottomColor = color;
+          cell.appendChild(spike);
+        } else if (char === "s") {
+          const spike = document.createElement("div");
+          spike.className = "spike-visual spike-u";
+          if (color) spike.style.borderTopColor = color;
+          cell.appendChild(spike);
+        }
+
+        if (state.fakes.has(`${x},${y}`)) {
+          const ind = document.createElement("div");
+          ind.className =
+            "absolute top-0 right-0 text-[8px] font-bold text-yellow-400 px-0.5 leading-none pointer-events-none z-10";
+          ind.innerText = "F";
+          cell.appendChild(ind);
+        }
+
+        if (color === "flicker" || state.flickers.has(`${x},${y}`)) {
+          const ind = document.createElement("div");
+          ind.className =
+            "absolute bottom-0 left-0 text-[8px] font-bold text-white/70 px-0.5 leading-none pointer-events-none z-10";
+          ind.innerText = "👁";
+          cell.appendChild(ind);
+        }
+
+        if (color === "jump_flicker" || state.jumpFlickers.has(`${x},${y}`)) {
+          const ind = document.createElement("div");
+          ind.className =
+            "absolute bottom-0 left-0 text-[8px] font-bold text-green-400 px-0.5 leading-none pointer-events-none z-10";
+          ind.innerText = "⬆";
+          cell.appendChild(ind);
+        }
+
+        if (color === "touch_flicker" || state.touchFlickers.has(`${x},${y}`)) {
+          const ind = document.createElement("div");
+          ind.className =
+            "absolute bottom-0 right-0 text-pink-400 px-0.5 pointer-events-none z-10 flex items-center justify-center";
+          ind.innerHTML =
+            '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zM18 11c0-1.66-1.34-3-3-3h-1.5V7.5c0-1.93-1.57-3.5-3.5-3.5S7 5.57 7 7.5V8H5.5C3.84 8 2.5 9.34 2.5 11v8.5C2.5 21.43 4.07 23 6 23h11c1.93 0 3.5-1.57 3.5-3.5V11z"/></svg>';
+          cell.appendChild(ind);
+        }
+
+        const isIllusion = state.illusions.has(`${x},${y}`);
+        if (isIllusion) {
+          cell.className = `cell ${TILE_MAP["x"]}`;
+          const ind = document.createElement("div");
+          ind.className =
+            "absolute top-0 left-0 text-[8px] font-bold text-cyan-400 px-0.5 leading-none pointer-events-none z-10";
+          ind.innerText = "I";
+          cell.appendChild(ind);
+        }
+
+        // Picker Highlight
+        if (state.picker.active) {
+          if (
+            state.picker.mode === "multi" &&
+            state.picker.selection.some((p) => p.x === x && p.y === y)
+          ) {
+            cell.style.boxShadow =
+              "inset 0 0 0 2px #3b82f6, 0 0 10px rgba(59, 130, 246, 0.5)";
+          } else if (state.picker.mode === "single") {
+            cell.style.cursor = "crosshair";
+          }
+        }
+      }
+
+      function render() {
+        const gridEl = document.getElementById("level-grid");
+        const totalCells = state.width * state.height;
+
+        // Only rebuild if dimensions changed or grid is empty
+        if (gridEl.children.length !== totalCells + 1) {
+          gridEl.style.gridTemplateColumns = `repeat(${state.width}, 24px)`;
+          gridEl.style.width = `${state.width * 24}px`;
+          gridEl.style.height = `${state.height * 24}px`;
+          gridEl.innerHTML = "";
+          const frag = document.createDocumentFragment();
+          const overlay = document.createElement("div");
+          overlay.id = "selection-overlay";
+          frag.appendChild(overlay);
+
+          for (let y = 0; y < state.height; y++) {
+            for (let x = 0; x < state.width; x++) {
+              const cell = document.createElement("div");
+              cell.dataset.x = x;
+              cell.dataset.y = y;
+              renderCell(cell, x, y);
+              frag.appendChild(cell);
+            }
+          }
+          gridEl.appendChild(frag);
+        } else {
+          // Incremental update
+          for (let i = 0; i < totalCells; i++) {
+            const cell = gridEl.children[i + 1]; // +1 for overlay
+            const x = i % state.width;
+            const y = Math.floor(i / state.width);
+            renderCell(cell, x, y);
+          }
+        }
         updateSelectionUI();
         minimap.render();
       }
@@ -3382,13 +3893,14 @@
           if (cell) {
             const x = parseInt(cell.dataset.x),
               y = parseInt(cell.dataset.y);
-            
-            if (state.tool !== 'select') {
-               const char = state.grid[y][x];
-               const bName = BLOCK_NAMES[char] || 'Unknown';
-               document.getElementById("cursor-pos").innerText = `${x}, ${y} (${bName})`;
+
+            if (state.tool !== "select") {
+              const char = state.grid[y][x];
+              const bName = BLOCK_NAMES[char] || "Unknown";
+              document.getElementById("cursor-pos").innerText =
+                `${x}, ${y} (${bName})`;
             } else {
-               document.getElementById("cursor-pos").innerText = `${x}, ${y}`;
+              document.getElementById("cursor-pos").innerText = `${x}, ${y}`;
             }
 
             if (state.picker.active) {
@@ -3560,18 +4072,18 @@
       }
 
       function toggleSPExpand() {
-        const expanded = document.getElementById('sp-expanded');
-        const btn = document.getElementById('sp-expand-btn');
-        const icon = document.getElementById('sp-expand-icon');
-        
-        if (expanded.classList.contains('hidden')) {
-            expanded.classList.remove('hidden');
-            expanded.classList.add('flex');
-            icon.style.transform = 'rotate(180deg)';
+        const expanded = document.getElementById("sp-expanded");
+        const btn = document.getElementById("sp-expand-btn");
+        const icon = document.getElementById("sp-expand-icon");
+
+        if (expanded.classList.contains("hidden")) {
+          expanded.classList.remove("hidden");
+          expanded.classList.add("flex");
+          icon.style.transform = "rotate(180deg)";
         } else {
-            expanded.classList.add('hidden');
-            expanded.classList.remove('flex');
-            icon.style.transform = 'rotate(0deg)';
+          expanded.classList.add("hidden");
+          expanded.classList.remove("flex");
+          icon.style.transform = "rotate(0deg)";
         }
       }
 
@@ -3606,19 +4118,19 @@
 
         // Position Popup
         popup.classList.remove("hidden");
-        
+
         // Calculate screen position
         const gridEl = document.getElementById("level-grid");
         const gridRect = gridEl.getBoundingClientRect();
-        
+
         // Position at top right of selection
         const left = gridRect.left + (norm.x2 + 1) * 24 * state.zoom + 10;
         const top = gridRect.top + norm.y1 * 24 * state.zoom;
-        
+
         // Keep within bounds
         const maxLeft = window.innerWidth - popup.offsetWidth - 20;
         const maxTop = window.innerHeight - popup.offsetHeight - 20;
-        
+
         popup.style.left = `${Math.min(left, maxLeft)}px`;
         popup.style.top = `${Math.max(20, Math.min(top, maxTop))}px`;
 
@@ -3629,6 +4141,7 @@
         let allInvisible = true;
         let allFlicker = true;
         let allJumpFlicker = true;
+        let allTouchFlicker = true;
         let hasBreakable = false;
         let onlyBreakable = true;
         let allIllusion = true;
@@ -3636,88 +4149,111 @@
         let allPainted = true;
         let hasBlocks = false;
 
-        for(let y = norm.y1; y <= norm.y2; y++) {
-            for(let x = norm.x1; x <= norm.x2; x++) {
-                const char = state.grid[y][x];
-                if(char === '^') {
-                    hasRising = true;
-                    if (!state.risingThrough.has(`${x},${y}`)) {
-                        allThrough = false;
-                    }
-                }
-                if (char === 'G') {
-                    hasBreakable = true;
-                    if (!state.illusions.has(`${x},${y}`)) allIllusion = false;
-                } else if (char !== ' ') {
-                    onlyBreakable = false;
-                }
-                if (['W', 'K', 'k'].includes(char)) {
-                    hasConfigurable = true;
-                }
-                if (state.grid[y][x] !== ' ') {
-                    hasBlocks = true;
-                    if (!state.fakes.has(`${x},${y}`)) allFake = false;
-                    
-                    const col = state.colors[`${x},${y}`];
-                    if (col !== 'invisible') allInvisible = false;
-                    if (col !== 'flicker') allFlicker = false;
-                    if (col !== 'jump_flicker') allJumpFlicker = false;
-                    if (!col || ['invisible', 'flicker', 'jump_flicker'].includes(col)) allPainted = false;
-                }
+        for (let y = norm.y1; y <= norm.y2; y++) {
+          for (let x = norm.x1; x <= norm.x2; x++) {
+            const char = state.grid[y][x];
+            if (char === "^") {
+              hasRising = true;
+              if (!state.risingThrough.has(`${x},${y}`)) {
+                allThrough = false;
+              }
             }
+            if (char === "G") {
+              hasBreakable = true;
+              if (!state.illusions.has(`${x},${y}`)) allIllusion = false;
+            } else if (char !== " ") {
+              onlyBreakable = false;
+            }
+            if (["W", "K", "k"].includes(char)) {
+              hasConfigurable = true;
+            }
+            if (state.grid[y][x] !== " ") {
+              hasBlocks = true;
+              if (!state.fakes.has(`${x},${y}`)) allFake = false;
+
+              const col = state.colors[`${x},${y}`];
+              if (col !== "invisible") allInvisible = false;
+              if (!state.flickers.has(`${x},${y}`)) allFlicker = false;
+              if (!state.jumpFlickers.has(`${x},${y}`)) allJumpFlicker = false;
+              if (!state.touchFlickers.has(`${x},${y}`))
+                allTouchFlicker = false;
+              if (
+                !col ||
+                [
+                  "invisible",
+                  "flicker",
+                  "jump_flicker",
+                  "touch_flicker",
+                ].includes(col)
+              )
+                allPainted = false;
+            }
+          }
         }
-        
+
         if (!hasBlocks) {
-            allIllusion = false;
-            allFake = false; allInvisible = false; allFlicker = false; allJumpFlicker = false; allPainted = false;
+          allIllusion = false;
+          allFake = false;
+          allInvisible = false;
+          allFlicker = false;
+          allJumpFlicker = false;
+          allTouchFlicker = false;
+          allPainted = false;
         }
 
         const setBtn = (id, active) => {
-            const btn = document.getElementById(id);
-            if(btn) btn.className = active ? "p-1.5 bg-blue-600 text-white rounded flex justify-center items-center sp-btn" : "p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn";
+          const btn = document.getElementById(id);
+          if (btn)
+            btn.className = active
+              ? "p-1.5 bg-blue-600 text-white rounded flex justify-center items-center sp-btn"
+              : "p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn";
         };
 
-        setBtn('btn-sp-fake', allFake);
-        setBtn('btn-sp-invisible', allInvisible);
-        setBtn('btn-sp-paint', allPainted);
-        setBtn('btn-sp-flicker', allFlicker);
-        setBtn('btn-sp-jump-flicker', allJumpFlicker);
+        setBtn("btn-sp-fake", allFake);
+        setBtn("btn-sp-invisible", allInvisible);
+        setBtn("btn-sp-paint", allPainted);
+        setBtn("btn-sp-flicker", allFlicker);
+        setBtn("btn-sp-jump-flicker", allJumpFlicker);
+        setBtn("btn-sp-touch-flicker", allTouchFlicker);
 
-        const illusionBtn = document.getElementById('btn-sp-illusion');
+        const illusionBtn = document.getElementById("btn-sp-illusion");
         if (hasBreakable && onlyBreakable) {
-            illusionBtn.classList.remove('hidden');
-            setBtn('btn-sp-illusion', allIllusion);
+          illusionBtn.classList.remove("hidden");
+          setBtn("btn-sp-illusion", allIllusion);
         } else {
-            illusionBtn.classList.add('hidden');
+          illusionBtn.classList.add("hidden");
         }
 
-        const risingOpt = document.getElementById('sp-rising-opt');
-        if(hasRising) risingOpt.classList.remove('hidden');
-        else risingOpt.classList.add('hidden');
-        document.getElementById('sp-rising-check').checked = allThrough;
+        const risingOpt = document.getElementById("sp-rising-opt");
+        if (hasRising) risingOpt.classList.remove("hidden");
+        else risingOpt.classList.add("hidden");
+        document.getElementById("sp-rising-check").checked = allThrough;
 
-        const configOpt = document.getElementById('sp-block-config-opt');
-        if(hasConfigurable) {
-            configOpt.classList.remove('hidden');
-            configOpt.classList.add('flex');
-            // Check if all selected have same speed
-            let commonCount = null;
-            let first = true;
-            for(let y = norm.y1; y <= norm.y2; y++) {
-                for(let x = norm.x1; x <= norm.x2; x++) {
-                    if(['W', 'K', 'k'].includes(state.grid[y][x])) {
-                        const c = state.blockConfigs[`${x},${y}`]?.count || 1;
-                        if (first) { commonCount = c; first = false; }
-                        else if (commonCount !== c) commonCount = '';
-                    }
-                }
+        const configOpt = document.getElementById("sp-block-config-opt");
+        if (hasConfigurable) {
+          configOpt.classList.remove("hidden");
+          configOpt.classList.add("flex");
+          // Check if all selected have same speed
+          let commonCount = null;
+          let first = true;
+          for (let y = norm.y1; y <= norm.y2; y++) {
+            for (let x = norm.x1; x <= norm.x2; x++) {
+              if (["W", "K", "k"].includes(state.grid[y][x])) {
+                const c = state.blockConfigs[`${x},${y}`]?.count || 1;
+                if (first) {
+                  commonCount = c;
+                  first = false;
+                } else if (commonCount !== c) commonCount = "";
+              }
             }
-            document.getElementById('sp-block-count-input').value = commonCount !== null ? commonCount : '';
+          }
+          document.getElementById("sp-block-count-input").value =
+            commonCount !== null ? commonCount : "";
         } else {
-            configOpt.classList.add('hidden');
-            configOpt.classList.remove('flex');
+          configOpt.classList.add("hidden");
+          configOpt.classList.remove("flex");
         }
-        
+
         minimap.render();
       }
 
@@ -3734,12 +4270,15 @@
         const hasColor = state.colors[`${x},${y}`] !== undefined;
         if (state.grid[y][x] === char && !hasColor) return;
 
-        if (char === ' ') {
-             state.fakes.delete(`${x},${y}`);
-             state.risingThrough.delete(`${x},${y}`);
-             delete state.risingSpeeds[`${x},${y}`];
-             state.illusions.delete(`${x},${y}`);
-             delete state.blockConfigs[`${x},${y}`];
+        if (char === " ") {
+          state.fakes.delete(`${x},${y}`);
+          state.risingThrough.delete(`${x},${y}`);
+          delete state.risingSpeeds[`${x},${y}`];
+          state.illusions.delete(`${x},${y}`);
+          state.flickers.delete(`${x},${y}`);
+          state.touchFlickers.delete(`${x},${y}`);
+          state.jumpFlickers.delete(`${x},${y}`);
+          delete state.blockConfigs[`${x},${y}`];
         }
 
         // Multi-player check
@@ -3754,38 +4293,46 @@
         state.grid[y][x] = char;
         delete state.colors[`${x},${y}`]; // Reset color on overwrite
         state.illusions.delete(`${x},${y}`);
-        
+
         if (updateView) {
-            const cell = document.getElementById("level-grid").children[y * state.width + x + 1];
-            if (cell) renderCell(cell, x, y);
-            minimap.render();
+          const cell =
+            document.getElementById("level-grid").children[
+              y * state.width + x + 1
+            ];
+          if (cell) renderCell(cell, x, y);
+          minimap.render();
         }
       }
 
       function makeSelectionInvisible() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allInvisible = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'invisible') {
-                 allInvisible = false;
-                 break;
-             }
+            if (
+              state.grid[y][x] !== " " &&
+              state.colors[`${x},${y}`] !== "invisible"
+            ) {
+              allInvisible = false;
+              break;
+            }
           }
           if (!allInvisible) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allInvisible) {
-                     if (state.colors[`${x},${y}`] === 'invisible') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'invisible';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allInvisible) {
+                if (state.colors[`${x},${y}`] === "invisible")
+                  delete state.colors[`${x},${y}`];
+              } else {
+                state.colors[`${x},${y}`] = "invisible";
+              }
+            }
           }
         }
         render();
@@ -3794,28 +4341,69 @@
 
       function toggleFlickerSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allFlicker = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'flicker') {
-                 allFlicker = false;
-                 break;
-             }
+            if (
+              state.grid[y][x] !== " " &&
+              state.colors[`${x},${y}`] !== "flicker"
+            ) {
+              allFlicker = false;
+              break;
+            }
           }
           if (!allFlicker) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allFlicker) {
-                     if (state.colors[`${x},${y}`] === 'flicker') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'flicker';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allFlicker) {
+                if (state.colors[`${x},${y}`] === "flicker")
+                  delete state.colors[`${x},${y}`];
+              } else {
+                state.colors[`${x},${y}`] = "flicker";
+              }
+            }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleTouchFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
+        let allTouchFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (
+              state.grid[y][x] !== " " &&
+              !state.touchFlickers.has(`${x},${y}`)
+            ) {
+              allTouchFlicker = false;
+              break;
+            }
+          }
+          if (!allTouchFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " ") {
+              if (allTouchFlicker) {
+                state.touchFlickers.delete(`${x},${y}`);
+              } else {
+                state.touchFlickers.add(`${x},${y}`);
+                if (state.colors[`${x},${y}`] === "touch_flicker")
+                  delete state.colors[`${x},${y}`];
+              }
+            }
           }
         }
         render();
@@ -3824,28 +4412,33 @@
 
       function toggleJumpFlickerSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allJumpFlicker = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'jump_flicker') {
-                 allJumpFlicker = false;
-                 break;
-             }
+            if (
+              state.grid[y][x] !== " " &&
+              state.colors[`${x},${y}`] !== "jump_flicker"
+            ) {
+              allJumpFlicker = false;
+              break;
+            }
           }
           if (!allJumpFlicker) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allJumpFlicker) {
-                     if (state.colors[`${x},${y}`] === 'jump_flicker') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'jump_flicker';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allJumpFlicker) {
+                if (state.colors[`${x},${y}`] === "jump_flicker")
+                  delete state.colors[`${x},${y}`];
+              } else {
+                state.colors[`${x},${y}`] = "jump_flicker";
+              }
+            }
           }
         }
         render();
@@ -3855,25 +4448,25 @@
       function toggleIllusionSelection() {
         const sel = getNormalizedSelection();
         if (!sel) return;
-        
+
         let allAreIllusions = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
-            for (let x = sel.x1; x <= sel.x2; x++) {
-                if (state.grid[y][x] === 'G' && !state.illusions.has(`${x},${y}`)) {
-                    allAreIllusions = false;
-                    break;
-                }
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] === "G" && !state.illusions.has(`${x},${y}`)) {
+              allAreIllusions = false;
+              break;
             }
-            if (!allAreIllusions) break;
+          }
+          if (!allAreIllusions) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
-            for (let x = sel.x1; x <= sel.x2; x++) {
-                if (state.grid[y][x] === 'G') {
-                    if (allAreIllusions) state.illusions.delete(`${x},${y}`);
-                    else state.illusions.add(`${x},${y}`);
-                }
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] === "G") {
+              if (allAreIllusions) state.illusions.delete(`${x},${y}`);
+              else state.illusions.add(`${x},${y}`);
             }
+          }
         }
         render();
         history.push();
@@ -3881,25 +4474,26 @@
 
       function toggleFakeSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allFake = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && !state.fakes.has(`${x},${y}`)) {
-                 allFake = false;
-                 break;
-             }
+            if (state.grid[y][x] !== " " && !state.fakes.has(`${x},${y}`)) {
+              allFake = false;
+              break;
+            }
           }
           if (!allFake) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allFake) state.fakes.delete(`${x},${y}`);
-                 else state.fakes.add(`${x},${y}`);
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allFake) state.fakes.delete(`${x},${y}`);
+              else state.fakes.add(`${x},${y}`);
+            }
           }
         }
         render();
@@ -3909,45 +4503,46 @@
       function toggleRisingThrough() {
         const sel = getNormalizedSelection();
         if (!sel) return;
-        
-        const check = document.getElementById('sp-rising-check');
+
+        const check = document.getElementById("sp-rising-check");
         const val = check.checked;
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] === '^') {
-                 if (val) state.risingThrough.add(`${x},${y}`);
-                 else state.risingThrough.delete(`${x},${y}`);
-             }
+            if (state.grid[y][x] === "^") {
+              if (val) state.risingThrough.add(`${x},${y}`);
+              else state.risingThrough.delete(`${x},${y}`);
+            }
           }
         }
         // No render needed as this is invisible property, but good for consistency
         history.push();
         // Update UI to reflect state
-        updateSelectionUI(); 
+        updateSelectionUI();
       }
 
       function toggleFakeSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allFake = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && !state.fakes.has(`${x},${y}`)) {
-                 allFake = false;
-                 break;
-             }
+            if (state.grid[y][x] !== " " && !state.fakes.has(`${x},${y}`)) {
+              allFake = false;
+              break;
+            }
           }
           if (!allFake) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allFake) state.fakes.delete(`${x},${y}`);
-                 else state.fakes.add(`${x},${y}`);
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allFake) state.fakes.delete(`${x},${y}`);
+              else state.fakes.add(`${x},${y}`);
+            }
           }
         }
         render();
@@ -3957,46 +4552,51 @@
       function toggleRisingThrough() {
         const sel = getNormalizedSelection();
         if (!sel) return;
-        
-        const check = document.getElementById('sp-rising-check');
+
+        const check = document.getElementById("sp-rising-check");
         const val = check.checked;
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] === '^') {
-                 if (val) state.risingThrough.add(`${x},${y}`);
-                 else state.risingThrough.delete(`${x},${y}`);
-             }
+            if (state.grid[y][x] === "^") {
+              if (val) state.risingThrough.add(`${x},${y}`);
+              else state.risingThrough.delete(`${x},${y}`);
+            }
           }
         }
         history.push();
-        updateSelectionUI(); 
+        updateSelectionUI();
       }
 
       function makeSelectionInvisible() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allInvisible = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'invisible') {
-                 allInvisible = false;
-                 break;
-             }
+            if (
+              state.grid[y][x] !== " " &&
+              state.colors[`${x},${y}`] !== "invisible"
+            ) {
+              allInvisible = false;
+              break;
+            }
           }
           if (!allInvisible) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allInvisible) {
-                     if (state.colors[`${x},${y}`] === 'invisible') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'invisible';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allInvisible) {
+                if (state.colors[`${x},${y}`] === "invisible")
+                  delete state.colors[`${x},${y}`];
+              } else {
+                state.colors[`${x},${y}`] = "invisible";
+              }
+            }
           }
         }
         render();
@@ -4005,28 +4605,32 @@
 
       function toggleFlickerSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allFlicker = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'flicker') {
-                 allFlicker = false;
-                 break;
-             }
+            if (state.grid[y][x] !== " " && !state.flickers.has(`${x},${y}`)) {
+              allFlicker = false;
+              break;
+            }
           }
           if (!allFlicker) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allFlicker) {
-                     if (state.colors[`${x},${y}`] === 'flicker') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'flicker';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allFlicker) {
+                state.flickers.delete(`${x},${y}`);
+              } else {
+                state.flickers.add(`${x},${y}`);
+                // Remove legacy color if present
+                if (state.colors[`${x},${y}`] === "flicker")
+                  delete state.colors[`${x},${y}`];
+              }
+            }
           }
         }
         render();
@@ -4035,28 +4639,34 @@
 
       function toggleJumpFlickerSelection() {
         const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
         let allJumpFlicker = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'jump_flicker') {
-                 allJumpFlicker = false;
-                 break;
-             }
+            if (
+              state.grid[y][x] !== " " &&
+              !state.jumpFlickers.has(`${x},${y}`)
+            ) {
+              allJumpFlicker = false;
+              break;
+            }
           }
           if (!allJumpFlicker) break;
         }
 
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (state.grid[y][x] !== ' ') {
-                 if (allJumpFlicker) {
-                     if (state.colors[`${x},${y}`] === 'jump_flicker') delete state.colors[`${x},${y}`];
-                 } else {
-                     state.colors[`${x},${y}`] = 'jump_flicker';
-                 }
-             }
+            if (state.grid[y][x] !== " ") {
+              if (allJumpFlicker) {
+                state.jumpFlickers.delete(`${x},${y}`);
+              } else {
+                state.jumpFlickers.add(`${x},${y}`);
+                if (state.colors[`${x},${y}`] === "jump_flicker")
+                  delete state.colors[`${x},${y}`];
+              }
+            }
           }
         }
         render();
@@ -4067,13 +4677,13 @@
         const sel = getNormalizedSelection();
         if (!sel) return;
         const count = parseInt(val);
-        
+
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             if (['W', 'K', 'k'].includes(state.grid[y][x])) {
-                 if (count > 1) state.blockConfigs[`${x},${y}`] = { count: count };
-                 else delete state.blockConfigs[`${x},${y}`];
-             }
+            if (["W", "K", "k"].includes(state.grid[y][x])) {
+              if (count > 1) state.blockConfigs[`${x},${y}`] = { count: count };
+              else delete state.blockConfigs[`${x},${y}`];
+            }
           }
         }
         history.push();
@@ -4084,23 +4694,26 @@
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
           for (let x = b.x1; x <= b.x2; x++) {
-              paint(x, y, " ", false);
-              state.fakes.delete(`${x},${y}`);
-              state.risingThrough.delete(`${x},${y}`);
-              state.illusions.delete(`${x},${y}`);
-              delete state.risingSpeeds[`${x},${y}`];
-              delete state.blockConfigs[`${x},${y}`];
+            paint(x, y, " ", false);
+            state.fakes.delete(`${x},${y}`);
+            state.risingThrough.delete(`${x},${y}`);
+            state.illusions.delete(`${x},${y}`);
+            state.flickers.delete(`${x},${y}`);
+            state.touchFlickers.delete(`${x},${y}`);
+            state.jumpFlickers.delete(`${x},${y}`);
+            delete state.risingSpeeds[`${x},${y}`];
+            delete state.blockConfigs[`${x},${y}`];
           }
         render(); // Batch render
         history.push();
-
       }
 
       function fillSelection() {
         const b = getNormalizedSelection();
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
-          for (let x = b.x1; x <= b.x2; x++) paint(x, y, state.selectedChar, false);
+          for (let x = b.x1; x <= b.x2; x++)
+            paint(x, y, state.selectedChar, false);
         render(); // Batch render
         history.push();
       }
@@ -4149,12 +4762,15 @@
             const color = temp[y][x + "_c"];
             if (color) state.colors[`${b.x1 + x},${b.y1 + y}`] = color;
             else delete state.colors[`${b.x1 + x},${b.y1 + y}`];
-            
+
             // Handle fakes? Mirroring fakes is complex without storing them in temp.
             // For now, clear fakes in mirrored area to avoid confusion or implement full mirror.
             state.fakes.delete(`${b.x1 + x},${b.y1 + y}`);
             state.risingThrough.delete(`${b.x1 + x},${b.y1 + y}`);
             state.illusions.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.flickers.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.touchFlickers.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.jumpFlickers.delete(`${b.x1 + x},${b.y1 + y}`);
           }
         }
         render();
@@ -4177,13 +4793,25 @@
             temp[y - b.y1][x - b.x1 + "_c"] = state.colors[`${x},${y}`];
             temp[y - b.y1][x - b.x1 + "_f"] = state.fakes.has(`${x},${y}`);
             temp[y - b.y1][x - b.x1 + "_i"] = state.illusions.has(`${x},${y}`);
-            temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(
+              `${x},${y}`,
+            );
+            temp[y - b.y1][x - b.x1 + "_fl"] = state.flickers.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_tf"] = state.touchFlickers.has(
+              `${x},${y}`,
+            );
+            temp[y - b.y1][x - b.x1 + "_jf"] = state.jumpFlickers.has(
+              `${x},${y}`,
+            );
             temp[y - b.y1][x - b.x1 + "_cfg"] = state.blockConfigs[`${x},${y}`];
             state.grid[y][x] = " "; // Clear source
             delete state.colors[`${x},${y}`];
             state.fakes.delete(`${x},${y}`);
             state.illusions.delete(`${x},${y}`);
             state.risingThrough.delete(`${x},${y}`);
+            state.flickers.delete(`${x},${y}`);
+            state.touchFlickers.delete(`${x},${y}`);
+            state.jumpFlickers.delete(`${x},${y}`);
           }
         }
 
@@ -4200,7 +4828,7 @@
               if (temp[y][x + "_c"])
                 state.colors[`${tx},${ty}`] = temp[y][x + "_c"];
               else delete state.colors[`${tx},${ty}`];
-              
+
               if (temp[y][x + "_f"]) state.fakes.add(`${tx},${ty}`);
               else state.fakes.delete(`${tx},${ty}`);
 
@@ -4210,7 +4838,17 @@
               if (temp[y][x + "_r"]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
 
-              if (temp[y][x + "_cfg"]) state.blockConfigs[`${tx},${ty}`] = temp[y][x + "_cfg"];
+              if (temp[y][x + "_fl"]) state.flickers.add(`${tx},${ty}`);
+              else state.flickers.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_tf"]) state.touchFlickers.add(`${tx},${ty}`);
+              else state.touchFlickers.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_jf"]) state.jumpFlickers.add(`${tx},${ty}`);
+              else state.jumpFlickers.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_cfg"])
+                state.blockConfigs[`${tx},${ty}`] = temp[y][x + "_cfg"];
               else delete state.blockConfigs[`${tx},${ty}`];
             }
           }
@@ -4241,16 +4879,19 @@
             state.grid[y][x] !== target
           )
             continue;
+          state.grid[y][x] = char;
           delete state.colors[`${x},${y}`];
           state.fakes.delete(`${x},${y}`);
           state.risingThrough.delete(`${x},${y}`);
           state.illusions.delete(`${x},${y}`);
+          state.flickers.delete(`${x},${y}`);
+          state.touchFlickers.delete(`${x},${y}`);
+          state.jumpFlickers.delete(`${x},${y}`);
           delete state.risingSpeeds[`${x},${y}`];
           delete state.blockConfigs[`${x},${y}`];
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
         }
         render();
-
       }
 
       function zoom(d) {
@@ -4369,6 +5010,9 @@
         state.fakes = new Set();
         state.risingThrough = new Set();
         state.illusions = new Set();
+        state.flickers = new Set();
+        state.touchFlickers = new Set();
+        state.jumpFlickers = new Set();
         state.actions = [];
         state.blockConfigs = {};
         state.selection = null;
@@ -4389,6 +5033,9 @@
             row.push(state.fakes.has(`${x},${y}`));
             row.push(state.illusions.has(`${x},${y}`));
             row.push(state.risingThrough.has(`${x},${y}`));
+            row.push(state.flickers.has(`${x},${y}`));
+            row.push(state.touchFlickers.has(`${x},${y}`));
+            row.push(state.jumpFlickers.has(`${x},${y}`));
             row.push(state.blockConfigs[`${x},${y}`]);
           }
           data.push(row);
@@ -4408,7 +5055,7 @@
           : 0;
 
         const h = clipboard.length;
-        const w = clipboard[0].length / 6; // Adjusted for interleaved data
+        const w = clipboard[0].length / 9; // Adjusted for interleaved data
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
@@ -4418,17 +5065,30 @@
               state.grid[ty][tx] = clipboard[y][x * 4];
               if (clipboard[y][x * 5 + 1])
                 state.colors[`${tx},${ty}`] = clipboard[y][x * 5 + 1];
-              
+
               if (clipboard[y][x * 5 + 2]) state.fakes.add(`${tx},${ty}`);
               else state.fakes.delete(`${tx},${ty}`);
 
               if (clipboard[y][x * 5 + 3]) state.illusions.add(`${tx},${ty}`);
               else state.illusions.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 5 + 4]) state.risingThrough.add(`${tx},${ty}`);
+              if (clipboard[y][x * 5 + 4])
+                state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 6 + 5]) state.blockConfigs[`${tx},${ty}`] = clipboard[y][x * 6 + 5];
+              if (clipboard[y][x * 9 + 5]) state.flickers.add(`${tx},${ty}`);
+              else state.flickers.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 9 + 6])
+                state.touchFlickers.add(`${tx},${ty}`);
+              else state.touchFlickers.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 9 + 7])
+                state.jumpFlickers.add(`${tx},${ty}`);
+              else state.jumpFlickers.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 9 + 8])
+                state.blockConfigs[`${tx},${ty}`] = clipboard[y][x * 9 + 8];
               else delete state.blockConfigs[`${tx},${ty}`];
 
               // Update visual
@@ -5285,13 +5945,18 @@
               riseInterval: parseFloat(
                 document.getElementById("prop-rise").value,
               ),
-              forceZoom: document.getElementById("prop-force-zoom").value === 'true',
-              disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
+              forceZoom:
+                document.getElementById("prop-force-zoom").value === "true",
+              disableDeathAnim:
+                document.getElementById("prop-no-death-anim").value === "true",
               music: state.music,
               colors: state.colors,
               fakes: Array.from(state.fakes),
               risingThrough: Array.from(state.risingThrough),
               illusions: Array.from(state.illusions),
+              flickers: Array.from(state.flickers),
+              touchFlickers: Array.from(state.touchFlickers),
+              jumpFlickers: Array.from(state.jumpFlickers),
               risingSpeeds: state.risingSpeeds,
               blockConfigs: state.blockConfigs,
               plan: state.grid.map((r) => r.join("")),
@@ -5633,12 +6298,17 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
-            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
-            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
+            forceZoom:
+              document.getElementById("prop-force-zoom").value === "true",
+            disableDeathAnim:
+              document.getElementById("prop-no-death-anim").value === "true",
             music: state.music,
             colors: state.colors,
             fakes: Array.from(state.fakes),
             illusions: Array.from(state.illusions),
+            flickers: Array.from(state.flickers),
+            touchFlickers: Array.from(state.touchFlickers),
+            jumpFlickers: Array.from(state.jumpFlickers),
             plan: state.grid.map((r) => r.join("")),
             risingSpeeds: state.risingSpeeds,
           };
@@ -5695,11 +6365,14 @@
           document.getElementById("prop-h").value = state.height;
           document.getElementById("gravity-val").innerText =
             document.getElementById("prop-gravity").value;
-          
+
           state.colors = {};
           state.fakes = new Set();
           state.risingThrough = new Set();
-            state.illusions = new Set();
+          state.illusions = new Set();
+          state.flickers = new Set();
+          state.touchFlickers = new Set();
+          state.jumpFlickers = new Set();
           state.risingSpeeds = {};
 
           render();
@@ -5718,7 +6391,8 @@
             this.currentId = null; // Treat as new project initially
             document.getElementById("prop-name").value =
               d.name || "Imported Sector";
-            document.getElementById("prop-creator").value = d.creator || "Anonymous";
+            document.getElementById("prop-creator").value =
+              d.creator || "Anonymous";
             document.getElementById("prop-desc").value = d.description || "";
             setDifficulty(d.difficulty || 1);
             document.getElementById("prop-gravity").value = d.gravity || 27;
@@ -5727,8 +6401,10 @@
             const riseVal = d.riseInterval || 0;
             document.getElementById("rise-val").innerText =
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-            document.getElementById("prop-force-zoom").value = d.forceZoom || false;
-            document.getElementById("prop-no-death-anim").value = d.disableDeathAnim || false;
+            document.getElementById("prop-force-zoom").value =
+              d.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value =
+              d.disableDeathAnim || false;
 
             let musicId = d.music || null;
             if (musicId && musicId.includes(".")) {
@@ -5743,6 +6419,9 @@
 
             state.risingThrough = new Set(d.risingThrough || []);
             state.illusions = new Set(d.illusions || []);
+            state.flickers = new Set(d.flickers || []);
+            state.touchFlickers = new Set(d.touchFlickers || []);
+            state.jumpFlickers = new Set(d.jumpFlickers || []);
             state.risingSpeeds = d.risingSpeeds || {};
             state.blockConfigs = d.blockConfigs || {};
 
@@ -5787,13 +6466,18 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
-            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
-            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
+            forceZoom:
+              document.getElementById("prop-force-zoom").value === "true",
+            disableDeathAnim:
+              document.getElementById("prop-no-death-anim").value === "true",
             music: state.music,
             colors: state.colors,
             fakes: Array.from(state.fakes),
             risingThrough: Array.from(state.risingThrough),
             illusions: Array.from(state.illusions),
+            flickers: Array.from(state.flickers),
+            touchFlickers: Array.from(state.touchFlickers),
+            jumpFlickers: Array.from(state.jumpFlickers),
             risingSpeeds: state.risingSpeeds,
             blockConfigs: state.blockConfigs,
             width: state.width,
@@ -5818,17 +6502,21 @@
             const data = JSON.parse(json);
             this.currentId = data.id;
             document.getElementById("prop-name").value = data.name;
-            document.getElementById("prop-creator").value = data.creator || "Anonymous";
+            document.getElementById("prop-creator").value =
+              data.creator || "Anonymous";
             document.getElementById("prop-desc").value = data.description || "";
             setDifficulty(data.difficulty || 1);
             document.getElementById("prop-gravity").value = data.gravity || 27;
-            document.getElementById("gravity-val").innerText = data.gravity || 27;
+            document.getElementById("gravity-val").innerText =
+              data.gravity || 27;
             document.getElementById("prop-rise").value = data.riseInterval || 0;
             const riseVal = data.riseInterval || 0;
             document.getElementById("rise-val").innerText =
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-            document.getElementById("prop-force-zoom").value = data.forceZoom || false;
-            document.getElementById("prop-no-death-anim").value = data.disableDeathAnim || false;
+            document.getElementById("prop-force-zoom").value =
+              data.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value =
+              data.disableDeathAnim || false;
 
             state.music = data.music || null;
             renderMusic();
@@ -5839,6 +6527,9 @@
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
+            state.flickers = new Set(data.flickers || []);
+            state.touchFlickers = new Set(data.touchFlickers || []);
+            state.jumpFlickers = new Set(data.jumpFlickers || []);
             state.risingSpeeds = data.risingSpeeds || {};
             state.blockConfigs = data.blockConfigs || {};
             document.getElementById("prop-w").value = state.width;
@@ -6224,11 +6915,10 @@
             const customColor =
               state.colors[`${Math.round(ox)},${Math.round(oy)}`];
 
-            
-            if (customColor === 'invisible') {
+            if (customColor === "invisible") {
               ctx.globalAlpha = 0.5;
             }
-            
+
             if (char === "x") {
               let fill = isModern ? "#334155" : "#444444";
               let stroke = isModern ? "#1e293b" : "#333333";
@@ -6491,7 +7181,7 @@
               blockConfigs: state.blockConfigs,
             }),
           );
-          if (this.stack.length > 50) this.stack.shift();
+          if (this.stack.length > 20) this.stack.shift();
           else this.ptr++;
         },
         undo() {
@@ -6505,6 +7195,9 @@
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
+            state.flickers = new Set(data.flickers || []);
+            state.touchFlickers = new Set(data.touchFlickers || []);
+            state.jumpFlickers = new Set(data.jumpFlickers || []);
             state.risingSpeeds = data.risingSpeeds || {};
             state.blockConfigs = data.blockConfigs || {};
             renderMusic();
@@ -6523,6 +7216,9 @@
             state.fakes = new Set(data.fakes || []);
             state.risingThrough = new Set(data.risingThrough || []);
             state.illusions = new Set(data.illusions || []);
+            state.flickers = new Set(data.flickers || []);
+            state.touchFlickers = new Set(data.touchFlickers || []);
+            state.jumpFlickers = new Set(data.jumpFlickers || []);
             state.risingSpeeds = data.risingSpeeds || {};
             state.blockConfigs = data.blockConfigs || {};
             renderMusic();
@@ -6565,6 +7261,9 @@
             state.colors = d.colors || {};
             state.illusions = new Set(d.illusions || []);
             state.fakes = new Set(d.fakes || []);
+            state.flickers = new Set(d.flickers || []);
+            state.touchFlickers = new Set(d.touchFlickers || []);
+            state.jumpFlickers = new Set(d.jumpFlickers || []);
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
