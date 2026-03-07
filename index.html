@@ -101,7 +101,9 @@
 
       .spike-block,
       .wall-block,
-      .spike-block-u {
+      .spike-block-u,
+      .spike-block-l,
+      .spike-block-r {
         background: #444;
         border: 3px solid #333;
         box-sizing: border-box;
@@ -109,7 +111,9 @@
       /* Hide text content for these in game if any */
       .spike-block,
       .wall-block,
-      .spike-block-u {
+      .spike-block-u,
+      .spike-block-l,
+      .spike-block-r {
         color: transparent;
       }
 
@@ -279,7 +283,7 @@
         padding: 40px;
         max-width: 500px;
         text-align: center;
-        box-shadow: 0 10px 40px rgba(51, 86, 153, 0.3);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         animation: popupSlide 0.3s ease-out;
       }
 
@@ -2076,7 +2080,7 @@
         default: { name: "Default", copies: "N/A" },
         chairlord: { name: "Chairlord", copies: "1/1" },
         sunset: { name: "Sunset", copies: "1/2" },
-        rainbowmonster: { name: "Rainbow Monster", copies: "1/2" },
+        rainbowmonster: { name: "Rainbow Monster", copies: "1/8" },
         burningheart: { name: "Burning Heart", copies: "1/3" },
         tv: { name: "TV", copies: "1/2" },
         cubemouth: { name: "Cube Mouth", copies: "1/5" },
@@ -2095,8 +2099,13 @@
         rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
         rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
       };
-      const LATEST_NEWS_VERSION = "1.5.2"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.5.3"; // Not even really related to supabase
       const NEWS_UPDATES = [
+        {
+          v: "1.5.3",
+          t: "Sliding Blocks",
+          d: "Added sliding blocks, which force the player to slide down with them. There are both slide right and slide left blocks. Also added new wall spikes for more flexible placing of spikes, and wall spike blocks (where those spikes appear when in close proximity). In addition to this, added many new keyboard shortcuts which you can view in a new 'Controls' section of settings. These go with a new update for practice mode and chapter speedruns, now allowing you to go back to the previous checkpoint or reset checkpoints in pratice mode and completely reset in chapter speedrun mode. ",
+        },
         {
           v: "1.5.2",
           t: "Bug FIx",
@@ -2310,14 +2319,7 @@
               saveSettings();
               checkBlueCoinSkinUnlock(true);
             }
-            showPopup("SUCCESS", "Logged in! Data synced.", () => {
-              const now = new Date();
-              const hour = now.getHours();
-              const minute = now.getMinutes();
-              if (hour < 9 || (hour === 9 && minute < 15) || hour >= 16) {
-                showAfterSchoolReward();
-              }
-            });
+            showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
           updateLoginButton();
           safeStorage.setItem("blockoverit_username", currentUser);
@@ -2420,32 +2422,6 @@
               text: "SEND",
               onClick: () => {
                 submitFeedback(document.getElementById("feedback-text").value);
-              },
-            },
-          ],
-        });
-      }
-
-      function showAfterSchoolReward() {
-        if (currentUserSkins.includes("rainbowmonster")) return;
-
-        const html = `
-            Thanks for playing outside of school! Here's your reward:
-            <div style="width: 100%; display: flex; justify-content: center; margin: 20px 0;">
-                <div style="width: 80px; height: 160px; background-image: url('rainbowmonster.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));"></div>
-            </div>
-        `;
-        popupManager.show({
-          title: "AFTER SCHOOL REWARD",
-          html: html,
-          buttons: [
-            {
-              text: "CLAIM",
-              onClick: () => {
-                if (!currentUserSkins.includes("rainbowmonster")) {
-                  currentUserSkins.push("rainbowmonster");
-                  syncDataToCloud();
-                }
               },
             },
           ],
@@ -3013,6 +2989,7 @@
         editorNewTab: false,
         currentSkin: "default",
         showHitboxes: false,
+        lastReadNews: null,
         playlist: [
           "synth",
           "joyful",
@@ -3069,6 +3046,10 @@
         gameSettings.showHitboxes = false;
       if (gameSettings.currentSkin === undefined)
         gameSettings.currentSkin = "default";
+      if (gameSettings.lastReadNews === undefined) {
+        // Migrate legacy local storage if exists
+        gameSettings.lastReadNews = safeStorage.getItem("lastReadNews") || null;
+      }
       if (!gameSettings.playlist)
         gameSettings.playlist = MUSIC_LIBRARY.map((t) => t.id);
 
@@ -4563,6 +4544,66 @@
       SpikeRight.prototype.type = "spike-right";
       SpikeRight.prototype.act = function (step, level) {};
 
+      function SpikeBlockLeft(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+      }
+      SpikeBlockLeft.prototype.type = "spike-block-l";
+      SpikeBlockLeft.prototype.act = function (step, level) {
+        if (this.triggered) return;
+        var p = level.player;
+        if (!p) return;
+        var dx = p.pos.x + p.size.x / 2 - (this.pos.x + this.size.x / 2);
+        var dy = p.pos.y + p.size.y / 2 - (this.pos.y + this.size.y / 2);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 2.0) {
+          var targetPos = this.pos.plus(new Vector(-1, 0));
+          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+            for (let i = 0; i < (this.produceCount || 1); i++) {
+              var p = targetPos.plus(new Vector(-i, 0));
+              if (!level.obstacleAt(p, new Vector(1, 1), null)) {
+                var spike = new SpikeLeft(p);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+              }
+            }
+          }
+          this.triggered = true;
+        }
+      };
+
+      function SpikeBlockRight(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+        this.triggered = false;
+      }
+      SpikeBlockRight.prototype.type = "spike-block-r";
+      SpikeBlockRight.prototype.act = function (step, level) {
+        if (this.triggered) return;
+        var p = level.player;
+        if (!p) return;
+        var dx = p.pos.x + p.size.x / 2 - (this.pos.x + this.size.x / 2);
+        var dy = p.pos.y + p.size.y / 2 - (this.pos.y + this.size.y / 2);
+        var dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 2.0) {
+          var targetPos = this.pos.plus(new Vector(1, 0));
+          if (!level.obstacleAt(targetPos, new Vector(1, 1), null)) {
+            for (let i = 0; i < (this.produceCount || 1); i++) {
+              var p = targetPos.plus(new Vector(i, 0));
+              if (!level.obstacleAt(p, new Vector(1, 1), null)) {
+                var spike = new SpikeRight(p);
+                spike.id = level.nextActorId++;
+                level.actors.push(spike);
+              }
+            }
+          }
+          this.triggered = true;
+        }
+      };
+
       var actorchars = {
         "@": Player,
         o: Coin,
@@ -4586,6 +4627,8 @@
         "<": SlideLeft,
         "[": SpikeLeft,
         "]": SpikeRight,
+        "{": SpikeBlockLeft,
+        "}": SpikeBlockRight,
       };
 
       function cloneActor(actor) {
@@ -4811,7 +4854,7 @@
                   actor.riseInterval = this.risingSpeeds[`${x},${y}`];
                 }
                 if (
-                  ["W", "K", "k"].includes(ch) &&
+                  ["W", "K", "k", "{", "}"].includes(ch) &&
                   this.blockConfigs &&
                   this.blockConfigs[`${x},${y}`]
                 ) {
@@ -5460,6 +5503,8 @@
                 member.type === "spike-block" ||
                 member.type === "wall-block" ||
                 member.type === "spike-block-u" ||
+                member.type === "spike-block-l" ||
+                member.type === "spike-block-r" ||
                 member.type === "grinder" ||
                 member.type === "moving-group" ||
                 (member.type === "visual-wall" && member.isVisible)
@@ -6176,6 +6221,9 @@
               "spike-block",
               "wall-block",
               "visual-wall",
+              "spike-block-u",
+              "spike-block-l",
+              "spike-block-r",
             ].includes(actor.type)
           ) {
             el.style.borderWidth = (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
@@ -7452,8 +7500,7 @@
         if (!activeLevelDisplay) playMusic();
 
         // Check News
-        const lastRead = safeStorage.getItem("lastReadNews");
-        if (lastRead !== LATEST_NEWS_VERSION) {
+        if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
           document.getElementById("news-notif").style.display = "block";
         }
 
@@ -7934,7 +7981,8 @@
         } else if (view === "news") {
           subtitle.textContent = "NEWS & UPDATES";
 
-          safeStorage.setItem("lastReadNews", LATEST_NEWS_VERSION);
+          gameSettings.lastReadNews = LATEST_NEWS_VERSION;
+          saveSettings();
           document.getElementById("news-notif").style.display = "none";
 
           const newsContent = document.createElement("div");
@@ -9391,14 +9439,7 @@
       if (savedUser) {
         currentUser = savedUser;
         updateLoginButton();
-        fetchAndSyncUserData().then(() => {
-          const now = new Date();
-          const hour = now.getHours();
-          const minute = now.getMinutes();
-          if (hour < 9 || (hour === 9 && minute < 15) || hour >= 16) {
-            showAfterSchoolReward();
-          }
-        });
+        fetchAndSyncUserData();
       } else {
         if (!safeStorage.getItem("hasSeenLoginPrompt")) {
           safeStorage.setItem("hasSeenLoginPrompt", "true");
@@ -9582,8 +9623,7 @@
           if (!currentPlayingTrackId) playMusic();
 
           // Check News
-          const lastRead = safeStorage.getItem("lastReadNews");
-          if (lastRead !== LATEST_NEWS_VERSION) {
+          if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
             const latestUpdate = NEWS_UPDATES.find(
               (u) => u.v === LATEST_NEWS_VERSION,
             );
@@ -9595,7 +9635,8 @@
                 </div>
               `;
               const setRead = () => {
-                safeStorage.setItem("lastReadNews", LATEST_NEWS_VERSION);
+                gameSettings.lastReadNews = LATEST_NEWS_VERSION;
+                saveSettings();
                 document.getElementById("news-notif").style.display = "none";
               };
               popupManager.show({
