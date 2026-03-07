@@ -149,6 +149,41 @@
       .t-spike-left::after, .t-spike-right::after {
         content: none;
       }
+      .t-spike-block {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block::after {
+        content: "▼";
+        color: #f87171;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+      .t-spike-block-u { background: #444; border: 3px solid #333; position: relative; }
+      .t-spike-block-u::after { content: "▲"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
+
+      .t-spike-block-l { background: #444; border: 3px solid #333; position: relative; }
+      .t-spike-block-l::after { content: "◀"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
+
+      .t-spike-block-r { background: #444; border: 3px solid #333; position: relative; }
+      .t-spike-block-r::after { content: "▶"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
+
+      .t-wall-block { background: #444; border: 3px solid #333; position: relative; }
+      .t-wall-block::after { content: "■"; color: #94a3b8; font-size: 8px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
+
+      .style-modern .t-spike-block, 
+      .style-modern .t-spike-block-u, 
+      .style-modern .t-spike-block-l, 
+      .style-modern .t-spike-block-r, 
+      .style-modern .t-wall-block {
+        background: #334155;
+        border: 1px solid #1e293b;
+      }
 
       .tool-active {
         background: var(--accent) !important;
@@ -2536,6 +2571,11 @@
         "<": "t-slide-left",
         "[": "t-spike-left",
         "]": "t-spike-right",
+        K: "t-spike-block",
+        k: "t-spike-block-u",
+        "{": "t-spike-block-l",
+        "}": "t-spike-block-r",
+        W: "t-wall-block",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -2555,6 +2595,11 @@
         "<": "Slide Left",
         "[": "Spike Left",
         "]": "Spike Right",
+        K: "Spike Block (Down)",
+        k: "Spike Block (Up)",
+        "{": "Spike Block (Left)",
+        "}": "Spike Block (Right)",
+        W: "Wall Block",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
@@ -2645,6 +2690,11 @@
           "<": "#444",
           "[": "#94a3b8",
           "]": "#94a3b8",
+          K: "#444",
+          k: "#444",
+          "{": "#444",
+          "}": "#444",
+          W: "#444",
           o: "#e2e838",
           B: "#335699",
           "@": "#10b981", // Use a bright color for player on minimap
@@ -3345,6 +3395,11 @@
               "[": "[",
               "}": "]",
               "]": "]",
+              K: "K",
+              U: "k", // Shift+U for Up spike block
+              W: "W",
+              "{": "{",
+              "}": "}",
             };
 
             if (map[k]) {
@@ -4891,6 +4946,34 @@
                 ctx.lineTo(px + cellSize, py + cellSize / 2);
                 ctx.lineTo(px, py + cellSize);
                 ctx.fill();
+              } else if (['K', 'k', '{', '}', 'W'].includes(char)) {
+                let fill = isModern ? "#334155" : "#444444";
+                let stroke = isModern ? "#1e293b" : "#333333";
+                if (customColor) {
+                  fill = customColor;
+                  stroke = adjustColor(customColor, -20);
+                }
+                ctx.fillStyle = fill;
+                ctx.fillRect(px, py, cellSize, cellSize);
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = isModern ? 1 : 3;
+                const offset = isModern ? 0.5 : 1.5;
+                const size = isModern ? cellSize - 1 : cellSize - 3;
+                ctx.strokeRect(px + offset, py + offset, size, size);
+
+                // Symbol
+                ctx.fillStyle = "#f87171";
+                if (char === 'W') ctx.fillStyle = "#94a3b8";
+                ctx.font = "bold 10px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let sym = "";
+                if (char === 'K') sym = "▼";
+                if (char === 'k') sym = "▲";
+                if (char === '{') sym = "◀";
+                if (char === '}') sym = "▶";
+                if (char === 'W') sym = "■";
+                ctx.fillText(sym, cx, cy);
               }
               ctx.globalAlpha = 1.0;
             }
@@ -6090,6 +6173,11 @@
                     <div>&lt;: Slide L</div>
                     <div>[: Spike L</div>
                     <div>]: Spike R</div>
+                    <div>K: Spike Blk D</div>
+                    <div>U: Spike Blk U</div>
+                    <div>{: Spike Blk L</div>
+                    <div>}: Spike Blk R</div>
+                    <div>W: Wall Blk</div>
                   </div>
                 </div>
               </div>
