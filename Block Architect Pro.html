@@ -292,14 +292,13 @@
         position: relative;
       }
       .t-spike-block-l::after {
-        content: "◀";
-        color: #f87171;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M20 2 L20 22 L4 12 Z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
         height: 100%;
-        font-weight: bold;
+        display: block;
       }
 
       .t-spike-block-r {
@@ -308,14 +307,13 @@
         position: relative;
       }
       .t-spike-block-r::after {
-        content: "▶";
-        color: #f87171;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M4 2 L4 22 L20 12 Z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
         height: 100%;
-        font-weight: bold;
+        display: block;
       }
 
       .spike-visual.spike-u {
@@ -3060,28 +3058,28 @@
     <script>
       const TILE_MAP = {
         x: "t-wall",
+        W: "t-wall-block",
+        G: "t-breakable",
+        F: "t-falling",
         "!": "t-lava",
         "=": "t-lava-h",
         "|": "t-lava-v",
         v: "t-lava-drip",
-        H: "t-moving-h",
-        V: "t-moving-v",
-        F: "t-falling",
-        G: "t-breakable",
-        K: "t-spike-block",
-        k: "t-spike-block-u",
-        W: "t-wall-block",
-        J: "t-jump-pad",
-        C: "t-grinder",
         "^": "t-rising",
         S: "t-spike",
         s: "t-spike-u",
-        ">": "t-slide-right",
-        "<": "t-slide-left",
         "[": "t-spike-left",
         "]": "t-spike-right",
+        K: "t-spike-block",
+        k: "t-spike-block-u",
         "{": "t-spike-block-l",
         "}": "t-spike-block-r",
+        H: "t-moving-h",
+        V: "t-moving-v",
+        ">": "t-slide-right",
+        "<": "t-slide-left",
+        J: "t-jump-pad",
+        C: "t-grinder",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -3089,28 +3087,28 @@
       };
       const BLOCK_NAMES = {
         x: "Wall",
+        W: "Wall Block",
+        G: "Breakable Block",
+        F: "Falling Block",
         "!": "Lava",
         "=": "Horizontal Lava",
         "|": "Vertical Lava",
         v: "Dripping Lava",
-        H: "Horizontal Moving Block",
-        V: "Vertical Moving Block",
-        F: "Falling Block",
-        G: "Breakable Block",
-        K: "Spike Block",
-        k: "Upside Down Spike Block",
-        W: "Wall Block",
-        J: "Jump Pad",
-        C: "The Grinder",
         "^": "Rising Lava",
         S: "Spike",
         s: "Upside Down Spike",
-        ">": "Slide Right",
-        "<": "Slide Left",
         "[": "Spike Left",
         "]": "Spike Right",
+        K: "Spike Block",
+        k: "Upside Down Spike Block",
         "{": "Spike Block (Left)",
         "}": "Spike Block (Right)",
+        H: "Horizontal Moving Block",
+        V: "Vertical Moving Block",
+        ">": "Slide Right",
+        "<": "Slide Left",
+        J: "Jump Pad",
+        C: "The Grinder",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
