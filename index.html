@@ -6566,7 +6566,7 @@
             saveSettings();
             activeLevelDisplay.syncActors(); // Refresh visuals
             showTopNotification(
-              "Hitboxes: " + (gameSettings.showHitboxes ? "ON" : "OFF"),
+              "Hitboxes " + (gameSettings.showHitboxes ? "ON" : "OFF"),
             );
           }
         }
@@ -6814,7 +6814,7 @@
               ? CHAPTER_2
               : CHAPTER_3;
         startGameLevel(chapterData[0], 0, "campaign", currentLevelChapter);
-        showTopNotification("Speedrun Reset!");
+        showTopNotification("Chapter Speedrun reset.");
       }
 
       function cycleSkin() {
@@ -6865,8 +6865,7 @@
         }
 
         if (currentGameMode === "practice") {
-          document.getElementById("hud").innerText =
-            "ESC | PRESS 'P' TO SET SPAWN";
+          document.getElementById("hud").innerText = "ESC";
           document.getElementById("practice-controls").style.display = "flex";
         }
 
