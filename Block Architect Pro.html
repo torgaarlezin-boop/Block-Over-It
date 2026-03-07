@@ -269,6 +269,55 @@
       .t-spike-u::after {
         content: none;
       }
+      .t-slide-right {
+        background: linear-gradient(to top left, #444 50%, transparent 0);
+      }
+      .t-slide-left {
+        background: linear-gradient(to top right, #444 50%, transparent 0);
+      }
+      .t-spike-left,
+      .t-spike-right {
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .t-spike-left::after,
+      .t-spike-right::after {
+        content: none;
+      }
+      .t-spike-block-l {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block-l::after {
+        content: "◀";
+        color: #f87171;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+
+      .t-spike-block-r {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block-r::after {
+        content: "▶";
+        color: #f87171;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+
       .spike-visual.spike-u {
         border-bottom: 0;
         border-top: 20px solid #94a3b8;
@@ -457,6 +506,22 @@
         border: 1px solid #0f172a;
         border-radius: 2px;
       }
+      .style-modern .t-slide-right {
+        background: linear-gradient(to top left, #334155 50%, transparent 0);
+        border-right: 1px solid #1e293b;
+        border-bottom: 1px solid #1e293b;
+      }
+      .style-modern .t-slide-left {
+        background: linear-gradient(to top right, #334155 50%, transparent 0);
+        border-left: 1px solid #1e293b;
+        border-bottom: 1px solid #1e293b;
+      }
+      .style-modern .t-spike-block-l,
+      .style-modern .t-spike-block-r {
+        background: #334155;
+        border: 1px solid #1e293b;
+        border-radius: 2px;
+      }
       .t-spike {
         background: transparent;
         display: flex;
@@ -477,6 +542,28 @@
       .style-modern .spike-visual {
         border-bottom-color: #cbd5e1;
         filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+      }
+      .spike-left-visual {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 20px solid #94a3b8;
+      }
+      .style-modern .spike-left-visual {
+        border-right-color: #cbd5e1;
+        filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+      }
+      .spike-right-visual {
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 20px solid #94a3b8;
+      }
+      .style-modern .spike-right-visual {
+        border-left-color: #cbd5e1;
+        filter: drop-shadow(-2px 2px 2px rgba(0, 0, 0, 0.3));
       }
       #minimap-container.collapsed {
         width: auto;
@@ -2989,6 +3076,12 @@
         "^": "t-rising",
         S: "t-spike",
         s: "t-spike-u",
+        ">": "t-slide-right",
+        "<": "t-slide-left",
+        "[": "t-spike-left",
+        "]": "t-spike-right",
+        "{": "t-spike-block-l",
+        "}": "t-spike-block-r",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -3012,6 +3105,12 @@
         "^": "Rising Lava",
         S: "Spike",
         s: "Upside Down Spike",
+        ">": "Slide Right",
+        "<": "Slide Left",
+        "[": "Spike Left",
+        "]": "Spike Right",
+        "{": "Spike Block (Left)",
+        "}": "Spike Block (Right)",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
@@ -3130,6 +3229,12 @@
           "^": "#d32f2f",
           S: "#94a3b8",
           s: "#94a3b8",
+          ">": "#444",
+          "<": "#444",
+          "[": "#94a3b8",
+          "]": "#94a3b8",
+          "{": "#444",
+          "}": "#444",
           o: "#e2e838",
           B: "#335699",
           "@": "#10b981", // Use a bright color for player on minimap
@@ -3438,6 +3543,10 @@
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual"></div></div>`;
           } else if (char === "s") {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual spike-u"></div></div>`;
+          } else if (char === "[") {
+            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-left-visual"></div></div>`;
+          } else if (char === "]") {
+            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-right-visual"></div></div>`;
           } else {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"></div>`;
           }
@@ -3606,6 +3715,18 @@
           const spike = document.createElement("div");
           spike.className = "spike-visual spike-u";
           if (color) spike.style.borderTopColor = color;
+          cell.appendChild(spike);
+        }
+        if (char === "[") {
+          const spike = document.createElement("div");
+          spike.className = "spike-left-visual";
+          if (color) spike.style.borderRightColor = color;
+          cell.appendChild(spike);
+        }
+        if (char === "]") {
+          const spike = document.createElement("div");
+          spike.className = "spike-right-visual";
+          if (color) spike.style.borderLeftColor = color;
           cell.appendChild(spike);
         }
 
@@ -4018,6 +4139,14 @@
               L: "!",
               P: "@",
               C: "o",
+              ">": ">",
+              ".": ">",
+              "<": "<",
+              ",": "<",
+              "{": "{",
+              "}": "}",
+              "[": "[",
+              "]": "]",
             };
 
             if (map[k]) {
@@ -6157,6 +6286,60 @@
                 ctx.lineTo(px + cellSize, py);
                 ctx.lineTo(px + cellSize / 2, py + cellSize);
                 ctx.fill();
+              } else if (char === ">") {
+                ctx.fillStyle =
+                  customColor || (isModern ? "#334155" : "#444444");
+                ctx.beginPath();
+                ctx.moveTo(px + cellSize, py);
+                ctx.lineTo(px, py + cellSize);
+                ctx.lineTo(px + cellSize, py + cellSize);
+                ctx.fill();
+              } else if (char === "<") {
+                ctx.fillStyle =
+                  customColor || (isModern ? "#334155" : "#444444");
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + cellSize, py + cellSize);
+                ctx.lineTo(px, py + cellSize);
+                ctx.fill();
+              } else if (char === "[") {
+                ctx.fillStyle = customColor || "#94a3b8";
+                ctx.beginPath();
+                ctx.moveTo(px + cellSize, py);
+                ctx.lineTo(px, py + cellSize / 2);
+                ctx.lineTo(px + cellSize, py + cellSize);
+                ctx.fill();
+              } else if (char === "]") {
+                ctx.fillStyle = customColor || "#94a3b8";
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + cellSize, py + cellSize / 2);
+                ctx.lineTo(px, py + cellSize);
+                ctx.fill();
+              } else if (["{", "}"].includes(char)) {
+                let fill = isModern ? "#334155" : "#444444";
+                let stroke = isModern ? "#1e293b" : "#333333";
+                if (customColor) {
+                  fill = customColor;
+                  stroke = adjustColor(customColor, -20);
+                }
+                ctx.fillStyle = fill;
+                ctx.fillRect(px, py, cellSize, cellSize);
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = isModern ? 1 : 3;
+                const offset = isModern ? 0.5 : 1.5;
+                const size = isModern ? cellSize - 1 : cellSize - 3;
+                ctx.strokeRect(px + offset, py + offset, size, size);
+
+                // Symbol
+                ctx.fillStyle = "#f87171";
+                ctx.font = "bold 10px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let sym = "";
+                if (char === "{") sym = "◀";
+                if (char === "}") sym = "▶";
+                ctx.fillText(sym, cx, cy);
               }
               ctx.globalAlpha = 1.0;
             }
@@ -7439,6 +7622,12 @@
                     <div>O/C: Coin</div>
                     <div>S: Spike</div>
                     <div>B: Wall</div>
+                    <div>&gt;: Slide R</div>
+                    <div>&lt;: Slide L</div>
+                    <div>[: Spike L</div>
+                    <div>]: Spike R</div>
+                    <div>{: Spike Blk L</div>
+                    <div>}: Spike Blk R</div>
                   </div>
                 </div>
               </div>
