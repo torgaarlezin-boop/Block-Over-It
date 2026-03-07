@@ -227,6 +227,14 @@
         border-top-style: solid;
       }
 
+      .slide-right {
+        background: linear-gradient(to top left, #444 50%, transparent 0);
+      }
+
+      .slide-left {
+        background: linear-gradient(to top right, #444 50%, transparent 0);
+      }
+
       .game {
         position: relative;
         overflow: auto;
@@ -1790,6 +1798,53 @@
         background-color: #333;
         padding-left: 12px !important;
       }
+
+      /* Practice Controls */
+      .practice-controls {
+        position: absolute;
+        top: 70px;
+        right: 20px;
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 60;
+      }
+      .practice-btn {
+        background: #333;
+        border: 2px solid #555;
+        color: #fff;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        transition: all 0.2s;
+      }
+      .practice-btn:hover {
+        background: #444;
+        border-color: #335699;
+      }
+
+      /* Top Notification */
+      .top-notification {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #335699;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 2000;
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
+        text-align: center;
+      }
+      .top-notification.show {
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
@@ -1936,6 +1991,19 @@
     <div id="highscore-display">BEST: --:--.---</div>
     <canvas id="confetti-canvas"></canvas>
 
+    <div id="top-notification" class="top-notification"></div>
+    <div id="practice-controls" class="practice-controls">
+      <button class="practice-btn" onclick="handlePracticeInput(false, false)">
+        Set Point (P)
+      </button>
+      <button class="practice-btn" onclick="handlePracticeInput(false, true)">
+        Undo Point (Alt+P)
+      </button>
+      <button class="practice-btn" onclick="handlePracticeInput(true, false)">
+        Reset (Shift+P)
+      </button>
+    </div>
+
     <div id="intro-layer">
       <div id="intro-sellwood">Sellwood Game Studios</div>
       <div id="intro-anim-container">
@@ -2020,8 +2088,14 @@
         kingbanana: { name: "King Banana", copies: "1/2" },
         j_imbo: { name: "J_imbo", copies: "1/1" },
         bluecoin: { name: "Blue Gem", copies: "N/A" },
+        coolguy: { name: "Cool Guy", copies: "1/5" },
+        goldcoolguy: { name: "Golden Cool Guy", copies: "1/1" },
+        inkcoolguy: { name: "Cool Guy (Ink)", copies: "1/3" },
+        sketchbanana: { name: "King Banana (Sketch)", copies: "1/3" },
+        rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
+        rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
       };
-      const LATEST_NEWS_VERSION = "1.5.1"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.5.2"; // Not even really related to supabase
       const NEWS_UPDATES = [
         {
           v: "1.5.2",
@@ -4100,6 +4174,7 @@
         this.pos = pos.plus(new Vector(0, -0.5));
         this.size = new Vector(0.5, 1);
         this.speed = new Vector(0, 0);
+        this.rotation = 0;
       }
       Player.prototype.type = "player";
 
@@ -4460,6 +4535,34 @@
         }
       };
 
+      function SlideRight(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+      }
+      SlideRight.prototype.type = "slide-right";
+      SlideRight.prototype.act = function (step, level) {};
+
+      function SlideLeft(pos) {
+        this.pos = pos;
+        this.size = new Vector(1, 1);
+      }
+      SlideLeft.prototype.type = "slide-left";
+      SlideLeft.prototype.act = function (step, level) {};
+
+      function SpikeLeft(pos) {
+        this.pos = pos.plus(new Vector(0, 0.2));
+        this.size = new Vector(0.5, 0.6);
+      }
+      SpikeLeft.prototype.type = "spike-left";
+      SpikeLeft.prototype.act = function (step, level) {};
+
+      function SpikeRight(pos) {
+        this.pos = pos.plus(new Vector(0.5, 0.2));
+        this.size = new Vector(0.5, 0.6);
+      }
+      SpikeRight.prototype.type = "spike-right";
+      SpikeRight.prototype.act = function (step, level) {};
+
       var actorchars = {
         "@": Player,
         o: Coin,
@@ -4479,11 +4582,18 @@
         k: UpsideDownSpikeBlock,
         J: JumpPad,
         C: Grinder,
+        ">": SlideRight,
+        "<": SlideLeft,
+        "[": SpikeLeft,
+        "]": SpikeRight,
       };
 
       function cloneActor(actor) {
         if (actor.type === "lava-group") {
           return new LavaGroup(actor.members.map((m) => cloneActor(m)));
+        }
+        if (actor.type === "moving-group") {
+          return new MovingGroup(actor.members.map((m) => cloneActor(m)));
         }
         let newActor = Object.create(Object.getPrototypeOf(actor));
         Object.assign(newActor, actor);
@@ -4537,6 +4647,7 @@
         this.jumpFlickers = new Set(levelData.jumpFlickers || []);
         this.blockConfigs = levelData.blockConfigs || {};
         this.age = 0;
+        this.practiceStack = [];
         this.playerHasMoved = false;
 
         for (var y = 0; y < this.height; y++) {
@@ -5357,7 +5468,9 @@
               if (member.type === "lava") return "lava";
               if (
                 member.type === "spike" ||
-                member.type === "upside-down-spike"
+                member.type === "upside-down-spike" ||
+                member.type === "spike-left" ||
+                member.type === "spike-right"
               ) {
                 if (
                   exceptActor &&
@@ -5646,14 +5759,51 @@
             if (gameTimerStart === 0) gameTimerStart = Date.now();
           }
         }
-        if (currentGameMode === "practice" && keys.p) {
-          // Save full state
-          level.practiceState = level.actors.map((a) => cloneActor(a));
-          // Visual feedback is handled by drawPracticeMarker
-        }
+
         if (keys.left || keys.right || keys.up) level.playerHasMoved = true;
-        this.moveX(step, level, keys);
-        this.moveY(step, level, keys);
+
+        // Check for slide interaction
+        var slide = level.actors.find(
+          (a) =>
+            (a.type === "slide-right" || a.type === "slide-left") &&
+            this.pos.x + this.size.x > a.pos.x &&
+            this.pos.x < a.pos.x + a.size.x &&
+            this.pos.y + this.size.y > a.pos.y &&
+            this.pos.y < a.pos.y + a.size.y,
+        );
+
+        if (slide) {
+          this.sliding = true;
+          var speed = 15;
+          if (slide.type === "slide-right") {
+            this.speed.x = -speed;
+            this.speed.y = speed;
+            this.rotation = 45;
+            var relX = this.pos.x + this.size.x / 2 - slide.pos.x;
+            relX = Math.max(0, Math.min(1, relX));
+            var targetY = slide.pos.y + (1 - relX) - this.size.y;
+            this.pos.y = targetY;
+          } else {
+            this.speed.x = speed;
+            this.speed.y = speed;
+            this.rotation = -45;
+            var relX = this.pos.x + this.size.x / 2 - slide.pos.x;
+            relX = Math.max(0, Math.min(1, relX));
+            var targetY = slide.pos.y + relX - this.size.y;
+            this.pos.y = targetY;
+          }
+
+          var motion = new Vector(this.speed.x * step, 0);
+          var newPos = this.pos.plus(motion);
+          if (!level.obstacleAt(newPos, this.size, this)) {
+            this.pos.x = newPos.x;
+          }
+        } else {
+          this.sliding = false;
+          this.rotation = 0;
+          this.moveX(step, level, keys);
+          this.moveY(step, level, keys);
+        }
 
         var otherActor = level.actorAt(this);
         if (
@@ -5690,12 +5840,18 @@
             type == "lava-group" ||
             type == "spike" ||
             type == "upside-down-spike" ||
+            type == "spike-left" ||
+            type == "spike-right" ||
             type == "grinder") &&
           this.status == null
         ) {
-          if (currentGameMode === "practice" && this.practiceState) {
-            // Restore full state
-            this.actors = this.practiceState.map((a) => cloneActor(a));
+          if (
+            currentGameMode === "practice" &&
+            this.practiceStack &&
+            this.practiceStack.length > 0
+          ) {
+            const state = this.practiceStack[this.practiceStack.length - 1];
+            this.actors = state.map((a) => cloneActor(a));
             this.player = this.actors.find((a) => a.type === "player");
             // Re-cache dynamic actors
             this.dynamicActors = this.actors.filter(
@@ -5707,7 +5863,12 @@
             );
             return;
           }
-          if (currentGameMode === "deathrun" || this.disableDeathAnim) {
+          if (
+            currentGameMode === "deathrun" ||
+            currentGameMode === "speedrun" ||
+            currentGameMode === "chapter_speedrun" ||
+            this.disableDeathAnim
+          ) {
             this.status = "lost";
             this.finishDelay = 0; // Instant fail
           } else {
@@ -5871,7 +6032,12 @@
                 el.style.borderColor = adjustColor(actor.color, -20);
               } else if (
                 actor.type !== "spike" &&
-                actor.type !== "upside-down-spike"
+                actor.type !== "upside-down-spike" &&
+                actor.type !== "bonus-coin" &&
+                actor.type !== "slide-right" &&
+                actor.type !== "slide-left" &&
+                actor.type !== "spike-left" &&
+                actor.type !== "spike-right"
               ) {
                 if (
                   !actor.flickerType &&
@@ -5917,6 +6083,44 @@
               else if (actor.color === "invisible")
                 el.style.visibility = "hidden";
               el.appendChild(visual);
+            }
+            if (actor.type === "spike-left") {
+              var visual = document.createElement("div");
+              visual.className = "spike-visual";
+              visual.style.borderTopWidth = s * 0.5 + "px";
+              visual.style.borderBottomWidth = s * 0.5 + "px";
+              visual.style.borderRightWidth = s + "px";
+              visual.style.borderLeftWidth = "0px";
+              visual.style.borderBottomColor = "transparent";
+              visual.style.borderRightColor = actor.color || "#aaa";
+              visual.style.position = "absolute";
+              visual.style.left = "0";
+              visual.style.top = "50%";
+              visual.style.transform = "translateY(-50%)";
+              el.appendChild(visual);
+            }
+            if (actor.type === "spike-right") {
+              var visual = document.createElement("div");
+              visual.className = "spike-visual";
+              visual.style.borderTopWidth = s * 0.5 + "px";
+              visual.style.borderBottomWidth = s * 0.5 + "px";
+              visual.style.borderLeftWidth = s + "px";
+              visual.style.borderRightWidth = "0px";
+              visual.style.borderBottomColor = "transparent";
+              visual.style.borderLeftColor = actor.color || "#aaa";
+              visual.style.position = "absolute";
+              visual.style.right = "0";
+              visual.style.top = "50%";
+              visual.style.transform = "translateY(-50%)";
+              el.appendChild(visual);
+            }
+            if (actor.type === "slide-right") {
+              const c = actor.color || "#444";
+              el.style.background = `linear-gradient(to top left, ${c} 50%, transparent 0)`;
+            }
+            if (actor.type === "slide-left") {
+              const c = actor.color || "#444";
+              el.style.background = `linear-gradient(to top right, ${c} 50%, transparent 0)`;
             }
             if (actor.text) {
               el.textContent = actor.text;
@@ -6040,6 +6244,7 @@
               visualW = 1.0;
               visualX = actor.pos.x - (1.0 - actor.size.x) / 2;
             }
+            el.style.transform = `rotate(${actor.rotation || 0}deg)`;
           }
 
           el.style.width = visualW * s + "px";
@@ -6087,10 +6292,10 @@
         this.world
           .querySelectorAll(".practice-marker")
           .forEach((el) => el.remove());
-        if (this.level.practiceState) {
-          var players = this.level.practiceState.filter(
-            (a) => a.type === "player",
-          );
+        if (this.level.practiceStack && this.level.practiceStack.length > 0) {
+          const state =
+            this.level.practiceStack[this.level.practiceStack.length - 1];
+          var players = state.filter((a) => a.type === "player");
           var s = this.scale;
           players.forEach((p) => {
             var marker = element("div", "practice-marker");
@@ -6197,14 +6402,14 @@
         65: "left",
         87: "up",
         68: "right",
-        83: "down",
+        // 83: "down", // S is now Switch Skin
         37: "left",
         38: "up",
         39: "right",
         40: "down",
         32: "up",
         80: "p",
-        82: "r",
+        // 82: "r", // R is handled globally
       };
       function trackKeys(codes) {
         var pressed = Object.create(null);
@@ -6229,18 +6434,21 @@
 
       // Global Escape Handler
       window.addEventListener("keydown", (e) => {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+          return;
         if (e.key === "Escape") {
           const popup = document.querySelector(".popup-overlay");
           const clPopup = document.querySelector(".cl-popup-overlay");
-          
+
           if (popup) {
             const closeBtn = popup.querySelector(".popup-close");
             if (closeBtn) closeBtn.click();
             else {
-               const btn = Array.from(popup.querySelectorAll("button")).find(b => b.textContent === "CLOSE");
-               if (btn) btn.click();
-               else popup.remove();
+              const btn = Array.from(popup.querySelectorAll("button")).find(
+                (b) => b.textContent === "CLOSE",
+              );
+              if (btn) btn.click();
+              else popup.remove();
             }
             return;
           }
@@ -6252,6 +6460,85 @@
           if (activeLevelDisplay) exitToMenu();
           else handleMenuBack();
         }
+
+        if (e.key.toLowerCase() === "z") {
+          if (activeLevelDisplay)
+            activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
+        }
+
+        if (currentMenuView === "main" && e.key.toLowerCase() === "s") {
+          currentGameMode = "speedrun";
+          showMenu("source-select");
+        }
+
+        if (currentGameMode === "practice" && activeLevelDisplay) {
+          if (e.key.toLowerCase() === "p") {
+            handlePracticeInput(e.shiftKey, e.altKey);
+          }
+        }
+
+        // R for Restart
+        if (e.key.toLowerCase() === "r") {
+          if (activeLevelDisplay) {
+            if (currentGameMode === "practice") {
+              const level = activeLevelDisplay.level;
+              if (level.practiceStack && level.practiceStack.length > 0) {
+                const state =
+                  level.practiceStack[level.practiceStack.length - 1];
+                level.actors = state.map((a) => cloneActor(a));
+                level.player = level.actors.find((a) => a.type === "player");
+                level.dynamicActors = level.actors.filter(
+                  (a) =>
+                    a.type === "moving-block" ||
+                    a.type === "moving-group" ||
+                    a.type === "lava-group" ||
+                    (a.type === "lava" && a.speed),
+                );
+                showTopNotification("Respawned at practice point");
+              } else {
+                restartCurrentLevel();
+              }
+            } else if (currentGameMode === "chapter_speedrun") {
+              if (e.shiftKey) {
+                resetChapterSpeedrun();
+              } else {
+                showTopNotification("Press Shift+R to reset full run");
+                restartCurrentLevel();
+              }
+            } else {
+              restartCurrentLevel();
+            }
+          }
+        }
+
+        // H for Hitboxes
+        if (e.key.toLowerCase() === "h") {
+          if (activeLevelDisplay) {
+            gameSettings.showHitboxes = !gameSettings.showHitboxes;
+            saveSettings();
+            activeLevelDisplay.syncActors(); // Refresh visuals
+            showTopNotification(
+              "Hitboxes: " + (gameSettings.showHitboxes ? "ON" : "OFF"),
+            );
+          }
+        }
+
+        // S for Switch Skin (In-game)
+        if (e.key.toLowerCase() === "s") {
+          if (activeLevelDisplay) {
+            cycleSkin();
+          }
+        }
+
+        // U for User Menu
+        if (e.key.toLowerCase() === "u") {
+          if (activeLevelDisplay) {
+            // Optional: Pause game?
+            exitToMenu(); // Or just open modal over game? Let's exit to menu for safety or just open modal
+          }
+          if (currentUser) showMenu("account");
+          else openLoginModal();
+        }
       });
 
       // Gamepad Support
@@ -6261,7 +6548,6 @@
         up: false,
         down: false,
         p: false,
-        r: false,
       };
       function getInputs() {
         // Clone keyboard inputs
@@ -6270,7 +6556,6 @@
         reusableInputs.up = arrows.up;
         reusableInputs.down = arrows.down;
         reusableInputs.p = arrows.p;
-        reusableInputs.r = arrows.r;
 
         const sensitivity = (gameSettings.sensitivity || 50) / 100;
         const threshold = Math.max(0.1, Math.min(0.9, 0.5 / sensitivity));
@@ -6304,6 +6589,42 @@
           }
         }
         return reusableInputs;
+      }
+
+      let topNotifTimeout;
+      function showTopNotification(text) {
+        const el = document.getElementById("top-notification");
+        if (!el) return;
+        el.textContent = text;
+        el.classList.add("show");
+        clearTimeout(topNotifTimeout);
+        topNotifTimeout = setTimeout(() => {
+          el.classList.remove("show");
+        }, 3000);
+      }
+
+      function handlePracticeInput(shift, alt) {
+        if (!activeLevelDisplay || !activeLevelDisplay.level) return;
+        const level = activeLevelDisplay.level;
+        if (!level.practiceStack) level.practiceStack = [];
+        if (shift) {
+          level.practiceStack = [];
+          showTopNotification("Practice points reset");
+        } else if (alt) {
+          if (level.practiceStack.length > 0) {
+            level.practiceStack.pop();
+            showTopNotification("Removed last point");
+          } else {
+            showTopNotification("No points to remove");
+          }
+        } else {
+          const state = level.actors.map((a) => cloneActor(a));
+          level.practiceStack.push(state);
+          showTopNotification(
+            "Practice point set. Press shift + p to reset practice points, and alt + p to go back one point",
+          );
+        }
+        activeLevelDisplay.drawPracticeMarker();
       }
 
       var activeLevelDisplay = null;
@@ -6433,6 +6754,37 @@
         }
       }
 
+      function resetChapterSpeedrun() {
+        if (currentGameMode !== "chapter_speedrun") return;
+        gameTimerStart = 0;
+        gameTimer = 0;
+        gameTimerRunning = false;
+        let chapterData =
+          currentLevelChapter === 1
+            ? CHAPTER_1
+            : currentLevelChapter === 2
+              ? CHAPTER_2
+              : CHAPTER_3;
+        startGameLevel(chapterData[0], 0, "campaign", currentLevelChapter);
+        showTopNotification("Speedrun Reset!");
+      }
+
+      function cycleSkin() {
+        const skins = getAvailableSkins();
+        let idx = skins.indexOf(gameSettings.currentSkin);
+        if (idx === -1) idx = 0;
+        idx = (idx + 1) % skins.length;
+        gameSettings.currentSkin = skins[idx];
+        saveSettings();
+        if (activeLevelDisplay) activeLevelDisplay.syncActors();
+        showTopNotification(
+          "Skin: " +
+            (SKIN_DEFINITIONS[gameSettings.currentSkin]
+              ? SKIN_DEFINITIONS[gameSettings.currentSkin].name
+              : gameSettings.currentSkin),
+        );
+      }
+
       function runLevel(level, Display, andThen) {
         activeLevelDisplay = new Display(
           document.getElementById("game-container"),
@@ -6467,15 +6819,12 @@
         if (currentGameMode === "practice") {
           document.getElementById("hud").innerText =
             "ESC | PRESS 'P' TO SET SPAWN";
+          document.getElementById("practice-controls").style.display = "flex";
         }
 
         playMusic(null, true);
         runAnimation(function (step) {
           const inputs = getInputs();
-          if (inputs.r) {
-            restartCurrentLevel();
-            return false;
-          }
 
           level.animate(step, inputs);
           activeLevelDisplay.drawFrame(step);
@@ -6829,6 +7178,7 @@
         document.getElementById("zoom-btn").style.display = "none";
         document.getElementById("timer-display").style.display = "none";
         document.getElementById("highscore-display").style.display = "none";
+        document.getElementById("practice-controls").style.display = "none";
         gameTimerStart = 0; // Ensure timer is reset when exiting
 
         playMusic(menuMusicState.trackId || "synth");
@@ -7358,6 +7708,39 @@
           container.appendChild(createAccordion("AUDIO", audioItems));
 
           // --- User Section ---
+          // --- Controls Section ---
+          const controlsItems = [];
+          const controlsBtn = document.createElement("button");
+          controlsBtn.className = "btn";
+          controlsBtn.textContent = "OPEN CONTROLS";
+          controlsBtn.style.width = "100%";
+          controlsBtn.onclick = () => {
+            const html = `
+                <div style="text-align:left; display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                    <div>Move</div><div>WASD / Arrows</div>
+                    <div>Jump</div><div>Space / Up / W</div>
+                    <div>Restart Level</div><div>R</div>
+                    <div>Menu</div><div>ESC</div>
+                    <div>Toggle Zoom</div><div>Z</div>
+                    <div>Toggle Hitboxes</div><div>H (In-game)</div>
+                    <div>Switch Skin</div><div>S (In-game)</div>
+                    <div>User Menu</div><div>U</div>
+                    <div>Practice Checkpoint</div><div>P</div>
+                    <div>Undo Checkpoint</div><div>Alt + P</div>
+                    <div>Reset Checkpoints</div><div>Shift + P</div>
+                    <div>Reset Chapter Run</div><div>Shift + R</div>
+                </div>
+            `;
+            popupManager.show({
+              title: "CONTROLS",
+              html: html,
+              buttons: [{ text: "CLOSE", onClick: () => {} }],
+            });
+          };
+          controlsItems.push(controlsBtn);
+          container.appendChild(createAccordion("CONTROLS", controlsItems));
+
+          // --- User Section ---
           const userItems = [];
           const accountBtn = document.createElement("button");
           accountBtn.className = "btn";
@@ -7506,13 +7889,22 @@
               color: "#a04040",
             },
             {
-              name: "CHAPTER RUN",
+              name: "CHAPTER SPEEDRUN",
               desc: "Speedrun the entire chapter.",
               action: () => {
                 currentGameMode = "chapter_speedrun";
                 showMenu("chapter-speedrun-select");
               },
               color: "#8e44ad",
+            },
+            {
+              name: "PRACTICE",
+              desc: "Practice levels with checkpoints.",
+              action: () => {
+                currentGameMode = "practice";
+                showMenu("source-select");
+              },
+              color: "#2ecc71",
             },
           ];
 
