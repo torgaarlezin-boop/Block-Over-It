@@ -1829,6 +1829,38 @@
         border-color: #335699;
       }
 
+      /* Mobile Practice Controls */
+      .mobile-mode .practice-controls {
+        top: 10px;
+        right: 10px;
+        flex-direction: row;
+        gap: 8px;
+      }
+      .mobile-mode .practice-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        font-size: 0; /* Hide text */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid #fff;
+      }
+      .mobile-mode .practice-btn::after {
+        font-size: 1.2rem;
+        color: #fff;
+      }
+      .mobile-mode .practice-btn:nth-child(1)::after {
+        content: "⚑";
+      }
+      .mobile-mode .practice-btn:nth-child(2)::after {
+        content: "↺";
+      }
+      .mobile-mode .practice-btn:nth-child(3)::after {
+        content: "✕";
+      }
+
       /* Top Notification */
       .top-notification {
         position: fixed;
@@ -1912,11 +1944,7 @@
 
       <button
         class="editor-btn"
-        onclick="
-          if (gameSettings.editorNewTab)
-            window.open('Block Architect Pro.html', '_blank');
-          else window.location.href = 'Block Architect Pro.html';
-        "
+        onclick="window.open('Block Architect Pro.html', '_blank')"
       >
         <span>Level Editor</span>
         <svg
@@ -2871,6 +2899,7 @@
       let gameTimerRunning = false;
       let gameTimerStart = 0;
       let speedrunEndTime = 0;
+      let tempPracticeStack = null;
 
       // Highscores
       const HIGHSCORES_KEY = "blockoverit_highscores";
@@ -2986,7 +3015,6 @@
         sensitivity: 50,
         shuffleMusic: true,
         showEditorButton: false,
-        editorNewTab: false,
         currentSkin: "default",
         showHitboxes: false,
         lastReadNews: null,
@@ -3040,8 +3068,6 @@
         gameSettings.confirmDelete = true;
       if (gameSettings.showEditorButton === undefined)
         gameSettings.showEditorButton = false;
-      if (gameSettings.editorNewTab === undefined)
-        gameSettings.editorNewTab = false;
       if (gameSettings.showHitboxes === undefined)
         gameSettings.showHitboxes = false;
       if (gameSettings.currentSkin === undefined)
@@ -6213,6 +6239,22 @@
                 visual.style.borderTopWidth = s + "px";
               }
             }
+          }
+          if (actor.type === "spike-left") {
+            var visual = el.firstChild;
+            if (visual && visual.classList.contains("spike-visual")) {
+              visual.style.borderTopWidth = s * 0.5 + "px";
+              visual.style.borderBottomWidth = s * 0.5 + "px";
+              visual.style.borderRightWidth = s + "px";
+            }
+          }
+          if (actor.type === "spike-right") {
+            var visual = el.firstChild;
+            if (visual && visual.classList.contains("spike-visual")) {
+              visual.style.borderTopWidth = s * 0.5 + "px";
+              visual.style.borderBottomWidth = s * 0.5 + "px";
+              visual.style.borderLeftWidth = s + "px";
+            }
           } else if (
             [
               "moving-block",
@@ -6814,7 +6856,7 @@
               ? CHAPTER_2
               : CHAPTER_3;
         startGameLevel(chapterData[0], 0, "campaign", currentLevelChapter);
-        showTopNotification("Chapter Speedrun reset.");
+        showTopNotification("Speedrun Reset!");
       }
 
       function cycleSkin() {
@@ -6947,8 +6989,35 @@
             } catch (e) {}
           }
         }
+
+        const levelInstance = new Level(levelData);
+        if (currentGameMode === "practice" && tempPracticeStack) {
+          levelInstance.practiceStack = tempPracticeStack;
+          if (levelInstance.practiceStack.length > 0) {
+            const state =
+              levelInstance.practiceStack[
+                levelInstance.practiceStack.length - 1
+              ];
+            levelInstance.actors = state.map((a) => cloneActor(a));
+            levelInstance.player = levelInstance.actors.find(
+              (a) => a.type === "player",
+            );
+            levelInstance.players = levelInstance.actors.filter(
+              (a) => a.type === "player",
+            );
+            levelInstance.dynamicActors = levelInstance.actors.filter(
+              (a) =>
+                a.type === "moving-block" ||
+                a.type === "moving-group" ||
+                a.type === "lava-group" ||
+                (a.type === "lava" && a.speed),
+            );
+          }
+          tempPracticeStack = null;
+        }
+
         runLevel(
-          new Level(levelData),
+          levelInstance,
           DOMDisplay,
 
           function (status, levelInstance) {
@@ -7696,25 +7765,6 @@
           };
           hbRow.appendChild(hbToggle);
           gameplayItems.push(hbRow);
-
-          // Open in New Tab Toggle
-          const newTabRow = document.createElement("div");
-
-          newTabRow.style.cssText =
-            "display:flex; align-items:center; justify-content:space-between;";
-          newTabRow.innerHTML = `<span style="font-size:1.2rem;">EDITOR: NEW TAB</span>`;
-          const newTabToggle = document.createElement("div");
-          newTabToggle.className =
-            "toggle-btn" + (gameSettings.editorNewTab ? " active" : "");
-          newTabToggle.innerHTML = '<div class="toggle-slider"></div>';
-          newTabToggle.onclick = () => {
-            gameSettings.editorNewTab = !gameSettings.editorNewTab;
-            newTabToggle.className =
-              "toggle-btn" + (gameSettings.editorNewTab ? " active" : "");
-            saveSettings();
-          };
-          newTabRow.appendChild(newTabToggle);
-          gameplayItems.push(newTabRow);
 
           const openGameplay = !context || context === "gameplay";
           container.appendChild(
