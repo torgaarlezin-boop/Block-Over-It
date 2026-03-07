@@ -134,29 +134,14 @@
         justify-content: center;
         height: 100%;
       }
-      .t-slide-right {
-        background: linear-gradient(to top left, #444 50%, transparent 0);
-      }
-      .t-slide-left {
-        background: linear-gradient(to top right, #444 50%, transparent 0);
-      }
-      .t-spike-left, .t-spike-right {
-        background: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .t-spike-left::after, .t-spike-right::after {
-        content: none;
-      }
-      .t-spike-block {
+      .t-falling {
         background: #444;
         border: 3px solid #333;
         position: relative;
       }
-      .t-spike-block::after {
+      .t-falling::after {
         content: "▼";
-        color: #f87171;
+        color: white;
         font-size: 10px;
         display: flex;
         align-items: center;
@@ -164,27 +149,112 @@
         height: 100%;
         font-weight: bold;
       }
-      .t-spike-block-u { background: #444; border: 3px solid #333; position: relative; }
-      .t-spike-block-u::after { content: "▲"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
-
-      .t-spike-block-l { background: #444; border: 3px solid #333; position: relative; }
-      .t-spike-block-l::after { content: "◀"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
-
-      .t-spike-block-r { background: #444; border: 3px solid #333; position: relative; }
-      .t-spike-block-r::after { content: "▶"; color: #f87171; font-size: 10px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
-
-      .t-wall-block { background: #444; border: 3px solid #333; position: relative; }
-      .t-wall-block::after { content: "■"; color: #94a3b8; font-size: 8px; display: flex; align-items: center; justify-content: center; height: 100%; font-weight: bold; }
-
-      .style-modern .t-spike-block, 
-      .style-modern .t-spike-block-u, 
-      .style-modern .t-spike-block-l, 
-      .style-modern .t-spike-block-r, 
-      .style-modern .t-wall-block {
-        background: #334155;
-        border: 1px solid #1e293b;
+      .t-breakable {
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM2NDY0NjQiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NDQ0NDQiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ0NDQ0NCIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+');
+        border: 3px solid #555;
+      }
+      .t-spike-block {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block::after {
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M12 2L2 22h20L12 2z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
+        height: 100%;
+        display: block;
+      }
+      .t-spike-block-u {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-spike-block-u::after {
+        content: "";
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M12 22L22 2H2L12 22z'/%3E%3C/svg%3E");
+        background-size: 60%;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .t-wall-block {
+        background: #444;
+        border: 3px solid #333;
+        position: relative;
+      }
+      .t-wall-block::after {
+        content: "W";
+        color: #aaa;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+      }
+      .t-jump-pad {
+        background: #590059;
+        border: 2px solid #d946ef;
+        position: relative;
+      }
+      .t-jump-pad::before {
+        content: '';
+        position: absolute;
+        top: 20%; left: 20%; right: 20%; bottom: 20%;
+        background: #d946ef;
+        border-radius: 50%;
+      }
+      .t-jump-pad::after {
+        content: "J";
+        color: white;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
+        position: relative;
+        z-index: 2;
+      }
+      .t-grinder {
+        background-color: #333;
+        background-image: linear-gradient(90deg, transparent 30%, #888 30%, #888 70%, transparent 70%), repeating-linear-gradient(0deg, #222 0px, #222 4px, #aaa 4px, #aaa 8px);
+        background-size: 100% 100%, 40% 100%;
+        background-position: center center, center 0;
+        position: relative;
+      }
+      .t-grinder::after {
+        content: "C";
+        color: white;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-weight: bold;
       }
 
+      .t-spike-u {
+        background: transparent;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .t-spike-u::after {
+        content: none;
+      }
+      .spike-visual.spike-u {
+        border-bottom: 0;
+        border-top: 20px solid #94a3b8;
+      }
+      .style-modern .spike-visual.spike-u {
+        border-top-color: #cbd5e1;
+      }
       .tool-active {
         background: var(--accent) !important;
         color: white !important;
@@ -198,8 +268,8 @@
       .right-sidebar {
         width: 320px;
         transition:
-          transform 0.3s ease,
-          margin-right 0.3s ease;
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .template-card {
@@ -215,19 +285,34 @@
       }
 
       .accordion-content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease-out;
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s ease-out;
       }
       .accordion-open .accordion-content {
-        max-height: 500px;
-        max-height: 1200px;
+        grid-template-rows: 1fr;
       }
       .accordion-header svg {
-        transition: transform 0.2s;
+        transition: transform 0.2s ease;
+        transform-origin: center;
       }
       .accordion-open .accordion-header svg {
         transform: rotate(180deg);
+      }
+
+      /* Ensure header always sits above content to avoid visual nesting */
+      .accordion-header {
+        position: relative;
+        z-index: 20;
+        background: transparent;
+      }
+      .accordion-content {
+        position: relative;
+        z-index: 1;
+      }
+      /* Small visual gap between sections for clarity */
+      .border-b {
+        padding-bottom: 0.25rem;
       }
 
       /* Custom Selection Box */
@@ -321,15 +406,35 @@
         border: 1px solid #b91c1c;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      .style-modern .t-slide-right {
-        background: linear-gradient(to top left, #334155 50%, transparent 0);
-        border-right: 1px solid #1e293b;
-        border-bottom: 1px solid #1e293b;
+      .style-modern .t-falling {
+        background: #64748b;
+        border: 1px solid #475569;
+        border-radius: 4px;
       }
-      .style-modern .t-slide-left {
-        background: linear-gradient(to top right, #334155 50%, transparent 0);
-        border-left: 1px solid #1e293b;
-        border-bottom: 1px solid #1e293b;
+      .style-modern .t-breakable {
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiM3MTg1OWYiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI1LjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjYuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PGNpcmNsZSBjeD0iNC41IiBjeT0iMy41IiByPSIwLjUiIGZpbGw9IiM0NzU1NjkiLz48Y2lyY2xlIGN4PSIxLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iIzQ3NTU2OSIvPjxjaXJjbGUgY3g9IjUuNSIgY3k9IjAuNSIgcj0iMC41IiBmaWxsPSIjNDc1NTY5Ii8+PC9zdmc+');
+        border: 1px solid #475569;
+        border-radius: 2px;
+      }
+      .style-modern .t-spike-block {
+        background: #334155;
+        border: 1px solid #1e293b;
+        border-radius: 2px;
+      }
+      .style-modern .t-wall-block {
+        background: #334155;
+        border: 1px solid #1e293b;
+        border-radius: 2px;
+      }
+      .style-modern .t-jump-pad {
+        background: #701a75;
+        border: 1px solid #d946ef;
+        border-radius: 2px;
+      }
+      .style-modern .t-grinder {
+        background: #1e293b;
+        border: 1px solid #0f172a;
+        border-radius: 2px;
       }
       .t-spike {
         background: transparent;
@@ -351,30 +456,6 @@
       .style-modern .spike-visual {
         border-bottom-color: #cbd5e1;
         filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
-      }
-      
-      .spike-left-visual {
-        width: 0;
-        height: 0;
-        border-top: 10px solid transparent;
-        border-bottom: 10px solid transparent;
-        border-right: 20px solid #94a3b8;
-      }
-      .style-modern .spike-left-visual {
-        border-right-color: #cbd5e1;
-        filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
-      }
-
-      .spike-right-visual {
-        width: 0;
-        height: 0;
-        border-top: 10px solid transparent;
-        border-bottom: 10px solid transparent;
-        border-left: 20px solid #94a3b8;
-      }
-      .style-modern .spike-right-visual {
-        border-left-color: #cbd5e1;
-        filter: drop-shadow(-2px 2px 2px rgba(0, 0, 0, 0.3));
       }
       #minimap-container.collapsed {
         width: auto;
@@ -488,9 +569,91 @@
         background: #3b82f6;
         color: white;
       }
+
+      /* Selection Popup */
+      #selection-popup {
+        transition: opacity 0.1s, transform 0.1s;
+      }
+      #selection-popup.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.95);
+      }
+      .sp-btn {
+        transition: all 0.1s;
+      }
+      .sp-btn:active {
+        transform: scale(0.95);
+      }
     </style>
   </head>
   <body class="flex flex-col">
+    <!-- Selection Popup (Floating) -->
+    <div id="selection-popup" class="hidden fixed z-50 bg-[#0f121a] border border-slate-700 rounded-lg shadow-2xl p-2 flex flex-col gap-2 w-48 select-none">
+      <div class="grid grid-cols-4 gap-1">
+          <button id="btn-sp-fill" onclick="fillSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-blue-400 flex justify-center items-center sp-btn" title="Fill">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 000 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11z"/></svg>
+          </button>
+          <button id="btn-sp-delete" onclick="deleteSelection()" class="p-1.5 bg-slate-800 hover:bg-red-900/30 rounded text-red-400 flex justify-center items-center sp-btn" title="Delete">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+          <button id="btn-sp-paint" onclick="openColorPickerForSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-purple-400 flex justify-center items-center sp-btn" title="Paint">
+              <div class="w-3 h-3 rounded-full bg-current"></div>
+          </button>
+          <button id="btn-sp-fake" onclick="toggleFakeSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-yellow-400 flex justify-center items-center sp-btn" title="Fake Block">
+              <span class="font-bold text-[10px]">F</span>
+          </button>
+      </div>
+      <div class="grid grid-cols-4 gap-1">
+          <button id="btn-sp-invisible" onclick="makeSelectionInvisible()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Invisible">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+          </button>
+          <button id="btn-sp-flicker" onclick="toggleFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Flicker">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-dasharray="4 4" /></svg>
+          </button>
+          <button id="btn-sp-jump-flicker" onclick="toggleJumpFlickerSelection()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn" title="Jump Flicker">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" /><path d="M12 8v12" /></svg>
+          </button>
+          <button id="btn-sp-illusion" onclick="toggleIllusionSelection()" class="hidden p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400 flex justify-center items-center sp-btn" title="Toggle Illusion">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M5 17v4M3 19h4M19 3v4M17 5h4M19 17v4M17 19h4M12 5v14"></path></svg>
+          </button>
+      </div>
+      <div class="bg-slate-900/50 rounded p-1 flex flex-col gap-1">
+          <div class="flex gap-1">
+               <button onclick="shiftSelection(0, -1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button>
+               <button onclick="shiftSelection(0, 1)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg></button>
+          </div>
+          <div class="flex gap-1">
+               <button onclick="shiftSelection(-1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+               <button onclick="shiftSelection(1, 0)" class="flex-1 p-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex justify-center sp-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+      </div>
+      <button id="sp-expand-btn" onclick="toggleSPExpand()" class="w-full text-[10px] text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded py-1 transition-colors flex justify-center items-center gap-1 sp-btn">
+          <span>More Options</span>
+          <svg id="sp-expand-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="transition-transform"><path d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="sp-expanded" class="hidden flex-col gap-2 pt-1">
+          <div class="grid grid-cols-2 gap-1">
+              <button onclick="mirrorSelection('h')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror H</button>
+              <button onclick="mirrorSelection('v')" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 font-bold sp-btn">Mirror V</button>
+          </div>
+          <div id="sp-rising-opt" class="hidden pt-2 border-t border-slate-700/50">
+               <label class="flex items-center gap-2 cursor-pointer group">
+                  <div class="relative">
+                      <input type="checkbox" id="sp-rising-check" class="sr-only peer" onchange="toggleRisingThrough()">
+                      <div class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                  </div>
+                  <span class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase">Lava Through Blocks</span>
+              </label>
+          </div>
+          <div id="sp-block-config-opt" class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2">
+              <span class="text-[9px] font-bold text-slate-400 uppercase">Blocks Produced</span>
+              <input type="number" id="sp-block-count-input" min="1" max="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500" onchange="updateBlockConfig(this.value)" placeholder="1">
+              <span class="text-[8px] text-slate-600">Default: 1</span>
+          </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header
       class="h-14 border-b border-slate-800 bg-[#0f121a] flex items-center justify-between px-6 z-50"
@@ -518,7 +681,7 @@
           </svg>
         </button>
         <h1 class="font-bold text-sm tracking-tight text-slate-200 uppercase">
-          Architect <span class="text-blue-500">Pro</span>
+          Architect <span class="text-blue-500">Pro</span><span class="text-purple-500">Beta</span>
         </h1>
       </div>
 
@@ -851,9 +1014,9 @@
           <div class="border-b border-slate-800 accordion-open">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200">MAIN</span>
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MAIN</span>
               <svg
                 width="12"
                 height="12"
@@ -863,9 +1026,10 @@
                 viewBox="0 0 24 24"
               >
                 <path d="M19 9l-7 7-7-7" />
-              </svg>
+                </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-4">
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2"
@@ -931,6 +1095,8 @@
                     </div>
                   </div>
                   <input type="hidden" id="prop-diff" value="1" />
+                  <input type="hidden" id="prop-force-zoom" value="false">
+                  <input type="hidden" id="prop-no-death-anim" value="false">
                 </div>
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
@@ -975,6 +1141,18 @@
                       settingsManager.syncToModal();
                     "
                   />
+                </div>
+                <div class="mt-4">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="text-[9px] text-slate-500 font-bold uppercase">Rising Lava Speed</label>
+                    <span id="rise-val" class="text-xs text-blue-400 font-mono">Disabled</span>
+                  </div>
+                  <input id="prop-rise" type="range" min="0" max="10" step="0.5" value="0" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                    oninput="
+                      const val = parseFloat(this.value);
+                      document.getElementById('rise-val').innerText = val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled';
+                      settingsManager.syncToModal();
+                    ">
                 </div>
                 <div
                   class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
@@ -1062,6 +1240,7 @@
                   </button>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
@@ -1069,9 +1248,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200">APPEARANCE</span>
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">APPEARANCE</span>
               <svg
                 width="12"
                 height="12"
@@ -1084,6 +1263,7 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-4">
                 <div>
                   <label
@@ -1115,7 +1295,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
                     <label class="flex items-center gap-2 cursor-pointer group">
                       <span
                         class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
@@ -1157,6 +1337,7 @@
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
@@ -1164,11 +1345,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200"
-                >STRUCTURE TEMPLATES</span
-              >
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">STRUCTURE TEMPLATES</span>
               <svg
                 width="12"
                 height="12"
@@ -1181,6 +1360,7 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-2" id="recent-templates-list">
                 <!-- Recent templates injected here -->
                 <button
@@ -1190,6 +1370,7 @@
                   Browse Full Library
                 </button>
               </div>
+              </div>
             </div>
           </div>
 
@@ -1197,9 +1378,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200">MUSIC</span>
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">MUSIC</span>
               <svg
                 width="12"
                 height="12"
@@ -1212,174 +1393,10 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6 space-y-2" id="music-list">
                 <!-- Music injected here -->
               </div>
-            </div>
-          </div>
-
-          <!-- Section 3: Selection Tools -->
-          <div class="border-b border-slate-800">
-            <button
-              onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
-            >
-              <span class="text-[11px] font-bold text-slate-200"
-                >SELECTION TOOLS</span
-              >
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
-              >
-                <path d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div class="accordion-content">
-              <div
-                id="selection-tools"
-                class="px-5 pb-6 opacity-50 pointer-events-none transition-opacity"
-              >
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onclick="fillSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-blue-400"
-                  >
-                    Fill
-                  </button>
-                  <button
-                    onclick="deleteSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-red-900/30 text-red-400"
-                  >
-                    Delete
-                  </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onclick="openColorPickerForSelection()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-purple-400 flex items-center justify-center gap-2"
-                  >
-                    <div class="w-3 h-3 rounded-full bg-current"></div>
-                    Paint
-                  </button>
-                  <button
-                    onclick="makeSelectionInvisible()"
-                    class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 text-slate-400"
-                  >
-                    Invisible
-                  </button>
-                </div>
-                <div class="mt-3 pt-3 border-t border-slate-800">
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                    >Mirror Selection</label
-                  >
-                  <div class="grid grid-cols-2 gap-2">
-                    <button
-                      onclick="mirrorSelection('h')"
-                      class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-1"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M8 7h8M8 17h8M12 3v18" />
-                      </svg>
-                      Horizontal
-                    </button>
-                    <button
-                      onclick="mirrorSelection('v')"
-                      class="py-2 bg-slate-800 text-[10px] font-bold rounded border border-slate-700 hover:bg-slate-700 flex items-center justify-center gap-1"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M7 8v8M17 8v8M3 12h18" />
-                      </svg>
-                      Vertical
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label
-                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
-                    >Move Selection</label
-                  >
-                  <div class="grid grid-cols-4 gap-1">
-                    <button
-                      onclick="shiftSelection(0, -1)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M12 19V5M5 12l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(0, 1)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M12 5v14M5 12l7 7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(-1, 0)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onclick="shiftSelection(1, 0)"
-                      class="p-1 bg-slate-800 rounded hover:bg-slate-700 flex justify-center"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1388,11 +1405,9 @@
           <div class="border-b border-slate-800">
             <button
               onclick="toggleAccordion(this)"
-              class="accordion-header w-full px-5 py-4 flex justify-between items-center hover:bg-white/5 transition-colors"
+              class="accordion-header w-full px-5 py-3 flex justify-between items-center hover:bg-white/5 transition-colors bg-slate-900/20"
             >
-              <span class="text-[11px] font-bold text-slate-200"
-                >LEVEL CHECK</span
-              >
+              <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">LEVEL CHECK</span>
               <svg
                 width="12"
                 height="12"
@@ -1405,6 +1420,7 @@
               </svg>
             </button>
             <div class="accordion-content">
+              <div class="min-h-0 overflow-hidden">
               <div class="px-5 pb-6">
                 <div
                   id="stats"
@@ -1435,6 +1451,7 @@
                   id="val-feedback"
                   class="mt-3 text-[10px] p-3 rounded border border-slate-800 hidden leading-relaxed"
                 ></div>
+              </div>
               </div>
             </div>
           </div>
@@ -1855,6 +1872,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <label
@@ -1932,6 +1950,7 @@
                       </div>
                     </label>
                   </div>
+                  </div>
                 </div>
               </div>
 
@@ -1957,6 +1976,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <div class="flex justify-between mb-1.5">
@@ -1978,6 +1998,7 @@
                         class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
                       />
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2004,6 +2025,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <div class="flex justify-between mb-1.5">
@@ -2055,6 +2077,7 @@
                       </div>
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
 
@@ -2080,6 +2103,7 @@
                   </svg>
                 </button>
                 <div class="accordion-content">
+                  <div class="min-h-0 overflow-hidden">
                   <div class="p-5 space-y-3">
                     <div>
                       <label
@@ -2182,6 +2206,7 @@
                         class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
                       />
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2335,12 +2360,6 @@
         <div class="w-64 bg-[#0a0c12] border-r border-slate-800 flex flex-col p-4">
           <div class="mb-6">
             <h2 class="text-lg font-bold text-white px-2 mb-4">Settings</h2>
-            <div class="relative">
-              <i class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              </i>
-              <input id="settings-search" type="text" placeholder="Search..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500" oninput="settingsManager.search()">
-            </div>
           </div>
           <div class="space-y-1">
             <button onclick="settingsManager.switchTab('metadata')" id="tab-metadata" class="settings-tab w-full active">Metadata</button>
@@ -2375,7 +2394,7 @@
                 </div>
                 <div class="setting-item">
                   <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Difficulty</label>
-                  <div class="flex gap-1 h-8" id="set-diff-bars"></div>
+                  <div class="flex gap-1 h-8" id="set-diff-bars-modal"></div>
                 </div>
               </div>
             </div>
@@ -2391,28 +2410,32 @@
                   </div>
                   <input id="set-prop-gravity" type="range" min="5" max="100" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500" oninput="document.getElementById('set-gravity-val').innerText = this.value; settingsManager.syncFromModal()">
                 </div>
-                <div class="setting-item">
-                  <div class="flex justify-between mb-2">
-                    <label class="text-[10px] text-slate-500 font-bold uppercase">Rising Lava Seconds per Block</label>
-                    <span id="rise-val" class="text-xs text-blue-400 font-mono">Disabled</span>
-                  </div>
-                  <input id="prop-rise" type="number" min="0" max="100" step="0.1" value="0" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white outline-none focus:border-blue-500" 
-                    oninput="const val = parseFloat(this.value); const display = val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled'; document.getElementById('rise-val').innerText = display;">
-                </div>
+                <!-- Hidden input for compatibility -->
+                <input type="hidden" id="prop-rise" value="0">
+                <input type="hidden" id="set-prop-rise" value="0">
                 <div class="pt-4 border-t border-slate-800 setting-item">
                   <label class="flex items-center justify-between cursor-pointer group">
-                    <span class="text-sm font-bold text-slate-300">Allow Rising Lava to Go Through Blocks</span>
+                    <span class="text-xs font-bold text-slate-300">Mirror Level (Multiple player spawns)</span>
                     <div class="relative">
-                      <input type="checkbox" id="prop-rise-through" class="sr-only peer">
+                      <input type="checkbox" id="set-prop-mirror" class="sr-only peer" onchange="settingsManager.syncFromModal()">
                       <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
                     </div>
                   </label>
                 </div>
                 <div class="pt-4 border-t border-slate-800 setting-item">
                   <label class="flex items-center justify-between cursor-pointer group">
-                    <span class="text-sm font-bold text-slate-300">Mirror Level (Multiple player spawns)</span>
+                    <span class="text-xs font-bold text-slate-300">Force Zoomed Camera</span>
                     <div class="relative">
-                      <input type="checkbox" id="set-prop-mirror" class="sr-only peer" onchange="settingsManager.syncFromModal()">
+                      <input type="checkbox" id="set-prop-force-zoom" class="sr-only peer" onchange="settingsManager.syncFromModal()">
+                      <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
+                    </div>
+                  </label>
+                </div>
+                <div class="pt-4 border-t border-slate-800 setting-item">
+                  <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-xs font-bold text-slate-300">Disable Death Animation</span>
+                    <div class="relative">
+                      <input type="checkbox" id="set-prop-no-death-anim" class="sr-only peer" onchange="settingsManager.syncFromModal()">
                       <div class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"></div>
                     </div>
                   </label>
@@ -2445,6 +2468,9 @@
           </div>
           
           <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+            <button id="btn-reset-defaults" onclick="settingsManager.resetToDefaults()" class="hidden mr-auto px-4 py-2 text-red-400 hover:text-red-300 text-xs font-bold rounded hover:bg-red-900/20 transition-colors">
+              Reset to Default
+            </button>
             <button onclick="settingsManager.close()" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded border border-slate-700">
               Close
             </button>
@@ -2565,17 +2591,16 @@
         v: "t-lava-drip",
         H: "t-moving-h",
         V: "t-moving-v",
-        "^": "t-rising",
-        S: "t-spike",
-        ">": "t-slide-right",
-        "<": "t-slide-left",
-        "[": "t-spike-left",
-        "]": "t-spike-right",
+        F: "t-falling",
+        G: "t-breakable",
         K: "t-spike-block",
         k: "t-spike-block-u",
-        "{": "t-spike-block-l",
-        "}": "t-spike-block-r",
         W: "t-wall-block",
+        J: "t-jump-pad",
+        C: "t-grinder",
+        "^": "t-rising",
+        S: "t-spike",
+        s: "t-spike-u",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -2589,17 +2614,16 @@
         v: "Dripping Lava",
         H: "Horizontal Moving Block",
         V: "Vertical Moving Block",
+        F: "Falling Block",
+        G: "Breakable Block",
+        K: "Spike Block",
+        k: "Upside Down Spike Block",
+        W: "Wall Block",
+        J: "Jump Pad",
+        C: "The Grinder",
         "^": "Rising Lava",
         S: "Spike",
-        ">": "Slide Right",
-        "<": "Slide Left",
-        "[": "Spike Left",
-        "]": "Spike Right",
-        K: "Spike Block (Down)",
-        k: "Spike Block (Up)",
-        "{": "Spike Block (Left)",
-        "}": "Spike Block (Right)",
-        W: "Wall Block",
+        s: "Upside Down Spike",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
@@ -2610,6 +2634,12 @@
           id: "synth",
           title: "Blockoverit",
           artist: "Block Over It",
+          file: null,
+        },
+        {
+          id: "none",
+          title: "No Music",
+          artist: "Silence",
           file: null,
         },
         {
@@ -2667,12 +2697,6 @@
           artist: "Alex Grohl",
           file: "time.mp3",
         },
-        {
-          id: "breakcore",
-          title: "[BREAKCORE]In-tE-mInD__!",
-          artist: "Chairlord",
-          file: "[BREAKCORE]In-tHE-mInD__!.mp3",
-        },
       ];
       const minimap = {
         isCollapsed: false,
@@ -2686,15 +2710,7 @@
           V: "#777",
           "^": "#d32f2f",
           S: "#94a3b8",
-          ">": "#444",
-          "<": "#444",
-          "[": "#94a3b8",
-          "]": "#94a3b8",
-          K: "#444",
-          k: "#444",
-          "{": "#444",
-          "}": "#444",
-          W: "#444",
+          s: "#94a3b8",
           o: "#e2e838",
           B: "#335699",
           "@": "#10b981", // Use a bright color for player on minimap
@@ -2772,12 +2788,25 @@
       };
 
       const settingsManager = {
+        defaults: {
+          name: "New Level",
+          creator: "Anonymous",
+          desc: "",
+          difficulty: 1,
+          gravity: 27,
+          rise: 0,
+          forceZoom: false,
+          noDeathAnim: false,
+          w: 40,
+          h: 20
+        },
         open() {
           const modal = document.getElementById('settings-modal');
           modal.classList.remove('hidden');
           this.syncToModal();
-          this.renderDiffBars();
+          this.renderDiffBarsModal();
           this.switchTab('metadata');
+          this.checkDirty();
         },
         close() {
           document.getElementById('settings-modal').classList.add('hidden');
@@ -2796,8 +2825,12 @@
           document.getElementById('set-prop-desc').value = document.getElementById('prop-desc').value;
           document.getElementById('set-prop-gravity').value = document.getElementById('prop-gravity').value;
           document.getElementById('set-gravity-val').innerText = document.getElementById('prop-gravity').value;
+          document.getElementById('set-prop-rise').value = document.getElementById('prop-rise').value;
+          document.getElementById('set-prop-force-zoom').checked = document.getElementById('prop-force-zoom').value === 'true';
+          document.getElementById('set-prop-no-death-anim').checked = document.getElementById('prop-no-death-anim').value === 'true';
           document.getElementById('set-prop-w').value = document.getElementById('prop-w').value;
           document.getElementById('set-prop-h').value = document.getElementById('prop-h').value;
+          this.checkDirty();
         },
         syncFromModal() {
           document.getElementById('prop-name').value = document.getElementById('set-prop-name').value;
@@ -2805,11 +2838,17 @@
           document.getElementById('prop-desc').value = document.getElementById('set-prop-desc').value;
           document.getElementById('prop-gravity').value = document.getElementById('set-prop-gravity').value;
           document.getElementById('gravity-val').innerText = document.getElementById('set-prop-gravity').value;
+          document.getElementById('prop-rise').value = document.getElementById('set-prop-rise').value;
+          const riseVal = parseFloat(document.getElementById('prop-rise').value);
+          document.getElementById('rise-val').innerText = riseVal > 0 ? (60 / riseVal).toFixed(1) + ' blk/min' : 'Disabled';
+          document.getElementById('prop-force-zoom').value = document.getElementById('set-prop-force-zoom').checked;
+          document.getElementById('prop-no-death-anim').value = document.getElementById('set-prop-no-death-anim').checked;
           document.getElementById('prop-w').value = document.getElementById('set-prop-w').value;
           document.getElementById('prop-h').value = document.getElementById('set-prop-h').value;
+          this.checkDirty();
         },
-        renderDiffBars() {
-          const container = document.getElementById("set-diff-bars");
+        renderDiffBarsModal() {
+          const container = document.getElementById("set-diff-bars-modal");
           container.innerHTML = "";
           const n = parseInt(document.getElementById("prop-diff").value);
           const colors = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
@@ -2822,9 +2861,44 @@
               btn.style.borderColor = colors[i - 1];
               btn.style.boxShadow = `0 0 8px ${colors[i - 1]}40`;
             }
-            btn.onclick = () => { setDifficulty(i); this.renderDiffBars(); };
+            btn.onclick = () => { setDifficulty(i); this.renderDiffBarsModal(); };
             container.appendChild(btn);
           }
+          this.checkDirty();
+        },
+        checkDirty() {
+          const current = {
+            name: document.getElementById('set-prop-name').value,
+            creator: document.getElementById('set-prop-creator').value,
+            desc: document.getElementById('set-prop-desc').value,
+            difficulty: parseInt(document.getElementById('prop-diff').value),
+            gravity: parseInt(document.getElementById('set-prop-gravity').value),
+            rise: parseFloat(document.getElementById('set-prop-rise').value || 0),
+            forceZoom: document.getElementById('set-prop-force-zoom').checked,
+            noDeathAnim: document.getElementById('set-prop-no-death-anim').checked,
+            w: parseInt(document.getElementById('set-prop-w').value),
+            h: parseInt(document.getElementById('set-prop-h').value)
+          };
+          
+          const isDirty = JSON.stringify(current) !== JSON.stringify(this.defaults);
+          const btn = document.getElementById('btn-reset-defaults');
+          if (isDirty) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        },
+        resetToDefaults() {
+          document.getElementById('set-prop-name').value = this.defaults.name;
+          document.getElementById('set-prop-creator').value = this.defaults.creator;
+          document.getElementById('set-prop-desc').value = this.defaults.desc;
+          document.getElementById('set-prop-gravity').value = this.defaults.gravity;
+          document.getElementById('set-gravity-val').innerText = this.defaults.gravity;
+          document.getElementById('set-prop-rise').value = this.defaults.rise;
+          document.getElementById('set-prop-force-zoom').checked = this.defaults.forceZoom;
+          document.getElementById('set-prop-no-death-anim').checked = this.defaults.noDeathAnim;
+          document.getElementById('set-prop-w').value = this.defaults.w;
+          document.getElementById('set-prop-h').value = this.defaults.h;
+          setDifficulty(this.defaults.difficulty);
+          this.renderDiffBarsModal();
+          this.syncFromModal();
         }
       };
       let currentAudio = null;
@@ -2850,6 +2924,11 @@
           callback: null,
           selection: [],
         },
+        fakes: new Set(),
+        risingThrough: new Set(),
+        risingSpeeds: {},
+        illusions: new Set(),
+        blockConfigs: {},
       };
       let clipboard = null;
 
@@ -2885,10 +2964,8 @@
           };
           if (char === "S") {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual"></div></div>`;
-          } else if (char === "[") {
-            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-left-visual"></div></div>`;
-          } else if (char === "]") {
-            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-right-visual"></div></div>`;
+          } else if (char === "s") {
+            btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"><div class="spike-visual spike-u"></div></div>`;
           } else {
             btn.innerHTML = `<div class="cell ${css} group-hover:scale-110 transition-transform"></div>`;
           }
@@ -2964,6 +3041,8 @@
           currentTrackId = track.id;
           if (track.id === "synth") {
             playEditorSynth();
+          } else if (track.id === "none") {
+            // Do nothing, music stopped
           } else if (track.file) {
             currentAudio = new Audio(track.file);
             currentAudio.loop = true;
@@ -3039,6 +3118,12 @@
               if (color === 'invisible') {
                 cell.style.opacity = '0.5';
                 cell.style.border = '1px dashed rgba(255,255,255,0.5)';
+              } else if (color === 'flicker') {
+                cell.style.opacity = '0.7';
+                cell.style.border = '1px dotted rgba(255,255,255,0.5)';
+              } else if (color === 'jump_flicker') {
+                cell.style.opacity = '0.8';
+                cell.style.border = '1px solid rgba(100,255,100,0.5)';
               } else {
                 cell.style.backgroundColor = color;
                 cell.style.borderColor = adjustColor(color, -20);
@@ -3050,18 +3135,41 @@
               spike.className = "spike-visual";
               if (color) spike.style.borderBottomColor = color;
               cell.appendChild(spike);
-            }
-            if (state.grid[y][x] === "[") {
+            } else if (state.grid[y][x] === "s") {
               const spike = document.createElement("div");
-              spike.className = "spike-left-visual";
-              if (color) spike.style.borderRightColor = color;
+              spike.className = "spike-visual spike-u";
+              if (color) spike.style.borderTopColor = color;
               cell.appendChild(spike);
             }
-            if (state.grid[y][x] === "]") {
-              const spike = document.createElement("div");
-              spike.className = "spike-right-visual";
-              if (color) spike.style.borderLeftColor = color;
-              cell.appendChild(spike);
+
+            if (state.fakes.has(`${x},${y}`)) {
+                const ind = document.createElement('div');
+                ind.className = 'absolute top-0 right-0 text-[8px] font-bold text-yellow-400 px-0.5 leading-none pointer-events-none z-10';
+                ind.innerText = 'F';
+                cell.appendChild(ind);
+            }
+
+            if (color === 'flicker') {
+                const ind = document.createElement('div');
+                ind.className = 'absolute bottom-0 left-0 text-[8px] font-bold text-white/70 px-0.5 leading-none pointer-events-none z-10';
+                ind.innerText = '👁';
+                cell.appendChild(ind);
+            }
+
+            if (color === 'jump_flicker') {
+                const ind = document.createElement('div');
+                ind.className = 'absolute bottom-0 left-0 text-[8px] font-bold text-green-400 px-0.5 leading-none pointer-events-none z-10';
+                ind.innerText = '⬆';
+                cell.appendChild(ind);
+            }
+
+            const isIllusion = state.illusions.has(`${x},${y}`);
+            if (isIllusion) {
+                cell.className = `cell ${TILE_MAP['x']}`;
+                const ind = document.createElement('div');
+                ind.className = 'absolute top-0 left-0 text-[8px] font-bold text-cyan-400 px-0.5 leading-none pointer-events-none z-10';
+                ind.innerText = 'I';
+                cell.appendChild(ind);
             }
 
             // Picker Highlight
@@ -3122,12 +3230,22 @@
       }
 
       function toggleAccordion(btn) {
-        const wrapper = btn.closest("div");
-        const isOpen = wrapper.classList.contains("accordion-open");
-        // Close others
-        // document.querySelectorAll('#accordion-container > div').forEach(el => el.classList.remove('accordion-open'));
-        if (!isOpen) wrapper.classList.add("accordion-open");
-        else wrapper.classList.remove("accordion-open");
+        const wrapper = btn.parentElement;
+        // Find the immediate parent that groups the accordion sections
+        const container = wrapper.parentElement;
+
+        // Determine current state
+        const wasOpen = wrapper.classList.contains("accordion-open");
+
+        // Close all sibling sections within this container
+        Array.from(container.children).forEach((child) => {
+          if (child.classList && child.classList.contains("accordion-open")) {
+            child.classList.remove("accordion-open");
+          }
+        });
+
+        // If the clicked one was closed, open it (otherwise leave all closed)
+        if (!wasOpen) wrapper.classList.add("accordion-open");
       }
 
       function setupInteractions() {
@@ -3384,22 +3502,10 @@
               B: "x",
               O: "o",
               S: "S",
+              D: "s",
               L: "!",
               P: "@",
               C: "o",
-              ">": ">",
-              ".": ">",
-              "<": "<",
-              ",": "<",
-              "{": "[",
-              "[": "[",
-              "}": "]",
-              "]": "]",
-              K: "K",
-              U: "k", // Shift+U for Up spike block
-              W: "W",
-              "{": "{",
-              "}": "}",
             };
 
             if (map[k]) {
@@ -3447,18 +3553,26 @@
 
           // Delete Selection
           if ((key === "backspace" || key === "delete") && state.selection) {
-            const { x1, y1, x2, y2 } = getNormalizedSelection();
-            for (let y = y1; y <= y2; y++) {
-              for (let x = x1; x <= x2; x++) {
-                state.grid[y][x] = " ";
-                delete state.colors[`${x},${y}`];
-              }
-            }
-            render();
-            history.push();
+            deleteSelection();
             updateStatus("Selection Cleared");
           }
         });
+      }
+
+      function toggleSPExpand() {
+        const expanded = document.getElementById('sp-expanded');
+        const btn = document.getElementById('sp-expand-btn');
+        const icon = document.getElementById('sp-expand-icon');
+        
+        if (expanded.classList.contains('hidden')) {
+            expanded.classList.remove('hidden');
+            expanded.classList.add('flex');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            expanded.classList.add('hidden');
+            expanded.classList.remove('flex');
+            icon.style.transform = 'rotate(0deg)';
+        }
       }
 
       function getNormalizedSelection() {
@@ -3474,11 +3588,11 @@
       function updateSelectionUI() {
         const overlay = document.getElementById("selection-overlay");
         overlay.innerHTML = "";
+        const popup = document.getElementById("selection-popup");
         const norm = getNormalizedSelection();
-        const tools = document.getElementById("selection-tools");
 
         if (!norm) {
-          if (tools) tools.classList.add("opacity-50", "pointer-events-none");
+          popup.classList.add("hidden");
           return;
         }
 
@@ -3490,10 +3604,120 @@
         rect.style.height = `${(norm.y2 - norm.y1 + 1) * 24}px`;
         overlay.appendChild(rect);
 
-        // Enable Selection Tools
-        if (tools) {
-          tools.classList.remove("opacity-50", "pointer-events-none");
+        // Position Popup
+        popup.classList.remove("hidden");
+        
+        // Calculate screen position
+        const gridEl = document.getElementById("level-grid");
+        const gridRect = gridEl.getBoundingClientRect();
+        
+        // Position at top right of selection
+        const left = gridRect.left + (norm.x2 + 1) * 24 * state.zoom + 10;
+        const top = gridRect.top + norm.y1 * 24 * state.zoom;
+        
+        // Keep within bounds
+        const maxLeft = window.innerWidth - popup.offsetWidth - 20;
+        const maxTop = window.innerHeight - popup.offsetHeight - 20;
+        
+        popup.style.left = `${Math.min(left, maxLeft)}px`;
+        popup.style.top = `${Math.max(20, Math.min(top, maxTop))}px`;
+
+        // Check for Rising Lava in selection
+        let hasRising = false;
+        let allThrough = true;
+        let allFake = true;
+        let allInvisible = true;
+        let allFlicker = true;
+        let allJumpFlicker = true;
+        let hasBreakable = false;
+        let onlyBreakable = true;
+        let allIllusion = true;
+        let hasConfigurable = false;
+        let allPainted = true;
+        let hasBlocks = false;
+
+        for(let y = norm.y1; y <= norm.y2; y++) {
+            for(let x = norm.x1; x <= norm.x2; x++) {
+                const char = state.grid[y][x];
+                if(char === '^') {
+                    hasRising = true;
+                    if (!state.risingThrough.has(`${x},${y}`)) {
+                        allThrough = false;
+                    }
+                }
+                if (char === 'G') {
+                    hasBreakable = true;
+                    if (!state.illusions.has(`${x},${y}`)) allIllusion = false;
+                } else if (char !== ' ') {
+                    onlyBreakable = false;
+                }
+                if (['W', 'K', 'k'].includes(char)) {
+                    hasConfigurable = true;
+                }
+                if (state.grid[y][x] !== ' ') {
+                    hasBlocks = true;
+                    if (!state.fakes.has(`${x},${y}`)) allFake = false;
+                    
+                    const col = state.colors[`${x},${y}`];
+                    if (col !== 'invisible') allInvisible = false;
+                    if (col !== 'flicker') allFlicker = false;
+                    if (col !== 'jump_flicker') allJumpFlicker = false;
+                    if (!col || ['invisible', 'flicker', 'jump_flicker'].includes(col)) allPainted = false;
+                }
+            }
         }
+        
+        if (!hasBlocks) {
+            allIllusion = false;
+            allFake = false; allInvisible = false; allFlicker = false; allJumpFlicker = false; allPainted = false;
+        }
+
+        const setBtn = (id, active) => {
+            const btn = document.getElementById(id);
+            if(btn) btn.className = active ? "p-1.5 bg-blue-600 text-white rounded flex justify-center items-center sp-btn" : "p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn";
+        };
+
+        setBtn('btn-sp-fake', allFake);
+        setBtn('btn-sp-invisible', allInvisible);
+        setBtn('btn-sp-paint', allPainted);
+        setBtn('btn-sp-flicker', allFlicker);
+        setBtn('btn-sp-jump-flicker', allJumpFlicker);
+
+        const illusionBtn = document.getElementById('btn-sp-illusion');
+        if (hasBreakable && onlyBreakable) {
+            illusionBtn.classList.remove('hidden');
+            setBtn('btn-sp-illusion', allIllusion);
+        } else {
+            illusionBtn.classList.add('hidden');
+        }
+
+        const risingOpt = document.getElementById('sp-rising-opt');
+        if(hasRising) risingOpt.classList.remove('hidden');
+        else risingOpt.classList.add('hidden');
+        document.getElementById('sp-rising-check').checked = allThrough;
+
+        const configOpt = document.getElementById('sp-block-config-opt');
+        if(hasConfigurable) {
+            configOpt.classList.remove('hidden');
+            configOpt.classList.add('flex');
+            // Check if all selected have same speed
+            let commonCount = null;
+            let first = true;
+            for(let y = norm.y1; y <= norm.y2; y++) {
+                for(let x = norm.x1; x <= norm.x2; x++) {
+                    if(['W', 'K', 'k'].includes(state.grid[y][x])) {
+                        const c = state.blockConfigs[`${x},${y}`]?.count || 1;
+                        if (first) { commonCount = c; first = false; }
+                        else if (commonCount !== c) commonCount = '';
+                    }
+                }
+            }
+            document.getElementById('sp-block-count-input').value = commonCount !== null ? commonCount : '';
+        } else {
+            configOpt.classList.add('hidden');
+            configOpt.classList.remove('flex');
+        }
+        
         minimap.render();
       }
 
@@ -3506,59 +3730,352 @@
         }
       }
 
-      function paint(x, y, char = state.selectedChar) {
+      function paint(x, y, char = state.selectedChar, updateView = true) {
         const hasColor = state.colors[`${x},${y}`] !== undefined;
         if (state.grid[y][x] === char && !hasColor) return;
+
+        if (char === ' ') {
+             state.fakes.delete(`${x},${y}`);
+             state.risingThrough.delete(`${x},${y}`);
+             delete state.risingSpeeds[`${x},${y}`];
+             state.illusions.delete(`${x},${y}`);
+             delete state.blockConfigs[`${x},${y}`];
+        }
 
         // Multi-player check
         if (char === "@") {
           for (let ry = 0; ry < state.height; ry++) {
             for (let rx = 0; rx < state.width; rx++) {
-              if (state.grid[ry][rx] === "@") paint(rx, ry, " ");
+              if (state.grid[ry][rx] === "@") paint(rx, ry, " ", updateView);
             }
           }
         }
 
         state.grid[y][x] = char;
         delete state.colors[`${x},${y}`]; // Reset color on overwrite
-        // Ensure we are targeting the correct child index (overlay is 0)
-        const cell =
-          document.getElementById("level-grid").children[
-            y * state.width + x + 1
-          ]; // +1 for overlay div
-        if (cell) {
-          cell.className = `cell ${TILE_MAP[state.grid[y][x]]}`;
-          cell.style.backgroundColor = "";
-          cell.style.borderColor = "";
-          cell.innerHTML = "";
-          if (state.grid[y][x] === "S") {
-            const spike = document.createElement("div");
-            spike.className = "spike-visual";
-            cell.appendChild(spike);
-          }
-          if (state.grid[y][x] === "[") {
-            const spike = document.createElement("div");
-            spike.className = "spike-left-visual";
-            cell.appendChild(spike);
-          }
-          if (state.grid[y][x] === "]") {
-            const spike = document.createElement("div");
-            spike.className = "spike-right-visual";
-            cell.appendChild(spike);
-          }
+        state.illusions.delete(`${x},${y}`);
+        
+        if (updateView) {
+            const cell = document.getElementById("level-grid").children[y * state.width + x + 1];
+            if (cell) renderCell(cell, x, y);
+            minimap.render();
         }
-        minimap.render();
       }
 
       function makeSelectionInvisible() {
         const sel = getNormalizedSelection();
         if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allInvisible = true;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-             state.colors[`${x},${y}`] = 'invisible';
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'invisible') {
+                 allInvisible = false;
+                 break;
+             }
+          }
+          if (!allInvisible) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allInvisible) {
+                     if (state.colors[`${x},${y}`] === 'invisible') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'invisible';
+                 }
+             }
           }
         }
         render();
+        history.push();
+      }
+
+      function toggleFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'flicker') {
+                 allFlicker = false;
+                 break;
+             }
+          }
+          if (!allFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFlicker) {
+                     if (state.colors[`${x},${y}`] === 'flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleJumpFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allJumpFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'jump_flicker') {
+                 allJumpFlicker = false;
+                 break;
+             }
+          }
+          if (!allJumpFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allJumpFlicker) {
+                     if (state.colors[`${x},${y}`] === 'jump_flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'jump_flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleIllusionSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        
+        let allAreIllusions = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+            for (let x = sel.x1; x <= sel.x2; x++) {
+                if (state.grid[y][x] === 'G' && !state.illusions.has(`${x},${y}`)) {
+                    allAreIllusions = false;
+                    break;
+                }
+            }
+            if (!allAreIllusions) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+            for (let x = sel.x1; x <= sel.x2; x++) {
+                if (state.grid[y][x] === 'G') {
+                    if (allAreIllusions) state.illusions.delete(`${x},${y}`);
+                    else state.illusions.add(`${x},${y}`);
+                }
+            }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleFakeSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFake = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && !state.fakes.has(`${x},${y}`)) {
+                 allFake = false;
+                 break;
+             }
+          }
+          if (!allFake) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFake) state.fakes.delete(`${x},${y}`);
+                 else state.fakes.add(`${x},${y}`);
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleRisingThrough() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        
+        const check = document.getElementById('sp-rising-check');
+        const val = check.checked;
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] === '^') {
+                 if (val) state.risingThrough.add(`${x},${y}`);
+                 else state.risingThrough.delete(`${x},${y}`);
+             }
+          }
+        }
+        // No render needed as this is invisible property, but good for consistency
+        history.push();
+        // Update UI to reflect state
+        updateSelectionUI(); 
+      }
+
+      function toggleFakeSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFake = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && !state.fakes.has(`${x},${y}`)) {
+                 allFake = false;
+                 break;
+             }
+          }
+          if (!allFake) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFake) state.fakes.delete(`${x},${y}`);
+                 else state.fakes.add(`${x},${y}`);
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleRisingThrough() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        
+        const check = document.getElementById('sp-rising-check');
+        const val = check.checked;
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] === '^') {
+                 if (val) state.risingThrough.add(`${x},${y}`);
+                 else state.risingThrough.delete(`${x},${y}`);
+             }
+          }
+        }
+        history.push();
+        updateSelectionUI(); 
+      }
+
+      function makeSelectionInvisible() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allInvisible = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'invisible') {
+                 allInvisible = false;
+                 break;
+             }
+          }
+          if (!allInvisible) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allInvisible) {
+                     if (state.colors[`${x},${y}`] === 'invisible') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'invisible';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'flicker') {
+                 allFlicker = false;
+                 break;
+             }
+          }
+          if (!allFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allFlicker) {
+                     if (state.colors[`${x},${y}`] === 'flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleJumpFlickerSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        let allJumpFlicker = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ' && state.colors[`${x},${y}`] !== 'jump_flicker') {
+                 allJumpFlicker = false;
+                 break;
+             }
+          }
+          if (!allJumpFlicker) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (state.grid[y][x] !== ' ') {
+                 if (allJumpFlicker) {
+                     if (state.colors[`${x},${y}`] === 'jump_flicker') delete state.colors[`${x},${y}`];
+                 } else {
+                     state.colors[`${x},${y}`] = 'jump_flicker';
+                 }
+             }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function updateBlockConfig(val) {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        const count = parseInt(val);
+        
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+             if (['W', 'K', 'k'].includes(state.grid[y][x])) {
+                 if (count > 1) state.blockConfigs[`${x},${y}`] = { count: count };
+                 else delete state.blockConfigs[`${x},${y}`];
+             }
+          }
+        }
         history.push();
       }
 
@@ -3566,30 +4083,25 @@
         const b = getNormalizedSelection();
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
-          for (let x = b.x1; x <= b.x2; x++) paint(x, y, " ");
-        // Keep selection active to allow further edits
-        render();
-        history.push();
-      }
-
-      function makeSelectionInvisible() {
-        const sel = getNormalizedSelection();
-        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
-        for (let y = sel.y1; y <= sel.y2; y++) {
-          for (let x = sel.x1; x <= sel.x2; x++) {
-             state.colors[`${x},${y}`] = 'invisible';
+          for (let x = b.x1; x <= b.x2; x++) {
+              paint(x, y, " ", false);
+              state.fakes.delete(`${x},${y}`);
+              state.risingThrough.delete(`${x},${y}`);
+              state.illusions.delete(`${x},${y}`);
+              delete state.risingSpeeds[`${x},${y}`];
+              delete state.blockConfigs[`${x},${y}`];
           }
-        }
-        render();
+        render(); // Batch render
         history.push();
+
       }
 
       function fillSelection() {
         const b = getNormalizedSelection();
         if (!b) return;
         for (let y = b.y1; y <= b.y2; y++)
-          for (let x = b.x1; x <= b.x2; x++) paint(x, y, state.selectedChar);
-        render();
+          for (let x = b.x1; x <= b.x2; x++) paint(x, y, state.selectedChar, false);
+        render(); // Batch render
         history.push();
       }
 
@@ -3637,6 +4149,12 @@
             const color = temp[y][x + "_c"];
             if (color) state.colors[`${b.x1 + x},${b.y1 + y}`] = color;
             else delete state.colors[`${b.x1 + x},${b.y1 + y}`];
+            
+            // Handle fakes? Mirroring fakes is complex without storing them in temp.
+            // For now, clear fakes in mirrored area to avoid confusion or implement full mirror.
+            state.fakes.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.risingThrough.delete(`${b.x1 + x},${b.y1 + y}`);
+            state.illusions.delete(`${b.x1 + x},${b.y1 + y}`);
           }
         }
         render();
@@ -3657,8 +4175,15 @@
           for (let x = b.x1; x <= b.x2; x++) {
             temp[y - b.y1][x - b.x1] = state.grid[y][x];
             temp[y - b.y1][x - b.x1 + "_c"] = state.colors[`${x},${y}`];
+            temp[y - b.y1][x - b.x1 + "_f"] = state.fakes.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_i"] = state.illusions.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_r"] = state.risingThrough.has(`${x},${y}`);
+            temp[y - b.y1][x - b.x1 + "_cfg"] = state.blockConfigs[`${x},${y}`];
             state.grid[y][x] = " "; // Clear source
             delete state.colors[`${x},${y}`];
+            state.fakes.delete(`${x},${y}`);
+            state.illusions.delete(`${x},${y}`);
+            state.risingThrough.delete(`${x},${y}`);
           }
         }
 
@@ -3675,6 +4200,18 @@
               if (temp[y][x + "_c"])
                 state.colors[`${tx},${ty}`] = temp[y][x + "_c"];
               else delete state.colors[`${tx},${ty}`];
+              
+              if (temp[y][x + "_f"]) state.fakes.add(`${tx},${ty}`);
+              else state.fakes.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_i"]) state.illusions.add(`${tx},${ty}`);
+              else state.illusions.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_r"]) state.risingThrough.add(`${tx},${ty}`);
+              else state.risingThrough.delete(`${tx},${ty}`);
+
+              if (temp[y][x + "_cfg"]) state.blockConfigs[`${tx},${ty}`] = temp[y][x + "_cfg"];
+              else delete state.blockConfigs[`${tx},${ty}`];
             }
           }
         }
@@ -3704,11 +4241,16 @@
             state.grid[y][x] !== target
           )
             continue;
-          state.grid[y][x] = char;
           delete state.colors[`${x},${y}`];
+          state.fakes.delete(`${x},${y}`);
+          state.risingThrough.delete(`${x},${y}`);
+          state.illusions.delete(`${x},${y}`);
+          delete state.risingSpeeds[`${x},${y}`];
+          delete state.blockConfigs[`${x},${y}`];
           queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
         }
         render();
+
       }
 
       function zoom(d) {
@@ -3824,13 +4366,15 @@
           .fill(null)
           .map(() => Array(state.width).fill(" "));
         state.colors = {};
+        state.fakes = new Set();
+        state.risingThrough = new Set();
+        state.illusions = new Set();
         state.actions = [];
+        state.blockConfigs = {};
         state.selection = null;
         render();
         history.push();
         updateStatus("Canvas Cleared");
-        const tools = document.getElementById("selection-tools");
-        if (tools) tools.classList.add("opacity-50", "pointer-events-none");
       }
 
       function copySelection() {
@@ -3842,6 +4386,10 @@
           for (let x = sel.x1; x <= sel.x2; x++) {
             row.push(state.grid[y][x]);
             row.push(state.colors[`${x},${y}`]); // Interleave color data? Or use object.
+            row.push(state.fakes.has(`${x},${y}`));
+            row.push(state.illusions.has(`${x},${y}`));
+            row.push(state.risingThrough.has(`${x},${y}`));
+            row.push(state.blockConfigs[`${x},${y}`]);
           }
           data.push(row);
         }
@@ -3860,16 +4408,29 @@
           : 0;
 
         const h = clipboard.length;
-        const w = clipboard[0].length / 2; // Adjusted for interleaved data
+        const w = clipboard[0].length / 6; // Adjusted for interleaved data
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
             const ty = startY + y;
             const tx = startX + x;
             if (ty < state.height && tx < state.width) {
-              state.grid[ty][tx] = clipboard[y][x * 2];
-              if (clipboard[y][x * 2 + 1])
-                state.colors[`${tx},${ty}`] = clipboard[y][x * 2 + 1];
+              state.grid[ty][tx] = clipboard[y][x * 4];
+              if (clipboard[y][x * 5 + 1])
+                state.colors[`${tx},${ty}`] = clipboard[y][x * 5 + 1];
+              
+              if (clipboard[y][x * 5 + 2]) state.fakes.add(`${tx},${ty}`);
+              else state.fakes.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 5 + 3]) state.illusions.add(`${tx},${ty}`);
+              else state.illusions.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 5 + 4]) state.risingThrough.add(`${tx},${ty}`);
+              else state.risingThrough.delete(`${tx},${ty}`);
+
+              if (clipboard[y][x * 6 + 5]) state.blockConfigs[`${tx},${ty}`] = clipboard[y][x * 6 + 5];
+              else delete state.blockConfigs[`${tx},${ty}`];
+
               // Update visual
               const cell =
                 document.getElementById("level-grid").children[
@@ -4724,9 +5285,15 @@
               riseInterval: parseFloat(
                 document.getElementById("prop-rise").value,
               ),
-              risingLavaThroughBlocks: document.getElementById("prop-rise-through").checked,
+              forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+              disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
               music: state.music,
               colors: state.colors,
+              fakes: Array.from(state.fakes),
+              risingThrough: Array.from(state.risingThrough),
+              illusions: Array.from(state.illusions),
+              risingSpeeds: state.risingSpeeds,
+              blockConfigs: state.blockConfigs,
               plan: state.grid.map((r) => r.join("")),
             },
             null,
@@ -4918,62 +5485,13 @@
                 ctx.lineTo(px + cellSize, py + cellSize);
                 ctx.lineTo(px + cellSize / 2, py);
                 ctx.fill();
-              } else if (char === ">") {
-                ctx.fillStyle = customColor || (isModern ? "#334155" : "#444444");
-                ctx.beginPath();
-                ctx.moveTo(px + cellSize, py);
-                ctx.lineTo(px, py + cellSize);
-                ctx.lineTo(px + cellSize, py + cellSize);
-                ctx.fill();
-              } else if (char === "<") {
-                ctx.fillStyle = customColor || (isModern ? "#334155" : "#444444");
-                ctx.beginPath();
-                ctx.moveTo(px, py);
-                ctx.lineTo(px + cellSize, py + cellSize);
-                ctx.lineTo(px, py + cellSize);
-                ctx.fill();
-              } else if (char === "[") {
-                ctx.fillStyle = customColor || "#94a3b8";
-                ctx.beginPath();
-                ctx.moveTo(px + cellSize, py);
-                ctx.lineTo(px, py + cellSize / 2);
-                ctx.lineTo(px + cellSize, py + cellSize);
-                ctx.fill();
-              } else if (char === "]") {
+              } else if (char === "s") {
                 ctx.fillStyle = customColor || "#94a3b8";
                 ctx.beginPath();
                 ctx.moveTo(px, py);
-                ctx.lineTo(px + cellSize, py + cellSize / 2);
-                ctx.lineTo(px, py + cellSize);
+                ctx.lineTo(px + cellSize, py);
+                ctx.lineTo(px + cellSize / 2, py + cellSize);
                 ctx.fill();
-              } else if (['K', 'k', '{', '}', 'W'].includes(char)) {
-                let fill = isModern ? "#334155" : "#444444";
-                let stroke = isModern ? "#1e293b" : "#333333";
-                if (customColor) {
-                  fill = customColor;
-                  stroke = adjustColor(customColor, -20);
-                }
-                ctx.fillStyle = fill;
-                ctx.fillRect(px, py, cellSize, cellSize);
-                ctx.strokeStyle = stroke;
-                ctx.lineWidth = isModern ? 1 : 3;
-                const offset = isModern ? 0.5 : 1.5;
-                const size = isModern ? cellSize - 1 : cellSize - 3;
-                ctx.strokeRect(px + offset, py + offset, size, size);
-
-                // Symbol
-                ctx.fillStyle = "#f87171";
-                if (char === 'W') ctx.fillStyle = "#94a3b8";
-                ctx.font = "bold 10px sans-serif";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                let sym = "";
-                if (char === 'K') sym = "▼";
-                if (char === 'k') sym = "▲";
-                if (char === '{') sym = "◀";
-                if (char === '}') sym = "▶";
-                if (char === 'W') sym = "■";
-                ctx.fillText(sym, cx, cy);
               }
               ctx.globalAlpha = 1.0;
             }
@@ -5115,10 +5633,14 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
-            risingLavaThroughBlocks: document.getElementById("prop-rise-through").checked,
+            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
             music: state.music,
             colors: state.colors,
+            fakes: Array.from(state.fakes),
+            illusions: Array.from(state.illusions),
             plan: state.grid.map((r) => r.join("")),
+            risingSpeeds: state.risingSpeeds,
           };
 
           let custom = JSON.parse(
@@ -5155,7 +5677,8 @@
             state.grid = t.grid;
             document.getElementById("prop-gravity").value = 27;
             document.getElementById("prop-rise").value = 0;
-            document.getElementById("prop-rise-through").checked = false;
+            document.getElementById("prop-force-zoom").value = "false";
+            document.getElementById("prop-no-death-anim").value = "false";
           } else {
             // Blank
             state.width = 40;
@@ -5164,12 +5687,20 @@
               .fill(null)
               .map(() => Array(state.width).fill(" "));
             document.getElementById("prop-gravity").value = 27;
+            document.getElementById("prop-force-zoom").value = "false";
+            document.getElementById("prop-no-death-anim").value = "false";
           }
 
           document.getElementById("prop-w").value = state.width;
           document.getElementById("prop-h").value = state.height;
           document.getElementById("gravity-val").innerText =
             document.getElementById("prop-gravity").value;
+          
+          state.colors = {};
+          state.fakes = new Set();
+          state.risingThrough = new Set();
+            state.illusions = new Set();
+          state.risingSpeeds = {};
 
           render();
           history.stack = [];
@@ -5196,7 +5727,8 @@
             const riseVal = d.riseInterval || 0;
             document.getElementById("rise-val").innerText =
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-            document.getElementById("prop-rise-through").checked = d.risingLavaThroughBlocks || false;
+            document.getElementById("prop-force-zoom").value = d.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value = d.disableDeathAnim || false;
 
             let musicId = d.music || null;
             if (musicId && musicId.includes(".")) {
@@ -5207,6 +5739,12 @@
             renderMusic();
 
             state.colors = d.colors || {};
+            state.fakes = new Set(d.fakes || []);
+
+            state.risingThrough = new Set(d.risingThrough || []);
+            state.illusions = new Set(d.illusions || []);
+            state.risingSpeeds = d.risingSpeeds || {};
+            state.blockConfigs = d.blockConfigs || {};
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
@@ -5249,9 +5787,15 @@
             riseInterval: parseFloat(
               document.getElementById("prop-rise").value,
             ),
-            risingLavaThroughBlocks: document.getElementById("prop-rise-through").checked,
+            forceZoom: document.getElementById("prop-force-zoom").value === 'true',
+            disableDeathAnim: document.getElementById("prop-no-death-anim").value === 'true',
             music: state.music,
             colors: state.colors,
+            fakes: Array.from(state.fakes),
+            risingThrough: Array.from(state.risingThrough),
+            illusions: Array.from(state.illusions),
+            risingSpeeds: state.risingSpeeds,
+            blockConfigs: state.blockConfigs,
             width: state.width,
             height: state.height,
             grid: state.grid,
@@ -5268,35 +5812,46 @@
           templateSaver.open();
         },
         load(id) {
-          const json = localStorage.getItem("boi_project_" + id);
-          if (!json) return;
-          const data = JSON.parse(json);
-          this.currentId = data.id;
-          document.getElementById("prop-name").value = data.name;
-          document.getElementById("prop-creator").value = data.creator || "Anonymous";
-          document.getElementById("prop-desc").value = data.description || "";
-          setDifficulty(data.difficulty || 1);
-          document.getElementById("prop-gravity").value = data.gravity || 27;
-          document.getElementById("gravity-val").innerText = data.gravity || 27;
-          document.getElementById("prop-rise").value = data.riseInterval || 0;
-          const riseVal = data.riseInterval || 0;
-          document.getElementById("rise-val").innerText =
-            riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-          document.getElementById("prop-rise-through").checked = data.risingLavaThroughBlocks || false;
+          try {
+            const json = localStorage.getItem("boi_project_" + id);
+            if (!json) throw new Error("Project not found");
+            const data = JSON.parse(json);
+            this.currentId = data.id;
+            document.getElementById("prop-name").value = data.name;
+            document.getElementById("prop-creator").value = data.creator || "Anonymous";
+            document.getElementById("prop-desc").value = data.description || "";
+            setDifficulty(data.difficulty || 1);
+            document.getElementById("prop-gravity").value = data.gravity || 27;
+            document.getElementById("gravity-val").innerText = data.gravity || 27;
+            document.getElementById("prop-rise").value = data.riseInterval || 0;
+            const riseVal = data.riseInterval || 0;
+            document.getElementById("rise-val").innerText =
+              riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+            document.getElementById("prop-force-zoom").value = data.forceZoom || false;
+            document.getElementById("prop-no-death-anim").value = data.disableDeathAnim || false;
 
-          state.music = data.music || null;
-          renderMusic();
-          state.width = data.width;
-          state.height = data.height;
-          state.grid = data.grid;
-          state.colors = data.colors || {};
-          document.getElementById("prop-w").value = state.width;
-          document.getElementById("prop-h").value = state.height;
-          render();
-          history.stack = [];
-          history.push();
-          closeModal("start-modal");
-          autoAdjust();
+            state.music = data.music || null;
+            renderMusic();
+            state.width = data.width;
+            state.height = data.height;
+            state.grid = data.grid;
+            state.colors = data.colors || {};
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
+            state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
+            document.getElementById("prop-w").value = state.width;
+            document.getElementById("prop-h").value = state.height;
+            render();
+            history.stack = [];
+            history.push();
+            closeModal("start-modal");
+            autoAdjust();
+          } catch (e) {
+            dialog.alert("Load Error", "Failed to load project: " + e.message);
+            console.error(e);
+          }
         },
         duplicate(id) {
           const p = JSON.parse(localStorage.getItem("boi_project_" + id));
@@ -5929,6 +6484,11 @@
               width: state.width,
               height: state.height,
               music: state.music,
+              fakes: Array.from(state.fakes),
+              risingThrough: Array.from(state.risingThrough),
+              illusions: Array.from(state.illusions),
+              risingSpeeds: state.risingSpeeds,
+              blockConfigs: state.blockConfigs,
             }),
           );
           if (this.stack.length > 50) this.stack.shift();
@@ -5942,6 +6502,11 @@
             state.width = data.width;
             state.height = data.height;
             state.music = data.music || null;
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
+            state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
             renderMusic();
             render();
             updateStatus("Undo Matrix");
@@ -5955,6 +6520,11 @@
             state.width = data.width;
             state.height = data.height;
             state.music = data.music || null;
+            state.fakes = new Set(data.fakes || []);
+            state.risingThrough = new Set(data.risingThrough || []);
+            state.illusions = new Set(data.illusions || []);
+            state.risingSpeeds = data.risingSpeeds || {};
+            state.blockConfigs = data.blockConfigs || {};
             renderMusic();
             render();
             updateStatus("Redo Matrix");
@@ -5982,7 +6552,6 @@
             const riseVal = d.riseInterval || 0;
             document.getElementById("rise-val").innerText =
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-            document.getElementById("prop-rise-through").checked = d.risingLavaThroughBlocks || false;
 
             // Fix music detection (map filename to ID if needed)
             let musicId = d.music || null;
@@ -5994,6 +6563,8 @@
 
             renderMusic();
             state.colors = d.colors || {};
+            state.illusions = new Set(d.illusions || []);
+            state.fakes = new Set(d.fakes || []);
 
             state.grid = d.plan.map((line) => line.split(""));
             state.height = state.grid.length;
@@ -6169,15 +6740,6 @@
                     <div>O/C: Coin</div>
                     <div>S: Spike</div>
                     <div>B: Wall</div>
-                    <div>&gt;: Slide R</div>
-                    <div>&lt;: Slide L</div>
-                    <div>[: Spike L</div>
-                    <div>]: Spike R</div>
-                    <div>K: Spike Blk D</div>
-                    <div>U: Spike Blk U</div>
-                    <div>{: Spike Blk L</div>
-                    <div>}: Spike Blk R</div>
-                    <div>W: Wall Blk</div>
                   </div>
                 </div>
               </div>
