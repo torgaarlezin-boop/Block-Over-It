@@ -2126,8 +2126,7 @@
         sketchbanana: { name: "King Banana (Sketch)", copies: "1/3" },
         rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
         rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
-        retroemo: { name: "Emotions (Retro)", copies: "1/3" },
-        
+        vintageemo: { name: "Emotions (Retro)", copies: "1/3" },
       };
       const LATEST_NEWS_VERSION = "1.5.3"; // Not even really related to supabase
       const NEWS_UPDATES = [
@@ -6300,8 +6299,8 @@
                   el.style.backgroundImage = `url('emo2win.png')`;
                 } else if (skin === "emo3") {
                   el.style.backgroundImage = `url('emo3win.png')`;
-                } else if (skin === "retroemo") {
-                  el.style.backgroundImage = `url('retroemowin.png')`;
+                } else if (skin === "vintageemo") {
+                  el.style.backgroundImage = `url('vintageemowin.png')`;
                 } else if (skin === "rainbownoir") {
                   el.style.backgroundImage = `url('${skin}.png')`;
                 } else {
@@ -6326,11 +6325,11 @@
                     this.level.status === "lost"
                       ? `url('emo3death.png')`
                       : `url('emo3.png')`;
-                } else if (skin === "retroemo") {
+                } else if (skin === "vintageemo") {
                   el.style.backgroundImage =
                     this.level.status === "lost"
-                      ? `url('retroemodeath.png')`
-                      : `url('retroemo.png')`;
+                      ? `url('vintageemodeath.png')`
+                      : `url('vintageemo.png')`;
                 } else {
                   el.style.backgroundImage = `url('${skin}.png')`;
                 }
