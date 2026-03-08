@@ -2127,6 +2127,12 @@
         rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
         rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
         vintageemo: { name: "Emotions (Vintage)", copies: "1/3" },
+        voodoocoolguy: { name: "Cool Guy (Voodoo)", copies: "1/1" },
+        pixeldino: { name: "Dino (Pixelated)", copies: "1/3" },
+        pixelcoolguy: { name: "Cool Guy (Pixelated)", copies: "1/3" },
+        pixelbanana: { name: "King Banana (Pixelated)", copies: "1/3" },
+        rainbowpixel: { name: "Rainbow Monster (Pixelated)", copies: "1/3" },
+        pixelsunset: { name: "Sunset (Pixelated)", copies: "1/3" },
       };
       const LATEST_NEWS_VERSION = "1.5.3"; // Not even really related to supabase
       const NEWS_UPDATES = [
@@ -7422,7 +7428,13 @@
         return section;
       }
 
-      function renderSkinGrid(container, skins, isInteractive, enableDrag = false, onReorder = null) {
+      function renderSkinGrid(
+        container,
+        skins,
+        isInteractive,
+        enableDrag = false,
+        onReorder = null,
+      ) {
         const grid = document.createElement("div");
         grid.style.cssText =
           "display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; margin-top: 20px; padding: 10px; box-sizing: border-box;";
@@ -7481,7 +7493,10 @@
               if (e.stopPropagation) e.stopPropagation();
               if (dragSrcEl !== this) {
                 if (onReorder) {
-                  onReorder(parseInt(dragSrcEl.dataset.index), parseInt(this.dataset.index));
+                  onReorder(
+                    parseInt(dragSrcEl.dataset.index),
+                    parseInt(this.dataset.index),
+                  );
                 }
               }
               return false;
@@ -8403,14 +8418,15 @@
           const skinHeader = document.createElement("div");
           skinHeader.style.cssText =
             "color: #fff; font-weight: bold; font-size: 1.5rem; margin-top: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; width: 100%; text-align: center; letter-spacing: 2px; display: flex; justify-content: space-between; align-items: center; padding-left: 10px; padding-right: 10px; box-sizing: border-box;";
-          
+
           const titleSpan = document.createElement("span");
           titleSpan.innerText = "MY SKINS";
           skinHeader.appendChild(titleSpan);
 
           const reorderBtn = document.createElement("button");
           reorderBtn.className = "btn";
-          reorderBtn.style.cssText = "padding: 5px 15px; font-size: 0.8rem; min-width: auto;";
+          reorderBtn.style.cssText =
+            "padding: 5px 15px; font-size: 0.8rem; min-width: auto;";
           if (isMobile) {
             reorderBtn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>`;
             reorderBtn.style.padding = "8px";
@@ -8429,13 +8445,19 @@
           let isReordering = false;
           const refreshSkins = () => {
             skinsContainer.innerHTML = "";
-            renderSkinGrid(skinsContainer, getAvailableSkins(), true, isReordering, (src, tgt) => {
-              const item = currentUserSkins[src];
-              currentUserSkins.splice(src, 1);
-              currentUserSkins.splice(tgt, 0, item);
-              syncDataToCloud();
-              refreshSkins();
-            });
+            renderSkinGrid(
+              skinsContainer,
+              getAvailableSkins(),
+              true,
+              isReordering,
+              (src, tgt) => {
+                const item = currentUserSkins[src];
+                currentUserSkins.splice(src, 1);
+                currentUserSkins.splice(tgt, 0, item);
+                syncDataToCloud();
+                refreshSkins();
+              },
+            );
           };
 
           reorderBtn.onclick = () => {
