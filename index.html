@@ -7422,13 +7422,7 @@
         return section;
       }
 
-      function renderSkinGrid(
-        container,
-        skins,
-        isInteractive,
-        enableDrag = false,
-        onReorder = null,
-      ) {
+      function renderSkinGrid(container, skins, isInteractive, enableDrag = false, onReorder = null) {
         const grid = document.createElement("div");
         grid.style.cssText =
           "display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; width: 100%; margin-top: 20px; padding: 10px; box-sizing: border-box;";
@@ -7487,10 +7481,7 @@
               if (e.stopPropagation) e.stopPropagation();
               if (dragSrcEl !== this) {
                 if (onReorder) {
-                  onReorder(
-                    parseInt(dragSrcEl.dataset.index),
-                    parseInt(this.dataset.index),
-                  );
+                  onReorder(parseInt(dragSrcEl.dataset.index), parseInt(this.dataset.index));
                 }
               }
               return false;
@@ -8412,16 +8403,21 @@
           const skinHeader = document.createElement("div");
           skinHeader.style.cssText =
             "color: #fff; font-weight: bold; font-size: 1.5rem; margin-top: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; width: 100%; text-align: center; letter-spacing: 2px; display: flex; justify-content: space-between; align-items: center; padding-left: 10px; padding-right: 10px; box-sizing: border-box;";
-
+          
           const titleSpan = document.createElement("span");
           titleSpan.innerText = "MY SKINS";
           skinHeader.appendChild(titleSpan);
 
           const reorderBtn = document.createElement("button");
           reorderBtn.className = "btn";
-          reorderBtn.style.cssText =
-            "padding: 5px 15px; font-size: 0.8rem; min-width: auto;";
-          reorderBtn.innerText = "REORDER";
+          reorderBtn.style.cssText = "padding: 5px 15px; font-size: 0.8rem; min-width: auto;";
+          if (isMobile) {
+            reorderBtn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>`;
+            reorderBtn.style.padding = "8px";
+          } else {
+            reorderBtn.innerText = "REORDER";
+          }
+
           skinHeader.appendChild(reorderBtn);
 
           container.appendChild(skinHeader);
@@ -8433,25 +8429,31 @@
           let isReordering = false;
           const refreshSkins = () => {
             skinsContainer.innerHTML = "";
-            renderSkinGrid(
-              skinsContainer,
-              getAvailableSkins(),
-              true,
-              isReordering,
-              (src, tgt) => {
-                const item = currentUserSkins[src];
-                currentUserSkins.splice(src, 1);
-                currentUserSkins.splice(tgt, 0, item);
-                syncDataToCloud();
-                refreshSkins();
-              },
-            );
+            renderSkinGrid(skinsContainer, getAvailableSkins(), true, isReordering, (src, tgt) => {
+              const item = currentUserSkins[src];
+              currentUserSkins.splice(src, 1);
+              currentUserSkins.splice(tgt, 0, item);
+              syncDataToCloud();
+              refreshSkins();
+            });
           };
 
           reorderBtn.onclick = () => {
             isReordering = !isReordering;
-            reorderBtn.innerText = isReordering ? "DONE" : "REORDER";
-            reorderBtn.style.borderColor = isReordering ? "#335699" : "#555";
+            if (isMobile) {
+              if (isReordering) {
+                reorderBtn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>`;
+                reorderBtn.style.borderColor = "#335699";
+                reorderBtn.style.background = "#335699";
+              } else {
+                reorderBtn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>`;
+                reorderBtn.style.borderColor = "#555";
+                reorderBtn.style.background = "#333";
+              }
+            } else {
+              reorderBtn.innerText = isReordering ? "DONE" : "REORDER";
+              reorderBtn.style.borderColor = isReordering ? "#335699" : "#555";
+            }
             refreshSkins();
           };
 
