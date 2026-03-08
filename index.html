@@ -2136,6 +2136,10 @@
         coolguyglassesdown: { name: "Cool Guy (Glasses Down)", copies: "1/1" },
         dasher: { name: "Dasher", copies: "1/1" },
         dasher2: { name: "Dasher 2", copies: "1/1" },
+        coolguynoir: { name: "Cool Guy (Noir)", copies: "1/3" },
+        metallic: { name: "Metallic Anger", copies: "1/1" },
+        legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
+        galaxy: { name: "Galaxy", copies: "N/A" },
       };
       const LATEST_NEWS_VERSION = "1.5.3"; // Not even really related to supabase
       const NEWS_UPDATES = [
@@ -2355,7 +2359,7 @@
               saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
-              checkBlueCoinSkinUnlock(true);
+              checkSkinUnlocks(false);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -2424,7 +2428,7 @@
             saveCustomLevelsProgress();
             saveHighscores();
             saveSettings();
-            checkBlueCoinSkinUnlock(true);
+            checkSkinUnlocks(false);
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -4129,6 +4133,61 @@
           (usePound ? "#" : "") +
           (g | (b << 8) | (r << 16)).toString(16).padStart(6, "0")
         );
+      }
+
+      async function checkMetallicAngerUnlock(silent = false) {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("metallic")) return;
+        if (!_supabase) return;
+
+        const deathrunKeys = Object.keys(highscores).filter((k) =>
+          k.startsWith("deathrun_campaign_"),
+        );
+        if (deathrunKeys.length < 3) return;
+
+        let numberOneCount = 0;
+        for (const key of deathrunKeys) {
+          const userTime = highscores[key];
+          const globalBest = await fetchGlobalHighscore(key);
+          if (globalBest !== null && userTime <= globalBest) {
+            numberOneCount++;
+          }
+        }
+
+        if (numberOneCount >= 3) {
+          currentUserSkins.push("metallic");
+          syncDataToCloud();
+          if (!silent) {
+            showPopup(
+              "SKIN UNLOCKED",
+              "You unlocked the Metallic Anger skin!",
+              () => {},
+            );
+          }
+        }
+      }
+
+      function checkGalaxySkinUnlock(silent = false) {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("galaxy")) return;
+
+        if (gameState.chapter2Beaten) {
+          currentUserSkins.push("galaxy");
+          syncDataToCloud();
+          if (!silent) {
+            showPopup(
+              "SKIN UNLOCKED",
+              "You unlocked the Galaxy skin!",
+              () => {},
+            );
+          }
+        }
+      }
+
+      async function checkSkinUnlocks(silent = false) {
+        checkBlueCoinSkinUnlock(silent);
+        checkGalaxySkinUnlock(silent);
+        await checkMetallicAngerUnlock(silent);
       }
 
       function getAvailableSkins() {
@@ -7051,6 +7110,7 @@
                   highscores[key] = gameTimer;
                   saveHighscores();
                   submitHighscoreToCloud(key, gameTimer);
+                  checkMetallicAngerUnlock();
                   newRecord = true;
                 }
                 if (newRecord) triggerConfetti();
@@ -7210,6 +7270,7 @@
                 )
                   gameState.levelBlueCoins[blueCoinKey] = true;
                 checkBlueCoinSkinUnlock();
+                checkGalaxySkinUnlock();
 
                 if (ch === 1 && index >= gameState.unlockedLevel)
                   gameState.unlockedLevel = index + 1;
@@ -7241,6 +7302,7 @@
                 } else if (isFinalLevel && ch === 2) {
                   gameState.chapter2Beaten = true;
                   saveGame();
+                  checkGalaxySkinUnlock();
                   showPopup("CHAPTER II BEATEN", "All levels completed!", () =>
                     exitToMenu(),
                   );
@@ -9836,4 +9898,3 @@
     </script>
   </body>
 </html>
-
