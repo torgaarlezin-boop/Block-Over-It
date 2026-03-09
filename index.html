@@ -4196,9 +4196,31 @@
         }
       }
 
+      function checkVintageEmoUnlock(silent = false) {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("vintageemo")) return;
+
+        if (
+          currentUserSkins.includes("emo") &&
+          currentUserSkins.includes("emo2") &&
+          currentUserSkins.includes("emo3")
+        ) {
+          currentUserSkins.push("vintageemo");
+          syncDataToCloud();
+          if (!silent) {
+            showPopup(
+              "SKIN UNLOCKED",
+              "You unlocked the Emotions (Vintage) skin!",
+              () => {},
+            );
+          }
+        }
+      }
+
       async function checkSkinUnlocks(silent = false) {
         checkBlueCoinSkinUnlock(silent);
         checkGalaxySkinUnlock(silent);
+        checkVintageEmoUnlock(silent);
         await checkMetallicAngerUnlock(silent);
       }
 
