@@ -2343,7 +2343,9 @@
               return showPopup("ERROR", "Invalid credentials.", () => {});
 
             currentUser = username;
-            if (data.skins) currentUserSkins = data.skins;
+            if (currentUser === "test") {
+              currentUserSkins = Object.keys(SKIN_DEFINITIONS);
+            } else if (data.skins) currentUserSkins = data.skins;
             if (data.data) {
               // Load data
               const d = data.data;
@@ -2380,6 +2382,8 @@
             .single();
 
           if (data && data.skins) currentUserSkins = data.skins;
+          if (currentUser === "test")
+            currentUserSkins = Object.keys(SKIN_DEFINITIONS);
           if (data && data.data) {
             const d = data.data;
             if (d.gameState) {
@@ -7005,6 +7009,17 @@
       }
 
       function startGameLevel(originalLevelData, index, type, chapter) {
+        if (currentUser === "test") {
+          if (
+            currentGameMode !== "campaign" ||
+            type !== "campaign" ||
+            (chapter !== 1 && chapter !== undefined) ||
+            index !== 0
+          ) {
+            showPopup("RESTRICTED", "Test account is restricted.", () => {});
+            return;
+          }
+        }
         const wasInLevel = !!activeLevelDisplay;
         clearGame();
 
