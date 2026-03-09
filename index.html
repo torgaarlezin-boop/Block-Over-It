@@ -2514,11 +2514,14 @@
           // Verify old password
           const { data, error: verifyError } = await _supabase
             .from("users")
-            .select("id")
+            .select("username")
             .eq("username", currentUser)
             .eq("password", oldPass)
             .single();
 
+          if (verifyError && verifyError.code !== "PGRST116") {
+            throw verifyError;
+          }
           if (verifyError || !data) {
             return showPopup("ERROR", "Incorrect current password.", () => {});
           }
