@@ -2044,6 +2044,11 @@
       </div>
     </div>
 
+    <div id="notification-banner" class="notification-banner">
+      <div id="notif-text">Notification Text</div>
+      <div id="notif-actions" style="display: flex; gap: 10px"></div>
+    </div>
+
     <div class="mobile-controls-overlay">
       <div class="mc-dpad">
         <div class="mc-btn" id="mc-left">
@@ -2135,17 +2140,15 @@
         metallic: { name: "Metallic Anger", copies: "1/1" },
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
-        frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
-        clock: { name: "Golden Clock", copies: "N/A" },
       };
       const LATEST_NEWS_VERSION = "1.5.4"; // Not even really related to supabase
       const NEWS_UPDATES = [
         {
           v: "1.5.4",
           t: "Rewards",
-          d: "There are now multiple new ways to get skins by playing the campaign. Beating chapter two yields a new galaxy skin, and getting first on three different leaderboards grants a 'Metallic Anger' skin. In addition to this, you can now reorganize your skins both on mobile and desktop, both for yourself and to show off your collections. There are also many new bug fixes.",
+          d: "There are now multiple new ways to get skins by playing the campaign. Beating chapter two yields a new galaxy skin, and getting first on three different leaderboards grants a 'Metallic Anger' skin. In addition to this, you can now reorganize your skins both on mobile and desktop, both for yourself and to show off your collections. There are also many new bug fixes."
         },
-        {
+          {
           v: "1.5.3",
           t: "Sliding Blocks",
           d: "Added sliding blocks, which force the player to slide down with them. There are both slide right and slide left blocks. Also added new wall spikes for more flexible placing of spikes, and wall spike blocks (where those spikes appear when in close proximity). In addition to this, added many new keyboard shortcuts which you can view in a new 'Controls' section of settings. These go with a new update for practice mode and chapter speedruns, now allowing you to go back to the previous checkpoint or reset checkpoints in pratice mode and completely reset in chapter speedrun mode. ",
@@ -2363,7 +2366,7 @@
               saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
-              await checkSkinUnlocks(false);
+              checkSkinUnlocks(false);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -2434,7 +2437,7 @@
             saveCustomLevelsProgress();
             saveHighscores();
             saveSettings();
-            await checkSkinUnlocks(false);
+            checkSkinUnlocks(false);
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -4176,38 +4179,6 @@
         }
       }
 
-      async function checkClockSkinUnlock(silent = false) {
-        if (!currentUser) return;
-        if (currentUserSkins.includes("clock")) return;
-        if (!_supabase) return;
-
-        const speedrunKeys = Object.keys(highscores).filter((k) =>
-          k.startsWith("speedrun_campaign_"),
-        );
-        if (speedrunKeys.length < 3) return;
-
-        let numberOneCount = 0;
-        for (const key of speedrunKeys) {
-          const userTime = highscores[key];
-          const globalBest = await fetchGlobalHighscore(key);
-          if (globalBest !== null && userTime <= globalBest) {
-            numberOneCount++;
-          }
-        }
-
-        if (numberOneCount >= 3) {
-          currentUserSkins.push("clock");
-          syncDataToCloud();
-          if (!silent) {
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Golden Clock skin!",
-              () => {},
-            );
-          }
-        }
-      }
-
       function checkGalaxySkinUnlock(silent = false) {
         if (!currentUser) return;
         if (currentUserSkins.includes("galaxy")) return;
@@ -4251,7 +4222,6 @@
         checkGalaxySkinUnlock(silent);
         checkVintageEmoUnlock(silent);
         await checkMetallicAngerUnlock(silent);
-        await checkClockSkinUnlock(silent);
       }
 
       function getAvailableSkins() {
@@ -6067,7 +6037,12 @@
             );
             return;
           }
-          if (currentGameMode === "deathrun" || this.disableDeathAnim) {
+          if (
+            currentGameMode === "deathrun" ||
+            currentGameMode === "speedrun" ||
+            currentGameMode === "chapter_speedrun" ||
+            this.disableDeathAnim
+          ) {
             this.status = "lost";
             this.finishDelay = 0; // Instant fail
           } else {
@@ -6075,8 +6050,8 @@
             this.finishDelay = 1;
           }
         } else if (type == "coin") {
-          this.actors = this.actors.filter((other) => other != actor);
           if (this.status === "lost") return;
+          this.actors = this.actors.filter((other) => other != actor);
           if (!this.actors.some((actor) => actor.type == "coin")) {
             if (currentGameMode === "speedrun") {
               if (gameTimerStart > 0) {
@@ -6428,7 +6403,7 @@
                   el.style.backgroundImage = `url('emo3win.png')`;
                 } else if (skin === "vintageemo") {
                   el.style.backgroundImage = `url('vintageemowin.png')`;
-                } else if (skin === "rainbownoir" || skin === "coolguynoir") {
+                } else if (skin === "rainbownoir") {
                   el.style.backgroundImage = `url('${skin}.png')`;
                 } else {
                   el.style.backgroundImage = `url('${skin}.png')`;
@@ -6853,43 +6828,7 @@
         }
         activeLevelDisplay.drawPracticeMarker();
       }
-      function handleCampaignWin(levelInstance, type, chapter, index) {
-        if (type !== "campaign") return;
 
-        const ch = chapter || 1;
-        let chapterData =
-          ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
-
-        const blueCoinKey =
-          ch === 1 ? index : ch === 2 ? `ch2_${index}` : `ch3_${index}`;
-
-        if (
-          levelInstance.blueCoinsCollected >= levelInstance.totalBlueCoins &&
-          levelInstance.totalBlueCoins > 0
-        )
-          gameState.levelBlueCoins[blueCoinKey] = true;
-        checkBlueCoinSkinUnlock();
-        checkGalaxySkinUnlock();
-
-        if (ch === 1 && index >= gameState.unlockedLevel)
-          gameState.unlockedLevel = index + 1;
-
-        if (ch === 2 && index >= gameState.unlockedLevelCh2)
-          gameState.unlockedLevelCh2 = index + 1;
-
-        if (ch === 3 && index >= gameState.unlockedLevelCh3)
-          gameState.unlockedLevelCh3 = index + 1;
-
-        const isFinalLevel = index === chapterData.length - 1;
-
-        if (isFinalLevel && ch === 1) gameState.chapter1Beaten = true;
-        else if (isFinalLevel && ch === 2) gameState.chapter2Beaten = true;
-        else if (isFinalLevel && ch === 3) {
-          gameState.chapter3Beaten = true;
-          gameState.gameBeaten = true;
-        }
-        saveGame();
-      }
       var activeLevelDisplay = null;
       var currentPlayingType = null; // 'campaign' or 'custom'
       var currentLevelIndex = 0;
@@ -7249,7 +7188,14 @@
 
                 // Check if there is a next level in this chapter
                 if (index < chapterData.length - 1) {
-                  handleCampaignWin(levelInstance, type, chapter, index);
+                  // Unlock next level in campaign
+                  if (chapter === 1 && index >= gameState.unlockedLevel)
+                    gameState.unlockedLevel = index + 1;
+                  if (chapter === 2 && index >= gameState.unlockedLevelCh2)
+                    gameState.unlockedLevelCh2 = index + 1;
+                  if (chapter === 3 && index >= gameState.unlockedLevelCh3)
+                    gameState.unlockedLevelCh3 = index + 1;
+                  saveGame();
 
                   // Proceed to next level
                   startGameLevel(
@@ -7323,7 +7269,6 @@
                 ) {
                   highscores[keyAny] = gameTimer;
                   saveHighscores();
-                  checkClockSkinUnlock();
                   submitHighscoreToCloud(keyAny, gameTimer);
                   newRecord = true;
                 }
@@ -7340,7 +7285,6 @@
                   if (!highscores[keyBlue] || gameTimer < highscores[keyBlue]) {
                     highscores[keyBlue] = gameTimer;
                     saveHighscores();
-                    checkClockSkinUnlock();
                     submitHighscoreToCloud(keyBlue, gameTimer);
                     newRecord = true;
                   }
@@ -7348,21 +7292,46 @@
 
                 if (newRecord) triggerConfetti();
 
-                handleCampaignWin(levelInstance, type, chapter, index);
-
                 startGameLevel(levelData, index, type, chapter);
                 return;
               }
 
               if (type === "campaign") {
-                handleCampaignWin(levelInstance, type, chapter, index);
-
                 const ch = chapter || 1;
-                let chapterData =
-                  ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
+                let chapterData;
+                if (currentGameMode === "rising_lava")
+                  chapterData = RISING_LAVA_LEVELS;
+                else
+                  chapterData =
+                    ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
+
+                const blueCoinKey =
+                  ch === 1 ? index : ch === 2 ? `ch2_${index}` : `ch3_${index}`;
+
+                if (
+                  levelInstance.blueCoinsCollected >=
+                    levelInstance.totalBlueCoins &&
+                  levelInstance.totalBlueCoins > 0
+                )
+                  gameState.levelBlueCoins[blueCoinKey] = true;
+                checkBlueCoinSkinUnlock();
+                checkGalaxySkinUnlock();
+
+                if (ch === 1 && index >= gameState.unlockedLevel)
+                  gameState.unlockedLevel = index + 1;
+
+                if (ch === 2 && index >= gameState.unlockedLevelCh2)
+                  gameState.unlockedLevelCh2 = index + 1;
+
+                if (ch === 3 && index >= gameState.unlockedLevelCh3)
+                  gameState.unlockedLevelCh3 = index + 1;
+
+                // Check if final level of current chapter
                 const isFinalLevel = index === chapterData.length - 1;
 
                 if (isFinalLevel && ch === 1) {
+                  gameState.chapter1Beaten = true;
+                  saveGame();
                   // Only show message if not shown before
                   if (!gameState.blueCoinUnlockShown) {
                     gameState.blueCoinUnlockShown = true;
@@ -7377,16 +7346,20 @@
                   }
                 } else if (isFinalLevel && ch === 2) {
                   gameState.chapter2Beaten = true;
+                  saveGame();
                   checkGalaxySkinUnlock();
                   showPopup("CHAPTER II BEATEN", "All levels completed!", () =>
                     exitToMenu(),
                   );
                 } else if (isFinalLevel && ch === 3) {
                   gameState.chapter3Beaten = true;
+                  gameState.gameBeaten = true;
+                  saveGame();
                   showPopup("CHAPTER III BEATEN", "Game Complete!", () =>
                     exitToMenu(),
                   );
                 } else {
+                  saveGame();
                   // Try next level in the same chapter
                   if (index + 1 < chapterData.length) {
                     startGameLevel(
