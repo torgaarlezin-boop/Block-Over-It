@@ -2136,6 +2136,7 @@
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
         frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
+        clock: { name: "Golden Clock", copies: "N/A" },
       };
       const LATEST_NEWS_VERSION = "1.5.4"; // Not even really related to supabase
       const NEWS_UPDATES = [
@@ -4175,6 +4176,38 @@
         }
       }
 
+      async function checkClockSkinUnlock(silent = false) {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("clock")) return;
+        if (!_supabase) return;
+
+        const speedrunKeys = Object.keys(highscores).filter((k) =>
+          k.startsWith("speedrun_campaign_"),
+        );
+        if (speedrunKeys.length < 3) return;
+
+        let numberOneCount = 0;
+        for (const key of speedrunKeys) {
+          const userTime = highscores[key];
+          const globalBest = await fetchGlobalHighscore(key);
+          if (globalBest !== null && userTime <= globalBest) {
+            numberOneCount++;
+          }
+        }
+
+        if (numberOneCount >= 3) {
+          currentUserSkins.push("clock");
+          syncDataToCloud();
+          if (!silent) {
+            showPopup(
+              "SKIN UNLOCKED",
+              "You unlocked the Golden Clock skin!",
+              () => {},
+            );
+          }
+        }
+      }
+
       function checkGalaxySkinUnlock(silent = false) {
         if (!currentUser) return;
         if (currentUserSkins.includes("galaxy")) return;
@@ -4218,6 +4251,7 @@
         checkGalaxySkinUnlock(silent);
         checkVintageEmoUnlock(silent);
         await checkMetallicAngerUnlock(silent);
+        await checkClockSkinUnlock(silent);
       }
 
       function getAvailableSkins() {
@@ -7289,6 +7323,7 @@
                 ) {
                   highscores[keyAny] = gameTimer;
                   saveHighscores();
+                  checkClockSkinUnlock();
                   submitHighscoreToCloud(keyAny, gameTimer);
                   newRecord = true;
                 }
@@ -7305,6 +7340,7 @@
                   if (!highscores[keyBlue] || gameTimer < highscores[keyBlue]) {
                     highscores[keyBlue] = gameTimer;
                     saveHighscores();
+                    checkClockSkinUnlock();
                     submitHighscoreToCloud(keyBlue, gameTimer);
                     newRecord = true;
                   }
