@@ -2363,7 +2363,7 @@
               saveCustomLevelsProgress();
               saveHighscores();
               saveSettings();
-              checkSkinUnlocks(false);
+              await checkSkinUnlocks(false);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -2434,7 +2434,7 @@
             saveCustomLevelsProgress();
             saveHighscores();
             saveSettings();
-            checkSkinUnlocks(false);
+            await checkSkinUnlocks(false);
           }
         } catch (e) {
           console.warn("Sync error:", e);
