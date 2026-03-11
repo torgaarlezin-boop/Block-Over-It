@@ -2353,10 +2353,7 @@
               const d = data.data;
               if (d.gameState) {
                 if (d.gameState.levelBlueCoins) {
-                  gameState.levelBlueCoins = {
-                    ...gameState.levelBlueCoins,
-                    ...d.gameState.levelBlueCoins,
-                  };
+                  gameState.levelBlueCoins = d.gameState.levelBlueCoins;
                 }
                 gameState.unlockedLevel = Math.max(
                   gameState.unlockedLevel,
@@ -2378,10 +2375,7 @@
                   gameState.blueCoinUnlockShown = true;
               }
               if (d.customLevelsProgress)
-                customLevelsProgress = {
-                  ...customLevelsProgress,
-                  ...d.customLevelsProgress,
-                };
+                customLevelsProgress = d.customLevelsProgress;
               if (d.highscores) {
                 for (const key in d.highscores) {
                   if (!highscores[key] || d.highscores[key] < highscores[key])
@@ -2422,12 +2416,8 @@
           if (data && data.data) {
             const d = data.data;
             if (d.gameState) {
-              if (d.gameState.levelBlueCoins) {
-                gameState.levelBlueCoins = {
-                  ...gameState.levelBlueCoins,
-                  ...d.gameState.levelBlueCoins,
-                };
-              }
+              if (d.gameState.levelBlueCoins)
+                gameState.levelBlueCoins = d.gameState.levelBlueCoins;
               gameState.unlockedLevel = Math.max(
                 gameState.unlockedLevel,
                 d.gameState.unlockedLevel || 0,
@@ -2448,10 +2438,7 @@
                 gameState.blueCoinUnlockShown = true;
             }
             if (d.customLevelsProgress)
-              customLevelsProgress = {
-                ...customLevelsProgress,
-                ...d.customLevelsProgress,
-              };
+              customLevelsProgress = d.customLevelsProgress;
             if (d.highscores) {
               for (const key in d.highscores) {
                 if (!highscores[key] || d.highscores[key] < highscores[key])
