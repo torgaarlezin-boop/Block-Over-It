@@ -383,6 +383,28 @@
         z-index: 100;
       }
 
+      .news-banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #335699;
+        color: white;
+        padding: 8px 0;
+        text-align: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        z-index: 120;
+        overflow: hidden;
+        height: 35px; /* Fixed height */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #news-banner-content {
+        transition: opacity 0.5s ease-in-out;
+      }
+
       h1 {
         font-size: clamp(2.5rem, 5vw, 4rem);
         margin-bottom: 20px;
@@ -710,7 +732,7 @@
       /* Top Left Controls */
       .top-left-controls {
         position: absolute;
-        top: 20px;
+        top: 55px;
         left: 20px;
         display: flex;
         gap: 15px;
@@ -760,7 +782,7 @@
       /* Login Button */
       .login-btn {
         position: absolute;
-        top: 20px;
+        top: 55px;
         right: 20px;
         background: #333;
         border: 2px solid #555;
@@ -810,7 +832,7 @@
 
       .feedback-btn {
         position: absolute;
-        top: 20px;
+        top: 55px;
         right: 75px;
         width: 44px;
         height: 44px;
@@ -1885,6 +1907,9 @@
   </head>
   <body>
     <div id="main-menu">
+      <div id="news-banner" class="news-banner" onclick="showNewsFromBanner()">
+        <div id="news-banner-content"></div>
+      </div>
       <h1>Block Over It</h1>
       <h2 id="menu-subtitle"></h2>
       <div id="menu-content" class="menu-container"></div>
@@ -2136,9 +2161,34 @@
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
         frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
-        clock: { name: "Golden Clock", copies: "N/A" },
+        golden: { name: "Golden", copies: "N/A" },
       };
       const LATEST_NEWS_VERSION = "1.5.4"; // Not even really related to supabase
+      const GAME_NEWS = [
+        {
+          headline: "Mcdongos Takes the Crown!",
+          date: "2026-03-10",
+          image: "kingbanana.png",
+          story:
+            "Just today, experienced player Mcdongos defeated Seppe in the level 1 speedruns. This incredible speedrun beat the previous record by .031, a large amount for a speedrun. We'll see what Jack's first place skin will be soon. ",
+        },
+        {
+          headline: "1.6 Campaign Update Coming Soon!",
+          date: "2026-03-10",
+          image: null,
+          story:
+            "Coming soon is the 1.6 campaign update. This update will introduce 4 new chapters (all the way to chapter 6), totalling  30 blue coins (this will make the blue coin skin much harder to obtain). Each new chapter will jahave its own new blocks, featuring completely new gameplay unlike any levels in the current campaign.",
+        },
+        {
+          headline: "New 'Galaxy' Skin Now Unlockable",
+          date: "2026-03-10",
+          image: "galaxy.png",
+          story:
+            "In the new 1.5.4 update, a variety of new 'reward skins' have been added. Out of those skins, perhaps the most wanted is the Galaxy skin, obtainable through beating Chapter 2. With new chaptes coming soon in 1.6, it's likely we'll see more skins in this style.",
+        },
+      ];
+      const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
+
       const NEWS_UPDATES = [
         {
           v: "1.5.4",
@@ -4198,16 +4248,16 @@
 
       async function checkClockSkinUnlock(silent = false) {
         if (!currentUser) return;
-        if (currentUserSkins.includes("clock")) return;
+        if (currentUserSkins.includes("golden")) return;
         if (!_supabase) return;
 
-        const speedrunKeys = Object.keys(highscores).filter((k) =>
-          k.startsWith("speedrun_campaign_"),
+        const deathrunKeys = Object.keys(highscores).filter((k) =>
+          k.startsWith("deathrun_campaign_"),
         );
-        if (speedrunKeys.length < 3) return;
+        if (deathrunKeys.length < 3) return;
 
         let numberOneCount = 0;
-        for (const key of speedrunKeys) {
+        for (const key of deathrunKeys) {
           const userTime = highscores[key];
           const globalBest = await fetchGlobalHighscore(key);
           if (globalBest !== null && userTime <= globalBest) {
@@ -4216,12 +4266,12 @@
         }
 
         if (numberOneCount >= 3) {
-          currentUserSkins.push("clock");
+          currentUserSkins.push("golden");
           syncDataToCloud();
           if (!silent) {
             showPopup(
               "SKIN UNLOCKED",
-              "You unlocked the Golden Clock skin!",
+              "You unlocked the Golden skin!",
               () => {},
             );
           }
@@ -6096,7 +6146,6 @@
           }
         } else if (type == "coin") {
           this.actors = this.actors.filter((other) => other != actor);
-          if (this.status === "lost") return;
           if (!this.actors.some((actor) => actor.type == "coin")) {
             if (currentGameMode === "speedrun") {
               if (gameTimerStart > 0) {
@@ -7488,6 +7537,39 @@
       let currentMenuView = "main";
       let customMenuSource = "main";
 
+      let newsBannerIndex = 0;
+      function rotateNewsBanner() {
+        if (ROTATING_NEWS.length === 0) return;
+        const contentEl = document.getElementById("news-banner-content");
+        if (!contentEl) return;
+
+        contentEl.style.opacity = 0;
+
+        setTimeout(() => {
+          newsBannerIndex = (newsBannerIndex + 1) % ROTATING_NEWS.length;
+          const item = ROTATING_NEWS[newsBannerIndex];
+          contentEl.textContent = `${item.headline}`;
+          contentEl.style.opacity = 1;
+        }, 500); // match css transition
+      }
+
+      function startNewsBanner() {
+        if (ROTATING_NEWS.length > 0) {
+          rotateNewsBanner(); // initial call
+          setInterval(rotateNewsBanner, 5000); // rotate every 5 seconds
+        } else {
+          const banner = document.getElementById("news-banner");
+          if (banner) banner.style.display = "none";
+        }
+      }
+
+      function showNewsFromBanner() {
+        const story = ROTATING_NEWS[newsBannerIndex];
+        if (story) {
+          showMenu("news-story", { story: story });
+        }
+      }
+
       function handleMenuBack() {
         if (currentMenuView === "main") return;
 
@@ -7752,6 +7834,11 @@
         const mainTitle = document.querySelector("#main-menu h1");
         if (mainTitle)
           mainTitle.style.display = view === "main" ? "block" : "none";
+
+        const newsBanner = document.getElementById("news-banner");
+        if (newsBanner) {
+          newsBanner.style.display = view === "main" ? "flex" : "none";
+        }
 
         const hint = document.querySelector(".controls-hint");
         if (hint) hint.style.display = view === "main" ? "block" : "none";
@@ -8249,36 +8336,126 @@
         } else if (view === "news") {
           subtitle.textContent = "NEWS & UPDATES";
 
-          gameSettings.lastReadNews = LATEST_NEWS_VERSION;
-          saveSettings();
-          document.getElementById("news-notif").style.display = "none";
+          const tabContainer = document.createElement("div");
+          tabContainer.style.cssText =
+            "display:flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;";
 
-          const newsContent = document.createElement("div");
-          newsContent.style.cssText =
-            "width:100%; max-width:600px; max-height:60vh; overflow-y:auto; background:#222; border:2px solid #444; padding:20px; text-align:left;";
+          const newsTabBtn = document.createElement("button");
+          newsTabBtn.className = "btn";
+          newsTabBtn.textContent = "News";
 
-          NEWS_UPDATES.forEach((u) => {
-            const row = document.createElement("div");
-            row.style.marginBottom = "15px";
-            row.style.borderBottom = "1px solid #333";
-            row.style.paddingBottom = "10px";
-            row.innerHTML = `
+          const updatesTabBtn = document.createElement("button");
+          updatesTabBtn.className = "btn";
+          updatesTabBtn.textContent = "Updates";
+
+          tabContainer.appendChild(newsTabBtn);
+          tabContainer.appendChild(updatesTabBtn);
+          container.appendChild(tabContainer);
+
+          const contentContainer = document.createElement("div");
+          contentContainer.style.cssText =
+            "width:100%; max-width:700px; max-height:60vh; overflow-y:auto; background:#1a1a1a; border:2px solid #444; padding:20px; text-align:left;";
+          container.appendChild(contentContainer);
+
+          const showNewsContent = () => {
+            newsTabBtn.style.borderColor = "#335699";
+            updatesTabBtn.style.borderColor = "#555";
+            contentContainer.innerHTML = "";
+            if (GAME_NEWS.length === 0) {
+              contentContainer.innerHTML =
+                "<div style='text-align:center; color:#888;'>No news right now.</div>";
+              return;
+            }
+            GAME_NEWS.forEach((newsItem) => {
+              const itemEl = document.createElement("div");
+              itemEl.style.cssText =
+                "padding: 15px; background: #333; border: 2px solid #555; border-radius: 4px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;";
+              itemEl.onmouseover = () => {
+                itemEl.style.background = "#444";
+                itemEl.style.borderColor = "#335699";
+              };
+              itemEl.onmouseout = () => {
+                itemEl.style.background = "#333";
+                itemEl.style.borderColor = "#555";
+              };
+
+              itemEl.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                    <h3 style="font-size:1.1rem; color:#fff; font-weight:bold; margin:0;">${newsItem.headline}</h3>
+                    <span style="font-size:0.8rem; color:#888;">${newsItem.date}</span>
+                </div>
+            `;
+
+              itemEl.onclick = () =>
+                showMenu("news-story", { story: newsItem });
+              contentContainer.appendChild(itemEl);
+            });
+          };
+
+          const showUpdatesContent = () => {
+            updatesTabBtn.style.borderColor = "#335699";
+            newsTabBtn.style.borderColor = "#555";
+            contentContainer.innerHTML = "";
+            NEWS_UPDATES.forEach((u) => {
+              const row = document.createElement("div");
+              row.style.marginBottom = "15px";
+              row.style.borderBottom = "1px solid #333";
+              row.style.paddingBottom = "10px";
+              row.innerHTML = `
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                   <span style="color:#335699; font-weight:bold; font-size:1.2rem;">v${u.v}</span>
                   <span style="color:#888; font-size:0.8rem; text-transform:uppercase;">${u.t}</span>
               </div>
               <div style="color:#ccc; font-size:0.9rem; line-height:1.4;">${u.d}</div>
             `;
-            newsContent.appendChild(row);
-          });
+              contentContainer.appendChild(row);
+            });
+          };
 
-          container.appendChild(newsContent);
+          newsTabBtn.onclick = showNewsContent;
+          updatesTabBtn.onclick = showUpdatesContent;
+
+          // Default tab
+          if (context && context.tab === "news") {
+            showNewsContent();
+          } else {
+            // Default to updates, or if coming from popup
+            showUpdatesContent();
+            gameSettings.lastReadNews = LATEST_NEWS_VERSION;
+            saveSettings();
+            document.getElementById("news-notif").style.display = "none";
+          }
 
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
           btnBack.style.marginTop = "20px";
           btnBack.onclick = () => showMenu("main");
+          container.appendChild(btnBack);
+        } else if (view === "news-story") {
+          const story = context.story;
+          subtitle.textContent = story.headline;
+
+          const storyContainer = document.createElement("div");
+          storyContainer.style.cssText =
+            "width:100%; max-width:700px; max-height:60vh; overflow-y:auto; background:#1a1a1a; border:2px solid #444; padding:20px; text-align:left;";
+
+          const storyHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:15px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                <h3 style="font-size:1.3rem; color:#fff; font-weight:bold; margin:0;">${story.headline}</h3>
+                <span style="font-size:0.9rem; color:#888;">${story.date}</span>
+            </div>
+            ${story.image ? `<img src="${story.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px;">` : ""}
+            <p style="line-height:1.6; color:#ccc; font-size:1.1rem;">${story.story}</p>
+        `;
+          storyContainer.innerHTML = storyHtml;
+          container.appendChild(storyContainer);
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK TO NEWS";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("news", { tab: "news" });
           container.appendChild(btnBack);
         } else if (view === "credits") {
           subtitle.textContent = "CREDITS";
@@ -9945,6 +10122,7 @@
       } else {
         document.getElementById("intro-layer").style.display = "none";
         showMenu("main");
+        startNewsBanner();
         setTimeout(() => {
           if (!currentPlayingTrackId) playMusic();
 
@@ -9978,7 +10156,7 @@
                     class: "secondary",
                     onClick: () => {
                       setRead();
-                      showMenu("news");
+                      showMenu("news", { tab: "updates" });
                     },
                   },
                 ],
