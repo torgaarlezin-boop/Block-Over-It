@@ -4221,7 +4221,7 @@
         if (!_supabase) return;
 
         const deathrunKeys = Object.keys(highscores).filter((k) =>
-          k.startsWith("deathrun_campaign_")
+          k.startsWith("deathrun_campaign_"),
         );
         if (deathrunKeys.length < 3) return;
 
@@ -4252,7 +4252,7 @@
         if (currentUserSkins.includes("golden")) return;
         if (!_supabase) return;
 
-       const speedrunKeys = Object.keys(highscores).filter((k) =>
+        const speedrunKeys = Object.keys(highscores).filter((k) =>
           k.startsWith("speedrun_campaign_"),
         );
         if (speedrunKeys.length < 3) return;
@@ -7579,6 +7579,11 @@
           return;
         }
 
+        if (currentMenuView === "controls") {
+          showMenu("settings");
+          return;
+        }
+
         if (currentMenuView === "beats-menu") {
           showMenu("main");
           return;
@@ -8120,35 +8125,14 @@
           container.appendChild(createAccordion("AUDIO", audioItems));
 
           // --- User Section ---
+
           // --- Controls Section ---
           const controlsItems = [];
           const controlsBtn = document.createElement("button");
           controlsBtn.className = "btn";
-          controlsBtn.textContent = "OPEN CONTROLS";
+          controlsBtn.textContent = "VIEW CONTROLS";
           controlsBtn.style.width = "100%";
-          controlsBtn.onclick = () => {
-            const html = `
-                <div style="text-align:left; display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
-                    <div>Move</div><div>WASD / Arrows</div>
-                    <div>Jump</div><div>Space / Up / W</div>
-                    <div>Restart Level</div><div>R</div>
-                    <div>Menu</div><div>ESC</div>
-                    <div>Toggle Zoom</div><div>Z</div>
-                    <div>Toggle Hitboxes</div><div>H (In-game)</div>
-                    <div>Switch Skin</div><div>S (In-game)</div>
-                    <div>User Menu</div><div>U</div>
-                    <div>Practice Checkpoint</div><div>P</div>
-                    <div>Undo Checkpoint</div><div>Alt + P</div>
-                    <div>Reset Checkpoints</div><div>Shift + P</div>
-                    <div>Reset Chapter Run</div><div>Shift + R</div>
-                </div>
-            `;
-            popupManager.show({
-              title: "CONTROLS",
-              html: html,
-              buttons: [{ text: "CLOSE", onClick: () => {} }],
-            });
-          };
+          controlsBtn.onclick = () => showMenu("controls");
           controlsItems.push(controlsBtn);
           container.appendChild(createAccordion("CONTROLS", controlsItems));
 
@@ -8187,9 +8171,55 @@
           closeBtn.innerHTML = "&times;";
           closeBtn.onclick = () => showMenu("main");
           container.appendChild(closeBtn);
+        } else if (view === "controls") {
+          subtitle.textContent = "CONTROLS";
+
+          const controlsContent = document.createElement("div");
+          controlsContent.style.cssText =
+            "text-align:left; display:grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 1.1rem; color: #ccc; background: #1a1a1a; padding: 25px; border-radius: 8px; border: 1px solid #333; width: 100%; max-width: 600px;";
+
+          const controlsMap = {
+            Move: "WASD / Arrows",
+            Jump: "Space / Up / W",
+            "Restart Level": "R",
+            Menu: "ESC",
+            "Toggle Zoom": "Z",
+            "Toggle Hitboxes": "H (In-game)",
+            "Switch Skin": "S (In-game)",
+            "User Menu": "U",
+            "Practice Checkpoint": "P",
+            "Undo Checkpoint": "Alt + P",
+            "Reset Checkpoints": "Shift + P",
+            "Reset Chapter Run": "Shift + R",
+          };
+
+          for (const key in controlsMap) {
+            const keyEl = document.createElement("div");
+            keyEl.textContent = key;
+            keyEl.style.fontWeight = "bold";
+            keyEl.style.color = "#fff";
+
+            const valEl = document.createElement("div");
+            valEl.textContent = controlsMap[key];
+            valEl.style.fontFamily = "monospace";
+            valEl.style.color = "#335699";
+
+            controlsContent.appendChild(keyEl);
+            controlsContent.appendChild(valEl);
+          }
+
+          container.appendChild(controlsContent);
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("settings");
+          container.appendChild(btnBack);
         } else if (view === "mobile-settings") {
           subtitle.textContent = "SETTINGS";
           container.style.maxWidth = "100%";
+
           container.style.padding = "20px";
 
           const settingsContent = document.createElement("div");
