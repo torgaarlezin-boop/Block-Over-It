@@ -4220,7 +4220,8 @@
         if (currentUserSkins.includes("metallic")) return;
         if (!_supabase) return;
 
-
+        const deathrunKeys = Object.keys(highscores).filter((k) =>
+          k.startsWith("deathrun_campaign_")
         );
         if (deathrunKeys.length < 3) return;
 
