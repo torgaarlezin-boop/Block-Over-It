@@ -4220,8 +4220,7 @@
         if (currentUserSkins.includes("metallic")) return;
         if (!_supabase) return;
 
-        const deathrunKeys = Object.keys(highscores).filter((k) =>
-          k.startsWith("deathrun_campaign_"),
+
         );
         if (deathrunKeys.length < 3) return;
 
@@ -4252,13 +4251,13 @@
         if (currentUserSkins.includes("golden")) return;
         if (!_supabase) return;
 
-        const deathrunKeys = Object.keys(highscores).filter((k) =>
-          k.startsWith("deathrun_campaign_"),
+       const speedrunKeys = Object.keys(highscores).filter((k) =>
+          k.startsWith("speedrun_campaign_"),
         );
-        if (deathrunKeys.length < 3) return;
+        if (speedrunKeys.length < 3) return;
 
         let numberOneCount = 0;
-        for (const key of deathrunKeys) {
+        for (const key of speedrunKeys) {
           const userTime = highscores[key];
           const globalBest = await fetchGlobalHighscore(key);
           if (globalBest !== null && userTime <= globalBest) {
