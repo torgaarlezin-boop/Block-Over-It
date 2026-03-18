@@ -8162,7 +8162,7 @@
                     saveGame();
                     showPopup(
                       "CHAPTER I BEATEN",
-                      "Blue Coins have been unlocked!",
+                      "Blue Coins have been unlocked. Uou unlock bue coins at the end of each chapter",
                       () => exitToMenu(),
                     );
                   } else {
@@ -9666,7 +9666,7 @@
 
           // Calculate total blue coins in game
           let totalBlueCoinsInGame = 0;
-          [CHAPTER_1, CHAPTER_2].forEach((ch) => {
+          [CHAPTER_1, CHAPTER_2, CHAPTER_3, CHAPTER_4].forEach((ch) => {
             ch.forEach((lvl) => {
               if (lvl.plan && lvl.plan.some((r) => r.includes("B")))
                 totalBlueCoinsInGame++;
@@ -9696,9 +9696,12 @@
 
             let chapterText = "CHAPTER 1";
             let levelText = "LEVEL 1";
-            if (gs.gameBeaten || gs.chapter3Beaten) {
+            if (gs.gameBeaten || gs.chapter4Beaten) {
               chapterText = "GAME";
               levelText = "COMPLETE";
+            } else if (gs.chapter3Beaten) {
+              chapterText = "CHAPTER 4";
+              levelText = `LEVEL ${(gs.unlockedLevelCh4 || 0) + 1}`;
             } else if (gs.chapter2Beaten) {
               chapterText = "CHAPTER 3";
               levelText = `LEVEL ${(gs.unlockedLevelCh3 || 0) + 1}`;
