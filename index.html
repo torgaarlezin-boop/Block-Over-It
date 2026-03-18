@@ -2508,6 +2508,7 @@
             if (error) throw error;
 
             currentUser = username;
+            addKnownAccount(username);
             showPopup("SUCCESS", "Signed up successfully!", () => {});
           } else {
             const { data, error } = await _supabase
@@ -2520,6 +2521,7 @@
               return showPopup("ERROR", "Invalid credentials.", () => {});
 
             currentUser = username;
+            addKnownAccount(username);
             if (currentUser === "test") {
               currentUserSkins = Object.keys(SKIN_DEFINITIONS);
             } else if (data.skins) currentUserSkins = data.skins;
@@ -3330,7 +3332,6 @@
 
       const SETTINGS_KEY = "blockoverit_settings";
       let gameSettings = JSON.parse(safeStorage.getItem(SETTINGS_KEY)) || {
-        camera: false,
         alternateBlueCoinStyle: false, // New setting for alternate blue coin style
         volume: 50,
         menuMusic: "synth",
@@ -3498,6 +3499,24 @@
           JSON.stringify(customLevelsProgress),
         );
         syncDataToCloud();
+      }
+
+      function getKnownAccounts() {
+        return JSON.parse(safeStorage.getItem("blockoverit_accounts") || "[]");
+      }
+
+      function addKnownAccount(username) {
+        let accounts = getKnownAccounts();
+        if (!accounts.includes(username)) {
+          accounts.push(username);
+          safeStorage.setItem("blockoverit_accounts", JSON.stringify(accounts));
+        }
+      }
+
+      function removeKnownAccount(username) {
+        let accounts = getKnownAccounts();
+        accounts = accounts.filter((u) => u !== username);
+        safeStorage.setItem("blockoverit_accounts", JSON.stringify(accounts));
       }
 
       // --- Popup System ---
@@ -6853,7 +6872,8 @@
         return elem;
       }
 
-      var globalZoomedOut = false;
+      // Default to zoomed out (true) on desktop, zoomed in (false) on mobile
+      var globalZoomedOut = !document.body.classList.contains("mobile-mode");
 
       function DOMDisplay(parent, level) {
         this.wrap = parent.appendChild(element("div", "game"));
@@ -7303,26 +7323,21 @@
         this.world.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
       };
 
+
       DOMDisplay.prototype.updateScale = function () {
         const isMobile = document.body.classList.contains("mobile-mode");
-        const useCamera =
-          gameSettings.camera || isMobile || this.level.forceZoom;
-
-        if (this.zoomedOut) {
+        if (this.zoomedOut) { 
           this.scale = Math.min(
             window.innerWidth / this.level.width,
-            window.innerHeight / this.level.height,
-          );
-        } else if (useCamera) {
-          this.scale = window.innerWidth / 15;
+            window.innerHeight / this.level.height
+        );
         } else {
-          this.scale = Math.min(
-            window.innerWidth / this.level.width,
-            window.innerHeight / this.level.height,
-          );
+          // Camera Mode
+          this.scale = window.innerWidth / 15;
         }
         this.world.style.width = this.level.width * this.scale + "px";
         this.world.style.height = this.level.height * this.scale + "px";
+
       };
 
       DOMDisplay.prototype.setZoomOut = function (state) {
@@ -7345,8 +7360,6 @@
         this.wrap.className = "game " + (this.level.status || "");
 
         const isMobile = document.body.classList.contains("mobile-mode");
-        const useCamera =
-          gameSettings.camera || isMobile || this.level.forceZoom;
 
         if (this.zoomedOut) {
           this.wrap.style.display = "flex";
@@ -7354,14 +7367,10 @@
           this.wrap.style.alignItems = "center";
           this.wrap.style.overflow = "hidden";
           this.world.style.transform = "none";
-        } else if (useCamera) {
+        } else {
           this.wrap.style.display = "block";
           this.wrap.style.overflow = "hidden"; // Hide scrollbars for transform camera
           this.scrollPlayerIntoView();
-        } else {
-          this.wrap.style.display = ""; // Revert to flex from CSS
-          this.wrap.style.overflow = "auto";
-          this.world.style.transform = "none"; // Reset transform
         }
       };
 
@@ -7435,8 +7444,7 @@
         }
 
         if (e.key.toLowerCase() === "z") {
-          if (activeLevelDisplay)
-            activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
+          if (activeLevelDisplay) activeLevelDisplay.setZoomOut(!activeLevelDisplay.zoomedOut);
         }
 
         if (currentMenuView === "main" && e.key.toLowerCase() === "s") {
@@ -7936,11 +7944,8 @@
         }
 
         document.getElementById("restart-btn").style.display = "block";
-        if (
-          document.body.classList.contains("mobile-mode") ||
-          gameSettings.camera
-        )
-          document.getElementById("zoom-btn").style.display = "flex";
+        // Always show zoom button
+        document.getElementById("zoom-btn").style.display = "flex";
         document.getElementById("restart-btn").style.display = "flex";
         document.body.classList.add("in-game"); // Show mobile controls
         if (document.body.classList.contains("mobile-mode")) {
@@ -8309,6 +8314,11 @@
 
         if (currentMenuView === "mobile-gamemodes") {
           showMenu("main");
+          return;
+        }
+        
+        if (currentMenuView === "switch-account") {
+          showMenu("account");
           return;
         }
 
@@ -8746,24 +8756,6 @@
 
           // --- Gameplay Section ---
           const gameplayItems = [];
-
-          // Camera Toggle
-          const camRow = document.createElement("div");
-          camRow.style.cssText =
-            "display:flex; align-items:center; justify-content:space-between;";
-          camRow.innerHTML = `<span style="font-size:1.2rem;">CAMERA ZOOM</span>`;
-          const camToggle = document.createElement("div");
-          camToggle.className =
-            "toggle-btn" + (gameSettings.camera ? " active" : "");
-          camToggle.innerHTML = '<div class="toggle-slider"></div>';
-          camToggle.onclick = () => {
-            gameSettings.camera = !gameSettings.camera;
-            camToggle.className =
-              "toggle-btn" + (gameSettings.camera ? " active" : "");
-            saveSettings();
-          };
-          camRow.appendChild(camToggle);
-          gameplayItems.push(camRow);
 
           // Alternate Blue Coin Style Toggle
           const bcRow = document.createElement("div");
@@ -9618,6 +9610,14 @@
 
           refreshSkins();
 
+          // Switch Account Button
+          const switchAccBtn = document.createElement("button");
+          switchAccBtn.className = "btn";
+          switchAccBtn.textContent = "SWITCH ACCOUNT";
+          switchAccBtn.style.cssText = "font-size: 1rem; padding: 15px; width: 100%; margin-top: 10px; background: #333; border: 1px solid #555;";
+          switchAccBtn.onclick = () => showMenu("switch-account");
+          container.appendChild(switchAccBtn);
+
           // Change Password Button
           const changePassBtn = document.createElement("button");
           changePassBtn.className = "btn";
@@ -9645,6 +9645,79 @@
             );
           };
           container.appendChild(logoutBtn);
+        } else if (view === "switch-account") {
+          subtitle.textContent = "SWITCH ACCOUNT";
+          container.style.maxWidth = "600px";
+          
+          const list = document.createElement("div");
+          list.style.cssText = "display: flex; flex-direction: column; gap: 10px; width: 100%;";
+          
+          const accounts = getKnownAccounts();
+          
+          accounts.forEach(acc => {
+             const isCurrent = acc === currentUser;
+             const row = document.createElement("div");
+             row.style.cssText = `display: flex; justify-content: space-between; align-items: center; background: ${isCurrent ? "#1a2a40" : "#222"}; border: 2px solid ${isCurrent ? "#335699" : "#333"}; padding: 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s;`;
+             
+             // Click to switch
+             row.onclick = () => {
+                 if (acc === currentUser) {
+                     showMenu("account");
+                     return;
+                 }
+                 currentUser = acc;
+                 safeStorage.setItem("blockoverit_username", currentUser);
+                 fetchAndSyncUserData(); // Updates login button and skins
+                 updateLoginButton();
+                 showMenu("account");
+                 showPopup("WELCOME BACK", `Switched to ${acc}`, () => {});
+             };
+             
+             const name = document.createElement("span");
+             name.textContent = acc;
+             name.style.fontWeight = "bold";
+             name.style.color = "#fff";
+             name.style.fontSize = "1.1rem";
+             
+             // Remove Button
+             const removeBtn = document.createElement("button");
+             removeBtn.innerHTML = "&times;";
+             removeBtn.style.cssText = "background: transparent; border: none; color: #666; font-size: 1.5rem; cursor: pointer; padding: 0 10px;";
+             removeBtn.onclick = (e) => {
+                 e.stopPropagation();
+                 showConfirmPopup("REMOVE ACCOUNT", `Remove ${acc} from this device?`, () => {
+                     removeKnownAccount(acc);
+                     if (acc === currentUser) {
+                         currentUser = null;
+                         safeStorage.removeItem("blockoverit_username");
+                         updateLoginButton();
+                         showMenu("main");
+                     } else {
+                         showMenu("switch-account"); // Refresh list
+                     }
+                 });
+             };
+             
+             row.appendChild(name);
+             row.appendChild(removeBtn);
+             list.appendChild(row);
+          });
+          
+          container.appendChild(list);
+          
+          const addBtn = document.createElement("button");
+          addBtn.className = "btn";
+          addBtn.textContent = "+ ADD ACCOUNT";
+          addBtn.style.cssText = "width: 100%; margin-top: 20px; background: #335699; border-color: #5588cc;";
+          addBtn.onclick = () => openLoginModal();
+          container.appendChild(addBtn);
+          
+          const backBtn = document.createElement("button");
+          backBtn.className = "btn";
+          backBtn.textContent = "BACK";
+          backBtn.style.marginTop = "10px";
+          backBtn.onclick = () => showMenu("account");
+          container.appendChild(backBtn);
         } else if (view === "user-profile") {
           const data = context || {};
 
