@@ -2019,6 +2019,18 @@
       .top-notification.show {
         opacity: 1;
       }
+
+      @keyframes rainbow {
+        0% { color: #ff5555; }
+        20% { color: #ffff55; }
+        40% { color: #55ff55; }
+        60% { color: #55ffff; }
+        80% { color: #5555ff; }
+        100% { color: #ff55ff; }
+      }
+      .text-rainbow {
+        animation: rainbow 2s linear infinite;
+      }
     </style>
   </head>
   <body>
@@ -2474,7 +2486,7 @@
         }
       }
 
-      async function handleAuth(type, username, password) {
+      async function handleAuth(type, username, password, withReward = false) {
         if (!_supabase)
           return showPopup("ERROR", "Supabase not configured.", () => {});
         if (!username || !password)
@@ -2502,15 +2514,26 @@
               highscores,
               gameSettings,
             };
+
+            let initialSkins = ["default"];
+            if (withReward) initialSkins.push("dino");
+
             const { error } = await _supabase
               .from("users")
               .insert([
-                { username, password, data: saveData, skins: ["default"] },
+                { username, password, data: saveData, skins: initialSkins },
               ]);
             if (error) throw error;
 
             currentUser = username;
-            showPopup("SUCCESS", "Signed up successfully!", () => {});
+            currentUserSkins = initialSkins;
+            showPopup(
+              "SUCCESS",
+              withReward
+                ? "Signed up! Dino skin unlocked."
+                : "Signed up successfully.",
+              () => {},
+            );
           } else {
             const { data, error } = await _supabase
               .from("users")
@@ -2747,7 +2770,7 @@
             .eq("username", currentUser);
 
           if (error) throw error;
-          showPopup("SUCCESS", "Password updated successfully!", () => {});
+          showPopup("SUCCESS", "Password updated.", () => {});
         } catch (e) {
           showPopup(
             "ERROR",
@@ -2825,7 +2848,7 @@
           }
 
           showPopup(
-            "SUCCESS!",
+            "SUCCESS",
             `You have unlocked the '${SKIN_DEFINITIONS[skinReward]?.name || skinReward}' skin!`,
             () => {},
           );
@@ -2858,6 +2881,7 @@
       let isMusicPaused = false;
       let isTransitioning = false;
       let fadeInterval = null;
+      let transitionTimeout = null;
       let beatsUpdateInterval = null;
       let menuMusicState = { trackId: "synth", time: 0 };
       let synthVolumeScale = 1.0;
@@ -2898,10 +2922,17 @@
         if (isMusicPaused && !immediate) return;
         if (immediate) isMusicPaused = false;
 
-        // If immediate request (user clicked), cancel any ongoing transition
-        if (immediate && isTransitioning) {
-          clearInterval(fadeInterval);
-          isTransitioning = false;
+        // Clear pending transition start if immediate
+        if (immediate) {
+          if (transitionTimeout) {
+            clearTimeout(transitionTimeout);
+            transitionTimeout = null;
+          }
+          if (isTransitioning) {
+            clearInterval(fadeInterval);
+            isTransitioning = false;
+            stopAllAudio(); // Ensure clean slate
+          }
         } else if (isTransitioning) return;
 
         let targetId = null;
@@ -3003,9 +3034,10 @@
             clearInterval(fadeInterval);
             stopAllAudio();
 
-            setTimeout(() => {
+            transitionTimeout = setTimeout(() => {
               startTrack(targetId, targetFile);
               isTransitioning = false;
+              transitionTimeout = null;
             }, 300);
           }
         }, fadeTime / steps);
@@ -3418,6 +3450,8 @@
         else if (currentGameMode === "deathrun") prefix = "deathrun_";
         else if (currentGameMode === "chapter_speedrun")
           return `chapter_speedrun_${chapter}`;
+        else if (currentGameMode === "impossible")
+          return `impossible_chapter_${chapter}`;
 
         if (category === "blue") prefix += "blue_";
 
@@ -3672,7 +3706,7 @@
           customLevels.push(JSON.parse(JSON.stringify(lvl)));
           saveCustomLevels();
           overlay.remove();
-          showPopup("SUCCESS", "Level added to your custom levels!", () => {});
+          showPopup("SUCCESS", "Level added to your custom levels", () => {});
         };
       }
 
@@ -3796,7 +3830,7 @@
         customLevelsProgress = {};
         highscores = {};
         safeStorage.clear();
-        showPopup("PROGRESS CLEARED", "All game progress has been reset!", () =>
+        showPopup("PROGRESS CLEARED", "All game progress has been reset", () =>
           showMenu("main"),
         );
       }
@@ -4206,7 +4240,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: null,
+          music: 'level6',
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4249,7 +4283,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: null,
+          music: 'byte',
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4368,7 +4402,7 @@
           riseInterval: 1,
           forceZoom: false,
           disableDeathAnim: false,
-          music: null,
+          music: 'time',
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4412,8 +4446,6 @@
           ],
         },
       ];
-      CHAPTER_3[0].music = "darkness.mp3";
-      CHAPTER_3[4].music = "last_point.mp3";
 
       const CHAPTER_4 = [
         {
@@ -4425,7 +4457,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: null,
+          music: 'level6',
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4628,7 +4660,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: null,
+          music: 'night',
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4737,8 +4769,6 @@
           ],
         },
       ];
-      CHAPTER_4[0].music = "drift.mp3";
-      CHAPTER_4[4].music = "night.mp3";
 
       const CHAPTER_5 = [
         {
@@ -6714,7 +6744,8 @@
         if (
           (currentGameMode === "speedrun" ||
             currentGameMode === "deathrun" ||
-            currentGameMode === "chapter_speedrun") &&
+            currentGameMode === "chapter_speedrun" ||
+            currentGameMode === "impossible") &&
           !gameTimerRunning &&
           !level.status
         ) {
@@ -7479,6 +7510,13 @@
                 showTopNotification("Press Shift+R to reset full run");
                 restartCurrentLevel();
               }
+            } else if (currentGameMode === "impossible") {
+              if (e.shiftKey) {
+                resetChapterSpeedrun();
+              } else {
+                showTopNotification("Press Shift+R to reset full run");
+                resetChapterSpeedrun();
+              }
             } else {
               restartCurrentLevel();
             }
@@ -7741,7 +7779,8 @@
         if (
           (currentGameMode !== "speedrun" &&
             currentGameMode !== "deathrun" &&
-            currentGameMode !== "chapter_speedrun") ||
+            currentGameMode !== "chapter_speedrun" &&
+            currentGameMode !== "impossible") ||
           !currentLevelData
         )
           return;
@@ -7753,7 +7792,8 @@
         // Force 'any' category for deathrun
         let category =
           currentGameMode === "deathrun" ||
-          currentGameMode === "chapter_speedrun"
+          currentGameMode === "chapter_speedrun" ||
+          currentGameMode === "impossible"
             ? "any"
             : highscoreCategory;
         if (currentGameMode === "deathrun") category = "any";
@@ -7783,8 +7823,15 @@
 
         if (currentGameMode === "deathrun") {
           hsDisplay.innerHTML = displayHtml;
-        } else if (currentGameMode === "chapter_speedrun") {
-          hsDisplay.innerHTML = `${displayHtml} [Chapter ${chapter}]`;
+        } else if (
+          currentGameMode === "chapter_speedrun" ||
+          currentGameMode === "impossible"
+        ) {
+          const modeLabel =
+            currentGameMode === "impossible"
+              ? "Impossible"
+              : "Chapter Speedrun";
+          hsDisplay.innerHTML = `${displayHtml} [${modeLabel} Ch ${chapter}]`;
         } else {
           const catLabel = highscoreCategory === "any" ? "Any%" : "Blue Coin";
           hsDisplay.innerHTML = `${displayHtml} <span onclick="window.toggleHighscoreCategory()" style="cursor:pointer; font-size: 0.8rem; margin-left: 10px; color: #888; border: 1px solid #555; padding: 2px 5px; border-radius: 3px; user-select: none;">[${catLabel}]</span>`;
@@ -7792,7 +7839,11 @@
       }
 
       function resetChapterSpeedrun() {
-        if (currentGameMode !== "chapter_speedrun") return;
+        if (
+          currentGameMode !== "chapter_speedrun" &&
+          currentGameMode !== "impossible"
+        )
+          return;
         gameTimerStart = 0;
         gameTimer = 0;
         gameTimerRunning = false;
@@ -7836,7 +7887,8 @@
         if (
           currentGameMode === "speedrun" ||
           currentGameMode === "deathrun" ||
-          currentGameMode === "chapter_speedrun"
+          currentGameMode === "chapter_speedrun" ||
+          currentGameMode === "impossible"
         ) {
           document.getElementById("timer-display").style.display = "block";
           if (gameTimerStart > 0) {
@@ -7906,7 +7958,11 @@
         currentLevelIndex = index;
         // currentPlayingType = type; // Not strictly needed if we use currentGameMode, but kept for compatibility if used elsewhere
 
-        if (currentGameMode === "chapter_speedrun" && gameTimerStart > 0) {
+        if (
+          (currentGameMode === "chapter_speedrun" ||
+            currentGameMode === "impossible") &&
+          gameTimerStart > 0
+        ) {
           gameTimerRunning = true;
           gameTimer = Date.now() - gameTimerStart;
         } else {
@@ -7930,7 +7986,8 @@
         if (
           currentGameMode === "speedrun" ||
           currentGameMode === "deathrun" ||
-          currentGameMode === "chapter_speedrun"
+          currentGameMode === "chapter_speedrun" ||
+          currentGameMode === "impossible"
         ) {
           updateHighscoreDisplay();
           document.getElementById("highscore-display").style.display = "block";
@@ -8000,6 +8057,10 @@
               } else if (currentGameMode === "speedrun") {
                 // Restart level, reset timer
                 startGameLevel(levelData, index, type, chapter);
+              } else if (currentGameMode === "impossible") {
+                // Failed impossible run
+                resetChapterSpeedrun();
+                return;
               } else if (currentGameMode === "chapter_speedrun") {
                 // Restart level, KEEP timer (RTA style)
                 // gameTimerStart is preserved by the check in startGameLevel
@@ -8014,7 +8075,10 @@
                 startGameLevel(levelData, index, type, chapter);
                 return;
               }
-              if (currentGameMode === "chapter_speedrun") {
+              if (
+                currentGameMode === "chapter_speedrun" ||
+                currentGameMode === "impossible"
+              ) {
                 let chapterData =
                   chapter === 1
                     ? CHAPTER_1
@@ -8064,7 +8128,9 @@
                   if (newRecord) triggerConfetti();
 
                   showPopup(
-                    "CHAPTER COMPLETE",
+                    currentGameMode === "impossible"
+                      ? "IMPOSSIBLE MODE COMPLETE"
+                      : "CHAPTER COMPLETE",
                     "Final Time: " +
                       document.getElementById("timer-display").innerText,
                     () => exitToMenu(),
@@ -8343,7 +8409,8 @@
             currentGameMode === "speedrun" ||
             currentGameMode === "deathrun" ||
             currentGameMode === "practice" ||
-            currentGameMode === "chapter_speedrun"
+            currentGameMode === "chapter_speedrun" ||
+            currentGameMode === "impossible"
           ) {
             showMenu("source-select");
           } else if (document.body.classList.contains("mobile-mode")) {
@@ -8703,6 +8770,16 @@
               showMenu("custom");
             };
             container.appendChild(mobCustomBtn);
+
+            // Mobile Level Awards Button (Top Left)
+            const mobAwardsBtn = document.createElement("button");
+            mobAwardsBtn.className =
+              "mobile-icon-btn awards-btn-mobile mobile-fixed-btn";
+            mobAwardsBtn.style.cssText =
+              "position: fixed; top: 20px; left: 20px; width: 50px; height: 50px; z-index: 100; display:flex;";
+            mobAwardsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 8V7h2v3.52C8.17 10.07 7.54 9.13 7 8zm10 0c-.54 1.13-1.17 2.07-2 2.52V7h2v1z"/></svg>`;
+            mobAwardsBtn.onclick = () => showMenu("level-awards");
+            container.appendChild(mobAwardsBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -9073,6 +9150,15 @@
               },
               color: "#8e44ad",
             },
+            {
+              name: "IMPOSSIBLE",
+              desc: "Chapter speedrun without dying.",
+              action: () => {
+                currentGameMode = "impossible";
+                showMenu("chapter-speedrun-select");
+              },
+              color: "#c0392b",
+            },
           ];
 
           modes.forEach((m) => {
@@ -9285,7 +9371,9 @@
                       Ejohson <br>
                       Seppe <br>
                       Abhay557 <br>
-                      Mcdongos
+                      Mcdongos <br>
+                      Dbumbgarner6849@student.pps.net <br>
+                      Ligmadaddy69
                       </div>
                     
                    <div class="cred-role">Level Design</div>
@@ -9461,6 +9549,14 @@
             showMenu("chapter-speedrun-select");
           };
 
+          const btnImpossible = document.createElement("button");
+          btnImpossible.className = "btn";
+          btnImpossible.textContent = "IMPOSSIBLE MODE";
+          btnImpossible.onclick = () => {
+            currentGameMode = "impossible";
+            showMenu("chapter-speedrun-select");
+          };
+
           const btnPractice = document.createElement("button");
           btnPractice.className = "btn";
           btnPractice.textContent = "PRACTICE";
@@ -9472,6 +9568,7 @@
           container.appendChild(btnSpeed);
           container.appendChild(btnDeath);
           container.appendChild(btnChapterSpeed);
+          container.appendChild(btnImpossible);
           container.appendChild(btnPractice);
 
           const btnBack = document.createElement("button");
@@ -9480,6 +9577,24 @@
           btnBack.onclick = () => showMenu("main");
           container.appendChild(btnBack);
         } else if (view === "source-select") {
+          if (currentGameMode === "speedrun" && !currentUser) {
+            popupManager.show({
+              title: "SIGN IN",
+              message:
+                "Create an account to save your progress on all devices and be on the leaderboard",
+              buttons: [
+                {
+                  text: "Sign Up",
+                  onClick: () => openLoginModal(),
+                },
+                {
+                  text: "OK",
+                  class: "secondary",
+                  onClick: () => {},
+                },
+              ],
+            });
+          }
           subtitle.textContent = currentGameMode.toUpperCase() + " SOURCE";
 
           const btnCamp = document.createElement("button");
@@ -9690,9 +9805,11 @@
 
             let chapterText = "CHAPTER 1";
             let levelText = "LEVEL 1";
-            if (gs.gameBeaten || gs.chapter4Beaten) {
+            let campaignClass = "";
+            if (gs.gameBeaten || gs.chapter4Beaten || gs.chapter5Beaten) {
               chapterText = "GAME";
               levelText = "COMPLETE";
+              campaignClass = "text-rainbow";
             } else if (gs.chapter3Beaten) {
               chapterText = "CHAPTER 4";
               levelText = `LEVEL ${(gs.unlockedLevelCh4 || 0) + 1}`;
@@ -9718,7 +9835,7 @@
                       </div>
                       <div style="${boxStyle}">
                           <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">CAMPAIGN</div>
-                          <div style="font-size:1.1rem; font-weight:bold; color:#fff;">${chapterText}</div>
+                          <div style="font-size:1.1rem; font-weight:bold; color:#fff;" class="${campaignClass}">${chapterText}</div>
                           <div style="font-size:0.9rem; color:#ccc;">${levelText}</div>
                       </div>
                    `;
@@ -9733,6 +9850,24 @@
 
           renderSkinGrid(container, data.skins || ["default"], false);
         } else if (view === "leaderboards-new") {
+          if (!currentUser) {
+            popupManager.show({
+              title: "SIGN IN",
+              message:
+                "Create an account to save your progress on all devices and be on the leaderboard",
+              buttons: [
+                {
+                  text: "Sign Up",
+                  onClick: () => openLoginModal(),
+                },
+                {
+                  text: "OK",
+                  class: "secondary",
+                  onClick: () => {},
+                },
+              ],
+            });
+          }
           subtitle.textContent = "LEADERBOARDS";
 
           const isMobile = document.body.classList.contains("mobile-mode");
@@ -9760,17 +9895,19 @@
             const modeSelect = document.createElement("select");
             modeSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-            ["Speedrun", "Deathrun", "Chapter Speedrun"].forEach((m) => {
-              const opt = document.createElement("option");
-              opt.value = m.toLowerCase().replace(" ", "_");
-              opt.text = m;
-              modeSelect.appendChild(opt);
-            });
+            ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible"].forEach(
+              (m) => {
+                const opt = document.createElement("option");
+                opt.value = m.toLowerCase().replace(" ", "_");
+                opt.text = m;
+                modeSelect.appendChild(opt);
+              },
+            );
 
             const chapSelect = document.createElement("select");
             chapSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-            [1, 2].forEach((c) => {
+            [1, 2, 3, 4].forEach((c) => {
               const opt = document.createElement("option");
               opt.value = c;
               opt.text = "Ch " + c;
@@ -9809,9 +9946,28 @@
             const updateLevels = () => {
               levelSelect.innerHTML = "";
               const ch = parseInt(chapSelect.value);
-              const levels =
-                ch === 1 ? CHAPTER_1 : ch === 2 ? CHAPTER_2 : CHAPTER_3;
-              if (modeSelect.value === "chapter_speedrun") {
+              let levels;
+              switch (ch) {
+                case 1:
+                  levels = CHAPTER_1;
+                  break;
+                case 2:
+                  levels = CHAPTER_2;
+                  break;
+                case 3:
+                  levels = CHAPTER_3;
+                  break;
+                case 4:
+                  levels = CHAPTER_4;
+                  break;
+                default:
+                  levels = CHAPTER_5;
+              }
+
+              if (
+                modeSelect.value === "chapter_speedrun" ||
+                modeSelect.value === "impossible"
+              ) {
                 levelSelect.style.display = "none";
                 levelSelect.disabled = true;
               } else {
@@ -9827,7 +9983,8 @@
 
               if (
                 modeSelect.value === "deathrun" ||
-                modeSelect.value === "chapter_speedrun"
+                modeSelect.value === "chapter_speedrun" ||
+                modeSelect.value === "impossible"
               ) {
                 catSelect.style.display = "none";
               } else {
@@ -9850,6 +10007,7 @@
               else if (mode === "deathrun") prefix = "deathrun_";
               else if (mode === "chapter_speedrun")
                 key = `chapter_speedrun_${ch}`;
+              else if (mode === "impossible") key = `impossible_chapter_${ch}`;
 
               if (!key) {
                 if (cat === "blue" && mode === "speedrun") prefix += "blue_";
@@ -9927,12 +10085,14 @@
           modeSelect.style.background = "#333";
           modeSelect.style.color = "white";
           modeSelect.style.border = "1px solid #555";
-          ["Speedrun", "Deathrun", "Chapter Speedrun"].forEach((m) => {
-            const opt = document.createElement("option");
-            opt.value = m.toLowerCase().replace(" ", "_");
-            opt.text = m;
-            modeSelect.appendChild(opt);
-          });
+          ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible"].forEach(
+            (m) => {
+              const opt = document.createElement("option");
+              opt.value = m.toLowerCase().replace(" ", "_");
+              opt.text = m;
+              modeSelect.appendChild(opt);
+            },
+          );
 
           // Chapter Selector
           const chapSelect = document.createElement("select");
@@ -10004,7 +10164,10 @@
                 break;
             }
 
-            if (modeSelect.value === "chapter_speedrun") {
+            if (
+              modeSelect.value === "chapter_speedrun" ||
+              modeSelect.value === "impossible"
+            ) {
               levelSelect.style.display = "none";
             } else {
               levelSelect.style.display = "block";
@@ -10018,7 +10181,8 @@
 
             if (
               modeSelect.value === "deathrun" ||
-              modeSelect.value === "chapter_speedrun"
+              modeSelect.value === "chapter_speedrun" ||
+              modeSelect.value === "impossible"
             ) {
               catSelect.style.display = "none";
             } else {
@@ -10042,6 +10206,8 @@
             else if (mode === "deathrun") prefix = "deathrun_";
             else if (mode === "chapter_speedrun") {
               key = `chapter_speedrun_${ch}`;
+            } else if (mode === "impossible") {
+              key = `impossible_chapter_${ch}`;
             }
 
             if (!key) {
@@ -10839,8 +11005,9 @@
       };
 
       // --- Auth UI ---
-      function openLoginModal() {
+      function openLoginModal(withReward = false) {
         const html = `
+                  ${withReward ? '<div style="color:#ffd700; margin-bottom:10px; font-weight:bold;">Sign Up to get Dino Skin!</div>' : ""}
                   <div style="display:flex; flex-direction:column; gap:10px;">
                     <input id="auth-user" placeholder="Username" style="padding:10px; background:#333; color:white; border:1px solid #555;">
                     <input id="auth-pass" type="password" placeholder="Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
@@ -10857,6 +11024,7 @@
                   "signin",
                   document.getElementById("auth-user").value,
                   document.getElementById("auth-pass").value,
+                  false,
                 ),
             },
             {
@@ -10866,6 +11034,7 @@
                   "signup",
                   document.getElementById("auth-user").value,
                   document.getElementById("auth-pass").value,
+                  withReward,
                 ),
             },
           ],
@@ -10884,17 +11053,27 @@
         updateLoginButton();
         fetchAndSyncUserData();
       } else {
-        if (!safeStorage.getItem("hasSeenLoginPrompt")) {
-          safeStorage.setItem("hasSeenLoginPrompt", "true");
-          setTimeout(() => {
-            showConfirmPopup(
-              "Cloud Save",
-              "Do you want to sign in to save your progress to the cloud?",
-              () => openLoginModal(),
-              () => {},
-            );
-          }, 1000);
-        }
+        setTimeout(() => {
+          const html = `
+                <div style="margin-bottom:15px; color:#ccc;">Create an account to unlock the exclusive <strong>Dino</strong> skin!</div>
+                <img src="dino.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+          popupManager.show({
+            title: "GET THE FREE DINO SKIN!",
+            html: html,
+            buttons: [
+              {
+                text: "CLAIM REWARD",
+                onClick: () => openLoginModal(true),
+              },
+              {
+                text: "LATER",
+                class: "secondary",
+                onClick: () => {},
+              },
+            ],
+          });
+        }, 1000);
       }
 
       // --- Intro Sequence ---
