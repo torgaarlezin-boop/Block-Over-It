@@ -2021,12 +2021,24 @@
       }
 
       @keyframes rainbow {
-        0% { color: #ff5555; }
-        20% { color: #ffff55; }
-        40% { color: #55ff55; }
-        60% { color: #55ffff; }
-        80% { color: #5555ff; }
-        100% { color: #ff55ff; }
+        0% {
+          color: #ff5555;
+        }
+        20% {
+          color: #ffff55;
+        }
+        40% {
+          color: #55ff55;
+        }
+        60% {
+          color: #55ffff;
+        }
+        80% {
+          color: #5555ff;
+        }
+        100% {
+          color: #ff55ff;
+        }
       }
       .text-rainbow {
         animation: rainbow 2s linear infinite;
@@ -2297,8 +2309,22 @@
         efanballoon: { name: "Efan Balloon", copies: "1/1" },
         deacy: { name: "Deacy", copies: "1/1" },
       };
-      const LATEST_NEWS_VERSION = "1.6"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
+        {
+          headline: "New 1.6.1 Update",
+          date: "2026-03-19",
+          image: null,
+          story:
+            "This update adds a new mode: Impossible mode. This mode is just like a Chapter Speedrun except you can't die. If you do, you are forced to restart the entire speedrun. This and level awards has also been added to mobile. This update also fixes many exploits that allow you to claim skins without completing anything, and adds a new leaderboard for the new impossible mode. There are also many UI changes, including a new rainbow animation for Campaign completion (when viewing another profile) and some other boring stuff.",
+        },
+        {
+          headline: "A New Mode in Block Over It!",
+          date: "2026-03-19",
+          image: null,
+          story:
+            "In the new 1.6.1 update, a variety of features have been added. One of the highlights of this update is the new Impossible mode. In this mode, death causes you to restart immediatly.",
+        },
         {
           headline: "Level Awards Announced- you won't believe how far it was",
           date: "2026-03-15",
@@ -2324,6 +2350,11 @@
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
       const NEWS_UPDATES = [
+        {
+          v: "1.6.1",
+          t: "Impossibility",
+          d: "This update adds a new mode: Impossible mode. This mode is just like a Chapter Speedrun except you cannot die. If you do, you are forced to restart the entire speedrun. This and level awards has also been added to mobile. This update also fixes many exploits that allow you to claim skins without completing anything, and adds a new leaderboard for the new impossible mode. There are also many UI changes, including a new rainbow animation for Campaign completion (when viewing another profile) and some other boring stuff. ",
+        },
         {
           v: "1.6",
           t: "Campaign Part 1",
@@ -4240,7 +4271,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: 'level6',
+          music: "level6",
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4283,7 +4314,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: 'byte',
+          music: "byte",
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4402,7 +4433,7 @@
           riseInterval: 1,
           forceZoom: false,
           disableDeathAnim: false,
-          music: 'time',
+          music: "time",
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4457,7 +4488,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: 'level6',
+          music: "level6",
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -4660,7 +4691,7 @@
           riseInterval: 0,
           forceZoom: false,
           disableDeathAnim: false,
-          music: 'night',
+          music: "night",
           colors: {},
           fakes: [],
           risingThrough: [],
