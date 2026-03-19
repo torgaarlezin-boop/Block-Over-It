@@ -4899,11 +4899,17 @@
         );
         if (deathrunKeys.length < 3) return;
 
+        const results = await Promise.all(
+          deathrunKeys.map(async (key) => {
+            const global = await fetchGlobalHighscore(key);
+            return { key, global };
+          }),
+        );
+
         let numberOneCount = 0;
-        for (const key of deathrunKeys) {
+        for (const { key, global } of results) {
           const userTime = highscores[key];
-          const globalBest = await fetchGlobalHighscore(key);
-          if (globalBest !== null && userTime <= globalBest) {
+          if (global !== null && userTime <= global) {
             numberOneCount++;
           }
         }
@@ -4931,11 +4937,17 @@
         );
         if (speedrunKeys.length < 3) return;
 
+        const results = await Promise.all(
+          speedrunKeys.map(async (key) => {
+            const global = await fetchGlobalHighscore(key);
+            return { key, global };
+          }),
+        );
+
         let numberOneCount = 0;
-        for (const key of speedrunKeys) {
+        for (const { key, global } of results) {
           const userTime = highscores[key];
-          const globalBest = await fetchGlobalHighscore(key);
-          if (globalBest !== null && userTime <= globalBest) {
+          if (global !== null && userTime <= global) {
             numberOneCount++;
           }
         }
