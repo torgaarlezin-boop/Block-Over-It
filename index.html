@@ -6232,6 +6232,12 @@
               }
             }
           }
+        } else if (f.startsWith("setBackground")) {
+          const match = f.match(/setBackground\s*\(\s*["']?(.*?)["']?\s*\)/);
+          if (match) {
+            this.background = match[1];
+            this.backgroundChanged = true;
+          }
         }
       };
 
@@ -6566,12 +6572,6 @@
                 return member.type;
               }
             }
-          }
-        } else if (f.startsWith("setBackground")) {
-          const match = f.match(/setBackground\s*\(\s*["']?(.*?)["']?\s*\)/);
-          if (match) {
-            this.background = match[1];
-            this.backgroundChanged = true;
           }
         }
       };
