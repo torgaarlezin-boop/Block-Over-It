@@ -2273,7 +2273,7 @@
         tv: { name: "TV", copies: "1/2" },
         cubemouth: { name: "Cube Mouth", copies: "1/5" },
         firstplacedaddy: { name: "First Place Daddy", copies: "1/1" },
-        dino: { name: "Dino", copies: "1/2" },
+        dino: { name: "Dino", copies: "1/4" },
         emo: { name: "Emotions", copies: "1/3" },
         emo2: { name: "Emotions 2", copies: "1/3" },
         emo3: { name: "Emotions 3", copies: "1/3" },
@@ -2308,6 +2308,9 @@
         thecat: { name: "The Cat", copies: "1/1" },
         efanballoon: { name: "Efan Balloon", copies: "1/1" },
         deacy: { name: "Deacy", copies: "1/1" },
+        triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
+        cityboi: { name: "City Boy", copies: "1/3" },
+        cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
       };
       const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
@@ -2578,7 +2581,10 @@
             currentUser = username;
             if (currentUser === "test") {
               currentUserSkins = Object.keys(SKIN_DEFINITIONS);
-            } else if (data.skins) currentUserSkins = data.skins;
+            } else if (data.skins) {
+              const mergedSkins = new Set([...currentUserSkins, ...data.skins]);
+              currentUserSkins = Array.from(mergedSkins);
+            }
             if (data.data) {
               // Load data
               const d = data.data;
@@ -2624,11 +2630,12 @@
               if (d.customLevels) customLevels = d.customLevels;
               if (d.gameSettings)
                 gameSettings = { ...gameSettings, ...d.gameSettings };
-              saveGame();
-              saveCustomLevels();
-              saveCustomLevelsProgress();
-              saveHighscores();
+              saveGame(true);
+              saveCustomLevels(true);
+              saveCustomLevelsProgress(true);
+              saveHighscores(true);
               saveSettings();
+              syncDataToCloud();
               await checkSkinUnlocks(false);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
@@ -2649,7 +2656,10 @@
             .eq("username", currentUser)
             .single();
 
-          if (data && data.skins) currentUserSkins = data.skins;
+          if (data && data.skins) {
+            const mergedSkins = new Set([...currentUserSkins, ...data.skins]);
+            currentUserSkins = Array.from(mergedSkins);
+          }
           if (currentUser === "test")
             currentUserSkins = Object.keys(SKIN_DEFINITIONS);
           if (data && data.data) {
@@ -2696,11 +2706,12 @@
             if (d.gameSettings && d.gameSettings.playlist)
               gameSettings.playlist = d.gameSettings.playlist;
 
-            saveGame();
-            saveCustomLevels();
-            saveCustomLevelsProgress();
-            saveHighscores();
+            saveGame(true);
+            saveCustomLevels(true);
+            saveCustomLevelsProgress(true);
+            saveHighscores(true);
             saveSettings();
+            syncDataToCloud();
             await checkSkinUnlocks(false);
           }
         } catch (e) {
@@ -3470,9 +3481,9 @@
         safeStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
       }
 
-      function saveHighscores() {
+      function saveHighscores(skipCloud = false) {
         safeStorage.setItem(HIGHSCORES_KEY, JSON.stringify(highscores));
-        syncDataToCloud();
+        if (!skipCloud) syncDataToCloud();
       }
 
       function getHighscoreKey(type, chapter, index, category = "any") {
@@ -3490,9 +3501,9 @@
         return `${prefix}campaign_${chapter}_${index}`;
       }
 
-      function saveGame() {
+      function saveGame(skipCloud = false) {
         safeStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-        syncDataToCloud();
+        if (!skipCloud) syncDataToCloud();
       }
 
       // --- Confetti System ---
@@ -3553,17 +3564,17 @@
         }
       }
 
-      function saveCustomLevels() {
+      function saveCustomLevels(skipCloud = false) {
         safeStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
-        syncDataToCloud();
+        if (!skipCloud) syncDataToCloud();
       }
 
-      function saveCustomLevelsProgress() {
+      function saveCustomLevelsProgress(skipCloud = false) {
         safeStorage.setItem(
           CUSTOM_LEVELS_PROGRESS_KEY,
           JSON.stringify(customLevelsProgress),
         );
-        syncDataToCloud();
+        if (!skipCloud) syncDataToCloud();
       }
 
       // --- Popup System ---
