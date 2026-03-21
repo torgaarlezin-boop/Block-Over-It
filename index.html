@@ -140,6 +140,9 @@
         border-radius: 50%;
         box-shadow: 0 0 5px #f0abfc;
       }
+      .jump-pad.colored::after {
+        display: none;
+      }
       .grinder {
         background-color: #333;
         background-image:
@@ -2561,13 +2564,19 @@
 
             currentUser = username;
             currentUserSkins = initialSkins;
-            showPopup(
-              "SUCCESS",
-              withReward
-                ? "Signed up! Dino skin unlocked."
-                : "Signed up successfully.",
-              () => {},
-            );
+            if (withReward) {
+                const html = `
+                    <div style="margin-bottom:15px; color:#ccc;">Signed up successfully! <strong>Dino</strong> skin unlocked.</div>
+                    <img src="dino.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+                `;
+                popupManager.show({
+                    title: "SUCCESS",
+                    html: html,
+                    buttons: [{ text: "OK", onClick: () => {} }]
+                });
+            } else {
+                showPopup("SUCCESS", "Signed up successfully!", () => {});
+            }
           } else {
             const { data, error } = await _supabase
               .from("users")
@@ -2889,11 +2898,16 @@
               .eq("code", code);
           }
 
-          showPopup(
-            "SUCCESS",
-            `You have unlocked the '${SKIN_DEFINITIONS[skinReward]?.name || skinReward}' skin!`,
-            () => {},
-          );
+          const skinName = SKIN_DEFINITIONS[skinReward]?.name || skinReward;
+          const html = `
+            <div style="margin-bottom:15px; color:#ccc;">You have unlocked the <strong>${skinName}</strong> skin!</div>
+            <img src="${skinReward}.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+          `;
+          popupManager.show({
+            title: "SUCCESS",
+            html: html,
+            buttons: [{ text: "OK", onClick: () => {} }]
+          });
         } catch (e) {
           showPopup("ERROR", "An error occurred. Please try again.", () => {});
         }
@@ -4990,11 +5004,15 @@
           currentUserSkins.push("metallic");
           syncDataToCloud();
           if (!silent) {
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Metallic Anger skin!",
-              () => {},
-            );
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Metallic Anger</strong> skin!</div>
+                <img src="metallic.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }]
+            });
           }
         }
       }
@@ -5028,11 +5046,15 @@
           currentUserSkins.push("golden");
           syncDataToCloud();
           if (!silent) {
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Golden skin!",
-              () => {},
-            );
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Golden</strong> skin!</div>
+                <img src="golden.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }]
+            });
           }
         }
       }
@@ -5045,11 +5067,15 @@
           currentUserSkins.push("galaxy");
           syncDataToCloud();
           if (!silent) {
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Galaxy skin!",
-              () => {},
-            );
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Galaxy</strong> skin!</div>
+                <img src="galaxy.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }]
+            });
           }
         }
       }
@@ -5066,11 +5092,15 @@
           currentUserSkins.push("vintageemo");
           syncDataToCloud();
           if (!silent) {
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Emotions (Vintage) skin!",
-              () => {},
-            );
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Emotions (Vintage)</strong> skin!</div>
+                <img src="vintageemo.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }]
+            });
           }
         }
       }
@@ -5122,12 +5152,17 @@
         if (total > 0 && collected >= total) {
           currentUserSkins.push("bluecoin");
           syncDataToCloud();
-          if (!silent)
-            showPopup(
-              "SKIN UNLOCKED",
-              "You unlocked the Blue Coin skin!",
-              () => {},
-            );
+          if (!silent) {
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Blue Coin</strong> skin!</div>
+                <img src="bluecoin.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }]
+            });
+          }
         }
       }
 
@@ -5683,6 +5718,8 @@
         this.age = 0;
         this.practiceStack = [];
         this.playerHasMoved = false;
+        this.background = levelData.background || null;
+        this.backgroundChanged = true;
 
         for (var y = 0; y < this.height; y++) {
           var line = plan[y],
@@ -5780,10 +5817,8 @@
 
             var Actor = actorchars[ch];
             if (Actor) {
+              var actor = null;
               if (ch === "B") {
-                // Blue coin spawns if conditions are met:
-                // - Campaign: game must be beaten
-                // - Custom: level must be beaten before
                 let shouldSpawnBlueCoin = false;
                 if (currentGameMode !== "deathrun") {
                   if (this.levelType === "campaign") {
@@ -5803,40 +5838,52 @@
                 }
                 if (shouldSpawnBlueCoin) {
                   this.totalBlueCoins++;
-                  var actor = new Actor(new Vector(x, y), ch);
-                  if (color) actor.color = color;
-                  if (isFake) actor.fake = true;
-                  actor.id = this.nextActorId++;
-                  this.actors.push(actor);
+                  actor = new Actor(new Vector(x, y), ch);
                 }
               } else {
-                var actor = new Actor(new Vector(x, y), ch);
+                actor = new Actor(new Vector(x, y), ch);
+              }
+
+              if (actor) {
                 if (ch === "G" && this.illusions.has(x + "," + y)) {
                   actor.isIllusion = true;
                 }
                 // Flicker logic for all actors
-                if (this.flickers.has(`${x},${y}`)) actor.isFlicker = true;
-                if (this.touchFlickers.has(`${x},${y}`))
+                if (this.flickers.has(`${x},${y}`) || color === "flicker")
+                  actor.isFlicker = true;
+                if (
+                  this.touchFlickers.has(`${x},${y}`) ||
+                  color === "touch_flicker"
+                )
                   actor.isTouchFlicker = true;
-                if (this.jumpFlickers.has(`${x},${y}`))
+                if (
+                  this.jumpFlickers.has(`${x},${y}`) ||
+                  color === "jump_flicker"
+                )
                   actor.isJumpFlicker = true;
-
-                // Legacy support
-                if (color === "flicker") actor.isFlicker = true;
-                if (color === "jump_flicker") actor.isJumpFlicker = true;
-                if (color === "touch_flicker") actor.isTouchFlicker = true;
 
                 if (
                   actor.isFlicker ||
                   actor.isJumpFlicker ||
                   actor.isTouchFlicker
                 ) {
-                  actor.flickerType = color;
+                  actor.flickerType = color || "flicker";
                   actor.isVisible = false;
                   actor.flickerTimer = 0;
                   actor.flickerVisibleTime = 0;
                 }
-                if (color) actor.color = color;
+
+                if (
+                  color &&
+                  color !== "flicker" &&
+                  color !== "touch_flicker" &&
+                  color !== "jump_flicker" &&
+                  color !== "invisible"
+                ) {
+                  actor.color = color;
+                }
+                if (color === "invisible") actor.color = "invisible";
+
                 if (isFake) actor.fake = true;
                 if (
                   ch === "^" &&
@@ -5869,13 +5916,14 @@
                 wall.isFlicker = isFlicker;
                 wall.isTouchFlicker = isTouchFlicker;
                 wall.isJumpFlicker = isJumpFlicker;
-                wall.flickerType = "combined";
+                wall.flickerType = color || "combined";
                 wall.isVisible = false;
                 wall.flickerTimer = 0;
                 wall.flickerVisibleTime = 0;
+                if (isFake) wall.fake = true;
                 wall.id = this.nextActorId++;
                 this.actors.push(wall);
-                fieldType = "wall"; // Keep in grid for collision
+                fieldType = null; // Removed "wall" to allow physical flickering and fakes via actor logic
               } else {
                 fieldType = "wall";
               }
@@ -6519,6 +6567,12 @@
               }
             }
           }
+        } else if (f.startsWith("setBackground")) {
+          const match = f.match(/setBackground\s*\(\s*["']?(.*?)["']?\s*\)/);
+          if (match) {
+            this.background = match[1];
+            this.backgroundChanged = true;
+          }
         }
       };
 
@@ -6956,6 +7010,7 @@
         this.hitboxLayer = this.world.appendChild(element("div"));
         this.hitboxElements = new Map();
 
+        this.updateBackground();
         this.updateScale();
         this.world.insertBefore(this.drawBackground(), this.actorLayer);
         this.drawFrame();
@@ -6967,6 +7022,20 @@
         };
         window.addEventListener("resize", this.resizeHandler);
       }
+
+      DOMDisplay.prototype.updateBackground = function () {
+        const bg = this.level.background;
+        if (!bg) {
+          this.wrap.style.background = "#222";
+          return;
+        }
+        if (bg.match(/^https?:\/\//) || bg.match(/^data:image/) || bg.match(/\.(png|jpg|jpeg|gif|webp)$/)) {
+             this.wrap.style.background = `url("${bg}") no-repeat center center fixed`;
+             this.wrap.style.backgroundSize = "cover";
+        } else {
+             this.wrap.style.background = bg;
+        }
+      };
 
       DOMDisplay.prototype.drawBackground = function () {
         if (this.bgLayer) this.bgLayer.remove();
@@ -7079,6 +7148,38 @@
                 ) {
                   el.style.backgroundColor = actor.color;
                   el.style.borderColor = adjustColor(actor.color, -20);
+
+                  // Custom logic for textured/complex blocks
+                  if (actor.type === "breakable-block") {
+                    el.style.backgroundBlendMode = "multiply";
+                    el.style.backgroundSize = "contain";
+                  }
+
+                  if (actor.type === "grinder") {
+                    const c = actor.color;
+                    const dark = adjustColor(c, -100);
+                    const light = adjustColor(c, 20);
+                    el.style.backgroundImage = `
+                      linear-gradient(90deg, transparent 30%, ${c} 30%, ${c} 70%, transparent 70%),
+                      repeating-linear-gradient(0deg, ${dark} 0px, ${dark} 4px, ${light} 4px, ${light} 8px)
+                    `;
+                    el.style.backgroundColor = "transparent"; // Let gradients handle it
+                  }
+
+                  if (actor.type === "jump-pad") {
+                    el.classList.add("colored");
+                    // Create/Update custom dot
+                    let dot = el.querySelector(".jump-pad-dot");
+                    if (!dot) {
+                      dot = document.createElement("div");
+                      dot.className = "jump-pad-dot";
+                      dot.style.cssText =
+                        "position:absolute; top:20%; left:20%; right:20%; bottom:20%; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                      el.appendChild(dot);
+                    }
+                    dot.style.backgroundColor = actor.color;
+                    dot.style.boxShadow = `0 0 5px ${adjustColor(actor.color, 40)}`;
+                  }
                 }
               }
             }
@@ -7415,6 +7516,10 @@
       };
 
       DOMDisplay.prototype.drawFrame = function () {
+        if (this.level.backgroundChanged) {
+          this.updateBackground();
+          this.level.backgroundChanged = false;
+        }
         if (this.level.backgroundDirty) {
           this.world.insertBefore(this.drawBackground(), this.world.firstChild);
           this.level.backgroundDirty = false;
