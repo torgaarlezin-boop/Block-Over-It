@@ -56,6 +56,52 @@
         outline: none;
         border-color: #335699;
       }
+      .controls-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+        width: 100%;
+        max-width: 600px;
+        margin-top: 15px;
+      }
+      .filter-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .filter-btn {
+        background: #333;
+        border: 1px solid #555;
+        color: #ccc;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+      .filter-btn:hover {
+        background: #444;
+        color: #fff;
+      }
+      .filter-btn.active {
+        background: #335699;
+        border-color: #5588cc;
+        color: #fff;
+        font-weight: bold;
+      }
+      #sort-select {
+        background: #333;
+        border: 1px solid #555;
+        color: #ccc;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        font-family: inherit;
+        cursor: pointer;
+      }
       #skins-grid {
         flex: 1;
         overflow-y: auto;
@@ -152,6 +198,16 @@
         background-color: #f1c40f;
         color: #000;
         border: 1px solid #f39c12;
+      }
+      .skin-tag.competitive {
+        background-color: #e67e22;
+        color: #fff;
+        border: 1px solid #d35400;
+      }
+      .skin-tag.unlock-code {
+        background-color: #1abc9c;
+        color: #fff;
+        border: 1px solid #16a085;
       }
       .skin-artist {
         font-size: 0.65rem;
@@ -278,7 +334,28 @@
     <header>
       <h1>Skin Explorer</h1>
       <div id="search-container">
-        <input type="text" id="search-input" placeholder="Search skins..." />
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search... (e.g. 'cool guy', 'honorary', '1/1')"
+        />
+      </div>
+      <div class="controls-container">
+        <div class="filter-tags" id="filter-tags">
+          <button class="filter-btn active" data-tag="all">All</button>
+          <button class="filter-btn" data-tag="firstPlace">1st Place</button>
+          <button class="filter-btn" data-tag="honorary">Honorary</button>
+          <button class="filter-btn" data-tag="competitive">Competitive</button>
+          <button class="filter-btn" data-tag="unlockCode">Code</button>
+        </div>
+        <select id="sort-select">
+          <option value="name_asc">Sort: Name (A-Z)</option>
+          <option value="name_desc">Sort: Name (Z-A)</option>
+          <option value="rarity_asc">Sort: Rarest First</option>
+          <option value="rarity_desc">Sort: Common First</option>
+          <option value="artist_asc">Sort: Artist (A-Z)</option>
+          <option value="artist_desc">Sort: Artist (Z-A)</option>
+        </select>
       </div>
     </header>
     <div id="skins-grid"></div>
@@ -322,7 +399,12 @@
         emo: { name: "Emotions", copies: "1/3", artist: "ejohnson" },
         emo2: { name: "Emotions 2", copies: "1/3", artist: "ejohnson" },
         emo3: { name: "Emotions 3", copies: "1/3", artist: "ejohnson" },
-        kingbanana: { name: "King Banana", copies: "1/5", artist: "Torgaar" },
+        kingbanana: {
+          name: "King Banana",
+          copies: "1/5",
+          artist: "Torgaar",
+          unlockCode: true,
+        },
         j_imbo: {
           name: "J_imbo",
           copies: "1/1",
@@ -330,11 +412,17 @@
           firstPlace: true,
         },
         bluecoin: { name: "Blue Gem", copies: "N/A", artist: "Torgaar" },
-        coolguy: { name: "Cool Guy", copies: "1/5", artist: "Torgaar" },
+        coolguy: {
+          name: "Cool Guy",
+          copies: "1/5",
+          artist: "Torgaar",
+          competitive: true,
+        },
         goldcoolguy: {
           name: "Cool Guy (Golden)",
           copies: "1/1",
           artist: "Torgaar",
+          competitive: true,
         },
         inkcoolguy: {
           name: "Cool Guy (Ink)",
@@ -365,6 +453,7 @@
           name: "Cool Guy (Voodoo)",
           copies: "1/1",
           artist: "Torgaar",
+          competitive: true,
         },
         coolguyglassesdown: {
           name: "Cool Guy (Glasses Down)",
@@ -393,6 +482,7 @@
           name: "Galaxy (Legends Edition)",
           copies: "1/3",
           artist: "Torgaar",
+          competitive: true,
         },
         galaxy: { name: "Galaxy", copies: "N/A", artist: "Torgaar" },
         frozenkingbanana: {
@@ -439,7 +529,12 @@
           copies: "1/3",
           artist: "jude",
         },
-        cityboi: { name: "City Boy", copies: "1/3", artist: "Ligmadaddy69" },
+        cityboi: {
+          name: "City Boy",
+          copies: "1/3",
+          artist: "Ligmadaddy69",
+          unlockCode: true,
+        },
         cityboilegend: {
           name: "City Boy (Legendary)",
           copies: "1/2",
@@ -489,6 +584,8 @@
         if (typeof def.honorary === "undefined") def.honorary = false;
         if (typeof def.firstPlace === "undefined") def.firstPlace = false;
         if (typeof def.artist === "undefined") def.artist = "Unknown";
+        if (typeof def.competitive === "undefined") def.competitive = false;
+        if (typeof def.unlockCode === "undefined") def.unlockCode = false;
         if (typeof def.forPlayer === "undefined") def.forPlayer = "";
       });
 
@@ -513,6 +610,12 @@
         }
         if (data.firstPlace) {
           detailsHtml += `<div class="skin-tag first-place" style="display:inline-block; margin-top:5px;">First Place</div>`;
+        }
+        if (data.competitive) {
+          detailsHtml += `<div class="skin-tag competitive" style="display:inline-block; margin-top:5px;">Competitive</div>`;
+        }
+        if (data.unlockCode) {
+          detailsHtml += `<div class="skin-tag unlock-code" style="display:inline-block; margin-top:5px;">Unlock Code</div>`;
         }
         modalDetails.innerHTML = detailsHtml;
 
@@ -544,32 +647,64 @@
 
       const grid = document.getElementById("skins-grid");
       const searchInput = document.getElementById("search-input");
+      const sortSelect = document.getElementById("sort-select");
+      const filterBtns = document.querySelectorAll(".filter-btn");
+
+      let currentFilter = "all";
 
       function renderSkins(filterText = "") {
         grid.innerHTML = "";
         const searchString = filterText.toLowerCase();
         const searchTerms = searchString.split(/\s+/).filter((t) => t);
+        const sortMode = sortSelect.value;
 
         let count = 0;
+        let skinsList = Object.entries(SKIN_DEFINITIONS);
 
-        Object.entries(SKIN_DEFINITIONS).forEach(([id, data]) => {
-          let match = true;
+        // Filter by Tag
+        if (currentFilter !== "all") {
+          skinsList = skinsList.filter(([id, data]) => data[currentFilter]);
+        }
 
-          if (searchTerms.length > 0) {
-            // Special Filters
-            if (searchString.includes("honorary") && !data.honorary)
-              match = false;
-            else if (searchString.includes("first place") && !data.firstPlace)
-              match = false;
-            else {
-              // General Search (ALL terms must match something)
-              const searchableText =
-                `${data.name} ${id} ${data.artist} ${data.forPlayer}`.toLowerCase();
-              match = searchTerms.every((term) =>
-                searchableText.includes(term),
-              );
-            }
+        // Filter by Search
+        skinsList = skinsList.filter(([id, data]) => {
+          if (searchTerms.length === 0) return true;
+          const searchableText =
+            `${data.name} ${id} ${data.artist} ${data.forPlayer}`.toLowerCase();
+          return searchTerms.every((term) => searchableText.includes(term));
+        });
+
+        // Sort
+        skinsList.sort((a, b) => {
+          const [idA, dataA] = a;
+          const [idB, dataB] = b;
+
+          if (sortMode === "name_asc")
+            return dataA.name.localeCompare(dataB.name);
+          if (sortMode === "name_desc")
+            return dataB.name.localeCompare(dataA.name);
+          if (sortMode === "artist_asc")
+            return dataA.artist.localeCompare(dataB.artist);
+          if (sortMode === "artist_desc")
+            return dataB.artist.localeCompare(dataA.artist);
+
+          if (sortMode.startsWith("rarity")) {
+            const getScore = (copies) => {
+              if (copies === "N/A") return 999;
+              const parts = copies.split("/");
+              if (parts.length === 2) return parseInt(parts[1]);
+              return 100;
+            };
+            const scoreA = getScore(dataA.copies);
+            const scoreB = getScore(dataB.copies);
+            if (sortMode === "rarity_asc") return scoreA - scoreB;
+            return scoreB - scoreA;
           }
+          return 0;
+        });
+
+        skinsList.forEach(([id, data]) => {
+          let match = true;
 
           if (match) {
             count++;
@@ -612,6 +747,18 @@
               t.textContent = "1st Place";
               tags.appendChild(t);
             }
+            if (data.competitive) {
+              const t = document.createElement("div");
+              t.className = "skin-tag competitive";
+              t.textContent = "Comp";
+              tags.appendChild(t);
+            }
+            if (data.unlockCode) {
+              const t = document.createElement("div");
+              t.className = "skin-tag unlock-code";
+              t.textContent = "Code";
+              tags.appendChild(t);
+            }
 
             const artist = document.createElement("div");
             artist.className = "skin-artist";
@@ -639,6 +786,17 @@
 
       searchInput.addEventListener("input", (e) => {
         renderSkins(e.target.value);
+      });
+
+      sortSelect.addEventListener("change", () => renderSkins());
+
+      filterBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilter = btn.dataset.tag;
+          renderSkins();
+        });
       });
 
       // Initial Render
