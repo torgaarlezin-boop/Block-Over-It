@@ -247,25 +247,162 @@
         margin-top: 2px;
       }
 
-      /* Mobile Tweaks */
-      @media (max-width: 600px) {
-        #skins-grid {
-          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-          padding: 15px;
-          gap: 15px;
+      @media (max-width: 768px) {
+        body {
+          background: linear-gradient(to bottom, #111 0%, #0a0a12 100%);
         }
-        .skin-card {
+
+        header {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          background: rgba(20, 20, 20, 0.95);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          padding: 10px 15px;
+          gap: 10px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+          font-size: 1.3rem;
+          margin-bottom: 2px;
+          width: 100%;
+          text-align: center;
+          pointer-events: none;
+        }
+
+        /* Back Button for Mobile */
+        .back-btn {
+          top: 12px;
+          left: 12px;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border-radius: 50%;
+          font-size: 0; /* Hide text */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .back-btn::before {
+          content: "←";
+          font-size: 1.2rem;
+          color: #fff;
+          margin-top: -2px;
+        }
+
+        #search-container {
+          margin-top: 5px;
+        }
+
+        #search-input {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 10px 20px;
+          font-size: 0.9rem;
+        }
+        #search-input:focus {
+          border-color: #335699;
+          background: rgba(0, 0, 0, 0.5);
+        }
+
+        .controls-container {
+          flex-direction: column;
+          gap: 10px;
+          margin-top: 0;
+        }
+
+        .filter-tags {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          justify-content: flex-start;
+          width: 100%;
+          padding-bottom: 5px;
+          -webkit-overflow-scrolling: touch;
+          gap: 8px;
+          scrollbar-width: none; /* Firefox */
+        }
+        .filter-tags::-webkit-scrollbar {
+          display: none;
+        }
+
+        .filter-btn {
+          flex-shrink: 0;
+          border-radius: 20px;
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-size: 0.8rem;
+          color: #ccc;
+        }
+        .filter-btn.active {
+          background: #335699;
+          border-color: #335699;
+          color: #fff;
+          box-shadow: 0 4px 15px rgba(51, 86, 153, 0.3);
+        }
+
+        #sort-select {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: #aaa;
           padding: 10px;
         }
+
+        #skins-grid {
+          padding: 15px;
+          gap: 15px;
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .skin-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 15px;
+          border-radius: 12px;
+          gap: 8px;
+        }
+        .skin-card:active {
+          transform: scale(0.96);
+          background: rgba(255, 255, 255, 0.08);
+          border-color: #335699;
+        }
+
         .skin-preview {
-          width: 50px;
+          width: 100%;
           height: 100px;
+          filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.6));
         }
-        header {
-          padding: 10px 15px;
+
+        .skin-name {
+          font-size: 0.9rem;
+          margin-top: 5px;
         }
-        h1 {
-          font-size: 1.2rem;
+
+        .skin-copies {
+          font-size: 0.65rem;
+          padding: 2px 6px;
+        }
+
+        /* Mobile */
+        .modal-content {
+          width: 85%;
+          max-height: 80vh;
+          overflow-y: auto;
+          padding: 30px 20px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+          background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+        }
+        .modal-preview {
+          height: 180px;
         }
       }
 
@@ -379,7 +516,7 @@
   </head>
   <body>
     <header>
-      <a href="blockoverit.html" class="back-btn">Back to Game</a>
+      <a href="index.html" class="back-btn">Back to Game</a>
       <h1>Skin Explorer</h1>
       <div id="search-container">
         <input
@@ -431,7 +568,6 @@
     </div>
 
     <script>
-      // Copied from blockoverit.html
       const SKIN_DEFINITIONS = {
         default: { name: "Default", copies: "N/A", gameUnlock: true },
         chairlord: {
