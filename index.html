@@ -8716,6 +8716,33 @@
         return section;
       }
 
+      function showFullScreenSkin(skinId) {
+        const meta = SKIN_DEFINITIONS[skinId] || {
+          name: skinId,
+          copies: "Unknown",
+        };
+
+        let visualHtml = "";
+        if (skinId === "default") {
+          visualHtml = `<div style="width:150px; height:150px; background:#335699; border-radius:12px; box-shadow:0 0 30px rgba(51,86,153,0.6); margin:20px;"></div>`;
+        } else {
+          visualHtml = `<img src="${skinId}.png" style="width:200px; height:200px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 0 20px rgba(255,255,255,0.1)); margin:10px;">`;
+        }
+
+        const html = `
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                ${visualHtml}
+                <div style="color:#aaa; font-size:1rem; margin-top:10px;">${meta.copies} Copies</div>
+            </div>
+        `;
+
+        popupManager.show({
+          title: meta.name.toUpperCase(),
+          html: html,
+          buttons: [{ text: "CLOSE", onClick: () => {} }],
+        });
+      }
+
       function renderSkinGrid(
         container,
         skins,
@@ -8749,6 +8776,8 @@
               saveSettings();
               showMenu("account");
             };
+          } else if (!isInteractive && !enableDrag) {
+            el.onclick = () => showFullScreenSkin(skinId);
           }
 
           if (enableDrag) {
