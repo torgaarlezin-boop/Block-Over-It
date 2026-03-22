@@ -35,6 +35,27 @@
         text-shadow: 2px 2px 0px #335699;
         color: #fff;
       }
+      .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: #333;
+        border: 1px solid #555;
+        color: #fff;
+        padding: 8px 15px;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-family: inherit;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+        z-index: 20;
+        text-decoration: none;
+      }
+      .back-btn:hover {
+        background: #444;
+        border-color: #335699;
+      }
       #search-container {
         width: 100%;
         max-width: 600px;
@@ -358,6 +379,7 @@
   </head>
   <body>
     <header>
+      <a href="blockoverit.html" class="back-btn">Back to Game</a>
       <h1>Skin Explorer</h1>
       <div id="search-container">
         <input
@@ -475,6 +497,7 @@
           name: "Cool Guy (Ink)",
           copies: "1/3",
           artist: "Torgaar",
+          competitive: true,
         },
         sketchbanana: {
           name: "King Banana (Sketch)",
@@ -506,6 +529,7 @@
           name: "Cool Guy (Glasses Down)",
           copies: "1/1",
           artist: "Torgaar",
+          competetive: true,
         },
         dasher: {
           name: "Dasher",
@@ -642,6 +666,12 @@
           copies: "1/1",
           honorary: true,
           artist: "Novalis",
+        },
+        jimbotree: {
+          name: "J_imbo Tree",
+          copies: "1/1",
+          artist: "Torgaar",
+          honorary: "True",
         },
       };
 
