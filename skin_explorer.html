@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Explorer</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: "Courier New", Courier, monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            background-color: #222;
+            border-bottom: 2px solid #333;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #335699;
+            color: #fff;
+        }
+        #search-container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+        #search-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            background-color: #333;
+            border: 2px solid #555;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        #search-input:focus {
+            outline: none;
+            border-color: #335699;
+        }
+        #skins-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+            align-content: start;
+        }
+        /* Scrollbar */
+        #skins-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        #skins-grid::-webkit-scrollbar-track {
+            background: #111;
+        }
+        #skins-grid::-webkit-scrollbar-thumb {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        .skin-card {
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .skin-card:hover {
+            transform: translateY(-5px);
+            border-color: #335699;
+            background-color: #222;
+        }
+        .skin-preview {
+            width: 60px;
+            height: 120px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));
+        }
+        .skin-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+            color: #ddd;
+        }
+        .skin-copies {
+            font-size: 0.7rem;
+            color: #888;
+            background-color: #111;
+            padding: 3px 6px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        .skin-copies.legendary {
+            color: #ffd700;
+            border-color: #b8860b;
+        }
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        /* Mobile Tweaks */
+        @media (max-width: 600px) {
+            #skins-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                padding: 15px;
+                gap: 15px;
+            }
+            .skin-card {
+                padding: 10px;
+            }
+            .skin-preview {
+                width: 50px;
+                height: 100px;
+            }
+            header {
+                padding: 10px 15px;
+            }
+            h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Skin Explorer</h1>
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Search skins...">
+        </div>
+    </header>
+    <div id="skins-grid"></div>
+
+    <script>
+        // Copied from blockoverit.html
+        const SKIN_DEFINITIONS = {
+            default: { name: "Default", copies: "N/A" },
+            chairlord: { name: "Chairlord", copies: "1/1" },
+            sunset: { name: "Sunset", copies: "1/2" },
+            rainbowmonster: { name: "Rainbow Monster", copies: "1/8" },
+            burningheart: { name: "Burning Heart", copies: "1/3" },
+            tv: { name: "TV", copies: "1/2" },
+            cubemouth: { name: "Cube Mouth", copies: "1/5" },
+            firstplacedaddy: { name: "First Place Daddy", copies: "1/1" },
+            dino: { name: "Dino", copies: "1/4" },
+            emo: { name: "Emotions", copies: "1/3" },
+            emo2: { name: "Emotions 2", copies: "1/3" },
+            emo3: { name: "Emotions 3", copies: "1/3" },
+            kingbanana: { name: "King Banana", copies: "1/5" },
+            j_imbo: { name: "J_imbo", copies: "1/1" },
+            bluecoin: { name: "Blue Gem", copies: "N/A" },
+            coolguy: { name: "Cool Guy", copies: "1/5" },
+            goldcoolguy: { name: "Golden Cool Guy", copies: "1/1" },
+            inkcoolguy: { name: "Cool Guy (Ink)", copies: "1/3" },
+            sketchbanana: { name: "King Banana (Sketch)", copies: "1/3" },
+            rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
+            rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
+            vintageemo: { name: "Emotions (Vintage)", copies: "1/3" },
+            voodoocoolguy: { name: "Cool Guy (Voodoo)", copies: "1/1" },
+            coolguyglassesdown: { name: "Cool Guy (Glasses Down)", copies: "1/1" },
+            dasher: { name: "Dasher", copies: "1/1" },
+            dasher2: { name: "Dasher 2", copies: "1/1" },
+            coolguynoir: { name: "Cool Guy (Noir)", copies: "1/3" },
+            metallic: { name: "Metallic Anger", copies: "N/A" },
+            legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
+            galaxy: { name: "Galaxy", copies: "N/A" },
+            frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
+            golden: { name: "Golden", copies: "N/A" },
+            rainbowcoolguy: { name: "Cool Guy (Rainbow Glasses)", copies: "1/3" },
+            coolerguy: { name: "Cool Guy (Cooler)", copies: "1/2" },
+            coolerguytexture: { name: "Cool Guy (Cooler Texture)", copies: "1/2" },
+            thecat: { name: "The Cat", copies: "1/1" },
+            efanballoon: { name: "Efan Balloon", copies: "1/1" },
+            deacy: { name: "Deacy", copies: "1/1" },
+            triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
+            cityboi: { name: "City Boy", copies: "1/3" },
+            cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
+            coolguyblackwhitelogo: { name: "Cool Guy (Black and White Logo)", copies: "1/3" },
+            coolguywatercolorlogo: { name: "Cool Guy (Watercolor Logo)", copies: "1/3" },
+            coolguyscrapbooklogo: { name: "Cool Guy (Scrapbook Logo)", copies: "1/3" },
+            coolguysignature: { name: "Cool Guy (Signature Logo)", copies: "1/3" },
+            coolguytorgaarsignature: { name: "Cool Guy (Torgaar Signature)", copies: "1/1" },
+            coolguyoregon: { name: "Cool Guy (Oregon Signature)", copies: "1/3" },
+            mistymountains: { name: "Misty Mountains", copies: "1/1" },
+        };
+
+        const grid = document.getElementById('skins-grid');
+        const searchInput = document.getElementById('search-input');
+
+        function renderSkins(filterText = '') {
+            grid.innerHTML = '';
+            const search = filterText.toLowerCase();
+            let count = 0;
+
+            Object.entries(SKIN_DEFINITIONS).forEach(([id, data]) => {
+                if (data.name.toLowerCase().includes(search) || id.toLowerCase().includes(search)) {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'skin-card';
+                    card.title = data.name;
+
+                    const preview = document.createElement('div');
+                    preview.className = 'skin-preview';
+                    
+                    if (id === 'default') {
+                        preview.style.backgroundColor = '#335699';
+                        preview.style.borderRadius = '4px';
+                    } else {
+                        preview.style.backgroundImage = `url('${id}.png')`;
+                    }
+
+                    const name = document.createElement('div');
+                    name.className = 'skin-name';
+                    name.textContent = data.name;
+
+                    const copies = document.createElement('div');
+                    copies.className = 'skin-copies' + (data.copies === '1/1' ? ' legendary' : '');
+                    copies.textContent = data.copies;
+
+                    card.appendChild(preview);
+                    card.appendChild(name);
+                    card.appendChild(copies);
+                    grid.appendChild(card);
+                }
+            });
+
+            if (count === 0) {
+                grid.innerHTML = `<div class="no-results">No skins found matching "${filterText}"</div>`;
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            renderSkins(e.target.value);
+        });
+
+        // Initial Render
+        renderSkins();
+    </script>
+</body>
+</html>
