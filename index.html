@@ -698,7 +698,8 @@
       }
 
       /* Editor Button */
-      .editor-btn, .skins-btn {
+      .editor-btn,
+      .skins-btn {
         background: #333;
         border: 2px solid #555;
         color: white;
@@ -717,7 +718,8 @@
         gap: 15px;
         z-index: 110;
       }
-      .editor-btn:hover, .skins-btn:hover {
+      .editor-btn:hover,
+      .skins-btn:hover {
         background: #444;
         border-color: #335699;
         transform: scale(1.05);
@@ -781,6 +783,24 @@
         transition: all 0.2s;
       }
       .awards-btn:hover {
+        background: #444;
+        border-color: #335699;
+        transform: scale(1.05);
+      }
+
+      /* Skins Explorer Button */
+      .skins-explorer-btn {
+        background: #333;
+        border: 2px solid #555;
+        color: white;
+        font-family: inherit;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 10px 20px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+      }
+      .skins-explorer-btn:hover {
         background: #444;
         border-color: #335699;
         transform: scale(1.05);
@@ -2164,6 +2184,9 @@
         <button class="awards-btn" onclick="showMenu('level-awards')">
           <span>Level Awards</span>
         </button>
+        <button class="skins-explorer-btn" onclick="window.location.href='skin_explorer.html'">
+          <span>Skin Explorer</span>
+        </button>
       </div>
 
       <div class="bottom-left-controls">
@@ -2183,7 +2206,7 @@
         </button>
         <button
           class="skins-btn"
-          onclick="window.location.href='skin_explorer.html'"
+          onclick="window.location.href = 'skin_explorer.html'"
         >
           <span>Skins</span>
         </button>
@@ -2268,26 +2291,30 @@
       </button>
     </div>
 
-      <div id="skin-modal" class="modal-overlay" onclick="if(event.target === this) closeSkinModal()">
-        <div class="modal-content">
-          <button class="popup-close" onclick="closeSkinModal()">&times;</button>
-          <div
-            id="version-controls"
-            class="version-controls"
-            style="display: none"
+    <div
+      id="skin-modal"
+      class="modal-overlay"
+      onclick="if (event.target === this) closeSkinModal();"
+    >
+      <div class="modal-content">
+        <button class="popup-close" onclick="closeSkinModal()">&times;</button>
+        <div
+          id="version-controls"
+          class="version-controls"
+          style="display: none"
+        >
+          <button class="version-btn" onclick="changeVersion(-1)">&lt;</button>
+          <span id="version-label" style="font-size: 0.8rem; color: #aaa"
+            >v1</span
           >
-            <button class="version-btn" onclick="changeVersion(-1)">&lt;</button>
-            <span id="version-label" style="font-size: 0.8rem; color: #aaa"
-              >v1</span
-            >
-            <button class="version-btn" onclick="changeVersion(1)">&gt;</button>
-          </div>
-          <div id="modal-preview" class="modal-preview"></div>
-          <div id="modal-title" class="modal-title"></div>
-          <div id="modal-subtitle" class="modal-subtitle"></div>
-          <div id="modal-details" class="modal-details"></div>
+          <button class="version-btn" onclick="changeVersion(1)">&gt;</button>
         </div>
+        <div id="modal-preview" class="modal-preview"></div>
+        <div id="modal-title" class="modal-title"></div>
+        <div id="modal-subtitle" class="modal-subtitle"></div>
+        <div id="modal-details" class="modal-details"></div>
       </div>
+    </div>
 
     <div id="intro-layer">
       <div id="intro-sellwood">Sellwood Game Studios</div>
@@ -2387,8 +2414,8 @@
           gameUnlock: true,
           versions: [
             { name: "Original", img: "metallic_old.png" },
-            { name: "Current", img: "metallic.png" }
-          ]
+            { name: "Current", img: "metallic.png" },
+          ],
         },
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
@@ -2422,7 +2449,7 @@
         },
         coolguyoregon: { name: "Cool Guy (Oregon Signature)", copies: "1/3" },
         mistymountains: { name: "Misty Mountains", copies: "1/1" },
-        jimbotree: {name: "J_imbo Tree", copies: "1/1"}
+        jimbotree: { name: "J_imbo Tree", copies: "1/1" },
       };
       const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
@@ -3606,9 +3633,15 @@
         if (!skipCloud) syncDataToCloud();
       }
 
-      function getHighscoreKey(type, chapter, index, category = "any", awardKey = null) {
+      function getHighscoreKey(
+        type,
+        chapter,
+        index,
+        category = "any",
+        awardKey = null,
+      ) {
         if (currentGameMode === "speedrun" && awardKey) {
-          return `speedrun_award_${awardKey}${category === 'blue' ? '_blue' : ''}`;
+          return `speedrun_award_${awardKey}${category === "blue" ? "_blue" : ""}`;
         }
 
         let prefix = "";
@@ -8085,7 +8118,13 @@
             : highscoreCategory;
         if (currentGameMode === "deathrun") category = "any";
 
-        const key = getHighscoreKey(type, chapter, index, category, currentLevelData.awardKey);
+        const key = getHighscoreKey(
+          type,
+          chapter,
+          index,
+          category,
+          currentLevelData.awardKey,
+        );
         const best = highscores[key];
 
         // Format Local Time
@@ -8444,7 +8483,13 @@
 
                 let newRecord = false;
                 // Update Highscore (Any)
-                const keyAny = getHighscoreKey(type, chapter, index, "any", levelData.awardKey);
+                const keyAny = getHighscoreKey(
+                  type,
+                  chapter,
+                  index,
+                  "any",
+                  levelData.awardKey,
+                );
                 if (
                   gameTimer > 0 &&
                   (!highscores[keyAny] || gameTimer < highscores[keyAny])
@@ -8464,7 +8509,13 @@
                   levelInstance.totalBlueCoins > 0 &&
                   gameTimer > 0
                 ) {
-                  const keyBlue = getHighscoreKey(type, chapter, index, "blue", levelData.awardKey);
+                  const keyBlue = getHighscoreKey(
+                    type,
+                    chapter,
+                    index,
+                    "blue",
+                    levelData.awardKey,
+                  );
                   if (!highscores[keyBlue] || gameTimer < highscores[keyBlue]) {
                     highscores[keyBlue] = gameTimer;
                     saveHighscores();
@@ -8784,7 +8835,8 @@
         const versionControls = document.getElementById("version-controls");
 
         modalTitle.textContent = data.name;
-        modalSubtitle.textContent = data.copies === "N/A" ? "Standard Skin" : `${data.copies} Copies`;
+        modalSubtitle.textContent =
+          data.copies === "N/A" ? "Standard Skin" : `${data.copies} Copies`;
         modalDetails.innerHTML = "";
 
         // Handle Versions
@@ -8815,7 +8867,8 @@
 
       function updateModalVersionDisplay() {
         const v = currentSkinData.versions[currentVersionIdx];
-        document.getElementById("version-label").textContent = v.name || `v${currentVersionIdx + 1}`;
+        document.getElementById("version-label").textContent =
+          v.name || `v${currentVersionIdx + 1}`;
         updateModalImage(currentModalSkinId, v.img);
       }
 
@@ -8974,7 +9027,7 @@
         container.appendChild(grid);
       }
 
-            let cachedAwardsList = null;
+      let cachedAwardsList = null;
       async function fetchAwardsList() {
         if (cachedAwardsList) return cachedAwardsList;
         if (!_supabase) return [];
@@ -10313,14 +10366,18 @@
             const modeSelect = document.createElement("select");
             modeSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-            ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible", "Level Awards"].forEach(
-              (m) => {
-                const opt = document.createElement("option");
-                opt.value = m.toLowerCase().replace(" ", "_");
-                opt.text = m;
-                modeSelect.appendChild(opt);
-              },
-            );
+            [
+              "Speedrun",
+              "Deathrun",
+              "Chapter Speedrun",
+              "Impossible",
+              "Level Awards",
+            ].forEach((m) => {
+              const opt = document.createElement("option");
+              opt.value = m.toLowerCase().replace(" ", "_");
+              opt.text = m;
+              modeSelect.appendChild(opt);
+            });
 
             const chapSelect = document.createElement("select");
             chapSelect.style.cssText =
@@ -10372,7 +10429,7 @@
                   opt.text = "No Awards";
                   chapSelect.appendChild(opt);
                 } else {
-                  awards.forEach(a => {
+                  awards.forEach((a) => {
                     const opt = document.createElement("option");
                     opt.value = a.id;
                     opt.text = a.title;
@@ -10382,10 +10439,11 @@
                 // Levels for Awards (1st, 2nd, 3rd)
                 levelSelect.style.display = "block";
                 levelSelect.disabled = false;
-                [1, 2, 3].forEach(i => {
+                [1, 2, 3].forEach((i) => {
                   const opt = document.createElement("option");
                   opt.value = i;
-                  opt.text = i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
+                  opt.text =
+                    i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
                   levelSelect.appendChild(opt);
                 });
               } else {
@@ -10397,15 +10455,24 @@
                   opt.text = "Chapter " + c;
                   chapSelect.appendChild(opt);
                 });
-                
+
                 const ch = parseInt(chapSelect.value) || 1;
                 let levels;
                 switch (ch) {
-                  case 1: levels = CHAPTER_1; break;
-                  case 2: levels = CHAPTER_2; break;
-                  case 3: levels = CHAPTER_3; break;
-                  case 4: levels = CHAPTER_4; break;
-                  default: levels = CHAPTER_5;
+                  case 1:
+                    levels = CHAPTER_1;
+                    break;
+                  case 2:
+                    levels = CHAPTER_2;
+                    break;
+                  case 3:
+                    levels = CHAPTER_3;
+                    break;
+                  case 4:
+                    levels = CHAPTER_4;
+                    break;
+                  default:
+                    levels = CHAPTER_5;
                 }
               }
 
@@ -10421,11 +10488,20 @@
                 const ch = parseInt(chapSelect.value) || 1;
                 let levels;
                 switch (ch) {
-                  case 1: levels = CHAPTER_1; break;
-                  case 2: levels = CHAPTER_2; break;
-                  case 3: levels = CHAPTER_3; break;
-                  case 4: levels = CHAPTER_4; break;
-                  default: levels = CHAPTER_5;
+                  case 1:
+                    levels = CHAPTER_1;
+                    break;
+                  case 2:
+                    levels = CHAPTER_2;
+                    break;
+                  case 3:
+                    levels = CHAPTER_3;
+                    break;
+                  case 4:
+                    levels = CHAPTER_4;
+                    break;
+                  default:
+                    levels = CHAPTER_5;
                 }
                 levels.forEach((_, i) => {
                   const opt = document.createElement("option");
@@ -10544,14 +10620,18 @@
           modeSelect.style.background = "#333";
           modeSelect.style.color = "white";
           modeSelect.style.border = "1px solid #555";
-          ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible", "Level Awards"].forEach(
-            (m) => {
-              const opt = document.createElement("option");
-              opt.value = m.toLowerCase().replace(" ", "_");
-              opt.text = m;
-              modeSelect.appendChild(opt);
-            },
-          );
+          [
+            "Speedrun",
+            "Deathrun",
+            "Chapter Speedrun",
+            "Impossible",
+            "Level Awards",
+          ].forEach((m) => {
+            const opt = document.createElement("option");
+            opt.value = m.toLowerCase().replace(" ", "_");
+            opt.text = m;
+            modeSelect.appendChild(opt);
+          });
 
           // Chapter Selector
           const chapSelect = document.createElement("select");
@@ -10603,7 +10683,7 @@
 
           const updateLevels = async () => {
             levelSelect.innerHTML = "";
-            
+
             if (modeSelect.value === "level_awards") {
               chapSelect.innerHTML = "";
               const awards = await fetchAwardsList();
@@ -10612,7 +10692,7 @@
                 opt.text = "No Awards";
                 chapSelect.appendChild(opt);
               } else {
-                awards.forEach(a => {
+                awards.forEach((a) => {
                   const opt = document.createElement("option");
                   opt.value = a.id;
                   opt.text = a.title;
@@ -10621,10 +10701,11 @@
               }
               // Levels for Awards
               levelSelect.style.display = "block";
-              [1, 2, 3].forEach(i => {
+              [1, 2, 3].forEach((i) => {
                 const opt = document.createElement("option");
                 opt.value = i;
-                opt.text = i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
+                opt.text =
+                  i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
                 levelSelect.appendChild(opt);
               });
             } else {
@@ -10640,11 +10721,20 @@
               const ch = parseInt(chapSelect.value) || 1;
               let levels;
               switch (ch) {
-                case 1: levels = CHAPTER_1; break;
-                case 2: levels = CHAPTER_2; break;
-                case 3: levels = CHAPTER_3; break;
-                case 4: levels = CHAPTER_4; break;
-                default: levels = CHAPTER_5;
+                case 1:
+                  levels = CHAPTER_1;
+                  break;
+                case 2:
+                  levels = CHAPTER_2;
+                  break;
+                case 3:
+                  levels = CHAPTER_3;
+                  break;
+                case 4:
+                  levels = CHAPTER_4;
+                  break;
+                default:
+                  levels = CHAPTER_5;
               }
             }
 
@@ -10658,11 +10748,20 @@
               const ch = parseInt(chapSelect.value) || 1;
               let levels;
               switch (ch) {
-                case 1: levels = CHAPTER_1; break;
-                case 2: levels = CHAPTER_2; break;
-                case 3: levels = CHAPTER_3; break;
-                case 4: levels = CHAPTER_4; break;
-                default: levels = CHAPTER_5;
+                case 1:
+                  levels = CHAPTER_1;
+                  break;
+                case 2:
+                  levels = CHAPTER_2;
+                  break;
+                case 3:
+                  levels = CHAPTER_3;
+                  break;
+                case 4:
+                  levels = CHAPTER_4;
+                  break;
+                default:
+                  levels = CHAPTER_5;
               }
               levels.forEach((_, i) => {
                 const opt = document.createElement("option");
@@ -11366,7 +11465,8 @@
 
                       const speedBtn = document.createElement("button");
                       speedBtn.className = "btn";
-                      speedBtn.style.cssText = "padding:5px 15px; font-size:0.8rem; min-width:auto; background:#e67e22; border-color:#d35400; margin-right:5px;";
+                      speedBtn.style.cssText =
+                        "padding:5px 15px; font-size:0.8rem; min-width:auto; background:#e67e22; border-color:#d35400; margin-right:5px;";
                       speedBtn.textContent = "SPEEDRUN";
                       speedBtn.onclick = () => {
                         currentGameMode = "speedrun";
