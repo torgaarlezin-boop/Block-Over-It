@@ -209,6 +209,11 @@
         color: #fff;
         border: 1px solid #16a085;
       }
+      .skin-tag.game-unlock {
+        background-color: #2ecc71;
+        color: #000;
+        border: 1px solid #27ae60;
+      }
       .skin-artist {
         font-size: 0.65rem;
         color: #666;
@@ -325,6 +330,27 @@
         line-height: 1;
         padding: 5px;
       }
+      .version-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+      .version-btn {
+        background: #333;
+        border: 1px solid #555;
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .version-btn:hover {
+        background: #444;
+      }
       .modal-close:hover {
         color: #fff;
       }
@@ -337,7 +363,7 @@
         <input
           type="text"
           id="search-input"
-          placeholder="Search... (e.g. 'cool guy', 'honorary', '1/1')"
+          placeholder="Search for skins..."
         />
       </div>
       <div class="controls-container">
@@ -347,6 +373,7 @@
           <button class="filter-btn" data-tag="honorary">Honorary</button>
           <button class="filter-btn" data-tag="competitive">Competitive</button>
           <button class="filter-btn" data-tag="unlockCode">Code</button>
+          <button class="filter-btn" data-tag="gameUnlock">Unlock</button>
         </div>
         <select id="sort-select">
           <option value="name_asc">Sort: Name (A-Z)</option>
@@ -363,6 +390,17 @@
     <div id="skin-modal" class="modal-overlay">
       <div class="modal-content">
         <button class="modal-close" onclick="closeSkinModal()">&times;</button>
+        <div
+          id="version-controls"
+          class="version-controls"
+          style="display: none"
+        >
+          <button class="version-btn" onclick="changeVersion(-1)">&lt;</button>
+          <span id="version-label" style="font-size: 0.8rem; color: #aaa"
+            >v1</span
+          >
+          <button class="version-btn" onclick="changeVersion(1)">&gt;</button>
+        </div>
         <div id="modal-preview" class="modal-preview"></div>
         <div id="modal-title" class="modal-title"></div>
         <div id="modal-subtitle" class="modal-subtitle"></div>
@@ -373,7 +411,7 @@
     <script>
       // Copied from blockoverit.html
       const SKIN_DEFINITIONS = {
-        default: { name: "Default", copies: "N/A" },
+        default: { name: "Default", copies: "N/A", gameUnlock: true },
         chairlord: {
           name: "Chairlord",
           copies: "1/1",
@@ -395,7 +433,12 @@
           artist: "Ligmadaddy69",
           firstPlace: true,
         },
-        dino: { name: "Dino", copies: "1/4", artist: "Mcdongos" },
+        dino: {
+          name: "Dino",
+          copies: "1/4",
+          artist: "Mcdongos",
+          gameUnlock: true,
+        },
         emo: { name: "Emotions", copies: "1/3", artist: "ejohnson" },
         emo2: { name: "Emotions 2", copies: "1/3", artist: "ejohnson" },
         emo3: { name: "Emotions 3", copies: "1/3", artist: "ejohnson" },
@@ -411,7 +454,12 @@
           artist: "Torgaar",
           firstPlace: true,
         },
-        bluecoin: { name: "Blue Gem", copies: "N/A", artist: "Torgaar" },
+        bluecoin: {
+          name: "Blue Gem",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+        },
         coolguy: {
           name: "Cool Guy",
           copies: "1/5",
@@ -477,20 +525,39 @@
           copies: "1/3",
           artist: "Torgaar",
         },
-        metallic: { name: "Metallic Anger", copies: "N/A", artist: "Torgaar" },
+        metallic: {
+          name: "Metallic Anger",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+          versions: [
+            { name: "Original", img: "metallic_old.png" },
+            { name: "Current", img: "metallic.png" },
+          ],
+        },
         legendsgalaxy: {
           name: "Galaxy (Legends Edition)",
           copies: "1/3",
           artist: "Torgaar",
           competitive: true,
         },
-        galaxy: { name: "Galaxy", copies: "N/A", artist: "Torgaar" },
+        galaxy: {
+          name: "Galaxy",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+        },
         frozenkingbanana: {
           name: "King Banana (Frozen)",
           copies: "1/3",
           artist: "Torgaar",
         },
-        golden: { name: "Golden", copies: "N/A", artist: "Torgaar" },
+        golden: {
+          name: "Golden",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+        },
         rainbowcoolguy: {
           name: "Cool Guy (Rainbow Glasses)",
           copies: "1/3",
@@ -586,6 +653,7 @@
         if (typeof def.artist === "undefined") def.artist = "Unknown";
         if (typeof def.competitive === "undefined") def.competitive = false;
         if (typeof def.unlockCode === "undefined") def.unlockCode = false;
+        if (typeof def.gameUnlock === "undefined") def.gameUnlock = false;
         if (typeof def.forPlayer === "undefined") def.forPlayer = "";
       });
 
@@ -594,8 +662,16 @@
       const modalTitle = document.getElementById("modal-title");
       const modalSubtitle = document.getElementById("modal-subtitle");
       const modalDetails = document.getElementById("modal-details");
+      const versionControls = document.getElementById("version-controls");
+      const versionLabel = document.getElementById("version-label");
+
+      let currentModalSkinId = null;
+      let currentSkinData = null;
+      let currentVersionIdx = 0;
 
       function openSkinModal(id, data) {
+        currentModalSkinId = id;
+        currentSkinData = data;
         modalTitle.textContent = data.name;
         modalSubtitle.textContent =
           data.copies === "N/A" ? "Standard Skin" : `${data.copies} Copies`;
@@ -617,18 +693,50 @@
         if (data.unlockCode) {
           detailsHtml += `<div class="skin-tag unlock-code" style="display:inline-block; margin-top:5px;">Unlock Code</div>`;
         }
+        if (data.gameUnlock) {
+          detailsHtml += `<div class="skin-tag game-unlock" style="display:inline-block; margin-top:5px;">Game Unlock</div>`;
+        }
         modalDetails.innerHTML = detailsHtml;
 
+        // Handle Versions
+        if (data.versions && data.versions.length > 0) {
+          currentVersionIdx = data.versions.length - 1; // Default to latest
+          versionControls.style.display = "flex";
+          updateModalVersionDisplay();
+        } else {
+          versionControls.style.display = "none";
+          updateModalImage(id);
+        }
+
+        modal.classList.add("active");
+      }
+
+      function updateModalVersionDisplay() {
+        const v = currentSkinData.versions[currentVersionIdx];
+        versionLabel.textContent = v.name || `v${currentVersionIdx + 1}`;
+        updateModalImage(currentModalSkinId, v.img);
+      }
+
+      function updateModalImage(id, customImg) {
         if (id === "default") {
           modalPreview.style.backgroundImage = "none";
           modalPreview.style.backgroundColor = "#335699";
           modalPreview.style.borderRadius = "8px";
         } else {
           modalPreview.style.backgroundColor = "transparent";
-          modalPreview.style.backgroundImage = `url('${id}.png')`;
+          const img = customImg || `${id}.png`;
+          modalPreview.style.backgroundImage = `url('${img}')`;
         }
+      }
 
-        modal.classList.add("active");
+      function changeVersion(dir) {
+        if (!currentSkinData || !currentSkinData.versions) return;
+        currentVersionIdx += dir;
+        if (currentVersionIdx < 0)
+          currentVersionIdx = currentSkinData.versions.length - 1;
+        if (currentVersionIdx >= currentSkinData.versions.length)
+          currentVersionIdx = 0;
+        updateModalVersionDisplay();
       }
 
       function closeSkinModal() {
@@ -757,6 +865,12 @@
               const t = document.createElement("div");
               t.className = "skin-tag unlock-code";
               t.textContent = "Code";
+              tags.appendChild(t);
+            }
+            if (data.gameUnlock) {
+              const t = document.createElement("div");
+              t.className = "skin-tag game-unlock";
+              t.textContent = "Unlock";
               tags.appendChild(t);
             }
 
