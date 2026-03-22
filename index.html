@@ -2046,12 +2046,63 @@
       .text-rainbow {
         animation: rainbow 2s linear infinite;
       }
+
+      /* Level Award Animations */
+      @keyframes sheen {
+        0% {
+          background-position: 0% 50%;
+        }
+        100% {
+          background-position: 100% 50%;
+        }
+      }
+      .award-title-golden {
+        background: linear-gradient(
+          to right,
+          #bf953f,
+          #fcf6ba,
+          #b38728,
+          #fbf5b7,
+          #aa771c
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent !important;
+        animation: sheen 3s infinite linear;
+        background-size: 200% auto;
+        filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
+        display: inline-block;
+      }
+
+      .award-title-legendary {
+        background: linear-gradient(90deg, #ff00cc, #3333ff, #ff00cc, #3333ff);
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent !important;
+        animation: sheen 3s infinite linear;
+        letter-spacing: 2px;
+        filter: drop-shadow(0 0 5px rgba(255, 0, 255, 0.8));
+        font-weight: 900 !important;
+        display: inline-block;
+        font-size: 1.4rem !important;
+      }
     </style>
   </head>
   <body>
     <div id="main-menu">
       <div id="news-banner" class="news-banner" onclick="showNewsFromBanner()">
         <div id="news-banner-content"></div>
+        <div
+          id="version-display"
+          style="
+            position: absolute;
+            right: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            opacity: 0.8;
+          "
+        ></div>
       </div>
       <h1>Block Over It</h1>
       <h2 id="menu-subtitle"></h2>
@@ -2314,9 +2365,42 @@
         triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
         cityboi: { name: "City Boy", copies: "1/3" },
         cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
+        coolguyblackwhitelogo: {
+          name: "Cool Guy (Black and White Logo)",
+          copies: "1/3",
+        },
+        coolguywatercolorlogo: {
+          name: "Cool Guy (Watercolor Logo)",
+          copies: "1/3",
+        },
+        coolguyscrapbooklogo: {
+          name: "Cool Guy (Scrapbook Logo)",
+          copies: "1/3",
+        },
+        coolguysignature: { name: "Cool Guy (Signature Logo)", copies: "1/3" },
+        coolguytorgaarsignature: {
+          name: "Cool Guy (Torgaar Signature)",
+          copies: "1/1",
+        },
+        coolguyoregon: { name: "Cool Guy (Oregon Signature)", copies: "1/3" },
+        mistymountains: { name: "Misty Mountains", copies: "1/1" },
       };
       const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
+        {
+          headline: "Some new cool honorary skins to honor players!",
+          date: "2026-03-21",
+          image: "mistymountains",
+          story:
+            "Recently added to Block Over It are some new honorary skins. Eroberson, Dbumbgarner, and Novalis all got honorary skins. Eroberson got an iconic EfanBalloon, Deacon got 'Deacy', and Novalis got the most requested of all, 'Misty Mountains', designed by Novalis and Torgaar in an amazing collaberation (shown above). Luckily, these will all be availible in the new Replica system, where players will be able to obtain replicas of popular skins a month mininum after they have released. Only one replica skin will release each month (this will be voted for).",
+        },
+        {
+          headline: "Use code CITYBOI to get the City Boy skin for free",
+          date: "2026-03-21",
+          image: "cityboi.png",
+          story:
+            "The new City Boy skin can be obtained for free! Just go to settings -> User settings - > Enter Code and enter the code to get the skin for free!",
+        },
         {
           headline: "New 1.6.1 Update",
           date: "2026-03-19",
@@ -2330,27 +2414,6 @@
           image: null,
           story:
             "In the new 1.6.1 update, a variety of features have been added. One of the highlights of this update is the new Impossible mode. In this mode, death causes you to restart immediatly.",
-        },
-        {
-          headline: "Level Awards Announced- you won't believe how far it was",
-          date: "2026-03-15",
-          image: "chairlord.png",
-          story:
-            "Last month, the Level Awards were extremely close. Two rival levels, The Monster Trio and Smiley City were so fun and well designed people had a difficult time deciding which one to choose. However, these level awards, it was completely different. The level 'Take Your Time' by Chairlord defeated all other levels with 50% of the total votes from elites. You can play the levels as well as the other levels in the level awards menu.",
-        },
-        {
-          headline: "Mcdongo's first place skin announced!",
-          date: "2026-03-15",
-          image: "thecat.png",
-          story:
-            "Not long ago, experienced player Mcdongos defeated Seppe in the level 1 speedruns. This incredible speedrun beat the previous record by .031, a large amount for a speedrun. Mcdongo's first place skin, shown above, is titled 'The Cat' and designed by Mcdongos himself.",
-        },
-        {
-          headline: "Campaign Update Part One Out!",
-          date: "2026-03-15",
-          image: null,
-          story:
-            "The new 1.6 'Campaign Update Part One' is out! This update introduces 2 new chapters (all the way to chapter 4), totalling 20 blue coins (this will make the blue coin skin much harder to obtain). Each new chapter will have its own new blocks, featuring completely new gameplay unlike any levels in the current campaign. The sequel to this update, 1.7 (or campaign update part two) will introduce Chapters 5 and 6 and possibly more, in addition to new reward skins for beating the new chapters and new blocks.",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
@@ -2565,17 +2628,17 @@
             currentUser = username;
             currentUserSkins = initialSkins;
             if (withReward) {
-                const html = `
+              const html = `
                     <div style="margin-bottom:15px; color:#ccc;">Signed up successfully! <strong>Dino</strong> skin unlocked.</div>
                     <img src="dino.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
                 `;
-                popupManager.show({
-                    title: "SUCCESS",
-                    html: html,
-                    buttons: [{ text: "OK", onClick: () => {} }]
-                });
+              popupManager.show({
+                title: "SUCCESS",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }],
+              });
             } else {
-                showPopup("SUCCESS", "Signed up successfully!", () => {});
+              showPopup("SUCCESS", "Signed up successfully!", () => {});
             }
           } else {
             const { data, error } = await _supabase
@@ -2906,7 +2969,7 @@
           popupManager.show({
             title: "SUCCESS",
             html: html,
-            buttons: [{ text: "OK", onClick: () => {} }]
+            buttons: [{ text: "OK", onClick: () => {} }],
           });
         } catch (e) {
           showPopup("ERROR", "An error occurred. Please try again.", () => {});
@@ -5009,9 +5072,9 @@
                 <img src="metallic.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
             `;
             popupManager.show({
-                title: "SKIN UNLOCKED",
-                html: html,
-                buttons: [{ text: "OK", onClick: () => {} }]
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
             });
           }
         }
@@ -5051,9 +5114,9 @@
                 <img src="golden.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
             `;
             popupManager.show({
-                title: "SKIN UNLOCKED",
-                html: html,
-                buttons: [{ text: "OK", onClick: () => {} }]
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
             });
           }
         }
@@ -5072,9 +5135,9 @@
                 <img src="galaxy.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
             `;
             popupManager.show({
-                title: "SKIN UNLOCKED",
-                html: html,
-                buttons: [{ text: "OK", onClick: () => {} }]
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
             });
           }
         }
@@ -5097,9 +5160,9 @@
                 <img src="vintageemo.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
             `;
             popupManager.show({
-                title: "SKIN UNLOCKED",
-                html: html,
-                buttons: [{ text: "OK", onClick: () => {} }]
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
             });
           }
         }
@@ -5158,9 +5221,9 @@
                 <img src="bluecoin.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
             `;
             popupManager.show({
-                title: "SKIN UNLOCKED",
-                html: html,
-                buttons: [{ text: "OK", onClick: () => {} }]
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
             });
           }
         }
@@ -5719,6 +5782,7 @@
         this.practiceStack = [];
         this.playerHasMoved = false;
         this.background = levelData.background || null;
+        this.bgAnimation = levelData.bgAnimation || null;
         this.backgroundChanged = true;
 
         for (var y = 0; y < this.height; y++) {
@@ -7010,6 +7074,9 @@
         this.hitboxLayer = this.world.appendChild(element("div"));
         this.hitboxElements = new Map();
 
+        this.bgAnimTimer = 0;
+        this.bgAnimIndex = 0;
+
         this.updateBackground();
         this.updateScale();
         this.world.insertBefore(this.drawBackground(), this.actorLayer);
@@ -7024,16 +7091,32 @@
       }
 
       DOMDisplay.prototype.updateBackground = function () {
-        const bg = this.level.background;
+        let bg = this.level.background;
+
+        if (
+          this.level.bgAnimation &&
+          this.level.bgAnimation.values &&
+          this.level.bgAnimation.values.length > 0
+        ) {
+          bg =
+            this.level.bgAnimation.values[
+              this.bgAnimIndex % this.level.bgAnimation.values.length
+            ];
+        }
+
         if (!bg) {
           this.wrap.style.background = "#222";
           return;
         }
-        if (bg.match(/^https?:\/\//) || bg.match(/^data:image/) || bg.match(/\.(png|jpg|jpeg|gif|webp)$/)) {
-             this.wrap.style.background = `url("${bg}") no-repeat center center fixed`;
-             this.wrap.style.backgroundSize = "cover";
+        if (
+          bg.match(/^https?:\/\//) ||
+          bg.match(/^data:image/) ||
+          bg.match(/\.(png|jpg|jpeg|gif|webp)$/)
+        ) {
+          this.wrap.style.background = `url("${bg}") no-repeat center center fixed`;
+          this.wrap.style.backgroundSize = "cover";
         } else {
-             this.wrap.style.background = bg;
+          this.wrap.style.background = bg;
         }
       };
 
@@ -7515,7 +7598,17 @@
         this.drawFrame();
       };
 
-      DOMDisplay.prototype.drawFrame = function () {
+      DOMDisplay.prototype.drawFrame = function (step) {
+        if (this.level.bgAnimation) {
+          const interval = (this.level.bgAnimation.interval || 1000) / 1000;
+          this.bgAnimTimer += step || 0;
+          if (this.bgAnimTimer > interval) {
+            this.bgAnimTimer = 0;
+            this.bgAnimIndex++;
+            this.updateBackground();
+          }
+        }
+
         if (this.level.backgroundChanged) {
           this.updateBackground();
           this.level.backgroundChanged = false;
@@ -8499,6 +8592,9 @@
       }
 
       function startNewsBanner() {
+        const vDisplay = document.getElementById("version-display");
+        if (vDisplay) vDisplay.textContent = "v" + LATEST_NEWS_VERSION;
+
         if (ROTATING_NEWS.length > 0) {
           rotateNewsBanner(); // initial call
           setInterval(rotateNewsBanner, 5000); // rotate every 5 seconds
@@ -8893,6 +8989,24 @@
             mobSettingsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`;
             mobSettingsBtn.onclick = () => showMenu("mobile-settings");
             container.appendChild(mobSettingsBtn);
+
+            // Mobile News Button (Bottom Right - Next to Settings)
+            const mobNewsBtn = document.createElement("button");
+            mobNewsBtn.className =
+              "mobile-icon-btn news-btn-mobile mobile-fixed-btn";
+            mobNewsBtn.style.cssText =
+              "position: fixed; bottom: 20px; right: 80px; width: 50px; height: 50px; z-index: 100; display:flex;";
+            mobNewsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 12H6v-2h5v2zm0-4H6V8h5v2zm6 4h-5v-2h5v2zm0-4h-5V8h5v2z"/></svg>`;
+            if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
+              const dot = document.createElement("div");
+              dot.className = "notif-dot";
+              dot.style.display = "block";
+              dot.style.top = "5px";
+              dot.style.right = "5px";
+              mobNewsBtn.appendChild(dot);
+            }
+            mobNewsBtn.onclick = () => showMenu("news");
+            container.appendChild(mobNewsBtn);
 
             // Mobile Beats Button (Bottom Left)
             const mobBeatsBtn = document.createElement("button");
@@ -9953,7 +10067,12 @@
             let chapterText = "CHAPTER 1";
             let levelText = "LEVEL 1";
             let campaignClass = "";
-            if (gs.gameBeaten || gs.chapter4Beaten || gs.chapter5Beaten) {
+            if (
+              gs.gameBeaten ||
+              gs.chapter4Beaten ||
+              gs.chapter5Beaten ||
+              (gs.unlockedLevelCh4 || 0) >= 5
+            ) {
               chapterText = "GAME";
               levelText = "COMPLETE";
               campaignClass = "text-rainbow";
@@ -10950,6 +11069,14 @@
                     title.style.cssText =
                       "font-size:1.2rem; font-weight:bold; color:#335699; text-transform:uppercase; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:5px;";
                     title.textContent = group.title || "Award Event";
+
+                    const tText = (group.title || "").trim();
+                    if (tText.toLowerCase().startsWith("legends")) {
+                      title.className = "award-title-legendary";
+                    } else if (tText.endsWith("Awards")) {
+                      title.className = "award-title-golden";
+                    }
+
                     groupEl.appendChild(title);
 
                     const places = [
