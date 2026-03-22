@@ -698,10 +698,7 @@
       }
 
       /* Editor Button */
-      .editor-btn {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
+      .editor-btn, .skins-btn {
         background: #333;
         border: 2px solid #555;
         color: white;
@@ -711,9 +708,16 @@
         padding: 10px 20px;
         text-transform: uppercase;
         transition: all 0.2s;
+      }
+      .bottom-left-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        gap: 15px;
         z-index: 110;
       }
-      .editor-btn:hover {
+      .editor-btn:hover, .skins-btn:hover {
         background: #444;
         border-color: #335699;
         transform: scale(1.05);
@@ -1600,6 +1604,7 @@
       .mobile-mode .news-banner,
       .mobile-mode .leaderboard-btn,
       .mobile-mode .editor-btn,
+      .mobile-mode .skins-btn,
       .mobile-mode .login-btn,
       .mobile-mode .feedback-btn,
       .mobile-mode .controls-hint,
@@ -2161,20 +2166,28 @@
         </button>
       </div>
 
-      <button
-        class="editor-btn"
-        onclick="window.open('Block Architect Pro.html', '_blank')"
-      >
-        <span>Level Editor</span>
-        <svg
-          style="display: none; width: 24px; height: 24px; fill: currentColor"
-          viewBox="0 0 24 24"
+      <div class="bottom-left-controls">
+        <button
+          class="editor-btn"
+          onclick="window.open('Block Architect Pro.html', '_blank')"
         >
-          <path
-            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
-          />
-        </svg>
-      </button>
+          <span>Level Editor</span>
+          <svg
+            style="display: none; width: 24px; height: 24px; fill: currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+            />
+          </svg>
+        </button>
+        <button
+          class="skins-btn"
+          onclick="window.location.href='skin_explorer.html'"
+        >
+          <span>Skins</span>
+        </button>
+      </div>
 
       <button class="feedback-btn" onclick="openFeedbackModal()">
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -2254,6 +2267,27 @@
         Reset (Shift+P)
       </button>
     </div>
+
+      <div id="skin-modal" class="modal-overlay" onclick="if(event.target === this) closeSkinModal()">
+        <div class="modal-content">
+          <button class="popup-close" onclick="closeSkinModal()">&times;</button>
+          <div
+            id="version-controls"
+            class="version-controls"
+            style="display: none"
+          >
+            <button class="version-btn" onclick="changeVersion(-1)">&lt;</button>
+            <span id="version-label" style="font-size: 0.8rem; color: #aaa"
+              >v1</span
+            >
+            <button class="version-btn" onclick="changeVersion(1)">&gt;</button>
+          </div>
+          <div id="modal-preview" class="modal-preview"></div>
+          <div id="modal-title" class="modal-title"></div>
+          <div id="modal-subtitle" class="modal-subtitle"></div>
+          <div id="modal-details" class="modal-details"></div>
+        </div>
+      </div>
 
     <div id="intro-layer">
       <div id="intro-sellwood">Sellwood Game Studios</div>
@@ -2342,16 +2376,20 @@
         rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
         vintageemo: { name: "Emotions (Vintage)", copies: "1/3" },
         voodoocoolguy: { name: "Cool Guy (Voodoo)", copies: "1/1" },
-        pixeldino: { name: "Dino (Pixelated)", copies: "1/3" },
-        pixelcoolguy: { name: "Cool Guy (Pixelated)", copies: "1/3" },
-        pixelbanana: { name: "King Banana (Pixelated)", copies: "1/3" },
-        rainbowpixel: { name: "Rainbow Monster (Pixelated)", copies: "1/3" },
-        pixelsunset: { name: "Sunset (Pixelated)", copies: "1/3" },
         coolguyglassesdown: { name: "Cool Guy (Glasses Down)", copies: "1/1" },
         dasher: { name: "Dasher", copies: "1/1" },
         dasher2: { name: "Dasher 2", copies: "1/1" },
         coolguynoir: { name: "Cool Guy (Noir)", copies: "1/3" },
-        metallic: { name: "Metallic Anger", copies: "N/A" },
+        metallic: {
+          name: "Metallic Anger",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+          versions: [
+            { name: "Original", img: "metallic_old.png" },
+            { name: "Current", img: "metallic.png" }
+          ]
+        },
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
         frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
@@ -2363,7 +2401,7 @@
         efanballoon: { name: "Efan Balloon", copies: "1/1" },
         deacy: { name: "Deacy", copies: "1/1" },
         triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
-        cityboi: { name: "City Boy", copies: "1/3" },
+        cityboi: { name: "City Boy", copies: "1/5" },
         cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
         coolguyblackwhitelogo: {
           name: "Cool Guy (Black and White Logo)",
@@ -2384,13 +2422,14 @@
         },
         coolguyoregon: { name: "Cool Guy (Oregon Signature)", copies: "1/3" },
         mistymountains: { name: "Misty Mountains", copies: "1/1" },
+        jimbotree: {name: "J_imbo Tree", copies: "1/1"}
       };
       const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
         {
           headline: "Some new cool honorary skins to honor players!",
           date: "2026-03-21",
-          image: "mistymountains",
+          image: "mistymountains.png",
           story:
             "Recently added to Block Over It are some new honorary skins. Eroberson, Dbumbgarner, and Novalis all got honorary skins. Eroberson got an iconic EfanBalloon, Deacon got 'Deacy', and Novalis got the most requested of all, 'Misty Mountains', designed by Novalis and Torgaar in an amazing collaberation (shown above). Luckily, these will all be availible in the new Replica system, where players will be able to obtain replicas of popular skins a month mininum after they have released. Only one replica skin will release each month (this will be voted for).",
         },
@@ -2896,7 +2935,11 @@
 
       function openCodeRedeemModal() {
         if (!currentUser) return openLoginModal();
-        const html = `<input id="redeem-code-input" placeholder="Enter Code" style="width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #555; text-transform: uppercase; text-align: center; font-size: 1.2rem;">`;
+        const html = `
+          <div style="padding: 10px; width: 100%; box-sizing: border-box;">
+            <input id="redeem-code-input" placeholder="ENTER CODE" style="width: 100%; padding: 15px; background: #333; color: white; border: 2px solid #555; text-transform: uppercase; text-align: center; font-size: 1.2rem; border-radius: 4px; box-sizing: border-box; outline: none;">
+          </div>
+        `;
         popupManager.show({
           title: "REDEEM CODE",
           html: html,
@@ -3563,7 +3606,11 @@
         if (!skipCloud) syncDataToCloud();
       }
 
-      function getHighscoreKey(type, chapter, index, category = "any") {
+      function getHighscoreKey(type, chapter, index, category = "any", awardKey = null) {
+        if (currentGameMode === "speedrun" && awardKey) {
+          return `speedrun_award_${awardKey}${category === 'blue' ? '_blue' : ''}`;
+        }
+
         let prefix = "";
         if (currentGameMode === "speedrun") prefix = "speedrun_";
         else if (currentGameMode === "deathrun") prefix = "deathrun_";
@@ -3836,7 +3883,7 @@
           gameState.levelBlueCoins[`custom_${index}`] || false;
 
         // Get Highscore
-        const key = getHighscoreKey("custom", 1, index, "any");
+        const key = getHighscoreKey("custom", 1, index, "any", lvl.awardKey);
         const bestTime = highscores[key];
         let timeStr = "--:--.---";
         if (bestTime) {
@@ -8038,7 +8085,7 @@
             : highscoreCategory;
         if (currentGameMode === "deathrun") category = "any";
 
-        const key = getHighscoreKey(type, chapter, index, category);
+        const key = getHighscoreKey(type, chapter, index, category, currentLevelData.awardKey);
         const best = highscores[key];
 
         // Format Local Time
@@ -8073,7 +8120,7 @@
               : "Chapter Speedrun";
           hsDisplay.innerHTML = `${displayHtml} [${modeLabel} Ch ${chapter}]`;
         } else {
-          const catLabel = highscoreCategory === "any" ? "Any%" : "Blue Coin";
+          const catLabel = highscoreCategory === "any" ? "Any" : "Blue Coin";
           hsDisplay.innerHTML = `${displayHtml} <span onclick="window.toggleHighscoreCategory()" style="cursor:pointer; font-size: 0.8rem; margin-left: 10px; color: #888; border: 1px solid #555; padding: 2px 5px; border-radius: 3px; user-select: none;">[${catLabel}]</span>`;
         }
       }
@@ -8396,8 +8443,8 @@
                 }
 
                 let newRecord = false;
-                // Update Highscore (Any%)
-                const keyAny = getHighscoreKey(type, chapter, index, "any");
+                // Update Highscore (Any)
+                const keyAny = getHighscoreKey(type, chapter, index, "any", levelData.awardKey);
                 if (
                   gameTimer > 0 &&
                   (!highscores[keyAny] || gameTimer < highscores[keyAny])
@@ -8417,7 +8464,7 @@
                   levelInstance.totalBlueCoins > 0 &&
                   gameTimer > 0
                 ) {
-                  const keyBlue = getHighscoreKey(type, chapter, index, "blue");
+                  const keyBlue = getHighscoreKey(type, chapter, index, "blue", levelData.awardKey);
                   if (!highscores[keyBlue] || gameTimer < highscores[keyBlue]) {
                     highscores[keyBlue] = gameTimer;
                     saveHighscores();
@@ -8716,31 +8763,83 @@
         return section;
       }
 
+      // --- Skin Modal Logic ---
+      let currentModalSkinId = null;
+      let currentSkinData = null;
+      let currentVersionIdx = 0;
+
       function showFullScreenSkin(skinId) {
-        const meta = SKIN_DEFINITIONS[skinId] || {
+        const data = SKIN_DEFINITIONS[skinId] || {
           name: skinId,
           copies: "Unknown",
         };
+        currentModalSkinId = skinId;
+        currentSkinData = data;
 
-        let visualHtml = "";
-        if (skinId === "default") {
-          visualHtml = `<div style="width:150px; height:150px; background:#335699; border-radius:12px; box-shadow:0 0 30px rgba(51,86,153,0.6); margin:20px;"></div>`;
+        const modal = document.getElementById("skin-modal");
+        const modalPreview = document.getElementById("modal-preview");
+        const modalTitle = document.getElementById("modal-title");
+        const modalSubtitle = document.getElementById("modal-subtitle");
+        const modalDetails = document.getElementById("modal-details");
+        const versionControls = document.getElementById("version-controls");
+
+        modalTitle.textContent = data.name;
+        modalSubtitle.textContent = data.copies === "N/A" ? "Standard Skin" : `${data.copies} Copies`;
+        modalDetails.innerHTML = "";
+
+        // Handle Versions
+        if (data.versions && data.versions.length > 0) {
+          currentVersionIdx = data.versions.length - 1; // Default to latest
+          versionControls.style.display = "flex";
+          updateModalVersionDisplay();
         } else {
-          visualHtml = `<img src="${skinId}.png" style="width:200px; height:200px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(0 0 20px rgba(255,255,255,0.1)); margin:10px;">`;
+          versionControls.style.display = "none";
+          updateModalImage(skinId);
         }
 
-        const html = `
-            <div style="display:flex; flex-direction:column; align-items:center;">
-                ${visualHtml}
-                <div style="color:#aaa; font-size:1rem; margin-top:10px;">${meta.copies} Copies</div>
-            </div>
-        `;
+        modal.style.display = "flex";
+        setTimeout(() => {
+          modal.style.opacity = 1;
+          modal.querySelector(".modal-content").style.transform = "scale(1)";
+        }, 10);
+      }
 
-        popupManager.show({
-          title: meta.name.toUpperCase(),
-          html: html,
-          buttons: [{ text: "CLOSE", onClick: () => {} }],
-        });
+      function closeSkinModal() {
+        const modal = document.getElementById("skin-modal");
+        modal.style.opacity = 0;
+        modal.querySelector(".modal-content").style.transform = "scale(0.9)";
+        setTimeout(() => {
+          modal.style.display = "none";
+        }, 200);
+      }
+
+      function updateModalVersionDisplay() {
+        const v = currentSkinData.versions[currentVersionIdx];
+        document.getElementById("version-label").textContent = v.name || `v${currentVersionIdx + 1}`;
+        updateModalImage(currentModalSkinId, v.img);
+      }
+
+      function updateModalImage(id, customImg) {
+        const modalPreview = document.getElementById("modal-preview");
+        if (skinId === "default") {
+          modalPreview.style.backgroundImage = "none";
+          modalPreview.style.backgroundColor = "#335699";
+          modalPreview.style.borderRadius = "8px";
+        } else {
+          modalPreview.style.backgroundColor = "transparent";
+          const img = customImg || `${id}.png`;
+          modalPreview.style.backgroundImage = `url('${img}')`;
+        }
+      }
+
+      function changeVersion(dir) {
+        if (!currentSkinData || !currentSkinData.versions) return;
+        currentVersionIdx += dir;
+        if (currentVersionIdx < 0)
+          currentVersionIdx = currentSkinData.versions.length - 1;
+        if (currentVersionIdx >= currentSkinData.versions.length)
+          currentVersionIdx = 0;
+        updateModalVersionDisplay();
       }
 
       function renderSkinGrid(
@@ -8875,6 +8974,18 @@
         container.appendChild(grid);
       }
 
+            let cachedAwardsList = null;
+      async function fetchAwardsList() {
+        if (cachedAwardsList) return cachedAwardsList;
+        if (!_supabase) return [];
+        const { data, error } = await _supabase
+          .from("level_awards")
+          .select("id, title")
+          .order("created_at", { ascending: false });
+        if (data) cachedAwardsList = data;
+        return data || [];
+      }
+
       async function openUserProfile(username) {
         if (!_supabase) return;
 
@@ -8933,9 +9044,9 @@
         if (awardsBtn)
           awardsBtn.style.display = view === "main" ? "block" : "none";
 
-        const editorBtn = document.querySelector(".editor-btn");
-        if (editorBtn)
-          editorBtn.style.display = view === "main" ? "block" : "none";
+        const blControls = document.querySelector(".bottom-left-controls");
+        if (blControls)
+          blControls.style.display = view === "main" ? "flex" : "none";
 
         const loginBtn = document.querySelector(".login-btn");
         if (loginBtn)
@@ -10017,6 +10128,18 @@
 
           refreshSkins();
 
+          // Add View Button
+          const viewSkinBtnContainer = document.createElement("div");
+          viewSkinBtnContainer.style.cssText =
+            "width: 100%; display: flex; justify-content: flex-end; margin-top: 20px;";
+          const viewSkinBtn = document.createElement("button");
+          viewSkinBtn.className = "btn";
+          viewSkinBtn.textContent = "VIEW SKIN";
+          viewSkinBtn.onclick = () =>
+            showFullScreenSkin(gameSettings.currentSkin);
+          viewSkinBtnContainer.appendChild(viewSkinBtn);
+          container.appendChild(viewSkinBtnContainer);
+
           // Change Password Button
           const changePassBtn = document.createElement("button");
           changePassBtn.className = "btn";
@@ -10190,7 +10313,7 @@
             const modeSelect = document.createElement("select");
             modeSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-            ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible"].forEach(
+            ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible", "Level Awards"].forEach(
               (m) => {
                 const opt = document.createElement("option");
                 opt.value = m.toLowerCase().replace(" ", "_");
@@ -10224,7 +10347,7 @@
             catSelect.style.cssText =
               "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
             catSelect.innerHTML =
-              '<option value="any">Any%</option><option value="blue">Blue Coin</option>';
+              '<option value="any">Any</option><option value="blue">Blue Coin</option>';
 
             row2.appendChild(levelSelect);
             row2.appendChild(catSelect);
@@ -10238,25 +10361,52 @@
             list.innerHTML =
               "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
 
-            const updateLevels = () => {
+            const updateLevels = async () => {
               levelSelect.innerHTML = "";
-              const ch = parseInt(chapSelect.value);
-              let levels;
-              switch (ch) {
-                case 1:
-                  levels = CHAPTER_1;
-                  break;
-                case 2:
-                  levels = CHAPTER_2;
-                  break;
-                case 3:
-                  levels = CHAPTER_3;
-                  break;
-                case 4:
-                  levels = CHAPTER_4;
-                  break;
-                default:
-                  levels = CHAPTER_5;
+
+              if (modeSelect.value === "level_awards") {
+                chapSelect.innerHTML = "";
+                const awards = await fetchAwardsList();
+                if (awards.length === 0) {
+                  const opt = document.createElement("option");
+                  opt.text = "No Awards";
+                  chapSelect.appendChild(opt);
+                } else {
+                  awards.forEach(a => {
+                    const opt = document.createElement("option");
+                    opt.value = a.id;
+                    opt.text = a.title;
+                    chapSelect.appendChild(opt);
+                  });
+                }
+                // Levels for Awards (1st, 2nd, 3rd)
+                levelSelect.style.display = "block";
+                levelSelect.disabled = false;
+                [1, 2, 3].forEach(i => {
+                  const opt = document.createElement("option");
+                  opt.value = i;
+                  opt.text = i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
+                  levelSelect.appendChild(opt);
+                });
+              } else {
+                // Reset Chapter Select for Campaign
+                chapSelect.innerHTML = "";
+                [1, 2, 3, 4].forEach((c) => {
+                  const opt = document.createElement("option");
+                  opt.value = c;
+                  opt.text = "Chapter " + c;
+                  chapSelect.appendChild(opt);
+                });
+                
+                const ch = parseInt(chapSelect.value) || 1;
+                let levels;
+                switch (ch) {
+                  case 1: levels = CHAPTER_1; break;
+                  case 2: levels = CHAPTER_2; break;
+                  case 3: levels = CHAPTER_3; break;
+                  case 4: levels = CHAPTER_4; break;
+                  default: levels = CHAPTER_5;
+                }
               }
 
               if (
@@ -10265,9 +10415,18 @@
               ) {
                 levelSelect.style.display = "none";
                 levelSelect.disabled = true;
-              } else {
+              } else if (modeSelect.value !== "level_awards") {
                 levelSelect.style.display = "block";
                 levelSelect.disabled = false;
+                const ch = parseInt(chapSelect.value) || 1;
+                let levels;
+                switch (ch) {
+                  case 1: levels = CHAPTER_1; break;
+                  case 2: levels = CHAPTER_2; break;
+                  case 3: levels = CHAPTER_3; break;
+                  case 4: levels = CHAPTER_4; break;
+                  default: levels = CHAPTER_5;
+                }
                 levels.forEach((_, i) => {
                   const opt = document.createElement("option");
                   opt.value = i;
@@ -10292,8 +10451,8 @@
               list.innerHTML =
                 "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
               const mode = modeSelect.value;
-              const ch = parseInt(chapSelect.value);
-              const lvlIdx = parseInt(levelSelect.value);
+              const chapVal = chapSelect.value;
+              const lvlVal = parseInt(levelSelect.value);
               const cat = catSelect.value;
 
               let key = "";
@@ -10301,12 +10460,17 @@
               if (mode === "speedrun") prefix = "speedrun_";
               else if (mode === "deathrun") prefix = "deathrun_";
               else if (mode === "chapter_speedrun")
-                key = `chapter_speedrun_${ch}`;
+                key = `chapter_speedrun_${chapVal}`;
               else if (mode === "impossible") key = `impossible_chapter_${ch}`;
+              else if (mode === "level_awards") {
+                key = `speedrun_award_${chapVal}_${lvlVal}`;
+                if (cat === "blue") key += "_blue";
+              }
 
               if (!key) {
+                const ch = parseInt(chapVal);
                 if (cat === "blue" && mode === "speedrun") prefix += "blue_";
-                key = `${prefix}campaign_${ch}_${lvlIdx}`;
+                key = `${prefix}campaign_${ch}_${lvlVal}`;
               }
 
               const scores = await fetchLevelLeaderboard(key, 10);
@@ -10380,7 +10544,7 @@
           modeSelect.style.background = "#333";
           modeSelect.style.color = "white";
           modeSelect.style.border = "1px solid #555";
-          ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible"].forEach(
+          ["Speedrun", "Deathrun", "Chapter Speedrun", "Impossible", "Level Awards"].forEach(
             (m) => {
               const opt = document.createElement("option");
               opt.value = m.toLowerCase().replace(" ", "_");
@@ -10409,7 +10573,7 @@
           levelSelect.style.color = "white";
           levelSelect.style.border = "1px solid #555";
 
-          // Category Selector (Any% / Blue Coin)
+          // Category Selector (Any / Blue Coin)
           const catSelect = document.createElement("select");
           catSelect.style.padding = "10px";
           catSelect.style.background = "#333";
@@ -10417,7 +10581,7 @@
           catSelect.style.border = "1px solid #555";
           const optAny = document.createElement("option");
           optAny.value = "any";
-          optAny.text = "Any%";
+          optAny.text = "Any";
           const optBlue = document.createElement("option");
           optBlue.value = "blue";
           optBlue.text = "Blue Coin";
@@ -10437,26 +10601,51 @@
           resultsDiv.innerHTML =
             "<div style='text-align:center; color:#888;'>Select options to view scores</div>";
 
-          const updateLevels = () => {
+          const updateLevels = async () => {
             levelSelect.innerHTML = "";
-            const ch = parseInt(chapSelect.value);
-            let levels;
-            switch (ch) {
-              case 1:
-                levels = CHAPTER_1;
-                break;
-              case 2:
-                levels = CHAPTER_2;
-                break;
-              case 3:
-                levels = CHAPTER_3;
-                break;
-              case 4:
-                levels = CHAPTER_4;
-                break;
-              case 5:
-                levels = CHAPTER_5;
-                break;
+            
+            if (modeSelect.value === "level_awards") {
+              chapSelect.innerHTML = "";
+              const awards = await fetchAwardsList();
+              if (awards.length === 0) {
+                const opt = document.createElement("option");
+                opt.text = "No Awards";
+                chapSelect.appendChild(opt);
+              } else {
+                awards.forEach(a => {
+                  const opt = document.createElement("option");
+                  opt.value = a.id;
+                  opt.text = a.title;
+                  chapSelect.appendChild(opt);
+                });
+              }
+              // Levels for Awards
+              levelSelect.style.display = "block";
+              [1, 2, 3].forEach(i => {
+                const opt = document.createElement("option");
+                opt.value = i;
+                opt.text = i === 1 ? "1st Place" : i === 2 ? "2nd Place" : "3rd Place";
+                levelSelect.appendChild(opt);
+              });
+            } else {
+              // Reset Chapter Select
+              chapSelect.innerHTML = "";
+              [1, 2, 3, 4].forEach((c) => {
+                const opt = document.createElement("option");
+                opt.value = c;
+                opt.text = "Chapter " + c;
+                chapSelect.appendChild(opt);
+              });
+
+              const ch = parseInt(chapSelect.value) || 1;
+              let levels;
+              switch (ch) {
+                case 1: levels = CHAPTER_1; break;
+                case 2: levels = CHAPTER_2; break;
+                case 3: levels = CHAPTER_3; break;
+                case 4: levels = CHAPTER_4; break;
+                default: levels = CHAPTER_5;
+              }
             }
 
             if (
@@ -10464,8 +10653,17 @@
               modeSelect.value === "impossible"
             ) {
               levelSelect.style.display = "none";
-            } else {
+            } else if (modeSelect.value !== "level_awards") {
               levelSelect.style.display = "block";
+              const ch = parseInt(chapSelect.value) || 1;
+              let levels;
+              switch (ch) {
+                case 1: levels = CHAPTER_1; break;
+                case 2: levels = CHAPTER_2; break;
+                case 3: levels = CHAPTER_3; break;
+                case 4: levels = CHAPTER_4; break;
+                default: levels = CHAPTER_5;
+              }
               levels.forEach((_, i) => {
                 const opt = document.createElement("option");
                 opt.value = i;
@@ -10490,8 +10688,8 @@
             resultsDiv.innerHTML =
               "<div style='text-align:center; color:#888;'>Loading...</div>";
             const mode = modeSelect.value;
-            const ch = parseInt(chapSelect.value);
-            const lvlIdx = parseInt(levelSelect.value);
+            const chapVal = chapSelect.value;
+            const lvlVal = parseInt(levelSelect.value);
             const cat = catSelect.value;
 
             // Construct key
@@ -10500,14 +10698,18 @@
             if (mode === "speedrun") prefix = "speedrun_";
             else if (mode === "deathrun") prefix = "deathrun_";
             else if (mode === "chapter_speedrun") {
-              key = `chapter_speedrun_${ch}`;
+              key = `chapter_speedrun_${chapVal}`;
             } else if (mode === "impossible") {
-              key = `impossible_chapter_${ch}`;
+              key = `impossible_chapter_${chapVal}`;
+            } else if (mode === "level_awards") {
+              key = `speedrun_award_${chapVal}_${lvlVal}`;
+              if (cat === "blue") key += "_blue";
             }
 
             if (!key) {
+              const ch = parseInt(chapVal);
               if (cat === "blue" && mode === "speedrun") prefix += "blue_";
-              key = `${prefix}campaign_${ch}_${lvlIdx}`;
+              key = `${prefix}campaign_${ch}_${lvlVal}`;
             }
 
             const scores = await fetchLevelLeaderboard(key, 100);
@@ -11126,7 +11328,7 @@
                       },
                     ];
 
-                    places.forEach((p) => {
+                    places.forEach((p, index) => {
                       if (!p.data) return;
                       let lvl = p.data;
                       if (typeof lvl === "string") {
@@ -11136,6 +11338,8 @@
                           return;
                         }
                       }
+                      // Inject Award Key for Leaderboard tracking
+                      lvl.awardKey = `${group.id}_${index + 1}`;
 
                       const row = document.createElement("div");
                       row.style.cssText =
@@ -11160,6 +11364,15 @@
                       infoBtn.textContent = "INFO";
                       infoBtn.onclick = () => openAwardLevelPopup(lvl);
 
+                      const speedBtn = document.createElement("button");
+                      speedBtn.className = "btn";
+                      speedBtn.style.cssText = "padding:5px 15px; font-size:0.8rem; min-width:auto; background:#e67e22; border-color:#d35400; margin-right:5px;";
+                      speedBtn.textContent = "SPEEDRUN";
+                      speedBtn.onclick = () => {
+                        currentGameMode = "speedrun";
+                        startGameLevel(lvl, -1, "custom");
+                      };
+
                       const playBtn = document.createElement("button");
                       playBtn.className = "btn";
                       playBtn.style.cssText =
@@ -11171,6 +11384,7 @@
                       };
 
                       btnGroup.appendChild(infoBtn);
+                      btnGroup.appendChild(speedBtn);
                       btnGroup.appendChild(playBtn);
 
                       row.appendChild(info);
