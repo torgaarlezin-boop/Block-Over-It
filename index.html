@@ -788,24 +788,6 @@
         transform: scale(1.05);
       }
 
-      /* Skins Explorer Button */
-      .skins-explorer-btn {
-        background: #333;
-        border: 2px solid #555;
-        color: white;
-        font-family: inherit;
-        font-size: 1rem;
-        cursor: pointer;
-        padding: 10px 20px;
-        text-transform: uppercase;
-        transition: all 0.2s;
-      }
-      .skins-explorer-btn:hover {
-        background: #444;
-        border-color: #335699;
-        transform: scale(1.05);
-      }
-
       /* Login Button */
       .login-btn {
         position: absolute;
@@ -2112,6 +2094,142 @@
         display: inline-block;
         font-size: 1.4rem !important;
       }
+
+      /* Feed UI Styles */
+      .feed-container {
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .feed-card {
+        background: #1a1a1a;
+        border: 2px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+
+      .feed-card:hover {
+        transform: translateY(-3px);
+        border-color: #335699;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      }
+
+      .feed-image-wrapper {
+        width: 100%;
+        height: 200px;
+        background: #000;
+        overflow: hidden;
+        border-bottom: 2px solid #333;
+        position: relative;
+      }
+
+      .feed-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+      }
+
+      .feed-card:hover .feed-image {
+        transform: scale(1.05);
+      }
+
+      .feed-content {
+        padding: 20px;
+      }
+
+      .feed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .feed-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #fff;
+        text-transform: uppercase;
+        line-height: 1.3;
+        text-shadow: 1px 1px 0 #000;
+      }
+
+      .feed-date {
+        font-size: 0.75rem;
+        color: #888;
+        background: #222;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #333;
+        white-space: nowrap;
+        margin-left: 15px;
+      }
+
+      .feed-body {
+        font-size: 0.95rem;
+        color: #ccc;
+        line-height: 1.6;
+      }
+
+      /* Update Card Feed Style */
+      .feed-update-card {
+        background: #1a1a1a;
+        border: 2px solid #333;
+        border-left: 5px solid #335699;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
+      }
+      
+      .feed-update-card:hover {
+        transform: translateX(5px);
+        background: #222;
+      }
+
+      .feed-update-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #333;
+      }
+
+      .feed-update-version {
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: #fff;
+      }
+
+      .feed-update-title {
+        font-size: 1rem;
+        color: #335699;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      /* Mobile Mode Adjustments */
+      .mobile-mode .feed-image-wrapper {
+        height: 160px;
+      }
+      .mobile-mode .feed-title {
+        font-size: 1.1rem;
+      }
+      .mobile-mode .feed-content {
+        padding: 15px;
+      }
+      .mobile-mode .feed-container {
+        padding: 15px;
+      }
     </style>
   </head>
   <body>
@@ -2183,9 +2301,6 @@
         </button>
         <button class="awards-btn" onclick="showMenu('level-awards')">
           <span>Level Awards</span>
-        </button>
-        <button class="skins-explorer-btn" onclick="window.location.href='skin_explorer.html'">
-          <span>Skin Explorer</span>
         </button>
       </div>
 
@@ -2454,6 +2569,12 @@
       const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
       const GAME_NEWS = [
         {
+          headline: "Metallic Anger Redesign!",
+          date: "2026-03-21",
+          image: "metallic_old.png",
+          story: "The metallic anger has just been redesigned! The old style, shown above, was a little boring and not very fitting in-game. Hopefully the new version improves this."
+        }
+        {
           headline: "Some new cool honorary skins to honor players!",
           date: "2026-03-21",
           image: "mistymountains.png",
@@ -2466,20 +2587,6 @@
           image: "cityboi.png",
           story:
             "The new City Boy skin can be obtained for free! Just go to settings -> User settings - > Enter Code and enter the code to get the skin for free!",
-        },
-        {
-          headline: "New 1.6.1 Update",
-          date: "2026-03-19",
-          image: null,
-          story:
-            "This update adds a new mode: Impossible mode. This mode is just like a Chapter Speedrun except you can't die. If you do, you are forced to restart the entire speedrun. This and level awards has also been added to mobile. This update also fixes many exploits that allow you to claim skins without completing anything, and adds a new leaderboard for the new impossible mode. There are also many UI changes, including a new rainbow animation for Campaign completion (when viewing another profile) and some other boring stuff.",
-        },
-        {
-          headline: "A New Mode in Block Over It!",
-          date: "2026-03-19",
-          image: null,
-          story:
-            "In the new 1.6.1 update, a variety of features have been added. One of the highlights of this update is the new Impossible mode. In this mode, death causes you to restart immediatly.",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
@@ -3186,6 +3293,9 @@
         if (immediate) {
           if (targetId === currentPlayingTrackId) {
             if (currentAudio && currentAudio.paused) currentAudio.play();
+            if (currentAudio && activeLevelDisplay && activeLevelDisplay.level) {
+                currentAudio.playbackRate = activeLevelDisplay.level.musicSpeed || 1.0;
+            }
             if (
               currentPlayingTrackId === "synth" &&
               bgmOscillator &&
@@ -3293,6 +3403,14 @@
           currentAudio
             .play()
             .catch((e) => console.warn("Audio play failed", e));
+
+          if (
+            activeLevelDisplay &&
+            activeLevelDisplay.level &&
+            activeLevelDisplay.level.musicSpeed
+          ) {
+            currentAudio.playbackRate = activeLevelDisplay.level.musicSpeed;
+          }
 
           if (!activeLevelDisplay) {
             const info = MUSIC_LIBRARY.find((t) => t.id === id);
@@ -5832,6 +5950,7 @@
         this.riseInterval = levelData.riseInterval || 3;
         this.mirrorLevel = levelData.mirrorLevel || false;
         this.forceZoom = levelData.forceZoom || false;
+        this.disableZoom = levelData.disableZoom || false;
         this.disableDeathAnim = levelData.disableDeathAnim || false;
         this.levelType = levelData.levelType || "campaign"; // Track level type
         this.chapter = levelData.chapter;
@@ -5839,6 +5958,7 @@
           levelData.customLevelIndex !== undefined
             ? levelData.customLevelIndex
             : -1; // Track custom level index
+        this.musicSpeed = levelData.musicSpeed || 1.0;
         this.width = plan[0].length;
         this.height = plan.length;
         this.grid = [];
@@ -7145,6 +7265,7 @@
         this.level = level;
         this.zoomedOut = globalZoomedOut;
         if (this.level.forceZoom) this.zoomedOut = false;
+        else if (this.level.disableZoom) this.zoomedOut = true;
 
         this.world = this.wrap.appendChild(element("div", "world"));
         this.world.style.position = "relative";
@@ -7185,6 +7306,7 @@
         }
 
         if (!bg) {
+          this.world.style.background = "#222";
           this.wrap.style.background = "#222";
           return;
         }
@@ -7193,11 +7315,13 @@
           bg.match(/^data:image/) ||
           bg.match(/\.(png|jpg|jpeg|gif|webp)$/)
         ) {
-          this.wrap.style.background = `url("${bg}") no-repeat center center fixed`;
-          this.wrap.style.backgroundSize = "cover";
+          this.world.style.background = `url("${bg}") no-repeat center center`;
+          this.world.style.backgroundSize = "cover";
         } else {
-          this.wrap.style.background = bg;
+          this.world.style.background = bg;
         }
+        // Ensure container has a fallback/base
+        this.wrap.style.background = "#111";
       };
 
       DOMDisplay.prototype.drawBackground = function () {
@@ -7671,6 +7795,7 @@
 
       DOMDisplay.prototype.setZoomOut = function (state) {
         if (this.level.forceZoom) return;
+        if (this.level.forceZoom || this.level.disableZoom) return;
         this.zoomedOut = state;
         globalZoomedOut = state;
         this.updateScale();
@@ -9234,6 +9359,17 @@
             mobAwardsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 8V7h2v3.52C8.17 10.07 7.54 9.13 7 8zm10 0c-.54 1.13-1.17 2.07-2 2.52V7h2v1z"/></svg>`;
             mobAwardsBtn.onclick = () => showMenu("level-awards");
             container.appendChild(mobAwardsBtn);
+
+            // Mobile Skins Button (Top Left - Next to Awards)
+            const mobSkinsBtn = document.createElement("button");
+            mobSkinsBtn.className =
+              "mobile-icon-btn skins-btn-mobile mobile-fixed-btn";
+            mobSkinsBtn.style.cssText =
+              "position: fixed; top: 20px; left: 80px; width: 50px; height: 50px; z-index: 100; display:flex;";
+            mobSkinsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6a1 1 0 0 0-1-1h-3c0-1.1-1.34-2-3-2H10c-1.66 0-3 .9-3 2H4a1 1 0 0 0-1 1v4h2v9h14v-9h2V6z"/></svg>`;
+            mobSkinsBtn.onclick = () =>
+              (window.location.href = "skin_explorer.html");
+            container.appendChild(mobSkinsBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -9640,9 +9776,14 @@
           container.appendChild(backBtn);
         } else if (view === "news") {
           subtitle.textContent = "NEWS & UPDATES";
+          container.style.padding = "0"; // Full width for feed
 
           const tabContainer = document.createElement("div");
           tabContainer.className = "news-updates-tabs";
+          tabContainer.style.width = "100%";
+          tabContainer.style.maxWidth = "700px";
+          tabContainer.style.margin = "0 auto 20px auto";
+          tabContainer.style.justifyContent = "center";
 
           const newsTabBtn = document.createElement("button");
           newsTabBtn.className = "btn";
@@ -9657,7 +9798,7 @@
           container.appendChild(tabContainer);
 
           const contentContainer = document.createElement("div");
-          contentContainer.className = "news-updates-content";
+          contentContainer.className = "feed-container";
           container.appendChild(contentContainer);
 
           const showNewsContent = () => {
@@ -9666,74 +9807,39 @@
             contentContainer.innerHTML = "";
             if (GAME_NEWS.length === 0) {
               contentContainer.innerHTML =
-                "<div style='text-align:center; color:#888;'>No news right now.</div>";
+                "<div style='text-align:center; color:#888; padding: 40px;'>No news right now.</div>";
               return;
             }
             GAME_NEWS.forEach((newsItem) => {
-              const itemEl = document.createElement("div");
-              itemEl.className = "news-accordion-item";
+              const card = document.createElement("div");
+              card.className = "feed-card";
+              
+              let imageHtml = "";
+              if (newsItem.image) {
+                imageHtml = `
+                  <div class="feed-image-wrapper">
+                    <img src="${newsItem.image}" class="feed-image" alt="News Image" onerror="this.style.display='none'">
+                  </div>
+                `;
+              }
 
-              const headerEl = document.createElement("div");
-              headerEl.className = "news-accordion-header";
-              headerEl.innerHTML = `
-                <div class="news-headline-wrapper">
-                  <div class="news-headline">${newsItem.headline}</div>
-                  <div class="news-date">${newsItem.date}</div>
+              card.innerHTML = `
+                ${imageHtml}
+                <div class="feed-content">
+                  <div class="feed-header">
+                    <div class="feed-title">${newsItem.headline}</div>
+                    <div class="feed-date">${newsItem.date}</div>
+                  </div>
+                  <div class="feed-body">${newsItem.story}</div>
                 </div>
-                <span class="accordion-arrow">▼</span>
               `;
-
-              const contentEl = document.createElement("div");
-              contentEl.className = "news-accordion-content";
-              contentEl.innerHTML = `
-                ${newsItem.image ? `<img src="${newsItem.image}" alt="News Image">` : ""}
-                <p>${newsItem.story}</p>
-              `;
-
-              headerEl.onclick = () => {
-                const contentIsOpen = contentEl.classList.contains("open");
-
-                // Close all other open items
-                document
-                  .querySelectorAll(".news-accordion-content.open")
-                  .forEach((openContent) => {
-                    if (openContent !== contentEl) {
-                      openContent.classList.remove("open");
-                      const openHeader = openContent.previousElementSibling;
-                      openHeader.classList.remove("active");
-                      openHeader.querySelector(
-                        ".accordion-arrow",
-                      ).style.transform = "rotate(0deg)";
-                    }
-                  });
-
-                // Toggle the clicked item
-                if (contentIsOpen) {
-                  contentEl.classList.remove("open");
-                  headerEl.classList.remove("active");
-                  headerEl.querySelector(".accordion-arrow").style.transform =
-                    "rotate(0deg)";
-                } else {
-                  contentEl.classList.add("open");
-                  headerEl.classList.add("active");
-                  headerEl.querySelector(".accordion-arrow").style.transform =
-                    "rotate(180deg)";
-                }
-              };
-
-              itemEl.appendChild(headerEl);
-              itemEl.appendChild(contentEl);
-              contentContainer.appendChild(itemEl);
+              
+              contentContainer.appendChild(card);
 
               // Auto-expand if coming from banner
               if (context && context.expand === newsItem.headline) {
-                // Use a small timeout to ensure the element is rendered and can be scrolled to
                 setTimeout(() => {
-                  contentEl.classList.add("open");
-                  headerEl.classList.add("active");
-                  headerEl.querySelector(".accordion-arrow").style.transform =
-                    "rotate(180deg)";
-                  itemEl.scrollIntoView({
+                  card.scrollIntoView({
                     behavior: "smooth",
                     block: "center",
                   });
@@ -9748,13 +9854,13 @@
             contentContainer.innerHTML = "";
             NEWS_UPDATES.forEach((u) => {
               const card = document.createElement("div");
-              card.className = "update-card";
+              card.className = "feed-update-card";
               card.innerHTML = `
-                <div class="update-header">
-                  <span class="update-version">v${u.v}</span>
-                  <span class="update-title">${u.t}</span>
+                <div class="feed-update-header">
+                  <span class="feed-update-version">v${u.v}</span>
+                  <span class="feed-update-title">${u.t}</span>
                 </div>
-                <div class="update-description">${u.d}</div>
+                <div class="feed-body">${u.d}</div>
               `;
               contentContainer.appendChild(card);
             });
@@ -10420,21 +10526,34 @@
 
             const updateLevels = async () => {
               levelSelect.innerHTML = "";
+              // Helper to check if we need to rebuild chapSelect (only if mode changed effectively)
+              const currentMode = modeSelect.value;
+              const isAwardMode = currentMode === "level_awards";
+              // If chapSelect has "Chapter 1" but we are in awards mode, or vice versa, rebuild.
+              // Simple check: see if first option text starts with "No" or "Legends" vs "Chapter"
+              const firstOptText = chapSelect.options[0]
+                ? chapSelect.options[0].text
+                : "";
+              const needsRebuild = isAwardMode
+                ? firstOptText.startsWith("Chapter")
+                : !firstOptText.startsWith("Chapter");
 
               if (modeSelect.value === "level_awards") {
-                chapSelect.innerHTML = "";
-                const awards = await fetchAwardsList();
-                if (awards.length === 0) {
-                  const opt = document.createElement("option");
-                  opt.text = "No Awards";
-                  chapSelect.appendChild(opt);
-                } else {
-                  awards.forEach((a) => {
+                if (needsRebuild) {
+                  chapSelect.innerHTML = "";
+                  const awards = await fetchAwardsList();
+                  if (awards.length === 0) {
                     const opt = document.createElement("option");
-                    opt.value = a.id;
-                    opt.text = a.title;
+                    opt.text = "No Awards";
                     chapSelect.appendChild(opt);
-                  });
+                  } else {
+                    awards.forEach((a) => {
+                      const opt = document.createElement("option");
+                      opt.value = a.id;
+                      opt.text = a.title;
+                      chapSelect.appendChild(opt);
+                    });
+                  }
                 }
                 // Levels for Awards (1st, 2nd, 3rd)
                 levelSelect.style.display = "block";
@@ -10447,14 +10566,16 @@
                   levelSelect.appendChild(opt);
                 });
               } else {
-                // Reset Chapter Select for Campaign
-                chapSelect.innerHTML = "";
-                [1, 2, 3, 4].forEach((c) => {
-                  const opt = document.createElement("option");
-                  opt.value = c;
-                  opt.text = "Chapter " + c;
-                  chapSelect.appendChild(opt);
-                });
+                if (needsRebuild) {
+                  // Reset Chapter Select for Campaign
+                  chapSelect.innerHTML = "";
+                  [1, 2, 3, 4].forEach((c) => {
+                    const opt = document.createElement("option");
+                    opt.value = c;
+                    opt.text = "Chapter " + c;
+                    chapSelect.appendChild(opt);
+                  });
+                }
 
                 const ch = parseInt(chapSelect.value) || 1;
                 let levels;
@@ -10582,7 +10703,10 @@
             };
 
             modeSelect.onchange = updateLevels;
-            chapSelect.onchange = updateLevels;
+            chapSelect.onchange = () => {
+              if (modeSelect.value !== "level_awards") updateLevels();
+              else fetchScores();
+            };
             levelSelect.onchange = fetchScores;
             catSelect.onchange = fetchScores;
 
@@ -10684,20 +10808,31 @@
           const updateLevels = async () => {
             levelSelect.innerHTML = "";
 
+            const currentMode = modeSelect.value;
+            const isAwardMode = currentMode === "level_awards";
+            const firstOptText = chapSelect.options[0]
+              ? chapSelect.options[0].text
+              : "";
+            const needsRebuild = isAwardMode
+              ? firstOptText.startsWith("Chapter")
+              : !firstOptText.startsWith("Chapter");
+
             if (modeSelect.value === "level_awards") {
-              chapSelect.innerHTML = "";
-              const awards = await fetchAwardsList();
-              if (awards.length === 0) {
-                const opt = document.createElement("option");
-                opt.text = "No Awards";
-                chapSelect.appendChild(opt);
-              } else {
-                awards.forEach((a) => {
+              if (needsRebuild) {
+                chapSelect.innerHTML = "";
+                const awards = await fetchAwardsList();
+                if (awards.length === 0) {
                   const opt = document.createElement("option");
-                  opt.value = a.id;
-                  opt.text = a.title;
+                  opt.text = "No Awards";
                   chapSelect.appendChild(opt);
-                });
+                } else {
+                  awards.forEach((a) => {
+                    const opt = document.createElement("option");
+                    opt.value = a.id;
+                    opt.text = a.title;
+                    chapSelect.appendChild(opt);
+                  });
+                }
               }
               // Levels for Awards
               levelSelect.style.display = "block";
@@ -10709,14 +10844,16 @@
                 levelSelect.appendChild(opt);
               });
             } else {
-              // Reset Chapter Select
-              chapSelect.innerHTML = "";
-              [1, 2, 3, 4].forEach((c) => {
-                const opt = document.createElement("option");
-                opt.value = c;
-                opt.text = "Chapter " + c;
-                chapSelect.appendChild(opt);
-              });
+              if (needsRebuild) {
+                // Reset Chapter Select
+                chapSelect.innerHTML = "";
+                [1, 2, 3, 4].forEach((c) => {
+                  const opt = document.createElement("option");
+                  opt.value = c;
+                  opt.text = "Chapter " + c;
+                  chapSelect.appendChild(opt);
+                });
+              }
 
               const ch = parseInt(chapSelect.value) || 1;
               let levels;
@@ -10839,7 +10976,10 @@
           };
 
           modeSelect.onchange = updateLevels;
-          chapSelect.onchange = updateLevels;
+          chapSelect.onchange = () => {
+            if (modeSelect.value !== "level_awards") updateLevels();
+            else fetchScores();
+          };
           levelSelect.onchange = fetchScores;
           catSelect.onchange = fetchScores;
 
