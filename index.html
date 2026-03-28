@@ -2689,7 +2689,7 @@
         mistymountains: { name: "Misty Mountains", copies: "1/1" },
         jimbotree: { name: "J_imbo Tree", copies: "1/1" },
       };
-      const LATEST_NEWS_VERSION = "1.6.1"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.7"; // Not even really related to supabase
       const GAME_NEWS = [
         {
           headline: "Some new cool honorary skins to honor players!",
@@ -2699,30 +2699,42 @@
             "Recently added to Block Over It are some new honorary skins. Eroberson, Dbumbgarner, and Novalis all got honorary skins. Eroberson got an iconic EfanBalloon, Deacon got 'Deacy', and Novalis got the most requested of all, 'Misty Mountains', designed by Novalis and Torgaar in an amazing collaberation (shown above). Luckily, these will all be availible in the new Replica system, where players will be able to obtain replicas of popular skins a month mininum after they have released. Only one replica skin will release each month (this will be voted for).",
         },
         {
-          headline: "Use code CITYBOI to get the City Boy skin for free",
+          headline:
+            "The new Oregon x Cool Guy skin can be claimed for free - here's how",
           date: "2026-03-21",
-          image: "cityboi.png",
+          image: "coolguyoregon.png",
           story:
-            "The new City Boy skin can be obtained for free! Just go to settings -> User settings - > Enter Code and enter the code to get the skin for free!",
+            "A brand new Oregon skin just got added to Block Over It! Featuring a variation of the classic cool guy logo, this skin accompanies the new Signature Cool Guy skins as well as the Cool Guy Logo skins. To claim it, just go to settings -> User settings - > Enter Code and enter the code OREGON to get the skin for free!",
         },
         {
-          headline: "New 1.6.1 Update",
-          date: "2026-03-19",
+          headline: "The Biggest Update EVER Just Released - Update 1.7",
+          date: "2026-03-28",
           image: null,
           story:
-            "This update adds a new mode: Impossible mode. This mode is just like a Chapter Speedrun except you can't die. If you do, you are forced to restart the entire speedrun. This and level awards has also been added to mobile. This update also fixes many exploits that allow you to claim skins without completing anything, and adds a new leaderboard for the new impossible mode. There are also many UI changes, including a new rainbow animation for Campaign completion (when viewing another profile) and some other boring stuff.",
+            "The new update, released March 28th 2026 features a new platform for sharing levels, new level awards speedruns (with rewards), custom backgrounds that can be either an image or color (or a constantly changing one!), and many more additions. Mobile is still a work in progress but still contains many of the new features. You can select news from the main menu and go to the updates tab to see the full changelog.",
         },
         {
-          headline: "A New Mode in Block Over It!",
-          date: "2026-03-19",
-          image: null,
+          headline:
+            "Rewards Are Coming to the New Level Awards Speedrun Gamemode",
+          date: "2026-03-28",
+          image: "mistymountains.png",
           story:
-            "In the new 1.6.1 update, a variety of features have been added. One of the highlights of this update is the new Impossible mode. In this mode, death causes you to restart immediatly.",
+            "The new 1.7 update introduced Level Awards speedruns and a special leaderboard for them. In the next level awards (in May) you'll get a chance to earn special new replicas. A replica is a new type of skin that is almost identical to a famous 1/1. Other than being marked as replicas, these skins are just copies of either honorary or first place skins. Each month, a honorary or first place skin to replicate is chosen. However, skins must have existed for at least 1 month. The players in first place of each level awards leaderboard a week after the level awards will get a copy of the replica.",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
       const NEWS_UPDATES = [
+        {
+          v: "1.7",
+          t: "Custom Level Update",
+          d: `Gameplay & Fixes: Impossible mode now has insta-death. Blue coins are finally visible in Chapter 4, and jump pads were redesigned. Many new features in addition to this.
+New Features: Added a skin explorer to both mobile and desktop, allowing you to view any player's skin in full-screen. You can also now find social media info and the current version number directly in the main menu.
+Custom Levels: You can now color every single object, add custom dash blocks, and adjust music speed. You can also add new visual text that displays to show things like the level title. You can set custom backgrounds, either as a color or image or as an animated bckground that switches between colors or images every x seconds. You can also now block camera zoom.
+Community & UI A new level sharing platform lets you upload, rate, and comment on custom levels. The UI for the news and level browser has been completely redesigned. There are also custom level speedruns.
+
+    `,
+        },
         {
           v: "1.6.1",
           t: "Impossibility",
