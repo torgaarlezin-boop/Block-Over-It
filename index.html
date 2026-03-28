@@ -262,22 +262,6 @@
         background: linear-gradient(to top right, #444 50%, transparent 0);
       }
 
-      @keyframes boi-shimmer {
-        0% { background-position: -150% 0; }
-        100% { background-position: 150% 0; }
-      }
-      .metallic-shimmer {
-        background-image: linear-gradient(
-          120deg,
-          rgba(255, 255, 255, 0) 30%,
-          rgba(255, 255, 255, 0.4) 50%,
-          rgba(255, 255, 255, 0) 70%
-        ) !important;
-        background-size: 250% 100% !important;
-        animation: boi-shimmer 2s infinite linear !important;
-        box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.2), 0 0 5px rgba(255, 255, 255, 0.1) !important;
-      }
-
       #level-title-overlay {
         position: fixed;
         top: 0;
@@ -1588,6 +1572,20 @@
           height: 30px;
           fill: currentColor;
         }
+      }
+      /* Mobile News UI Redesign */
+      .mobile-mode .news-updates-content {
+        padding-right: 0;
+        max-height: none;
+      }
+      .mobile-mode .news-item-card {
+        border-radius: 16px !important;
+        margin-bottom: 20px !important;
+        background: #1a1a1a !important;
+      }
+      .mobile-mode .news-headline {
+        font-size: 1.4rem !important;
+        line-height: 1.3;
       }
 
       /* Mobile Landscape Optimizations */
@@ -5488,14 +5486,6 @@
         }
       }
 
-      const METALLIC_COLORS = [
-        "#C0C0C0",
-        "#D4AF37",
-        "#B87333",
-        "#CD7F32",
-        "#71797E",
-      ];
-
       function Vector(x, y) {
         this.x = x;
         this.y = y;
@@ -5792,8 +5782,8 @@
       };
 
       function JumpPad(pos) {
-        this.pos = pos.plus(new Vector(0.1, 0.5));
-        this.size = new Vector(0.8, 0.5);
+        this.pos = pos.plus(new Vector(0, 0.5));
+        this.size = new Vector(1, 0.5);
       }
       JumpPad.prototype.type = "jump-pad";
       JumpPad.prototype.act = function (step, level) {
@@ -6115,7 +6105,7 @@
               var left = this.actors.find(
                 (a) =>
                   a.type === "moving-block" &&
-                  a.text === "↔" &&
+                  a.speed.x !== 0 &&
                   a.pos.y === y &&
                   Math.abs(a.pos.x + a.size.x - x) < 0.1 &&
                   a.color === color &&
@@ -6131,7 +6121,7 @@
               var top = this.actors.find(
                 (a) =>
                   a.type === "moving-block" &&
-                  a.text === "↕" &&
+                  a.speed.y !== 0 &&
                   a.pos.x === x &&
                   Math.abs(a.pos.y + a.size.y - y) < 0.1 &&
                   a.color === color &&
@@ -6149,6 +6139,7 @@
               var left = this.actors.find(
                 (a) =>
                   a.type === "lava" &&
+                  a.speed &&
                   a.speed.x !== 0 &&
                   a.pos.y === y &&
                   Math.abs(a.pos.x + a.size.x - x) < 0.1 &&
@@ -6165,6 +6156,7 @@
               var top = this.actors.find(
                 (a) =>
                   a.type === "lava" &&
+                  a.speed &&
                   a.speed.y !== 0 &&
                   !a.repeatPos && // Exclude dripping lava
                   a.pos.x === x &&
@@ -6282,6 +6274,8 @@
                   actor.produceCount =
                     this.blockConfigs[`${x},${y}`].count || 1;
                 }
+                if (ch === "H") actor.text = "↔";
+                if (ch === "V") actor.text = "↕";
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
@@ -6311,13 +6305,17 @@
                 fieldType = "wall";
               }
             } else if (ch === "!") {
-              var lava = new Lava(new Vector(x, y), "!");
-              lava.id = this.nextActorId++;
-              if (color) lava.color = color;
-              if (isFake) lava.fake = true;
-              if (this.risingThrough.has(x + "," + y))
-                lava.throughBlocks = true;
-              this.actors.push(lava);
+              if (color || isFake) {
+                var lava = new Lava(new Vector(x, y), "!");
+                lava.id = this.nextActorId++;
+                if (color) lava.color = color;
+                if (isFake) lava.fake = true;
+                if (this.risingThrough.has(x + "," + y))
+                  lava.throughBlocks = true;
+                this.actors.push(lava);
+              } else {
+                fieldType = "lava";
+              }
             }
             gridLine.push(fieldType);
           }
@@ -7475,13 +7473,13 @@
         for (var y = 0; y < this.level.height; y++) {
           for (var x = 0; x < this.level.width; x++) {
             var type = this.level.grid[y][x];
-            if (type === "wall") {
-              var el = element("div", "wall");
+            if (type === "wall" || type === "lava") {
+              var el = element("div", type);
               el.style.position = "absolute";
-              el.style.left = x * s + "px";
-              el.style.top = y * s + "px";
-              el.style.width = s + "px";
-              el.style.height = s + "px";
+              el.style.left = Math.round(x * s) + "px";
+              el.style.top = Math.round(y * s) + "px";
+              el.style.width = Math.round(s) + "px";
+              el.style.height = Math.round(s) + "px";
 
               var color = self.level.colors[`${x},${y}`];
               if (
@@ -7498,12 +7496,6 @@
               } else if (color && color !== "invisible") {
                 el.style.backgroundColor = color;
                 el.style.borderColor = adjustColor(color, -20);
-                if (
-                  typeof color === "string" &&
-                  METALLIC_COLORS.includes(color.toUpperCase())
-                ) {
-                  el.classList.add("metallic-shimmer");
-                }
               }
               el.style.borderWidth =
                 (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
@@ -7561,13 +7553,15 @@
                 el.style.backgroundColor = actor.color;
                 el.style.borderColor = adjustColor(actor.color, -20);
               } else if (
-                actor.type !== "spike" &&
-                actor.type !== "upside-down-spike" &&
-                actor.type !== "bonus-coin" &&
-                actor.type !== "slide-right" &&
-                actor.type !== "slide-left" &&
-                actor.type !== "spike-left" &&
-                actor.type !== "spike-right"
+                ![
+                  "spike",
+                  "upside-down-spike",
+                  "bonus-coin",
+                  "slide-right",
+                  "slide-left",
+                  "spike-left",
+                  "spike-right",
+                ].includes(actor.type)
               ) {
                 if (
                   !actor.flickerType &&
@@ -7577,10 +7571,6 @@
                 ) {
                   el.style.backgroundColor = actor.color;
                   el.style.borderColor = adjustColor(actor.color, -20);
-
-                  if (typeof actor.color === 'string' && METALLIC_COLORS.includes(actor.color.toUpperCase())) {
-                    el.classList.add("metallic-shimmer");
-                  }
 
                   // Custom logic for textured/complex blocks
                   if (actor.type === "breakable-block") {
@@ -9472,41 +9462,44 @@
           subtitle.textContent = "";
 
           if (document.body.classList.contains("mobile-mode")) {
-            const mobileGrid = document.createElement("div");
-            mobileGrid.className = "mobile-menu-grid";
-
-            // Leaderboard
-            const lbBtn = document.createElement("button");
-            lbBtn.className = "mobile-icon-btn";
-            lbBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>`;
-            lbBtn.onclick = () => showMenu("leaderboards-new");
-
-            // Campaign
-            const campBtn = document.createElement("button");
-            campBtn.className = "mobile-icon-btn";
-            campBtn.style.width = "100px";
-            campBtn.style.height = "100px";
-            campBtn.style.background = "#335699";
-            campBtn.style.borderColor = "#5588cc";
-            campBtn.className = "mobile-icon-btn campaign-btn";
-            campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-            campBtn.onclick = () => {
-              showMenu("mobile-gamemodes");
+            const mkCard = (title, desc, color, action) => {
+              const card = document.createElement("button");
+              card.className = "btn-card";
+              card.innerHTML = `<span class="btn-card-title" style="color:${color}">${title}</span><span class="btn-card-desc">${desc}</span>`;
+              card.onclick = action;
+              return card;
             };
 
-            // Profile
-            const profBtn = document.createElement("button");
-            profBtn.className = "mobile-icon-btn";
-            profBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
-            profBtn.onclick = () => {
-              if (currentUser) showMenu("account");
-              else openLoginModal();
-            };
-
-            mobileGrid.appendChild(lbBtn);
-            mobileGrid.appendChild(campBtn);
-            mobileGrid.appendChild(profBtn);
-            container.appendChild(mobileGrid);
+            container.appendChild(
+              mkCard(
+                "CAMPAIGN",
+                "Journey through the block world",
+                "#335699",
+                () => showMenu("campaign"),
+              ),
+            );
+            container.appendChild(
+              mkCard(
+                "COMPETITIVE",
+                "Leaderboards and Speedruns",
+                "#e67e22",
+                () => showMenu("mobile-gamemodes"),
+              ),
+            );
+            container.appendChild(
+              mkCard("CUSTOM", "Browse community creations", "#8e44ad", () => {
+                currentGameMode = "custom";
+                showMenu("custom");
+              }),
+            );
+            container.appendChild(
+              mkCard(
+                "SKINS",
+                "Customize your block",
+                "#2ecc71",
+                () => (window.location.href = "skin_explorer.html"),
+              ),
+            );
 
             // Mobile Settings Button (Bottom Right)
             const mobSettingsBtn = document.createElement("button");
@@ -10025,6 +10018,7 @@
             }
             GAME_NEWS.forEach((newsItem) => {
               const itemEl = document.createElement("div");
+              itemEl.className = "news-item-card";
               itemEl.style.cssText =
                 "background: #222; border: 2px solid #333; border-radius: 8px; margin-bottom: 15px; cursor: pointer; overflow: hidden; transition: transform 0.2s;";
               itemEl.onclick = () => {
@@ -10041,12 +10035,13 @@
               };
 
               const headerEl = document.createElement("div");
+              const isMobile = document.body.classList.contains("mobile-mode");
               headerEl.innerHTML = `
-                <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
-                    ${newsItem.image ? `<div style="width: 60px; height: 60px; background-image: url('${newsItem.image}'); background-size: cover; background-position: center; border-radius: 4px; flex-shrink: 0;"></div>` : `<div style="width: 60px; height: 60px; background: #335699; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0;"><svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10h5v5H7z"/></svg></div>`}
-                    <div>
-                        <div style="font-weight: bold; font-size: 1.1rem; color: #fff; margin-bottom: 4px;">${newsItem.headline}</div>
-                        <div style="font-size: 0.8rem; color: #888;">Click to read more</div>
+                <div style="padding: 20px; display: flex; ${isMobile ? "flex-direction:column;" : "align-items: center;"} gap: 15px;">
+                    ${newsItem.image ? `<div style="width: ${isMobile ? "100%" : "60px"}; height: ${isMobile ? "150px" : "60px"}; background-image: url('${newsItem.image}'); background-size: cover; background-position: center; border-radius: 8px; flex-shrink: 0;"></div>` : ""}
+                    <div class="news-headline-wrapper">
+                        <div class="news-headline" style="font-weight: bold; font-size: 1.1rem; color: #fff; margin-bottom: 4px;">${newsItem.headline}</div>
+                        <div class="news-date" style="font-size: 0.8rem; color: #888;">${newsItem.date}</div>
                     </div>
                 </div>
               `;
@@ -11512,6 +11507,8 @@
             currentGameMode = "custom";
           }
 
+          const isMobile = document.body.classList.contains("mobile-mode");
+
           // --- Action Bar ---
           const actionBar = document.createElement("div");
           actionBar.style.cssText =
@@ -11524,39 +11521,36 @@
             b.style.fontSize = "0.9rem";
             b.style.padding = "10px 15px";
             b.style.minWidth = "auto";
-            if (document.body.classList.contains("mobile-mode")) {
+            if (isMobile) {
               b.style.flex = "1 0 45%";
             }
             if (color) {
               b.style.background = color;
               b.style.borderColor = adjustColor(color, -20);
-              if (METALLIC_COLORS.includes(color.toUpperCase())) {
-                el.classList.add("metallic-shimmer");
-              }
             }
             b.onclick = cb;
             return b;
           };
 
+          if (!isMobile) {
           actionBar.appendChild(
             mkBtn("+ IMPORT", "#27ae60", () =>
               document.getElementById("file-input").click(),
             ),
           );
-          if (!document.body.classList.contains("mobile-mode")) {
             actionBar.appendChild(
               mkBtn("EDITOR", "#335699", () =>
                 window.open("Block Architect Pro.html", "_blank"),
               ),
             );
-          }
           actionBar.appendChild(
             mkBtn("BROWSE", "#8e44ad", () => showMenu("browse-levels")),
           );
           container.appendChild(actionBar);
+          }
 
           // Mobile Landscape Optimization for Custom Levels
-          if (document.body.classList.contains("mobile-mode")) {
+          if (isMobile) {
             container.style.flexDirection = "row";
           }
 
@@ -11714,6 +11708,15 @@
             });
           }
 
+          if (isMobile) {
+            const mobImportBtn = mkBtn("+ ADD LEVEL", "#27ae60", () =>
+              document.getElementById("file-input").click(),
+            );
+            mobImportBtn.style.width = "100%";
+            mobImportBtn.style.marginTop = "10px";
+            container.appendChild(mobImportBtn);
+          }
+
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
@@ -11834,7 +11837,7 @@
                       const info = document.createElement("div");
                       info.innerHTML = `
                               <div style="font-size:0.7rem; color:${p.color}; font-weight:bold;">${p.label}</div>
-                              <div style="font-size:1rem; font-weight:bold; color:#fff;">${lvl.name || "Unknown Level"} ${isBeaten ? '<span style="color:#335699; font-size:0.8rem; margin-left:5px;">★</span>' : ""}</div>
+                              <div style="font-size:1rem; font-weight:bold; color:#fff;">${lvl.name || "Unknown Level"}</div>
                               <div style="font-size:0.8rem; color:#888;">by ${lvl.creator || "Anonymous"}</div>
                           `;
 
