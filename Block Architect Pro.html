@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Block Architect Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
       :root {
         --bg-dark: #07090e;
@@ -198,19 +199,24 @@
         font-weight: bold;
       }
       .t-jump-pad {
-        background: #590059;
-        border: 2px solid #d946ef;
+        background: #4a148c;
+        border: 2px solid #ea80fc;
         position: relative;
+        border-radius: 50%;
+        box-shadow: 0 0 5px #d946ef;
       }
       .t-jump-pad::before {
         content: "";
         position: absolute;
-        top: 20%;
-        left: 20%;
-        right: 20%;
-        bottom: 20%;
-        background: #d946ef;
+        top: 25%;
+        left: 25%;
+        right: 25%;
+        bottom: 25%;
+        background: #f0abfc;
         border-radius: 50%;
+      }
+      .t-jump-pad.colored::before {
+        display: none;
       }
       .t-jump-pad::after {
         content: "J";
@@ -314,6 +320,62 @@
         background-position: center;
         height: 100%;
         display: block;
+      }
+
+      .t-dash-right {
+        background: #e67e22;
+        border: 2px solid #d35400;
+        position: relative;
+      }
+      .t-dash-right::after {
+        content: "»";
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      .t-dash-left {
+        background: #e67e22;
+        border: 2px solid #d35400;
+        position: relative;
+      }
+      .t-dash-left::after {
+        content: "«";
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+
+      @keyframes boi-shimmer {
+        0% { transform: translateX(-150%) skewX(-25deg); }
+        100% { transform: translateX(250%) skewX(-25deg); }
+      }
+      .metallic-shimmer {
+        position: relative !important;
+        overflow: hidden !important;
+        box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.2) !important;
+        z-index: 1;
+      }
+      .metallic-shimmer::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+        animation: boi-shimmer 2s infinite linear;
+        will-change: transform;
       }
 
       .spike-visual.spike-u {
@@ -495,9 +557,9 @@
         border-radius: 2px;
       }
       .style-modern .t-jump-pad {
-        background: #701a75;
-        border: 1px solid #d946ef;
-        border-radius: 2px;
+        background: #4a148c;
+        border: 2px solid #ea80fc;
+        border-radius: 50%;
       }
       .style-modern .t-grinder {
         background: #1e293b;
@@ -1025,8 +1087,7 @@
           </svg>
         </button>
         <h1 class="font-bold text-sm tracking-tight text-slate-200 uppercase">
-          Architect <span class="text-blue-500">Pro</span
-          ><span class="text-purple-500">Beta</span>
+          Architect <span class="text-blue-500">Pro</span>
         </h1>
       </div>
 
@@ -1095,10 +1156,10 @@
           Template
         </button>
         <button
-          onclick="io.downloadJson()"
+          onclick="shareManager.open()"
           class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-slate-300"
         >
-          Export
+          Share
         </button>
         <button
           onclick="exportManager.open()"
@@ -1110,7 +1171,7 @@
           onclick="showPreview()"
           class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-slate-300"
         >
-          Preview
+          JSON
         </button>
         <button
           onclick="helpManager.open()"
@@ -1380,7 +1441,7 @@
                   id="prop-name"
                   type="text"
                   value="New Level"
-                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500" oninput="settingsManager.syncToModal(); updateVisualTextPreview();"
                 />
               </div>
               <div>
@@ -1392,7 +1453,7 @@
                   id="prop-creator"
                   type="text"
                   value="Anonymous"
-                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500" oninput="settingsManager.syncToModal(); updateVisualTextPreview();"
                 />
               </div>
               <div>
@@ -1430,8 +1491,16 @@
                   </div>
                 </div>
                 <input type="hidden" id="prop-diff" value="1" />
+                <input type="hidden" id="prop-mirror" value="false" />
                 <input type="hidden" id="prop-force-zoom" value="false" />
                 <input type="hidden" id="prop-no-death-anim" value="false" />
+                <input type="hidden" id="prop-disable-zoom" value="false" />
+                <input type="hidden" id="prop-vis-title" value="" />
+                <input type="hidden" id="prop-vis-author" value="" />
+                <input type="hidden" id="prop-vis-win" value="" />
+                <input type="hidden" id="prop-vis-font" value="Courier New" />
+                <input type="hidden" id="prop-background" value="" />
+                <input type="hidden" id="prop-bg-anim" value="" />
               </div>
               <div
                 class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
@@ -1474,31 +1543,8 @@
                   "
                 />
               </div>
-              <div class="mt-4">
-                <div class="flex justify-between items-center mb-1.5">
-                  <label class="text-[9px] text-slate-500 font-bold uppercase"
-                    >Rising Lava Speed</label
-                  >
-                  <span id="rise-val" class="text-xs text-blue-400 font-mono"
-                    >Disabled</span
-                  >
-                </div>
-                <input
-                  id="prop-rise"
-                  type="range"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value="0"
-                  class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
-                  oninput="
-                    const val = parseFloat(this.value);
-                    document.getElementById('rise-val').innerText =
-                      val > 0 ? (60 / val).toFixed(1) + ' blk/min' : 'Disabled';
-                    settingsManager.syncToModal();
-                  "
-                />
-              </div>
+              <input type="hidden" id="prop-rise" value="0" />
+              <span id="rise-val" style="display: none"></span>
               <div
                 class="text-[9px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800/50 pb-1 mb-2 mt-4"
               >
@@ -1680,6 +1726,24 @@
                     ></div>
                   </div>
                 </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <span
+                    class="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-wider"
+                    >Show Editor BG</span
+                  >
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      id="opt-editor-bg"
+                      class="sr-only peer"
+                      checked
+                      onchange="editorApplyBackground()"
+                    />
+                    <div
+                      class="w-7 h-4 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                    ></div>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
@@ -1715,8 +1779,35 @@
                 >MUSIC</span
               >
             </div>
-            <div class="px-5 pb-6 space-y-2 pt-4" id="music-list">
-              <!-- Music injected here -->
+            <div class="px-5 pb-6 space-y-2 pt-4">
+              <div class="mb-3 pb-3 border-b border-slate-800">
+                <label
+                  class="text-[9px] text-slate-500 font-bold uppercase block mb-1"
+                  >Playback Speed</label
+                >
+                <div class="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value="1"
+                    id="prop-music-speed"
+                    oninput="
+                      document.getElementById('music-speed-val').innerText =
+                        this.value + 'x';
+                      updateMusicSpeed(this.value);
+                    "
+                    class="flex-1 h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                  />
+                  <span
+                    id="music-speed-val"
+                    class="text-[10px] text-blue-400 font-mono w-8 text-right"
+                    >1x</span
+                  >
+                </div>
+              </div>
+              <div id="music-list" class="space-y-1"></div>
             </div>
           </div>
 
@@ -1842,6 +1933,16 @@
                 accept=".json"
                 onchange="projectManager.importFromMenu(this)"
               />
+              <a
+                href="blockoverit.html"
+                class="col-span-2 p-3 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition-all text-center group block"
+              >
+                <div
+                  class="font-bold text-slate-200 text-xs group-hover:text-blue-400"
+                >
+                  Back to Game
+                </div>
+              </a>
             </div>
 
             <div
@@ -2092,6 +2193,80 @@
           >
             Download Manifest
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div
+      id="share-modal"
+      class="fixed inset-0 z-[300] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+    >
+      <div
+        class="bg-[#0f121a] border border-slate-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center"
+        >
+          <h3
+            class="text-xs font-bold text-slate-200 uppercase tracking-widest"
+          >
+            Share Level
+          </h3>
+          <button
+            onclick="closeModal('share-modal')"
+            class="text-slate-500 hover:text-white"
+          >
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-xs text-slate-400">
+            Share your creation with the world or export it locally.
+          </p>
+          <button
+            id="btn-share-upload"
+            onclick="shareManager.startUpload()"
+            class="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+          >
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            Upload to Block Over It
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="h-px bg-slate-800 flex-1"></div>
+            <span class="text-[10px] text-slate-600 uppercase">OR</span>
+            <div class="h-px bg-slate-800 flex-1"></div>
+          </div>
+          <button
+            onclick="io.downloadJson()"
+            class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded border border-slate-700"
+          >
+            Download JSON File
+          </button>
+          <div class="text-[10px] text-slate-500 mt-2 text-center">
+            Uploading requires being signed in on the main game site (or
+            configuring here).
+          </div>
         </div>
       </div>
     </div>
@@ -2568,7 +2743,7 @@
     <!-- DIALOG MODAL -->
     <div
       id="dialog-modal"
-      class="fixed inset-0 z-[300] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+      class="fixed inset-0 z-[400] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
     >
       <div
         class="bg-[#0f121a] border border-slate-800 w-full max-w-sm rounded-xl shadow-2xl p-6 transform transition-all scale-100"
@@ -2613,6 +2788,14 @@
           <div id="cp-recent" class="flex flex-wrap gap-2">
             <!-- Recent colors injected here -->
           </div>
+        </div>
+
+        <div class="mb-6">
+          <label
+            class="text-[9px] text-slate-500 font-bold uppercase block mb-2"
+            >Metallic</label
+          >
+          <div id="cp-metallic" class="flex flex-wrap gap-2"></div>
         </div>
 
         <div class="mb-6">
@@ -2700,6 +2883,13 @@
             >
               Grid
             </button>
+            <button
+              onclick="settingsManager.switchTab('visuals')"
+              id="tab-visuals"
+              class="settings-tab w-full"
+            >
+              Visuals
+            </button>
           </div>
         </div>
         <!-- Content -->
@@ -2767,23 +2957,24 @@
                   ></textarea>
                 </div>
                 <div class="setting-item">
-                  <label
-                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
-                    >Difficulty</label
-                  >
-                  <div class="flex gap-1 h-8" id="set-diff-bars-modal"></div>
+                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Difficulty</label>
+                  <div class="flex gap-1 h-6 items-center" id="set-diff-bars-modal"></div>
                 </div>
               </div>
             </div>
 
             <!-- Physics Section -->
-            <div id="sec-physics" class="space-y-6 hidden">
+            <div
+              id="sec-physics"
+              class="space-y-6 hidden"
+              style="display: none"
+            >
               <h3
                 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
               >
                 Physics
               </h3>
-              <div class="space-y-6 max-w-lg">
+              <div class="space-y-4 max-w-lg">
                 <div class="setting-item">
                   <div class="flex justify-between mb-2">
                     <label
@@ -2832,51 +3023,11 @@
                     </div>
                   </label>
                 </div>
-                <div class="pt-4 border-t border-slate-800 setting-item">
-                  <label
-                    class="flex items-center justify-between cursor-pointer group"
-                  >
-                    <span class="text-xs font-bold text-slate-300"
-                      >Force Zoomed Camera</span
-                    >
-                    <div class="relative">
-                      <input
-                        type="checkbox"
-                        id="set-prop-force-zoom"
-                        class="sr-only peer"
-                        onchange="settingsManager.syncFromModal()"
-                      />
-                      <div
-                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                      ></div>
-                    </div>
-                  </label>
-                </div>
-                <div class="pt-4 border-t border-slate-800 setting-item">
-                  <label
-                    class="flex items-center justify-between cursor-pointer group"
-                  >
-                    <span class="text-xs font-bold text-slate-300"
-                      >Disable Death Animation</span
-                    >
-                    <div class="relative">
-                      <input
-                        type="checkbox"
-                        id="set-prop-no-death-anim"
-                        class="sr-only peer"
-                        onchange="settingsManager.syncFromModal()"
-                      />
-                      <div
-                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
-                      ></div>
-                    </div>
-                  </label>
-                </div>
               </div>
             </div>
 
             <!-- Grid Section -->
-            <div id="sec-grid" class="space-y-6 hidden">
+            <div id="sec-grid" class="space-y-6 hidden" style="display: none">
               <h3
                 class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
               >
@@ -2927,6 +3078,333 @@
                 >
                   Clear All Blocks
                 </button>
+              </div>
+            </div>
+
+            <!-- Visuals Section -->
+            <div
+              id="sec-visuals"
+              class="space-y-6 hidden"
+              style="display: none"
+            >
+              <h3
+                class="text-sm font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2 mb-4"
+              >
+                Background
+              </h3>
+              <div
+                class="space-y-4 max-w-lg border-b border-slate-800 pb-4 mb-4"
+              >
+                <div class="setting-item">
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Force Zoomed Camera</span
+                    >
+                    <div class="relative">
+                      <input
+                        type="checkbox"
+                        id="set-prop-force-zoom"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+                <div class="setting-item">
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Block Camera Zoom</span
+                    >
+                    <div class="relative">
+                      <input
+                        type="checkbox"
+                        id="set-prop-disable-zoom"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div
+                id="bg-visual-preview"
+                class="w-full h-32 rounded border border-slate-700 bg-slate-950 flex items-center justify-center overflow-hidden mb-4 relative"
+              >
+                <div
+                  class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwIDBoMTB2MTBIMTB6TTAgMTBoMTB2MTBIMHoiIGZpbGw9IiMxZTI5M2IiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')] opacity-20"
+                ></div>
+                <div
+                  id="bg-preview-content"
+                  class="w-full h-full"
+                  style="background-color: #020617"
+                ></div>
+                <span
+                  class="absolute text-[10px] font-bold text-slate-500 bg-black/50 px-2 py-1 rounded"
+                  >PREVIEW</span
+                >
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Mode</label
+                  >
+                  <div
+                    class="flex bg-slate-950 p-1 rounded border border-slate-800"
+                  >
+                    <button
+                      id="bg-mode-static"
+                      onclick="
+                        document.getElementById('set-bg-mode').value = 'static';
+                        settingsManager.toggleBgMode();
+                      "
+                      class="flex-1 py-1.5 text-xs font-bold rounded text-white bg-blue-600"
+                    >
+                      Static
+                    </button>
+                    <button
+                      id="bg-mode-rotate"
+                      onclick="
+                        document.getElementById('set-bg-mode').value = 'rotate';
+                        settingsManager.toggleBgMode();
+                      "
+                      class="flex-1 py-1.5 text-xs font-bold rounded text-slate-400 hover:text-white"
+                    >
+                      Animated
+                    </button>
+                  </div>
+                  <input type="hidden" id="set-bg-mode" value="static" />
+                </div>
+
+                <div id="set-bg-static-group">
+                  <div class="flex gap-2">
+                    <button
+                      onclick="settingsManager.pickStaticColor()"
+                      class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white rounded border border-slate-700 flex items-center justify-center gap-2"
+                    >
+                      <div
+                        id="static-color-preview"
+                        class="w-3 h-3 rounded-full bg-transparent border border-slate-500"
+                      ></div>
+                      Pick Color
+                    </button>
+                    <button
+                      onclick="settingsManager.pickStaticImage()"
+                      class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white rounded border border-slate-700"
+                    >
+                      Set Image URL
+                    </button>
+                  </div>
+                  <input type="hidden" id="set-bg-value" />
+                </div>
+
+                <div id="set-bg-rotate-group" class="hidden">
+                  <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                      <label
+                        class="text-[10px] text-slate-500 font-bold uppercase"
+                        >Animation Frames</label
+                      >
+                      <button
+                        onclick="settingsManager.addBgFrame()"
+                        class="text-[9px] bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-0.5 rounded border border-slate-700"
+                      >
+                        + Add Frame
+                      </button>
+                    </div>
+                    <div
+                      id="bg-anim-list"
+                      class="space-y-2 mb-2 max-h-40 overflow-y-auto pr-1"
+                    ></div>
+                  </div>
+
+                  <div>
+                    <div class="flex justify-between mb-2">
+                      <label
+                        class="text-[10px] text-slate-500 font-bold uppercase"
+                        >Interval (ms)</label
+                      >
+                      <span
+                        id="set-bg-interval-val"
+                        class="text-xs text-blue-400 font-mono"
+                        >1000ms</span
+                      >
+                    </div>
+                    <input
+                      id="set-bg-interval"
+                      type="range"
+                      min="100"
+                      max="5000"
+                      step="100"
+                      value="1000"
+                      class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500"
+                      oninput="
+                        document.getElementById(
+                          'set-bg-interval-val',
+                        ).innerText = this.value + 'ms';
+                        settingsManager.syncFromModal();
+                        editorApplyBackground();
+                      "
+                    />
+                  </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800">
+                  <button
+                    onclick="
+                      document.getElementById('set-bg-value').value = '';
+                      document.getElementById('bg-anim-list').innerHTML = '';
+                      settingsManager.syncFromModal();
+                      editorApplyBackground();
+                    "
+                    class="text-xs text-red-400 hover:text-white"
+                  >
+                    Reset Background
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-4 pt-6 border-t border-slate-800">
+                <h4
+                  class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"
+                >
+                  Text
+                </h4>
+
+                <div class="space-y-3">
+                  <!-- Visual Title -->
+                  <div class="p-3 bg-slate-950 border border-slate-800 rounded">
+                    <label
+                      class="flex items-center justify-between cursor-pointer group mb-2"
+                    >
+                      <span class="text-xs font-bold text-slate-300"
+                        >Visual Title Text</span
+                      >
+                      <div class="relative">
+                        <input
+                          type="checkbox"
+                          id="set-vis-title-toggle"
+                          class="sr-only peer"
+                          onchange="settingsManager.toggleVisTitle()"
+                        />
+                        <div
+                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                        ></div>
+                      </div>
+                    </label>
+                    <div id="vis-title-input-group" class="hidden">
+                      <input
+                        type="text"
+                        id="set-vis-title"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                        placeholder="Level Title"
+                        oninput="settingsManager.syncFromModal()"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Visual Author -->
+                  <div
+                    class="p-3 bg-slate-950 border border-slate-800 rounded opacity-50 pointer-events-none transition-opacity"
+                    id="vis-author-group"
+                  >
+                    <label
+                      class="flex items-center justify-between cursor-pointer group mb-2"
+                    >
+                      <span class="text-xs font-bold text-slate-300"
+                        >Visual Author Text</span
+                      >
+                      <div class="relative">
+                        <input
+                          type="checkbox"
+                          id="set-vis-author-toggle"
+                          class="sr-only peer"
+                          onchange="settingsManager.toggleVisAuthor()"
+                        />
+                        <div
+                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                        ></div>
+                      </div>
+                    </label>
+                    <div id="vis-author-input-group" class="hidden">
+                      <input
+                        type="text"
+                        id="set-vis-author"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                        placeholder="Author Name"
+                        oninput="settingsManager.syncFromModal()"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Visual Win -->
+                  <div class="p-3 bg-slate-950 border border-slate-800 rounded">
+                    <label
+                      class="flex items-center justify-between cursor-pointer group mb-2"
+                    >
+                      <span class="text-xs font-bold text-slate-300"
+                        >Visual Win Text</span
+                      >
+                      <div class="relative">
+                        <input
+                          type="checkbox"
+                          id="set-vis-win-toggle"
+                          class="sr-only peer"
+                          onchange="settingsManager.toggleVisWin()"
+                        />
+                        <div
+                          class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                        ></div>
+                      </div>
+                    </label>
+                    <div id="vis-win-input-group" class="hidden">
+                      <input
+                        type="text"
+                        id="set-vis-win"
+                        class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                        placeholder="Win Message"
+                        oninput="settingsManager.syncFromModal()"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Visual Font -->
+                  <div class="p-3 bg-slate-950 border border-slate-800 rounded">
+                    <label
+                      class="text-[9px] text-slate-500 font-bold uppercase block mb-2"
+                      >Text Font</label
+                    >
+                    <select
+                      id="set-vis-font"
+                      onchange="settingsManager.syncFromModal()"
+                      class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="Courier New">Courier New (Default)</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Impact">Impact</option>
+                      <option value="Comic Sans MS">Comic Sans MS</option>
+                      <option value="Trebuchet MS">Trebuchet MS</option>
+                      <option value="'Press Start 2P', cursive">Pixel</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3080,6 +3558,8 @@
         "<": "t-slide-left",
         J: "t-jump-pad",
         C: "t-grinder",
+        D: "t-dash-right",
+        d: "t-dash-left",
         o: "t-coin",
         B: "t-blue",
         "@": "t-player",
@@ -3109,6 +3589,8 @@
         "<": "Slide Left",
         J: "Jump Pad",
         C: "The Grinder",
+        D: "Dash Right",
+        d: "Dash Left",
         o: "Coin",
         B: "Blue Coin",
         "@": "Player",
@@ -3213,6 +3695,14 @@
           file: "showcase.mp3",
         },
       ];
+      const METALLIC_COLORS = [
+        "#C0C0C0",
+        "#D4AF37",
+        "#B87333",
+        "#CD7F32",
+        "#71797E",
+      ];
+
       const minimap = {
         isCollapsed: false,
         pendingRender: null,
@@ -3324,29 +3814,72 @@
           difficulty: 1,
           gravity: 27,
           rise: 0,
+          musicSpeed: 1.0,
           forceZoom: false,
+          disableZoom: false,
           noDeathAnim: false,
+          visualTitle: null,
+          visualAuthor: null,
+          visualWin: null,
+          visualFont: "Courier New",
           w: 40,
           h: 20,
+        },
+        visualDefaults: {
+          background: "",
+          bgAnim: null,
         },
         open() {
           const modal = document.getElementById("settings-modal");
           modal.classList.remove("hidden");
           this.syncToModal();
-          this.renderDiffBarsModal();
-          this.switchTab("metadata");
           this.checkDirty();
         },
         close() {
           document.getElementById("settings-modal").classList.add("hidden");
         },
         switchTab(tabId) {
-          ["metadata", "physics", "grid"].forEach((id) => {
+          ["metadata", "physics", "grid", "visuals"].forEach((id) => {
             document.getElementById(`sec-${id}`).classList.add("hidden");
+            document.getElementById(`sec-${id}`).style.display = "none";
             document.getElementById(`tab-${id}`).classList.remove("active");
           });
           document.getElementById(`sec-${tabId}`).classList.remove("hidden");
+          document.getElementById(`sec-${tabId}`).style.display = "block";
           document.getElementById(`tab-${tabId}`).classList.add("active");
+        },
+        toggleBgMode() {
+          const mode = document.getElementById("set-bg-mode").value;
+          if (mode === "static") {
+            document
+              .getElementById("set-bg-static-group")
+              .classList.remove("hidden");
+            document
+              .getElementById("set-bg-rotate-group")
+              .classList.add("hidden");
+          } else {
+            document
+              .getElementById("set-bg-static-group")
+              .classList.add("hidden");
+            document
+              .getElementById("set-bg-rotate-group")
+              .classList.remove("hidden");
+          }
+
+          // UI Update for toggle buttons
+          const staticBtn = document.getElementById("bg-mode-static");
+          const rotateBtn = document.getElementById("bg-mode-rotate");
+          if (mode === "static") {
+            staticBtn.className =
+              "flex-1 py-1.5 text-xs font-bold rounded text-white bg-blue-600";
+            rotateBtn.className =
+              "flex-1 py-1.5 text-xs font-bold rounded text-slate-400 hover:text-white";
+          } else {
+            staticBtn.className =
+              "flex-1 py-1.5 text-xs font-bold rounded text-slate-400 hover:text-white";
+            rotateBtn.className =
+              "flex-1 py-1.5 text-xs font-bold rounded text-white bg-blue-600";
+          }
         },
         syncToModal() {
           document.getElementById("set-prop-name").value =
@@ -3361,14 +3894,62 @@
             document.getElementById("prop-gravity").value;
           document.getElementById("set-prop-rise").value =
             document.getElementById("prop-rise").value;
+          document.getElementById("set-prop-mirror").checked =
+            document.getElementById("prop-mirror").value === "true";
           document.getElementById("set-prop-force-zoom").checked =
             document.getElementById("prop-force-zoom").value === "true";
-          document.getElementById("set-prop-no-death-anim").checked =
-            document.getElementById("prop-no-death-anim").value === "true";
+          document.getElementById("set-prop-disable-zoom").checked =
+            document.getElementById("prop-disable-zoom").value === "true";
           document.getElementById("set-prop-w").value =
             document.getElementById("prop-w").value;
           document.getElementById("set-prop-h").value =
             document.getElementById("prop-h").value;
+
+          // Sync Text
+          const vTitle = document.getElementById("prop-vis-title").value;
+          const vAuthor = document.getElementById("prop-vis-author").value;
+          const vWin = document.getElementById("prop-vis-win").value;
+          const vFont = document.getElementById("prop-vis-font").value;
+
+          document.getElementById("set-vis-title-toggle").checked = !!vTitle;
+          document.getElementById("set-vis-title").value =
+            vTitle || document.getElementById("prop-name").value;
+          this.toggleVisTitle();
+
+          document.getElementById("set-vis-author-toggle").checked = !!vAuthor;
+          document.getElementById("set-vis-author").value =
+            vAuthor || document.getElementById("prop-creator").value;
+          this.toggleVisAuthor();
+
+          document.getElementById("set-vis-win-toggle").checked = !!vWin;
+          document.getElementById("set-vis-win").value =
+            vWin || "Level Complete!";
+          this.toggleVisWin();
+
+          document.getElementById("set-vis-font").value =
+            vFont || "Courier New";
+
+          // Visuals
+          const bg = document.getElementById("prop-background").value;
+          const bgAnimStr = document.getElementById("prop-bg-anim").value;
+
+          if (bgAnimStr) {
+            const anim = JSON.parse(bgAnimStr);
+            document.getElementById("set-bg-mode").value = "rotate";
+            document.getElementById("set-bg-interval").value = anim.interval;
+            document.getElementById("set-bg-interval-val").innerText =
+              anim.interval + "ms";
+          } else {
+            document.getElementById("set-bg-mode").value = "static";
+            document.getElementById("set-bg-value").value = bg;
+            document.getElementById(
+              "static-color-preview",
+            ).style.backgroundColor = bg || "transparent";
+          }
+
+          this.toggleBgMode();
+          this.renderDiffBarsModal();
+          updateVisualTextPreview();
           this.checkDirty();
         },
         syncFromModal() {
@@ -3387,17 +3968,177 @@
           const riseVal = parseFloat(
             document.getElementById("prop-rise").value,
           );
-          document.getElementById("rise-val").innerText =
-            riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
+          document.getElementById("prop-mirror").value =
+            document.getElementById("set-prop-mirror").checked;
           document.getElementById("prop-force-zoom").value =
             document.getElementById("set-prop-force-zoom").checked;
-          document.getElementById("prop-no-death-anim").value =
-            document.getElementById("set-prop-no-death-anim").checked;
+          document.getElementById("prop-disable-zoom").value =
+            document.getElementById("set-prop-disable-zoom").checked;
           document.getElementById("prop-w").value =
             document.getElementById("set-prop-w").value;
           document.getElementById("prop-h").value =
+
             document.getElementById("set-prop-h").value;
+
+          // Sync Text
+          document.getElementById("prop-vis-title").value =
+            document.getElementById("set-vis-title-toggle").checked
+              ? document.getElementById("set-vis-title").value
+              : "";
+          document.getElementById("prop-vis-author").value =
+            document.getElementById("set-vis-author-toggle").checked
+              ? document.getElementById("set-vis-author").value
+              : "";
+          document.getElementById("prop-vis-win").value =
+            document.getElementById("set-vis-win-toggle").checked
+              ? document.getElementById("set-vis-win").value
+              : "";
+          document.getElementById("prop-vis-font").value =
+            document.getElementById("set-vis-font").value;
+
+          updateVisualTextPreview();
+          // Visuals Sync
+          const mode = document.getElementById("set-bg-mode").value;
+          if (mode === "static") {
+            document.getElementById("prop-background").value =
+              document.getElementById("set-bg-value").value;
+            document.getElementById("prop-bg-anim").value = "";
+          } else {
+            const values = Array.from(
+              document.querySelectorAll(".bg-frame-input"),
+            )
+              .map((el) => el.value)
+              .filter((s) => s.trim());
+            const interval = parseInt(
+              document.getElementById("set-bg-interval").value,
+            );
+
+            if (values.length > 0) {
+              document.getElementById("prop-background").value = ""; // Clear static if anim exists
+              document.getElementById("prop-bg-anim").value = JSON.stringify({
+                type: "sequence",
+                values: values,
+                interval: interval,
+              });
+            } else {
+              document.getElementById("prop-bg-anim").value = "";
+            }
+          }
+
           this.checkDirty();
+          updateVisualTextPreview();
+        },
+        pickStaticColor() {
+          colorPicker.open(
+            document.getElementById("set-bg-value").value,
+            (c) => {
+              if (c) {
+                document.getElementById("set-bg-value").value = c;
+                document.getElementById(
+                  "static-color-preview",
+                ).style.backgroundColor = c;
+                this.syncFromModal();
+                editorApplyBackground();
+              }
+            },
+          );
+        },
+        pickStaticImage() {
+          dialog.prompt(
+            "Background Image",
+            "Enter Image URL:",
+            document.getElementById("set-bg-value").value,
+            (url) => {
+              if (url) {
+                document.getElementById("set-bg-value").value = url;
+                this.syncFromModal();
+                editorApplyBackground();
+              }
+            },
+          );
+        },
+        renderBgFrames(values) {
+          const container = document.getElementById("bg-anim-list");
+          container.innerHTML = "";
+          if (!values || values.length === 0) {
+            this.addBgFrame();
+          } else {
+            values.forEach((val) => this.addBgFrame(val));
+          }
+        },
+        addBgFrame(val = "") {
+          const container = document.getElementById("bg-anim-list");
+          const div = document.createElement("div");
+          div.className = "flex gap-2 items-center bg-frame-row";
+          div.innerHTML = `
+            <div class="relative flex-1">
+              <input type="text" value="${val}" class="bg-frame-input w-full bg-slate-950 border border-slate-800 rounded pl-2 pr-16 py-2 text-sm text-slate-300 outline-none focus:border-blue-500" placeholder="Color or URL" oninput="settingsManager.syncFromModal(); editorApplyBackground();">
+              <div class="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1">
+                  <button onclick="settingsManager.pickBgFrameColor(this)" class="p-1 hover:bg-slate-800 rounded text-slate-400" title="Pick Color">
+                    <div class="w-3 h-3 rounded-full border border-slate-600 bg-current"></div>
+                  </button>
+                  <button onclick="settingsManager.pickBgFrameImage(this)" class="p-1 hover:bg-slate-800 rounded text-slate-400" title="Set Image"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></button>
+              </div>
+            </div>
+            <button onclick="this.parentElement.remove(); settingsManager.syncFromModal(); editorApplyBackground();" class="text-slate-600 hover:text-red-400 p-1">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          `;
+          container.appendChild(div);
+        },
+        pickBgFrameColor(btn) {
+          const input = btn.closest(".relative").querySelector("input");
+          colorPicker.open(input.value, (c) => {
+            if (c) {
+              input.value = c;
+              this.syncFromModal();
+              editorApplyBackground();
+            }
+          });
+        },
+        pickBgFrameImage(btn) {
+          const input = btn.closest(".relative").querySelector("input");
+          dialog.prompt(
+            "Frame Image",
+            "Enter Image URL:",
+            input.value,
+            (url) => {
+              if (url) {
+                input.value = url;
+                this.syncFromModal();
+                editorApplyBackground();
+              }
+            },
+          );
+        },
+        toggleVisTitle() {
+          const on = document.getElementById("set-vis-title-toggle").checked;
+          document.getElementById("vis-title-input-group").className = on
+            ? "block mt-2"
+            : "hidden";
+          const authorGroup = document.getElementById("vis-author-group");
+          if (on) {
+            authorGroup.classList.remove("opacity-50", "pointer-events-none");
+          } else {
+            authorGroup.classList.add("opacity-50", "pointer-events-none");
+            document.getElementById("set-vis-author-toggle").checked = false;
+            this.toggleVisAuthor();
+          }
+          this.syncFromModal();
+        },
+        toggleVisAuthor() {
+          const on = document.getElementById("set-vis-author-toggle").checked;
+          document.getElementById("vis-author-input-group").className = on
+            ? "block mt-2"
+            : "hidden";
+          this.syncFromModal();
+        },
+        toggleVisWin() {
+          const on = document.getElementById("set-vis-win-toggle").checked;
+          document.getElementById("vis-win-input-group").className = on
+            ? "block mt-2"
+            : "hidden";
+          this.syncFromModal();
         },
         renderDiffBarsModal() {
           const container = document.getElementById("set-diff-bars-modal");
@@ -3440,7 +4181,14 @@
               document.getElementById("set-prop-rise").value || 0,
             ),
             forceZoom: document.getElementById("set-prop-force-zoom").checked,
-            noDeathAnim: document.getElementById("set-prop-no-death-anim")
+            visualTitle:
+              document.getElementById("prop-vis-title").value || null,
+            visualAuthor:
+              document.getElementById("prop-vis-author").value || null,
+            visualWin: document.getElementById("prop-vis-win").value || null,
+            visualFont:
+              document.getElementById("prop-vis-font").value || "Courier New",
+            disableZoom: document.getElementById("set-prop-disable-zoom")
               .checked,
             w: parseInt(document.getElementById("set-prop-w").value),
             h: parseInt(document.getElementById("set-prop-h").value),
@@ -3464,19 +4212,95 @@
           document.getElementById("set-prop-rise").value = this.defaults.rise;
           document.getElementById("set-prop-force-zoom").checked =
             this.defaults.forceZoom;
-          document.getElementById("set-prop-no-death-anim").checked =
-            this.defaults.noDeathAnim;
+          document.getElementById("set-prop-disable-zoom").checked =
+            this.defaults.disableZoom;
+          document.getElementById("set-vis-font").value =
+            this.defaults.visualFont;
           document.getElementById("set-prop-w").value = this.defaults.w;
           document.getElementById("set-prop-h").value = this.defaults.h;
           setDifficulty(this.defaults.difficulty);
+
+          // Reset Visuals
+          document.getElementById("set-bg-mode").value = "static";
+          document.getElementById("set-bg-value").value = "";
+          document.getElementById("bg-anim-list").innerHTML = "";
+          document.getElementById("set-bg-interval").value = 1000;
+          this.toggleBgMode();
+
           this.renderDiffBarsModal();
           this.syncFromModal();
+          editorApplyBackground();
         },
       };
       let currentAudio = null;
       let currentTrackId = null;
       let editorAudioCtx = null;
       let synthTimeout = null;
+      let editorBgInterval = null;
+
+      function editorApplyBackground() {
+        const vp = document.getElementById("viewport");
+        const bg = document.getElementById("prop-background").value;
+        const bgAnimStr = document.getElementById("prop-bg-anim").value;
+        const preview = document.getElementById("bg-preview-content");
+
+        // Check toggle for main viewport
+        const showInEditor = document.getElementById("opt-editor-bg").checked;
+
+        // Clear existing
+        vp.style.background = "#020617";
+        if (preview) preview.style.background = "#020617";
+        if (editorBgInterval) {
+          clearInterval(editorBgInterval);
+          editorBgInterval = null;
+        }
+
+        if (bgAnimStr) {
+          const anim = JSON.parse(bgAnimStr);
+          if (anim.values && anim.values.length > 0) {
+            let idx = 0;
+            const update = () => {
+              const val = anim.values[idx];
+              if (
+                val.match(/^https?:\/\//) ||
+                val.match(/^data:image/) ||
+                val.match(/\.(png|jpg|jpeg|gif|webp)$/)
+              ) {
+                vp.style.background = `url("${val}") no-repeat center center fixed`;
+                vp.style.backgroundSize = "cover";
+                if (preview) {
+                  preview.style.background = `url("${val}") no-repeat center center`;
+                  preview.style.backgroundSize = "cover";
+                }
+              } else {
+                if (showInEditor) vp.style.background = val;
+                if (preview) preview.style.background = val;
+              }
+              idx = (idx + 1) % anim.values.length;
+            };
+            update();
+            editorBgInterval = setInterval(update, anim.interval || 1000);
+          }
+        } else if (bg) {
+          if (
+            bg.match(/^https?:\/\//) ||
+            bg.match(/^data:image/) ||
+            bg.match(/\.(png|jpg|jpeg|gif|webp)$/)
+          ) {
+            if (showInEditor) {
+              vp.style.background = `url("${bg}") no-repeat center center fixed`;
+              vp.style.backgroundSize = "cover";
+            }
+            if (preview) {
+              preview.style.background = `url("${bg}") no-repeat center center`;
+              preview.style.backgroundSize = "cover";
+            }
+          } else {
+            if (showInEditor) vp.style.background = bg;
+            if (preview) preview.style.background = bg;
+          }
+        }
+      }
 
       const state = {
         width: 40,
@@ -3488,6 +4312,7 @@
         zoom: 1.0,
         isDrawing: false,
         music: null,
+        musicSpeed: 1.0,
         selection: null,
         rightPanelOpen: true,
         picker: {
@@ -3575,8 +4400,6 @@
       function renderMusic() {
         const container = document.getElementById("music-list");
         container.innerHTML = "";
-        container.style.maxHeight = "250px";
-        container.style.overflowY = "auto";
 
         MUSIC_LIBRARY.forEach((track) => {
           const el = document.createElement("div");
@@ -3669,6 +4492,102 @@
         note();
       }
 
+      // Init Supabase for Editor Upload
+      const supabaseUrl = "https://heqmnluegbbglmhtublu.supabase.co";
+      const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
+      const _supabase = window.supabase
+        ? window.supabase.createClient(supabaseUrl, supabaseKey)
+        : null;
+
+      const shareManager = {
+        open() {
+          document.getElementById("share-modal").classList.remove("hidden");
+        },
+        startUpload() {
+          if (!_supabase) {
+            dialog.alert("Error", "Database connection not available.");
+            return;
+          }
+          const data = JSON.parse(io.export());
+          // Default to current project creator or username
+          const defaultName =
+            data.creator ||
+            localStorage.getItem("blockoverit_username") ||
+            "Anonymous";
+
+          dialog.prompt(
+            "UPLOAD TO COMMUNITY",
+            "Enter Creator Name:",
+            defaultName,
+            (name) => {
+              if (name) this.processUpload(name);
+            },
+          );
+        },
+        async processUpload(creatorName) {
+          const btn = document.getElementById("btn-share-upload");
+          const originalText = btn.textContent;
+          btn.textContent = "Uploading...";
+          btn.disabled = true;
+
+          try {
+            const data = JSON.parse(io.export());
+            data.creator = creatorName;
+
+            const payload = {
+              name: data.name,
+              creator: creatorName,
+              description: data.description,
+              difficulty: data.difficulty,
+              data: data,
+            };
+
+            const { error } = await _supabase
+              .from("published_levels")
+              .insert([payload]);
+            if (error) throw error;
+
+            closeModal("share-modal");
+            dialog.alert(
+              "SUCCESS",
+              "Level uploaded successfully! It is now available in the Community Browser.",
+            );
+          } catch (e) {
+            dialog.alert("UPLOAD FAILED", e.message);
+          } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }
+        },
+        nativeShare() {
+          const name = document
+            .getElementById("prop-name")
+            .value.replace(/[^a-z0-9]/gi, "_");
+          const file = new File([io.export()], `${name}.json`, {
+            type: "application/json",
+          });
+
+          if (navigator.share) {
+            navigator
+              .share({
+                title: document.getElementById("prop-name").value,
+                text: "Check out my level made in Block Architect Pro!",
+                files: [file],
+              })
+              .catch(console.error);
+          } else {
+            dialog.alert(
+              "SHARE",
+              "Web Share API is not supported on this browser.",
+            );
+          }
+        },
+      };
+
+      function updateMusicSpeed(val) {
+        state.musicSpeed = parseFloat(val);
+      }
+
       function selectLevelMusic(id) {
         state.music = id;
         renderMusic();
@@ -3680,6 +4599,10 @@
         cell.innerHTML = "";
         cell.style.backgroundColor = "";
         cell.style.borderColor = "";
+        cell.style.borderRadius = "";
+        cell.style.backgroundImage = "";
+        cell.style.backgroundBlendMode = "";
+        cell.style.backgroundSize = "";
         cell.style.opacity = "";
         cell.style.border = "";
         cell.style.boxShadow = "";
@@ -3689,6 +4612,11 @@
         if (color) {
           cell.style.backgroundColor = color;
           cell.style.borderColor = adjustColor(color, -20);
+
+          if (typeof color === 'string' && METALLIC_COLORS.includes(color.toUpperCase())) {
+            cell.classList.add("metallic-shimmer");
+          }
+
           if (color === "invisible") {
             cell.style.opacity = "0.5";
             cell.style.border = "1px dashed rgba(255,255,255,0.5)";
@@ -3701,6 +4629,32 @@
           } else {
             cell.style.backgroundColor = color;
             cell.style.borderColor = adjustColor(color, -20);
+
+            // Mods for Architect Pro
+            if (char === "G") {
+              cell.style.backgroundBlendMode = "multiply";
+              cell.style.backgroundSize = "contain";
+            }
+            if (char === "C") {
+              const c = color;
+              const dark = adjustColor(c, -100);
+              const light = adjustColor(c, 20);
+              cell.style.backgroundImage = `linear-gradient(90deg, transparent 30%, ${c} 30%, ${c} 70%, transparent 70%), repeating-linear-gradient(0deg, ${dark} 0px, ${dark} 4px, ${light} 4px, ${light} 8px)`;
+              cell.style.backgroundColor = "transparent";
+            }
+            if (char === "J") {
+              cell.classList.add("colored");
+              let dot = cell.querySelector(".jp-dot");
+              if (!dot) {
+                dot = document.createElement("div");
+                dot.className = "jp-dot";
+                dot.style.cssText =
+                  "position:absolute; top:20%; left:20%; right:20%; bottom:20%; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); pointer-events:none;";
+                cell.appendChild(dot);
+              }
+              dot.style.backgroundColor = color;
+              dot.style.boxShadow = `0 0 5px ${adjustColor(color, 40)}`;
+            }
           }
         }
 
@@ -3785,6 +4739,44 @@
         }
       }
 
+      function updateVisualTextPreview() {
+        const grid = document.getElementById("level-grid");
+        let overlay = document.getElementById("visual-text-overlay");
+
+        const title = document.getElementById("prop-vis-title").value || "";
+        const author = document.getElementById("prop-vis-author").value || "";
+        const font = document.getElementById("prop-vis-font").value || "Courier New";
+
+        if (!title && !author) {
+          if (overlay) overlay.remove();
+          return;
+        }
+
+        if (!overlay) {
+          overlay = document.createElement("div");
+          overlay.id = "visual-text-overlay";
+          overlay.style.cssText = "position:absolute; top:10%; left:0; width:100%; pointer-events:none; z-index:100; display:flex; flex-direction:column; align-items:center; text-align:center; text-transform:uppercase;";
+          grid.appendChild(overlay);
+        }
+
+        overlay.innerHTML = "";
+        overlay.style.fontFamily = font;
+
+        if (title) {
+          const tEl = document.createElement("div");
+          tEl.style.cssText = "font-size:40px; font-weight:900; color:white; text-shadow:4px 4px 0px #335699; letter-spacing:2px; margin-bottom:5px;";
+          tEl.textContent = title;
+          overlay.appendChild(tEl);
+        }
+
+        if (author) {
+          const aEl = document.createElement("div");
+          aEl.style.cssText = "font-size:16px; font-weight:bold; color:#aaa; letter-spacing:1px;";
+          aEl.textContent = "BY " + author;
+          overlay.appendChild(aEl);
+        }
+      }
+
       function render() {
         const gridEl = document.getElementById("level-grid");
         const totalCells = state.width * state.height;
@@ -3820,6 +4812,7 @@
           }
         }
         updateSelectionUI();
+        updateVisualTextPreview();
         minimap.render();
       }
 
@@ -5344,6 +6337,7 @@
           "#475569",
           "#ffffff",
         ],
+        metallic: ["#C0C0C0", "#D4AF37", "#B87333", "#CD7F32", "#71797E"],
         callback: null,
         current: "#ffffff",
 
@@ -5351,6 +6345,7 @@
           this.callback = cb;
           this.current = initial || "#ffffff";
           this.renderRecent();
+          this.renderMetallic();
           this.handleCustom(this.current);
           document
             .getElementById("color-picker-modal")
@@ -5365,6 +6360,21 @@
             btn.className =
               "w-6 h-6 rounded-full border border-slate-700 hover:scale-110 transition-transform";
             btn.style.backgroundColor = c;
+            btn.onclick = () => this.handleCustom(c);
+            container.appendChild(btn);
+          });
+        },
+
+        renderMetallic() {
+          const container = document.getElementById("cp-metallic");
+          container.innerHTML = "";
+          this.metallic.forEach((c) => {
+            const btn = document.createElement("button");
+            btn.className =
+              "w-6 h-6 rounded-full border border-slate-700 hover:scale-110 transition-transform shadow-[0_0_5px_rgba(255,255,255,0.3)]";
+            btn.style.backgroundColor = c;
+            btn.style.backgroundImage =
+              "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 100%)";
             btn.onclick = () => this.handleCustom(c);
             container.appendChild(btn);
           });
@@ -5397,7 +6407,7 @@
               const char = state.grid[y][x];
               if (color === null) {
                 delete state.colors[`${x},${y}`];
-              } else if (char === "x") {
+              } else if (state.grid[y][x] !== " ") {
                 state.colors[`${x},${y}`] = color;
               }
             }
@@ -5995,6 +7005,11 @@
         document.getElementById("prop-h").value = state.height;
         document.getElementById("prop-gravity").value = t.gravity || 27;
         document.getElementById("gravity-val").innerText = t.gravity || 27;
+        document.getElementById("prop-vis-title").value = t.visualTitle || "";
+        document.getElementById("prop-vis-author").value = t.visualAuthor || "";
+        document.getElementById("prop-vis-win").value = t.visualWin || "";
+        document.getElementById("prop-vis-font").value =
+          t.visualFont || "Courier New";
 
         // Update Recents
         let recent = [];
@@ -6049,6 +7064,7 @@
         document.getElementById("info-modal").classList.remove("hidden");
       }
       function showPreview() {
+        settingsManager.syncFromModal();
         document.getElementById("modal-overlay").classList.remove("hidden");
         document.getElementById("json-preview-text").innerText = io.export();
       }
@@ -6062,6 +7078,7 @@
 
       const io = {
         export() {
+          settingsManager.syncFromModal();
           return JSON.stringify(
             {
               name: document.getElementById("prop-name").value,
@@ -6074,9 +7091,20 @@
               ),
               forceZoom:
                 document.getElementById("prop-force-zoom").value === "true",
+              disableZoom:
+                document.getElementById("prop-disable-zoom").value === "true",
+              visualTitle: document.getElementById("prop-vis-title").value,
+              visualAuthor: document.getElementById("prop-vis-author").value,
+              visualWin: document.getElementById("prop-vis-win").value,
+              visualFont: document.getElementById("prop-vis-font").value,
               disableDeathAnim:
                 document.getElementById("prop-no-death-anim").value === "true",
               music: state.music,
+              musicSpeed: state.musicSpeed,
+              background: document.getElementById("prop-background").value,
+              bgAnimation: document.getElementById("prop-bg-anim").value
+                ? JSON.parse(document.getElementById("prop-bg-anim").value)
+                : null,
               colors: state.colors,
               fakes: Array.from(state.fakes),
               risingThrough: Array.from(state.risingThrough),
@@ -6141,6 +7169,7 @@
               if (char === " ") continue;
 
               if (char === "x") {
+                const customColor = state.colors[`${x},${y}`];
                 if (isModern) {
                   ctx.fillStyle = "#334155";
                   ctx.fillRect(px, py, cellSize, cellSize);
@@ -6170,6 +7199,7 @@
                 char === "|" ||
                 char === "v"
               ) {
+                const customColor = state.colors[`${x},${y}`];
                 ctx.fillStyle = isModern ? "#ef4444" : "#e55555";
                 if (isModern) {
                   ctx.beginPath();
@@ -6180,7 +7210,25 @@
                 } else {
                   ctx.fillRect(px, py, cellSize, cellSize);
                 }
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px,
+                    py,
+                    px + cellSize,
+                    py + cellSize,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fillRect(px, py, cellSize, cellSize);
+                }
               } else if (char === "H" || char === "V") {
+                const customColor = state.colors[`${x},${y}`];
                 let fill = isModern ? "#64748b" : "#777777";
                 let stroke = isModern ? "#475569" : "#555555";
                 if (customColor) {
@@ -6208,12 +7256,31 @@
                     cellSize - 3,
                   );
                 }
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px,
+                    py,
+                    px + cellSize,
+                    py + cellSize,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fillRect(px, py, cellSize, cellSize);
+                }
+
                 ctx.fillStyle = "#ffffff";
                 ctx.font = "bold 10px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(char === "H" ? "↔" : "↕", cx, cy);
               } else if (char === "^") {
+                const customColor = state.colors[`${x},${y}`];
                 ctx.fillStyle = isModern ? "#ef4444" : "#d32f2f";
                 if (isModern) {
                   ctx.fillRect(px, py, cellSize, cellSize);
@@ -6236,6 +7303,24 @@
                     cellSize - 3,
                   );
                 }
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px,
+                    py,
+                    px + cellSize,
+                    py + cellSize,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fillRect(px, py, cellSize, heightPx);
+                }
+
                 ctx.fillStyle = "rgba(255,255,255,0.7)";
                 ctx.font = "10px sans-serif";
                 ctx.fillText("▲", cx, cy);
@@ -6260,6 +7345,7 @@
                 ctx.fill();
                 if (isModern) ctx.stroke();
               } else if (char === "@") {
+                const customColor = state.colors[`${x},${y}`];
                 ctx.fillStyle = isModern ? "#10b981" : "#5599aa";
                 const scale = isModern ? 0.85 : 0.8;
                 const size = cellSize * scale;
@@ -6270,6 +7356,23 @@
                   ctx.roundRect(px + offset, py + offset, size, size, r);
                 else ctx.rect(px + offset, py + offset, size, size);
                 ctx.fill();
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px + offset,
+                    py + offset,
+                    px + offset + size,
+                    py + offset + size,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fill();
+                }
               } else if (char === "S") {
                 ctx.fillStyle = customColor || "#94a3b8";
                 ctx.beginPath();
@@ -6314,7 +7417,23 @@
                 ctx.lineTo(px + cellSize, py + cellSize / 2);
                 ctx.lineTo(px, py + cellSize);
                 ctx.fill();
+              } else if (char === "J") {
+                ctx.fillStyle = "#4a148c";
+                ctx.strokeStyle = "#ea80fc";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, cellSize / 2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = customColor || "#f0abfc";
+                ctx.beginPath();
+                ctx.arc(cx, cy, cellSize / 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillText("J", cx, cy);
               } else if (["{", "}"].includes(char)) {
+                const customColor = state.colors[`${x},${y}`];
                 let fill = isModern ? "#334155" : "#444444";
                 let stroke = isModern ? "#1e293b" : "#333333";
                 if (customColor) {
@@ -6323,11 +7442,45 @@
                 }
                 ctx.fillStyle = fill;
                 ctx.fillRect(px, py, cellSize, cellSize);
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px,
+                    py,
+                    px + cellSize,
+                    py + cellSize,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fillRect(px, py, cellSize, cellSize);
+                }
                 ctx.strokeStyle = stroke;
                 ctx.lineWidth = isModern ? 1 : 3;
                 const offset = isModern ? 0.5 : 1.5;
                 const size = isModern ? cellSize - 1 : cellSize - 3;
                 ctx.strokeRect(px + offset, py + offset, size, size);
+
+                if (
+                  customColor &&
+                  METALLIC_COLORS.includes(customColor.toUpperCase())
+                ) {
+                  const grad = ctx.createLinearGradient(
+                    px,
+                    py,
+                    px + cellSize,
+                    py + cellSize,
+                  );
+                  grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                  grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                  grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                  ctx.fillStyle = grad;
+                  ctx.fillRect(px, py, cellSize, cellSize);
+                }
 
                 // Symbol
                 ctx.fillStyle = "#f87171";
@@ -6481,9 +7634,16 @@
             ),
             forceZoom:
               document.getElementById("prop-force-zoom").value === "true",
+            disableZoom:
+              document.getElementById("prop-disable-zoom").value === "true",
+            visualTitle: document.getElementById("prop-vis-title").value,
+            visualAuthor: document.getElementById("prop-vis-author").value,
+            visualWin: document.getElementById("prop-vis-win").value,
+            visualFont: document.getElementById("prop-vis-font").value,
             disableDeathAnim:
               document.getElementById("prop-no-death-anim").value === "true",
             music: state.music,
+            musicSpeed: state.musicSpeed,
             colors: state.colors,
             fakes: Array.from(state.fakes),
             illusions: Array.from(state.illusions),
@@ -6514,108 +7674,159 @@
         currentId: null,
         contextId: null,
         newProject(type) {
-          this.currentId = null;
-          document.getElementById("prop-name").value = "New Level";
-          document.getElementById("prop-creator").value = "Anonymous";
-          document.getElementById("prop-desc").value = "";
-          setDifficulty(1);
+          try {
+            this.currentId = null;
+            document.getElementById("prop-name").value = "New Level";
+            document.getElementById("prop-creator").value = "Anonymous";
+            document.getElementById("prop-desc").value = "";
+            setDifficulty(1);
 
-          if (type && ["pit", "tunnel", "climb"].includes(type)) {
-            // Quick templates
-            const t = getQuickTemplate(type);
-            state.width = t.width;
-            state.height = t.height;
-            state.grid = t.grid;
-            document.getElementById("prop-gravity").value = 27;
-            document.getElementById("prop-rise").value = 0;
-            document.getElementById("prop-force-zoom").value = "false";
-            document.getElementById("prop-no-death-anim").value = "false";
-          } else {
-            // Blank
-            state.width = 40;
-            state.height = 20;
-            state.grid = Array(state.height)
-              .fill(null)
-              .map(() => Array(state.width).fill(" "));
-            document.getElementById("prop-gravity").value = 27;
-            document.getElementById("prop-force-zoom").value = "false";
-            document.getElementById("prop-no-death-anim").value = "false";
+            state.musicSpeed = 1.0;
+            document.getElementById("prop-music-speed").value = 1;
+            document.getElementById("music-speed-val").innerText = "1x";
+
+            if (type && ["pit", "tunnel", "climb"].includes(type)) {
+              const t = getQuickTemplate(type);
+              state.width = t.width;
+              state.height = t.height;
+              state.grid = t.grid;
+              document.getElementById("prop-gravity").value = 27;
+              document.getElementById("prop-rise").value = 0;
+              document.getElementById("prop-force-zoom").value = "false";
+              document.getElementById("prop-disable-zoom").value = "false";
+              document.getElementById("prop-no-death-anim").value = "false";
+              document.getElementById("prop-vis-title").value = "";
+              document.getElementById("prop-vis-author").value = "";
+              document.getElementById("prop-vis-win").value = "";
+              document.getElementById("prop-vis-font").value = "Courier New";
+            } else {
+              state.width = 40;
+              state.height = 20;
+              state.grid = Array(state.height)
+                .fill(null)
+                .map(() => Array(state.width).fill(" "));
+              document.getElementById("prop-gravity").value = 27;
+              document.getElementById("prop-force-zoom").value = "false";
+              document.getElementById("prop-disable-zoom").value = "false";
+              document.getElementById("prop-no-death-anim").value = "false";
+              document.getElementById("prop-vis-title").value = "";
+              document.getElementById("prop-vis-author").value = "";
+              document.getElementById("prop-vis-win").value = "";
+              document.getElementById("prop-vis-font").value = "Courier New";
+              document.getElementById("prop-background").value = "";
+              document.getElementById("prop-bg-anim").value = "";
+            }
+
+            document.getElementById("prop-w").value = state.width;
+            document.getElementById("prop-h").value = state.height;
+            document.getElementById("gravity-val").innerText =
+              document.getElementById("prop-gravity").value;
+
+            state.colors = {};
+            state.fakes = new Set();
+            state.risingThrough = new Set();
+            state.illusions = new Set();
+            state.flickers = new Set();
+            state.touchFlickers = new Set();
+            state.jumpFlickers = new Set();
+            state.risingSpeeds = {};
+
+            render();
+            history.stack = [];
+            history.push();
+            settingsManager.syncToModal();
+            editorApplyBackground();
+            closeModal("start-modal");
+            autoAdjust();
+          } catch (e) {
+            alert("Error creating new project: " + e.message);
+            console.error(e);
           }
-
-          document.getElementById("prop-w").value = state.width;
-          document.getElementById("prop-h").value = state.height;
-          document.getElementById("gravity-val").innerText =
-            document.getElementById("prop-gravity").value;
-
-          state.colors = {};
-          state.fakes = new Set();
-          state.risingThrough = new Set();
-          state.illusions = new Set();
-          state.flickers = new Set();
-          state.touchFlickers = new Set();
-          state.jumpFlickers = new Set();
-          state.risingSpeeds = {};
-
-          render();
-          history.stack = [];
-          history.push();
-          closeModal("start-modal");
-          autoAdjust();
         },
         importFromMenu(input) {
           const file = input.files[0];
           if (!file) return;
-          // Re-use the existing file reader logic but adapted
           const reader = new FileReader();
           reader.onload = (ev) => {
-            const d = JSON.parse(ev.target.result);
-            this.currentId = null; // Treat as new project initially
-            document.getElementById("prop-name").value =
-              d.name || "Imported Sector";
-            document.getElementById("prop-creator").value =
-              d.creator || "Anonymous";
-            document.getElementById("prop-desc").value = d.description || "";
-            setDifficulty(d.difficulty || 1);
-            document.getElementById("prop-gravity").value = d.gravity || 27;
-            document.getElementById("gravity-val").innerText = d.gravity || 27;
-            document.getElementById("prop-rise").value = d.riseInterval || 0;
-            const riseVal = d.riseInterval || 0;
-            document.getElementById("rise-val").innerText =
-              riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
-            document.getElementById("prop-force-zoom").value =
-              d.forceZoom || false;
-            document.getElementById("prop-no-death-anim").value =
-              d.disableDeathAnim || false;
+            try {
+              const d = JSON.parse(ev.target.result);
+              this.currentId = null; // Treat as new project initially
+              document.getElementById("prop-name").value =
+                d.name || "Imported Sector";
+              document.getElementById("prop-creator").value =
+                d.creator || "Anonymous";
+              document.getElementById("prop-desc").value = d.description || "";
+              setDifficulty(d.difficulty || 1);
+              document.getElementById("prop-gravity").value = d.gravity || 27;
+              document.getElementById("gravity-val").innerText =
+                d.gravity || 27;
+              document.getElementById("prop-rise").value = d.riseInterval || 0;
+              const riseVal = d.riseInterval || 0;
+              document.getElementById("rise-val").innerText =
+                riseVal > 0
+                  ? (60 / riseVal).toFixed(1) + " blk/min"
+                  : "Disabled";
+              document.getElementById("prop-force-zoom").value =
+                d.forceZoom || false;
+              document.getElementById("prop-disable-zoom").value =
+                d.disableZoom || false;
+              document.getElementById("prop-vis-title").value =
+                d.visualTitle || "";
+              document.getElementById("prop-vis-author").value =
+                d.visualAuthor || "";
+              document.getElementById("prop-vis-win").value = d.visualWin || "";
+              document.getElementById("prop-vis-font").value =
+                d.visualFont || "Courier New";
+              document.getElementById("prop-no-death-anim").value =
+                d.disableDeathAnim || false;
 
-            let musicId = d.music || null;
-            if (musicId && musicId.includes(".")) {
-              const found = MUSIC_LIBRARY.find((t) => t.file === musicId);
-              if (found) musicId = found.id;
+              document.getElementById("prop-background").value =
+                d.background || "";
+              document.getElementById("prop-bg-anim").value = d.bgAnimation
+                ? JSON.stringify(d.bgAnimation)
+                : "";
+              editorApplyBackground();
+
+              let musicId = d.music || null;
+              if (musicId && musicId.includes(".")) {
+                const found = MUSIC_LIBRARY.find((t) => t.file === musicId);
+                if (found) musicId = found.id;
+              }
+              state.music = musicId;
+
+              state.musicSpeed = d.musicSpeed || 1.0;
+              document.getElementById("prop-music-speed").value =
+                state.musicSpeed;
+              document.getElementById("music-speed-val").innerText =
+                state.musicSpeed + "x";
+              renderMusic();
+
+              state.colors = d.colors || {};
+              state.fakes = new Set(d.fakes || []);
+
+              state.risingThrough = new Set(d.risingThrough || []);
+              state.illusions = new Set(d.illusions || []);
+              state.flickers = new Set(d.flickers || []);
+              state.touchFlickers = new Set(d.touchFlickers || []);
+              state.jumpFlickers = new Set(d.jumpFlickers || []);
+              state.risingSpeeds = d.risingSpeeds || {};
+              state.blockConfigs = d.blockConfigs || {};
+
+              state.grid = d.plan.map((line) => line.split(""));
+              state.height = state.grid.length;
+              state.width = state.grid[0].length;
+              document.getElementById("prop-w").value = state.width;
+              document.getElementById("prop-h").value = state.height;
+              render();
+              history.push();
+              settingsManager.syncToModal();
+              autoAdjust();
+              closeModal("start-modal");
+              updateStatus("Project Imported");
+            } catch (e) {
+              alert("Failed to import project: " + e.message);
+              console.error(e);
             }
-            state.music = musicId;
-            renderMusic();
-
-            state.colors = d.colors || {};
-            state.fakes = new Set(d.fakes || []);
-
-            state.risingThrough = new Set(d.risingThrough || []);
-            state.illusions = new Set(d.illusions || []);
-            state.flickers = new Set(d.flickers || []);
-            state.touchFlickers = new Set(d.touchFlickers || []);
-            state.jumpFlickers = new Set(d.jumpFlickers || []);
-            state.risingSpeeds = d.risingSpeeds || {};
-            state.blockConfigs = d.blockConfigs || {};
-
-            state.grid = d.plan.map((line) => line.split(""));
-            state.height = state.grid.length;
-            state.width = state.grid[0].length;
-            document.getElementById("prop-w").value = state.width;
-            document.getElementById("prop-h").value = state.height;
-            render();
-            history.push();
-            autoAdjust();
-            closeModal("start-modal");
-            updateStatus("Project Imported");
           };
           reader.readAsText(file);
           input.value = "";
@@ -6637,6 +7848,7 @@
         },
         save() {
           if (!this.currentId) this.currentId = Date.now().toString();
+          settingsManager.syncFromModal();
           const data = {
             id: this.currentId,
             name: document.getElementById("prop-name").value,
@@ -6649,9 +7861,20 @@
             ),
             forceZoom:
               document.getElementById("prop-force-zoom").value === "true",
+            disableZoom:
+              document.getElementById("prop-disable-zoom").value === "true",
+            visualTitle: document.getElementById("prop-vis-title").value,
+            visualAuthor: document.getElementById("prop-vis-author").value,
+            visualWin: document.getElementById("prop-vis-win").value,
+            visualFont: document.getElementById("prop-vis-font").value,
             disableDeathAnim:
               document.getElementById("prop-no-death-anim").value === "true",
+            background: document.getElementById("prop-background").value,
+            bgAnimation: document.getElementById("prop-bg-anim").value
+              ? JSON.parse(document.getElementById("prop-bg-anim").value)
+              : null,
             music: state.music,
+            musicSpeed: state.musicSpeed,
             colors: state.colors,
             fakes: Array.from(state.fakes),
             risingThrough: Array.from(state.risingThrough),
@@ -6696,10 +7919,32 @@
               riseVal > 0 ? (60 / riseVal).toFixed(1) + " blk/min" : "Disabled";
             document.getElementById("prop-force-zoom").value =
               data.forceZoom || false;
+            document.getElementById("prop-disable-zoom").value =
+              data.disableZoom || false;
+            document.getElementById("prop-vis-title").value =
+              data.visualTitle || "";
+            document.getElementById("prop-vis-author").value =
+              data.visualAuthor || "";
+            document.getElementById("prop-vis-win").value =
+              data.visualWin || "";
+            document.getElementById("prop-vis-font").value =
+              data.visualFont || "Courier New";
             document.getElementById("prop-no-death-anim").value =
               data.disableDeathAnim || false;
 
+            document.getElementById("prop-background").value =
+              data.background || "";
+            document.getElementById("prop-bg-anim").value = data.bgAnimation
+              ? JSON.stringify(data.bgAnimation)
+              : "";
+            editorApplyBackground();
+
             state.music = data.music || null;
+            state.musicSpeed = data.musicSpeed || 1.0;
+            document.getElementById("prop-music-speed").value =
+              state.musicSpeed;
+            document.getElementById("music-speed-val").innerText =
+              state.musicSpeed + "x";
             renderMusic();
             state.width = data.width;
             state.height = data.height;
@@ -6718,6 +7963,7 @@
             render();
             history.stack = [];
             history.push();
+            settingsManager.syncToModal();
             closeModal("start-modal");
             autoAdjust();
           } catch (e) {
@@ -7114,6 +8360,23 @@
               const offset = isModern ? 0.5 : 1.5;
               const size = isModern ? cellSize - 1 : cellSize - 3;
               ctx.strokeRect(px + offset, py + offset, size, size);
+
+              if (
+                customColor &&
+                METALLIC_COLORS.includes(customColor.toUpperCase())
+              ) {
+                const grad = ctx.createLinearGradient(
+                  px,
+                  py,
+                  px + cellSize,
+                  py + cellSize,
+                );
+                grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                ctx.fillStyle = grad;
+                ctx.fillRect(px, py, cellSize, cellSize);
+              }
             } else if (
               char === "!" ||
               char === "=" ||
@@ -7127,6 +8390,23 @@
                 else ctx.rect(px, py, cellSize, cellSize);
                 ctx.fill();
               } else {
+                ctx.fillRect(px, py, cellSize, cellSize);
+              }
+
+              if (
+                customColor &&
+                METALLIC_COLORS.includes(customColor.toUpperCase())
+              ) {
+                const grad = ctx.createLinearGradient(
+                  px,
+                  py,
+                  px + cellSize,
+                  py + cellSize,
+                );
+                grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                ctx.fillStyle = grad;
                 ctx.fillRect(px, py, cellSize, cellSize);
               }
             } else if (char === "H" || char === "V") {
@@ -7145,6 +8425,24 @@
                 ctx.lineWidth = 3;
                 ctx.strokeRect(px + 1.5, py + 1.5, cellSize - 3, cellSize - 3);
               }
+
+              if (
+                customColor &&
+                METALLIC_COLORS.includes(customColor.toUpperCase())
+              ) {
+                const grad = ctx.createLinearGradient(
+                  px,
+                  py,
+                  px + cellSize,
+                  py + cellSize,
+                );
+                grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                ctx.fillStyle = grad;
+                ctx.fillRect(px, py, cellSize, cellSize);
+              }
+
               ctx.fillStyle = "#ffffff";
               ctx.font = "bold 10px sans-serif";
               ctx.textAlign = "center";
@@ -7168,6 +8466,24 @@
                 ctx.lineWidth = 3;
                 ctx.strokeRect(px + 1.5, py + 1.5, cellSize - 3, heightPx - 3);
               }
+
+              if (
+                customColor &&
+                METALLIC_COLORS.includes(customColor.toUpperCase())
+              ) {
+                const grad = ctx.createLinearGradient(
+                  px,
+                  py,
+                  px + cellSize,
+                    py + cellSize,
+                );
+                grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                ctx.fillStyle = grad;
+                ctx.fillRect(px, py, cellSize, heightPx);
+              }
+
               ctx.fillStyle = "rgba(255,255,255,0.7)";
               ctx.font = "10px sans-serif";
               ctx.textAlign = "center";
@@ -7214,6 +8530,23 @@
                 ctx.roundRect(px + offset, py + offset, size, size, r);
               else ctx.rect(px + offset, py + offset, size, size);
               ctx.fill();
+
+              if (
+                customColor &&
+                METALLIC_COLORS.includes(customColor.toUpperCase())
+              ) {
+                const grad = ctx.createLinearGradient(
+                  px + offset,
+                  py + offset,
+                  px + offset + size,
+                  py + offset + size,
+                );
+                grad.addColorStop(0, "rgba(255,255,255,0.4)");
+                grad.addColorStop(0.5, "rgba(255,255,255,0)");
+                grad.addColorStop(1, "rgba(0,0,0,0.1)");
+                ctx.fillStyle = grad;
+                ctx.fill();
+              }
             }
           };
 
@@ -7642,7 +8975,7 @@
           nav.innerHTML = this.topics
             .map(
               (t) => `
-            <button onclick="helpManager.renderNav('${t.id}'); helpManager.renderContent('${t.id}')" 
+            <button onclick="helpManager.renderNav('${t.id}'); helpManager.renderContent('${t.id}')"
               class="w-full text-left px-4 py-2 rounded text-xs font-medium transition-colors ${t.id === activeId ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}">
               ${t.title}
             </button>
@@ -7707,7 +9040,7 @@
           nav.innerHTML = this.versions
             .map(
               (v) => `
-                <button onclick="whatsNewManager.renderNav('${v.id}'); whatsNewManager.renderContent('${v.id}')" 
+                <button onclick="whatsNewManager.renderNav('${v.id}'); whatsNewManager.renderContent('${v.id}')"
                   class="w-full text-left px-4 py-2 rounded text-xs font-medium transition-colors ${v.id === activeId ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}">
                   ${v.v} <span class="opacity-50 ml-1 text-[10px]">${v.date}</span>
                 </button>
