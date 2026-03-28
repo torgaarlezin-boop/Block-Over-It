@@ -263,25 +263,19 @@
       }
 
       @keyframes boi-shimmer {
-        from {
-          background-position: -200% 0;
-        }
-        to {
-          background-position: 200% 0;
-        }
+        0% { background-position: -150% 0; }
+        100% { background-position: 150% 0; }
       }
       .metallic-shimmer {
         background-image: linear-gradient(
-          110deg,
-          rgba(255, 255, 255, 0) 20%,
-          rgba(255, 255, 255, 0.1) 35%,
-          rgba(255, 255, 255, 0.8) 50%,
-          rgba(255, 255, 255, 0.1) 65%,
-          rgba(255, 255, 255, 0) 80%
+          120deg,
+          rgba(255, 255, 255, 0) 30%,
+          rgba(255, 255, 255, 0.4) 50%,
+          rgba(255, 255, 255, 0) 70%
         ) !important;
-        background-size: 200% 100% !important;
-        animation: boi-shimmer 1.5s infinite linear !important;
-        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+        background-size: 250% 100% !important;
+        animation: boi-shimmer 2s infinite linear !important;
+        box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.2), 0 0 5px rgba(255, 255, 255, 0.1) !important;
       }
 
       #level-title-overlay {
@@ -2210,7 +2204,17 @@
       .mobile-mode .custom-level-row,
       .mobile-mode .browser-level-row {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 10px;
+        padding: 15px;
+      }
+      .mobile-mode .browser-level-stats {
+        text-align: left !important;
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 12px !important;
+        border-top: 1px solid #333;
+        padding-top: 10px;
       }
       .mobile-mode .browser-controls {
         flex-direction: column;
@@ -7574,7 +7578,7 @@
                   el.style.backgroundColor = actor.color;
                   el.style.borderColor = adjustColor(actor.color, -20);
 
-                  if (METALLIC_COLORS.includes(actor.color.toUpperCase())) {
+                  if (typeof actor.color === 'string' && METALLIC_COLORS.includes(actor.color.toUpperCase())) {
                     el.classList.add("metallic-shimmer");
                   }
 
@@ -11539,11 +11543,13 @@
               document.getElementById("file-input").click(),
             ),
           );
-          actionBar.appendChild(
-            mkBtn("EDITOR", "#335699", () =>
-              window.open("Block Architect Pro.html", "_blank"),
-            ),
-          );
+          if (!document.body.classList.contains("mobile-mode")) {
+            actionBar.appendChild(
+              mkBtn("EDITOR", "#335699", () =>
+                window.open("Block Architect Pro.html", "_blank"),
+              ),
+            );
+          }
           actionBar.appendChild(
             mkBtn("BROWSE", "#8e44ad", () => showMenu("browse-levels")),
           );
@@ -12239,7 +12245,7 @@
         // Controls
         const controls = document.createElement("div");
         controls.style.cssText =
-          "width:100%; display:flex; gap:10px; margin-bottom:15px;";
+          "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;";
 
         // Search Bar
         const searchInput = document.createElement("input");
@@ -12335,11 +12341,11 @@
               // Compact styling
               card.style.padding = "10px";
               card.innerHTML = `
-                              <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                              <div class="browser-level-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
                                   <div style="font-size:1rem; font-weight:bold; color:#fff;">${lvl.name}</div>
                                   <div style="font-size:0.75rem; color:#888;">by ${lvl.creator}</div>
                               </div>
-                              <div style="text-align:right; font-size:0.8rem; display:flex; flex-direction:column; gap:2px;">
+                              <div class="browser-level-stats" style="text-align:right; font-size:0.8rem; display:flex; flex-direction:column; gap:2px;">
                                   <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:bold;">${score} Pts</div>
                                   <div style="color:#e67e22;">Diff: ${lvl.difficulty}/5</div>
                                   <div style="color:#666;">${lvl.plays || 0} plays</div>
