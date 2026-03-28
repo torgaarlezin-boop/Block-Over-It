@@ -262,6 +262,44 @@
         background: linear-gradient(to top right, #444 50%, transparent 0);
       }
 
+      @keyframes boi-shimmer {
+        from {
+          background-position: -200% 0;
+        }
+        to {
+          background-position: 200% 0;
+        }
+      }
+      .metallic-shimmer {
+        background-image: linear-gradient(
+          110deg,
+          rgba(255, 255, 255, 0) 20%,
+          rgba(255, 255, 255, 0.1) 35%,
+          rgba(255, 255, 255, 0.8) 50%,
+          rgba(255, 255, 255, 0.1) 65%,
+          rgba(255, 255, 255, 0) 80%
+        ) !important;
+        background-size: 200% 100% !important;
+        animation: boi-shimmer 1.5s infinite linear !important;
+        box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+      }
+
+      #level-title-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 500;
+        display: none;
+        background: rgba(0, 0, 0, 0.6);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        transition: opacity 0.8s ease-in-out;
+      }
+
       .game {
         position: relative;
         overflow: auto;
@@ -2176,6 +2214,60 @@
       }
       .mobile-mode .browser-controls {
         flex-direction: column;
+      }
+
+      /* --- Skin Modal Styles --- */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease-out;
+        z-index: 2000;
+        backdrop-filter: blur(5px);
+      }
+      .modal-content {
+        background: #1a1a1a;
+        border: 3px solid #335699;
+        border-radius: 8px;
+        padding: 30px;
+        max-width: 90%;
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        transform: scale(0.9);
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      }
+      .modal-preview {
+        width: 120px;
+        height: 240px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        margin-bottom: 20px;
+        filter: drop-shadow(0 0 20px rgba(51, 86, 153, 0.3));
+      }
+      .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .modal-subtitle {
+        color: #888;
+        font-size: 1rem;
+        margin-bottom: 20px;
       }
     </style>
   </head>
@@ -5437,14 +5529,14 @@
       Lava.prototype.type = "lava";
 
       function Coin(pos) {
-        this.basePos = this.pos = pos;
+        this.basePos = this.pos = pos.plus(new Vector(0.2, 0.2));
         this.size = new Vector(0.6, 0.6);
         this.wobble = Math.random() * Math.PI * 2;
       }
       Coin.prototype.type = "coin";
 
       function BonusCoin(pos) {
-        this.basePos = this.pos = pos;
+        this.basePos = this.pos = pos.plus(new Vector(0.2, 0.2));
         this.size = new Vector(0.6, 0.6);
         this.wobble = 0; // No wobble for flat look
       }
@@ -5696,8 +5788,8 @@
       };
 
       function JumpPad(pos) {
-        this.pos = pos.plus(new Vector(0, 0.5));
-        this.size = new Vector(1, 0.5);
+        this.pos = pos.plus(new Vector(0.1, 0.5));
+        this.size = new Vector(0.8, 0.5);
       }
       JumpPad.prototype.type = "jump-pad";
       JumpPad.prototype.act = function (step, level) {
@@ -7399,9 +7491,15 @@
               ) {
                 el.style.background = "transparent";
                 el.style.border = "none";
-              } else if (color) {
+              } else if (color && color !== "invisible") {
                 el.style.backgroundColor = color;
                 el.style.borderColor = adjustColor(color, -20);
+                if (
+                  typeof color === "string" &&
+                  METALLIC_COLORS.includes(color.toUpperCase())
+                ) {
+                  el.classList.add("metallic-shimmer");
+                }
               }
               el.style.borderWidth =
                 (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
@@ -7477,8 +7575,7 @@
                   el.style.borderColor = adjustColor(actor.color, -20);
 
                   if (METALLIC_COLORS.includes(actor.color.toUpperCase())) {
-                    el.style.backgroundImage =
-                      "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)";
+                    el.classList.add("metallic-shimmer");
                   }
 
                   // Custom logic for textured/complex blocks
@@ -7506,7 +7603,7 @@
                       dot = document.createElement("div");
                       dot.className = "jump-pad-dot";
                       dot.style.cssText =
-                        "position:absolute; top:20%; left:20%; right:20%; bottom:20%; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
+                        "position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:50%; height:60%; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);";
                       el.appendChild(dot);
                     }
                     dot.style.backgroundColor = actor.color;
@@ -8428,6 +8525,38 @@
         });
       }
 
+      function showLevelTitle(title, author, font) {
+        const overlay = document.getElementById("level-title-overlay");
+        if (!overlay) return;
+        overlay.innerHTML = "";
+        overlay.style.fontFamily = font || "Courier New";
+
+        if (title) {
+          const tEl = document.createElement("div");
+          tEl.style.cssText =
+            "font-size: clamp(2rem, 8vw, 4rem); font-weight: 900; color: white; text-shadow: 4px 4px 0px #335699; letter-spacing: 5px; text-transform: uppercase; text-align: center; margin-bottom: 10px;";
+          tEl.textContent = title;
+          overlay.appendChild(tEl);
+        }
+        if (author) {
+          const aEl = document.createElement("div");
+          aEl.style.cssText =
+            "font-size: clamp(1rem, 3vw, 1.5rem); color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;";
+          aEl.textContent = "BY " + author;
+          overlay.appendChild(aEl);
+        }
+
+        overlay.style.display = "flex";
+        overlay.style.opacity = "1";
+
+        setTimeout(() => {
+          overlay.style.opacity = "0";
+          setTimeout(() => {
+            overlay.style.display = "none";
+          }, 800);
+        }, 2500);
+      }
+
       function startGameLevel(
         originalLevelData,
         index,
@@ -9076,7 +9205,7 @@
 
       function updateModalImage(id, customImg) {
         const modalPreview = document.getElementById("modal-preview");
-        if (skinId === "default") {
+        if (id === "default") {
           modalPreview.style.backgroundImage = "none";
           modalPreview.style.backgroundColor = "#335699";
           modalPreview.style.borderRadius = "8px";
@@ -11397,6 +11526,9 @@
             if (color) {
               b.style.background = color;
               b.style.borderColor = adjustColor(color, -20);
+              if (METALLIC_COLORS.includes(color.toUpperCase())) {
+                el.classList.add("metallic-shimmer");
+              }
             }
             b.onclick = cb;
             return b;
