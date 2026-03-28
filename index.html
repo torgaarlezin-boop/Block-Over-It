@@ -1575,6 +1575,87 @@
       }
       /* Mobile News UI Redesign */
       .mobile-mode .news-updates-content {
+        } else if (view === "mobile-gamemodes") {
+          subtitle.textContent = "SELECT MODE";
+          container.style.width = "100%";
+          container.style.padding = "0";
+
+          const carousel = document.createElement("div");
+          carousel.className = "gamemode-carousel";
+          carousel.style.cssText =
+            "display: flex; overflow-x: auto; scroll-snap-type: x mandatory; width: 100%; height: 60vh; align-items: center; gap: 20px; padding: 0 20px; box-sizing: border-box; scrollbar-width: none;";
+
+          const modes = [
+            {
+              name: "CAMPAIGN",
+              desc: "Play the main story levels.",
+              action: () => {
+                currentGameMode = "campaign";
+                showMenu("campaign");
+              },
+              color: "#335699",
+            },
+            {
+              name: "SPEEDRUN",
+              desc: "Regular speedrun.",
+              action: () => {
+                currentGameMode = "speedrun";
+                showMenu("source-select");
+              },
+              color: "#e67e22",
+            },
+            {
+              name: "DEATHRUN",
+              desc: "Die as fast as possible.",
+              action: () => {
+                currentGameMode = "deathrun";
+                showMenu("source-select");
+              },
+              color: "#a04040",
+            },
+            {
+              name: "CHAPTER SPEEDRUN",
+              desc: "Speedrun the entire chapter.",
+              action: () => {
+                currentGameMode = "chapter_speedrun";
+                showMenu("chapter-speedrun-select");
+              },
+              color: "#8e44ad",
+            },
+            {
+              name: "IMPOSSIBLE",
+              desc: "Chapter speedrun without dying.",
+              action: () => {
+                currentGameMode = "impossible";
+                showMenu("chapter-speedrun-select");
+              },
+              color: "#c0392b",
+            },
+          ];
+
+          modes.forEach((m) => {
+            const card = document.createElement("div");
+            card.className = "gamemode-card";
+            card.style.cssText = `flex: 0 0 250px; height: 300px; background: #222; border: 2px solid ${m.color}; border-radius: 15px; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; position: relative; transition: transform 0.2s; margin: 0 auto;`;
+
+            card.innerHTML = `
+                        <div style="font-size: 1.5rem; font-weight: bold; color: ${m.color}; margin-bottom: 10px; text-align: center;">${m.name}</div>
+                        <div style="font-size: 0.9rem; color: #aaa; text-align: center; margin-bottom: 20px;">${m.desc}</div>
+                        <button class="btn" style="font-size: 1rem; padding: 10px 20px; background: ${m.color}; border-color: #fff;">PLAY</button>
+                    `;
+            card.onclick = m.action;
+            carousel.appendChild(card);
+          });
+
+          container.appendChild(carousel);
+
+          const backBtn = document.createElement("button");
+          backBtn.className = "btn";
+          backBtn.textContent = "BACK";
+          backBtn.style.cssText =
+            "position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;";
+          backBtn.onclick = () => showMenu("main");
+          container.appendChild(backBtn);
         padding-right: 0;
         max-height: none;
       }
@@ -2585,7 +2666,7 @@
         efanballoon: { name: "Efan Balloon", copies: "1/1" },
         deacy: { name: "Deacy", copies: "1/1" },
         triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
-        cityboi: { name: "City Boy", copies: "1/5" },
+        cityboi: { name: "City Boy", copies: "1/10" },
         cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
         coolguyblackwhitelogo: {
           name: "Cool Guy (Black and White Logo)",
@@ -6274,8 +6355,6 @@
                   actor.produceCount =
                     this.blockConfigs[`${x},${y}`].count || 1;
                 }
-                if (ch === "H") actor.text = "↔";
-                if (ch === "V") actor.text = "↕";
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
@@ -9462,44 +9541,36 @@
           subtitle.textContent = "";
 
           if (document.body.classList.contains("mobile-mode")) {
-            const mkCard = (title, desc, color, action) => {
-              const card = document.createElement("button");
-              card.className = "btn-card";
-              card.innerHTML = `<span class="btn-card-title" style="color:${color}">${title}</span><span class="btn-card-desc">${desc}</span>`;
-              card.onclick = action;
-              return card;
+            const mobileGrid = document.createElement("div");
+            mobileGrid.className = "mobile-menu-grid";
+
+            // Leaderboard
+            const lbBtn = document.createElement("button");
+            lbBtn.className = "mobile-icon-btn";
+            lbBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>`;
+            lbBtn.onclick = () => showMenu("leaderboards-new");
+
+            // Campaign
+            const campBtn = document.createElement("button");
+            campBtn.className = "mobile-icon-btn campaign-btn";
+            campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            campBtn.onclick = () => {
+              showMenu("mobile-gamemodes");
             };
 
-            container.appendChild(
-              mkCard(
-                "CAMPAIGN",
-                "Journey through the block world",
-                "#335699",
-                () => showMenu("campaign"),
-              ),
-            );
-            container.appendChild(
-              mkCard(
-                "COMPETITIVE",
-                "Leaderboards and Speedruns",
-                "#e67e22",
-                () => showMenu("mobile-gamemodes"),
-              ),
-            );
-            container.appendChild(
-              mkCard("CUSTOM", "Browse community creations", "#8e44ad", () => {
-                currentGameMode = "custom";
-                showMenu("custom");
-              }),
-            );
-            container.appendChild(
-              mkCard(
-                "SKINS",
-                "Customize your block",
-                "#2ecc71",
-                () => (window.location.href = "skin_explorer.html"),
-              ),
-            );
+            // Profile
+            const profBtn = document.createElement("button");
+            profBtn.className = "mobile-icon-btn";
+            profBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+            profBtn.onclick = () => {
+              if (currentUser) showMenu("account");
+              else openLoginModal();
+            };
+
+            mobileGrid.appendChild(lbBtn);
+            mobileGrid.appendChild(campBtn);
+            mobileGrid.appendChild(profBtn);
+            container.appendChild(mobileGrid);
 
             // Mobile Settings Button (Bottom Right)
             const mobSettingsBtn = document.createElement("button");
