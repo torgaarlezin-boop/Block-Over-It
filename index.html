@@ -11509,49 +11509,16 @@
 
           const isMobile = document.body.classList.contains("mobile-mode");
 
-          // --- Action Bar ---
-          const actionBar = document.createElement("div");
-          actionBar.style.cssText =
-            "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; justify-content:center;";
-
-          const mkBtn = (text, color, cb) => {
-            const b = document.createElement("button");
-            b.className = "btn";
-            b.textContent = text;
-            b.style.fontSize = "0.9rem";
-            b.style.padding = "10px 15px";
-            b.style.minWidth = "auto";
-            if (isMobile) {
-              b.style.flex = "1 0 45%";
-            }
-            if (color) {
-              b.style.background = color;
-              b.style.borderColor = adjustColor(color, -20);
-            }
-            b.onclick = cb;
-            return b;
-          };
-
-          if (!isMobile) {
-          actionBar.appendChild(
-            mkBtn("+ IMPORT", "#27ae60", () =>
-              document.getElementById("file-input").click(),
-            ),
-          );
-            actionBar.appendChild(
-              mkBtn("EDITOR", "#335699", () =>
-                window.open("Block Architect Pro.html", "_blank"),
-              ),
-            );
-          actionBar.appendChild(
-            mkBtn("BROWSE", "#8e44ad", () => showMenu("browse-levels")),
-          );
-          container.appendChild(actionBar);
+          // Reset mode if coming from main menu (fixes getting stuck in speedrun mode)
+          if (customMenuSource === "main") {
+            currentGameMode = "custom";
           }
 
           // Mobile Landscape Optimization for Custom Levels
-          if (isMobile) {
+          if (document.body.classList.contains("mobile-mode")) {
             container.style.flexDirection = "row";
+            container.style.flexWrap = "wrap";
+            container.style.justifyContent = "center";
           }
 
           // List existing custom levels
@@ -11708,26 +11675,29 @@
             });
           }
 
-          if (isMobile) {
-            const mobImportBtn = mkBtn("+ ADD LEVEL", "#27ae60", () =>
-              document.getElementById("file-input").click(),
-            );
-            mobImportBtn.style.width = "100%";
-            mobImportBtn.style.marginTop = "10px";
-            container.appendChild(mobImportBtn);
-          }
+          // Add Level Button logic
+          const controlsDiv = document.createElement("div");
+          controlsDiv.style.cssText =
+            "width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:20px;";
 
+          const label = document.createElement("label");
+          label.className = "file-label";
+          label.textContent = "+ Add Level (.json)";
+          label.htmlFor = "file-input";
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
-          btnBack.style.marginTop = "20px";
-          btnBack.style.width = "100%";
+          btnBack.style.marginTop = "0"; // Reset margin for flex
           btnBack.onclick = () => {
             if (customMenuSource === "source-select") showMenu("source-select");
             else if (document.body.classList.contains("mobile-mode"))
               showMenu("main");
             else showMenu("main");
           };
+
+          controlsDiv.appendChild(label);
+          controlsDiv.appendChild(btnBack);
+          container.appendChild(controlsDiv);
           container.appendChild(btnBack);
         } else if (view === "browse-levels") {
           subtitle.textContent = "COMMUNITY LEVELS";
