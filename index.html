@@ -1751,6 +1751,24 @@
       .mobile-mode #social-notif {
         display: none !important;
       }
+              /* Settings Responsiveness */
+        .mobile-mode .accordion-header {
+          padding: 12px;
+          font-size: 1.1rem;
+        }
+        .mobile-mode .accordion-content {
+          padding: 10px;
+          gap: 10px;
+        }
+        .mobile-mode .menu-container {
+          padding-bottom: 100px;
+        }
+        .mobile-mode .accordion-header span:first-child {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 80%;
+        }
 
       .mobile-mode .mobile-menu-grid {
         display: flex;
@@ -2351,6 +2369,20 @@
         color: #888;
         font-size: 1rem;
         margin-bottom: 20px;
+      }
+            /* Social Media Style Browser UI */
+      .browser-level-row {
+        background: #1a1a1a !important;
+        border: 2px solid #333 !important;
+        padding: 20px !important;
+        border-radius: 2px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        transition: all 0.2s !important;
+      }
+      .browser-level-row:hover {
+        border-color: #335699 !important;
+        transform: translateY(-2px) scale(1.01) !important;
+        background: #222 !important;
       }
     </style>
   </head>
@@ -5126,8 +5158,16 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           gravity: 40,
           riseInterval: 0,
           forceZoom: false,
+          disableZoom: false,
+          visualTitle: "",
+          visualAuthor: "",
+          visualWin: "",
+          visualFont: "Courier New",
           disableDeathAnim: false,
-          music: "night",
+          music: null,
+          musicSpeed: 1,
+          background: null,
+          bgAnimation: null,
           colors: {},
           fakes: [],
           risingThrough: [],
@@ -5157,10 +5197,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             "55,21",
             "56,21",
             "57,21",
-            "27,14",
-            "25,18",
-            "22,21",
-            "25,23",
             "39,16",
             "40,16",
             "41,16",
@@ -5196,20 +5232,20 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             "                                                                                                              ",
             "                                                                                    xxxxxx                    ",
             "                                                                                   x!!xx!!x                   ",
-            "                             B                                                     x! xx !x                   ",
+            "                                                                                   x! xx !x                   ",
             "                             xxxxxxxxxx                                            x!!xx!!x                   ",
             "                             x!     |                                              x!!xx!!x                   ",
             "                             x!                                                     x!xx!x                    ",
-            "                           G x!o                                                     ssss                     ",
+            "                             x!o                                                     ssss                     ",
             "                             x!                                                                               ",
             "                             x!   |    GGG                                            o                       ",
             "                             xxKGGxGxGx  GG                                                                   ",
-            "                         G                G                                           SS                    o ",
-            "                                           G                  xxxxxx         x  HH  GGxxGG    HH     GGGGG  xx",
+            "                                          G                                           SS                    o ",
+            "                                           G                  xxxxxx   B     x  HH  GGxxGG    HH     GGGGG  xx",
             "                                           GG         GGGGxxxx      x  =   = x                               x",
-            "                      G                    G     H    GGGG          x        x                              ox",
+            "                                           G     H    GGGG          x        x                              ox",
             "                                                                    x x      x                              xx",
-            "                         G                                          x        x                               x",
+            "                                                                    x        x                               x",
             "                                                                    x   H    x                              ox",
             "                                                                    x        x                              xx",
             "                                                                    x        x                               x",
@@ -5219,15 +5255,15 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             "                            x   H      x                                                                    ox",
             "                            x          x                                                                    xx",
             "                            !          x                                                                     x",
-            "                            !    H     x                                                                    ox",
-            "                            x          x                                x                                   xx",
-            "                            x          x                               x!x                                   x",
-            "                            x   H      x                              x!!!x                                 ox",
-            "                            x          x                             x!!!!!x                                xx",
-            "                          xxx          x                             xxxxxxx                                 x",
-            "                           sx      H   x        o        SS          x ! ! x                                ox",
-            "                                       x                SxxS         xkkkkkx                                xx",
-            "                            o          x                kxxk                                                 x",
+            "                            !    H     x                                x                                   ox",
+            "                            x          x                               x!x                                  xx",
+            "                            x          x                              x!!!x                                  x",
+            "                            x   H      x                             x!!!!!x                                ox",
+            "                            x          x                             xxxxxxx                                xx",
+            "                          xxx          x                             x ! ! x                                 x",
+            "                           sx      H   x        o        SS          xkkkkkx                                ox",
+            "                                       x                SxxS                                                xx",
+            "                            o          x                kkkk                                                 x",
             "                           S   GGGGGG  x      xxKxx    x    x                                               ox",
             "                           xx          x              x o  o x          o                                   xx",
             "                  S         x          x                                                                     x",
@@ -7589,7 +7625,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                 el.style.borderColor = adjustColor(color, -20);
               }
               el.style.borderWidth =
-                (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
+                Math.max(0, Math.round(s < 25 ? s * 0.12 : 3)) + "px";
               this.bgLayer.appendChild(el);
             }
           }
@@ -7700,9 +7736,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             if (actor.type === "spike") {
               var visual = document.createElement("div");
               visual.className = "spike-visual";
-              visual.style.borderLeftWidth = s * 0.5 + "px";
-              visual.style.borderRightWidth = s * 0.5 + "px";
-              visual.style.borderBottomWidth = s + "px";
+              visual.style.borderLeftWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderRightWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderBottomWidth = Math.round(s) + "px";
               visual.style.borderTopWidth = "0px";
               visual.style.position = "absolute";
               visual.style.left = "50%";
@@ -7717,9 +7753,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             if (actor.type === "upside-down-spike") {
               var visual = document.createElement("div");
               visual.className = "spike-visual spike-u";
-              visual.style.borderLeftWidth = s * 0.5 + "px";
-              visual.style.borderRightWidth = s * 0.5 + "px";
-              visual.style.borderTopWidth = s + "px";
+              visual.style.borderLeftWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderRightWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderTopWidth = Math.round(s) + "px";
               visual.style.borderBottomWidth = "0px";
               visual.style.position = "absolute";
               visual.style.left = "50%";
@@ -7734,9 +7770,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             if (actor.type === "spike-left") {
               var visual = document.createElement("div");
               visual.className = "spike-visual";
-              visual.style.borderTopWidth = s * 0.5 + "px";
-              visual.style.borderBottomWidth = s * 0.5 + "px";
-              visual.style.borderRightWidth = s + "px";
+              visual.style.borderTopWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderBottomWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderRightWidth = Math.round(s) + "px";
               visual.style.borderLeftWidth = "0px";
               visual.style.borderBottomColor = "transparent";
               visual.style.borderRightColor = actor.color || "#aaa";
@@ -7749,9 +7785,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             if (actor.type === "spike-right") {
               var visual = document.createElement("div");
               visual.className = "spike-visual";
-              visual.style.borderTopWidth = s * 0.5 + "px";
-              visual.style.borderBottomWidth = s * 0.5 + "px";
-              visual.style.borderLeftWidth = s + "px";
+              visual.style.borderTopWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderBottomWidth = Math.round(s * 0.5) + "px";
+              visual.style.borderLeftWidth = Math.round(s) + "px";
               visual.style.borderRightWidth = "0px";
               visual.style.borderBottomColor = "transparent";
               visual.style.borderLeftColor = actor.color || "#aaa";
@@ -7844,9 +7880,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               "spike-block-r",
             ].includes(actor.type)
           ) {
-            el.style.borderWidth = (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
+            el.style.borderWidth = Math.max(0, Math.round(s < 25 ? s * 0.12 : 3)) + "px";
           } else if (actor.type === "jump-pad") {
-            el.style.borderWidth = (s < 25 ? Math.max(1, s * 0.08) : 2) + "px";
+            el.style.borderWidth = Math.max(0, Math.round(s < 25 ? s * 0.08 : 2)) + "px";
           }
 
           var visualW = actor.size.x;
@@ -7922,10 +7958,10 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             el.style.transform = `rotate(${actor.rotation || 0}deg)`;
           }
 
-          el.style.width = visualW * s + "px";
-          el.style.height = visualH * s + "px";
-          el.style.left = visualX * s + "px";
-          el.style.top = visualY * s + "px";
+          el.style.width = Math.round(visualW * s) + "px";
+          el.style.height = Math.round(visualH * s) + "px";
+          el.style.left = Math.round(visualX * s) + "px";
+          el.style.top = Math.round(visualY * s) + "px";
 
           // Hitbox Debugging
           if (gameSettings.showHitboxes) {
@@ -7941,10 +7977,10 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               this.hitboxLayer.appendChild(hb);
               this.hitboxElements.set(actor.id, hb);
             }
-            hb.style.left = actor.pos.x * s + "px";
-            hb.style.top = actor.pos.y * s + "px";
-            hb.style.width = actor.size.x * s + "px";
-            hb.style.height = actor.size.y * s + "px";
+            hb.style.left = Math.round(actor.pos.x * s) + "px";
+            hb.style.top = Math.round(actor.pos.y * s) + "px";
+            hb.style.width = Math.round(actor.size.x * s) + "px";
+            hb.style.height = Math.round(actor.size.y * s) + "px";
           }
         });
 
@@ -7977,8 +8013,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             this.world.appendChild(marker);
             marker.style.width = p.size.x * s + "px";
             marker.style.height = p.size.y * s + "px";
-            marker.style.left = p.pos.x * s + "px";
-            marker.style.top = p.pos.y * s + "px";
+            marker.style.left = Math.round(p.pos.x * s) + "px";
+            marker.style.top = Math.round(p.pos.y * s) + "px";
           });
         }
       };
@@ -8016,8 +8052,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           // Camera Mode
           this.scale = window.innerWidth / 15;
         }
-        this.world.style.width = this.level.width * this.scale + "px";
-        this.world.style.height = this.level.height * this.scale + "px";
+        this.world.style.width = Math.round(this.level.width * this.scale) + "px";
+        this.world.style.height = Math.round(this.level.height * this.scale) + "px";
       };
 
       DOMDisplay.prototype.setZoomOut = function (state) {
@@ -9636,6 +9672,26 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             container.appendChild(mobNewsBtn);
 
             // Mobile Beats Button (Bottom Left)
+            const mobBrowserBtn = document.createElement("button");
+            mobBrowserBtn.className =
+              "mobile-icon-btn browser-btn-mobile mobile-fixed-btn";
+            mobBrowserBtn.style.cssText =
+              "position: fixed; top: 20px; right: 80px; width: 50px; height: 50px; z-index: 100; display:flex; background:#2ecc71; border-color:#27ae60;";
+            mobBrowserBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>`;
+            mobBrowserBtn.onclick = () => showMenu("browse-levels");
+            container.appendChild(mobBrowserBtn);
+
+            const mobAddBtn = document.createElement("button");
+            mobAddBtn.className =
+              "mobile-icon-btn add-btn-mobile mobile-fixed-btn";
+            mobAddBtn.style.cssText =
+              "position: fixed; top: 20px; right: 140px; width: 50px; height: 50px; z-index: 100; display:flex; background:#e67e22; border-color:#d35400;";
+            mobAddBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`;
+            mobAddBtn.onclick = () =>
+              document.getElementById("file-input").click();
+            container.appendChild(mobAddBtn);
+
+            // Mobile Beats Button
             const mobBeatsBtn = document.createElement("button");
             mobBeatsBtn.className =
               "mobile-icon-btn beats-btn-mobile mobile-fixed-btn";
@@ -9643,6 +9699,16 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               "position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; z-index: 100; display:flex;";
             mobBeatsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`;
             mobBeatsBtn.onclick = () => openMobileBeatsUI();
+            container.appendChild(mobBeatsBtn);
+
+            const mobSkinsBtn = document.createElement("button");
+            mobSkinsBtn.className =
+              "mobile-icon-btn skins-btn-mobile mobile-fixed-btn";
+            mobSkinsBtn.style.cssText =
+              "position: fixed; top: 20px; left: 80px; width: 50px; height: 50px; z-index: 100; display:flex;";
+            mobSkinsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
+            mobSkinsBtn.onclick = () =>
+              (window.location.href = "skin_explorer.html");
             container.appendChild(mobBeatsBtn);
 
             // Mobile Custom Levels Button (Top Right)
@@ -9668,17 +9734,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             mobAwardsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 8V7h2v3.52C8.17 10.07 7.54 9.13 7 8zm10 0c-.54 1.13-1.17 2.07-2 2.52V7h2v1z"/></svg>`;
             mobAwardsBtn.onclick = () => showMenu("level-awards");
             container.appendChild(mobAwardsBtn);
-
-            // Mobile Skins Button (Top Left - Next to Awards)
-            const mobSkinsBtn = document.createElement("button");
-            mobSkinsBtn.className =
-              "mobile-icon-btn skins-btn-mobile mobile-fixed-btn";
-            mobSkinsBtn.style.cssText =
-              "position: fixed; top: 20px; left: 80px; width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobSkinsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
-            mobSkinsBtn.onclick = () =>
-              (window.location.href = "skin_explorer.html");
-            container.appendChild(mobSkinsBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -9847,17 +9902,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             codeBtn.style.marginTop = "10px";
             codeBtn.onclick = () => openCodeRedeemModal();
             userItems.push(codeBtn);
-
-            const passDiv = document.createElement("div");
-            passDiv.style.cssText =
-              "display:flex; flex-direction:column; gap:10px; padding:10px; background:#222; border:1px solid #444; border-radius:4px;";
-            passDiv.innerHTML = `
-                    <div style="font-size:0.9rem; color:#ccc; font-weight:bold;">CHANGE PASSWORD</div>
-                    <input type="password" id="old-pass-input" placeholder="Current Password" style="padding:8px; background:#333; color:white; border:1px solid #555; font-size:0.8rem;">
-                    <input type="password" id="new-pass-input" placeholder="New Password" style="padding:8px; background:#333; color:white; border:1px solid #555; font-size:0.8rem;">
-                    <button class="btn" style="padding:8px; font-size:0.8rem; min-width:auto;" onclick="changePassword(document.getElementById('old-pass-input').value, document.getElementById('new-pass-input').value)">UPDATE PASSWORD</button>
-                  `;
-            userItems.push(passDiv);
           }
 
           const openUser = context === "user";
@@ -12408,12 +12452,14 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         sortSelect.id = "browser-sort";
         // Default to Most Likes
         sortSelect.style.cssText =
-          "padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; font-family: inherit;";
+          "padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; font-family: inherit; cursor: pointer;";
         sortSelect.innerHTML = `
+            <option value="likes">Popular</option>
+            <option value="featured">Featured</option>
+            <option value="awards">Level Awards</option>
             <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="likes">Most Likes</option>
             <option value="plays">Most Plays</option>
+            <option value="oldest">Classic</option>
             <option value="difficulty_asc">Easiest</option>
             <option value="difficulty_desc">Hardest</option>
         `;
@@ -12455,6 +12501,14 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             query = query.order("difficulty", { ascending: true });
           else if (sort === "difficulty_desc")
             query = query.order("difficulty", { ascending: false });
+          else if (sort === "featured")
+            query = query
+              .eq("featured", true)
+              .order("created_at", { ascending: false });
+          else if (sort === "awards")
+            query = query
+              .eq("awards", true)
+              .order("created_at", { ascending: false });
 
           query = query.limit(50);
 
@@ -12486,18 +12540,26 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               const score = (lvl.upvotes || 0) - (lvl.downvotes || 0);
               const card = document.createElement("div");
               card.className = "browser-level-row";
-              // Compact styling
-              card.style.padding = "10px";
               card.innerHTML = `
-                              <div class="browser-level-info" style="display:flex; flex-direction:column; gap:2px; flex:1;">
-                                  <div style="font-size:1rem; font-weight:bold; color:#fff;">${lvl.name}</div>
-                                  <div style="font-size:0.75rem; color:#888;">by ${lvl.creator}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+                      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                              <span style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:0.5px;">${lvl.name}</span>
+                              ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
+                              ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
+                          </div>
+                          <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
+                          <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:#e67e22; font-weight:bold;">${lvl.difficulty}/5</span></div>
+                      </div>
+                      <div style="text-align:right; display:flex; flex-direction:column; gap:8px;">
+                          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                              <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1.1rem; background:rgba(0,0,0,0.4); padding:6px 12px; border-radius:10px; border:1px solid #333;">
+                                  ${score > 0 ? "+" : ""}${score}
                               </div>
-                              <div class="browser-level-stats" style="text-align:right; font-size:0.8rem; display:flex; flex-direction:column; gap:2px;">
-                                  <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:bold;">${score} Pts</div>
-                                  <div style="color:#e67e22;">Diff: ${lvl.difficulty}/5</div>
-                                  <div style="color:#666;">${lvl.plays || 0} plays</div>
-                              </div>
+                          </div>
+                          <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${lvl.plays || 0} PLAYS</div>
+                      </div>
+                  </div>
                           `;
               card.onclick = () =>
                 showMenu("browse-levels", { viewLevel: lvl });
@@ -12654,11 +12716,12 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
       window.voteLevel = async (id, val, btnElement) => {
         if (!currentUser) return openLoginModal();
         const votedKey = `voted_level_${id}`;
-        const previousVote = localStorage.getItem(votedKey);
+        const previousVoteStr = localStorage.getItem(votedKey);
+        const previousVote = previousVoteStr ? parseInt(previousVoteStr) : 0;
 
-        if (previousVote && parseInt(previousVote) === val) {
-          return; // Same vote, do nothing
-        }
+        if (previousVote === val) return;
+
+        let delta = val;
 
         if (_supabase) {
           await _supabase.rpc(val > 0 ? "upvote_level" : "downvote_level", {
@@ -12670,7 +12733,10 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           const scoreEl = document.querySelector("#level-score-display");
           if (scoreEl) {
             let current = parseInt(scoreEl.innerText);
-            current += val;
+            if (previousVote !== 0 && previousVote !== val) {
+              delta = val * 2;
+            }
+            current += delta;
             scoreEl.innerText = current;
             scoreEl.style.color = current >= 0 ? "#2ecc71" : "#e74c3c";
           }
