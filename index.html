@@ -2456,6 +2456,13 @@
         <button class="awards-btn" onclick="showMenu('level-awards')">
           <span>Level Awards</span>
         </button>
+        <button
+          class="btn"
+          style="min-width: auto; padding: 10px 20px; font-size: 1rem; background: #222; border: 2px solid #444;"
+          onclick="window.location.href = 'skin_explorer.html'"
+        >
+          <span>Skins</span>
+        </button>
       </div>
 
       <div class="bottom-left-controls">
@@ -12430,14 +12437,15 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
       }
 
       async function renderLevelBrowserList(container) {
+        const isMobile = document.body.classList.contains("mobile-mode");
         const list = document.createElement("div");
         list.style.cssText =
-          "width:100%; display:flex; flex-direction:column; gap:10px; max-height:65vh; overflow-y:auto; padding-right:10px;";
+          "width:100%; display:flex; flex-direction:column; gap:10px; " + (isMobile ? "padding-bottom:100px;" : "max-height:65vh; overflow-y:auto; padding-right:10px;");
 
         // Controls
         const controls = document.createElement("div");
         controls.style.cssText =
-          "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;";
+          "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; " + (isMobile ? "position:sticky; top:0; background:#111; z-index:10; padding:10px 0;" : "");
 
         // Search Bar
         const searchInput = document.createElement("input");
@@ -12540,27 +12548,51 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               const score = (lvl.upvotes || 0) - (lvl.downvotes || 0);
               const card = document.createElement("div");
               card.className = "browser-level-row";
-              card.innerHTML = `
+
+              if (isMobile) {
+                card.style.padding = "25px";
+                card.innerHTML = `
+                  <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <span style="font-size:1.5rem; font-weight:900; color:#fff; letter-spacing:0.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${lvl.name}</span>
+                          <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1.2rem; background:rgba(0,0,0,0.4); padding:8px 15px; border-radius:12px; border:1px solid #333;">
+                              ${score > 0 ? '+' : ''}${score}
+                          </div>
+                      </div>
+                      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                          ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.7rem; padding:4px 12px; border-radius:20px; font-weight:900;">FEATURED</span>' : ''}
+                          ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.7rem; padding:4px 12px; border-radius:20px; font-weight:900;">AWARD</span>' : ''}
+                      </div>
+                      <div style="font-size:1.1rem; color:#335699; font-weight:bold;">by @${lvl.creator}</div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #333; padding-top:15px;">
+                          <div style="color:#aaa; font-size:0.9rem;">Difficulty: <span style="color:#e67e22; font-weight:bold;">${lvl.difficulty}/5</span></div>
+                          <div style="font-size:0.8rem; color:#666; font-weight:bold; text-transform:uppercase;">${lvl.plays || 0} PLAYS</div>
+                      </div>
+                  </div>
+                `;
+              } else {
+                card.innerHTML = `
                   <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                       <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
                           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                               <span style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:0.5px;">${lvl.name}</span>
-                              ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
-                              ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
+                              ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ''}
+                              ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">AWARD</span>' : ''}
                           </div>
-                          <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
+                          <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by @${lvl.creator}</div>
                           <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:#e67e22; font-weight:bold;">${lvl.difficulty}/5</span></div>
                       </div>
                       <div style="text-align:right; display:flex; flex-direction:column; gap:8px;">
                           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
                               <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1.1rem; background:rgba(0,0,0,0.4); padding:6px 12px; border-radius:10px; border:1px solid #333;">
-                                  ${score > 0 ? "+" : ""}${score}
+                                  ${score > 0 ? '+' : ''}${score}
                               </div>
                           </div>
                           <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${lvl.plays || 0} PLAYS</div>
                       </div>
                   </div>
-                          `;
+                `;
+              }
               card.onclick = () =>
                 showMenu("browse-levels", { viewLevel: lvl });
               list.appendChild(card);
