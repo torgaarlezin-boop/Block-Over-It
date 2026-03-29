@@ -3024,7 +3024,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               saveHighscores(true);
               saveSettings();
               syncDataToCloud();
-              checkNotifications();
               await checkSkinUnlocks(false);
             }
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
@@ -3102,7 +3101,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             saveSettings();
             syncDataToCloud();
             await checkSkinUnlocks(false);
-            checkNotifications();
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -12711,23 +12709,6 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         await _supabase
           .from("level_comments")
           .insert([{ level_id: id, username: currentUser, content: text }]);
-
-        // Handle Pings
-        const mentionRegex = /@(\w+)/g;
-        const mentions = [...text.matchAll(mentionRegex)].map((m) => m[1]);
-        if (mentions.length > 0) {
-          const uniqueMentions = [...new Set(mentions)]; // No duplicates
-          for (const user of uniqueMentions) {
-            await _supabase.from("notifications").insert([
-              {
-                username: user,
-                type: "mention",
-                message: `${currentUser} mentioned you in a comment!`,
-                link_id: id,
-              },
-            ]);
-          }
-        }
 
         input.value = "";
         loadComments(id);
