@@ -8734,8 +8734,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         currentLevelChapter = chapter;
 
         // Increment plays for community levels
-        if (levelData.dbId && _supabase) {
-          _supabase.rpc("increment_plays", { row_id: parseInt(levelData.dbId) });
+        if (originalLevelData.dbId && _supabase) {
+          _supabase.rpc("increment_plays", { row_id: originalLevelData.dbId });
         }
 
         // Highscore Display
