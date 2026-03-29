@@ -1900,12 +1900,12 @@
         border-bottom: 2px solid #333;
         padding-bottom: 10px;
         width: 100%;
-        max-width: 750px;
+        max-width: 900px;
       }
       .news-updates-content {
         width: 100%;
-        max-width: 750px;
-        max-height: 65vh;
+        max-width: 900px;
+        max-height: 75vh;
         overflow-y: auto;
         padding-right: 10px;
       }
@@ -2666,7 +2666,7 @@
         efanballoon: { name: "Efan Balloon", copies: "1/1" },
         deacy: { name: "Deacy", copies: "1/1" },
         triplet: { name: "Tung Tung Tung Sahur", copies: "1/3" },
-        cityboi: { name: "City Boy", copies: "1/10" },
+        cityboi: { name: "City Boy", copies: "1/11" },
         cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
         coolguyblackwhitelogo: {
           name: "Cool Guy (Black and White Logo)",
@@ -7569,8 +7569,10 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               el.style.position = "absolute";
               el.style.left = Math.round(x * s) + "px";
               el.style.top = Math.round(y * s) + "px";
-              el.style.width = Math.round(s) + "px";
-              el.style.height = Math.round(s) + "px";
+              el.style.width =
+                Math.round((x + 1) * s) - Math.round(x * s) + "px";
+              el.style.height =
+                Math.round((y + 1) * s) - Math.round(y * s) + "px";
 
               var color = self.level.colors[`${x},${y}`];
               if (
@@ -9455,8 +9457,27 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         return data || [];
       }
 
+      let lastLeaderboardState = {
+        mode: "speedrun",
+        chapter: "1",
+        level: "0",
+        category: "any",
+        scrollPos: 0,
+      };
+
       async function openUserProfile(username) {
         if (!_supabase) return;
+
+        // Save scroll position before showMenu clears the leaderboard
+        if (currentMenuView === "leaderboards-new") {
+          const list =
+            document.querySelector(
+              ".mobile-leaderboard-container > div:nth-child(2)",
+            ) || document.querySelector("#menu-content > div:nth-child(2)");
+          if (list) {
+            lastLeaderboardState.scrollPos = list.scrollTop;
+          }
+        }
 
         // Optimistic UI: Show loading state immediately
         showMenu("user-profile", { username, loading: true });
@@ -9549,8 +9570,12 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         const existingBack = document.getElementById("top-right-back-btn");
         if (existingBack) existingBack.remove();
 
+        const existingSocials = document.getElementById("news-socials");
+        if (existingSocials) existingSocials.remove();
+
         if (view === "main") {
           subtitle.textContent = "";
+          lastLeaderboardState.scrollPos = 0;
 
           if (document.body.classList.contains("mobile-mode")) {
             const mobileGrid = document.createElement("div");
@@ -10084,11 +10109,16 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
           // Social Icons
           const socialDiv = document.createElement("div");
+          socialDiv.id = "news-socials";
           socialDiv.style.cssText =
-            "display:flex; gap:15px; margin-bottom:15px; justify-content:center; width:100%; max-width:750px;";
+            "position: absolute; top: 60px; right: 20px; display:flex; gap:15px; z-index: 130;";
 
-          socialDiv.innerHTML = `<a href="https://discord.gg/t7vDcE2A" target="_blank" style="color:#7289da; text-decoration:none;"><svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg></a><a href="https://instagram.com/Block Over It" target="_blank" style="color:#E1306C; text-decoration:none;"><svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M7.8,2H16.2C19.4,2 22,4.6 22,7.8V16.2A5.8,5.8 0 0,1 16.2,22H7.8C4.6,22 2,19.4 2,16.2V7.8A5.8,5.8 0 0,1 7.8,2M7.6,4A3.6,3.6 0 0,0 4,7.6V16.4C4,18.39 5.61,20 7.6,20H16.4A3.6,3.6 0 0,0 20,16.4V7.6C20,5.61 18.39,4 16.4,4H7.6M17.25,5.5A1.25,1.25 0 0,1 18.5,6.75A1.25,1.25 0 0,1 17.25,8A1.25,1.25 0 0,1 16,6.75A1.25,1.25 0 0,1 17.25,5.5M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" /></svg></a>`;
-          container.appendChild(socialDiv);
+          socialDiv.innerHTML = `
+            <a href="mailto:blockoverit@outlook.com" target="_blank" style="color:#fff; text-decoration:none;" title="Email"><svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
+            <a href="https://discord.gg/t7vDcE2A" target="_blank" style="color:#7289da; text-decoration:none;" title="Discord"><svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg></a>
+            <a href="https://www.instagram.com/block_over_it?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" style="color:#E1306C; text-decoration:none;" title="Instagram"><svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M7.8,2H16.2C19.4,2 22,4.6 22,7.8V16.2A5.8,5.8 0 0,1 16.2,22H7.8C4.6,22 2,19.4 2,16.2V7.8A5.8,5.8 0 0,1 7.8,2M7.6,4A3.6,3.6 0 0,0 4,7.6V16.4C4,18.39 5.61,20 7.6,20H16.4A3.6,3.6 0 0,0 20,16.4V7.6C20,5.61 18.39,4 16.4,4H7.6M17.25,5.5A1.25,1.25 0 0,1 18.5,6.75A1.25,1.25 0 0,1 17.25,8A1.25,1.25 0 0,1 16,6.75A1.25,1.25 0 0,1 17.25,5.5M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" /></svg></a>
+          `;
+          document.getElementById("main-menu").appendChild(socialDiv);
 
           const showNewsContent = () => {
             newsTabBtn.style.borderColor = "#335699";
@@ -10763,6 +10793,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               opt.text = m;
               modeSelect.appendChild(opt);
             });
+            modeSelect.value = lastLeaderboardState.mode;
 
             const chapSelect = document.createElement("select");
             chapSelect.style.cssText =
@@ -10773,6 +10804,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               opt.text = "Ch " + c;
               chapSelect.appendChild(opt);
             });
+            chapSelect.value = lastLeaderboardState.chapter;
 
             row1.appendChild(modeSelect);
             row1.appendChild(chapSelect);
@@ -10803,6 +10835,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             list.innerHTML =
               "<div style='text-align:center; color:#666; margin-top:20px;'>Loading...</div>";
 
+            let isInitializing = true;
             const updateLevels = async () => {
               levelSelect.innerHTML = "";
               // Helper to check if we need to rebuild chapSelect (only if mode changed effectively)
@@ -10832,6 +10865,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                       opt.text = a.title;
                       chapSelect.appendChild(opt);
                     });
+                    if (isInitializing) {
+                      chapSelect.value = lastLeaderboardState.chapter;
+                    }
                   }
                 }
                 // Levels for Awards (1st, 2nd, 3rd)
@@ -10854,6 +10890,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                     opt.text = "Chapter " + c;
                     chapSelect.appendChild(opt);
                   });
+                  if (isInitializing) {
+                    chapSelect.value = lastLeaderboardState.chapter;
+                  }
                 }
 
                 const ch = parseInt(chapSelect.value) || 1;
@@ -10911,6 +10950,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                 });
               }
 
+              if (isInitializing) {
+                levelSelect.value = lastLeaderboardState.level;
+                catSelect.value = lastLeaderboardState.category;
+              }
+
               if (
                 modeSelect.value === "deathrun" ||
                 modeSelect.value === "chapter_speedrun" ||
@@ -10930,6 +10974,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               const chapVal = chapSelect.value;
               const lvlVal = parseInt(levelSelect.value);
               const cat = catSelect.value;
+
+              lastLeaderboardState.mode = mode;
+              lastLeaderboardState.chapter = chapVal;
+              lastLeaderboardState.level = lvlVal.toString();
+              lastLeaderboardState.category = cat;
 
               let key = "";
               let prefix = "";
@@ -10978,6 +11027,13 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                             `;
                   })
                   .join("");
+
+                if (isInitializing) {
+                  setTimeout(() => {
+                    list.scrollTop = lastLeaderboardState.scrollPos;
+                  }, 0);
+                  isInitializing = false;
+                }
               }
             };
 
@@ -11035,6 +11091,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             opt.text = m;
             modeSelect.appendChild(opt);
           });
+          modeSelect.value = lastLeaderboardState.mode;
 
           // Chapter Selector
           const chapSelect = document.createElement("select");
@@ -11048,6 +11105,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             opt.text = "Chapter " + c;
             chapSelect.appendChild(opt);
           });
+          chapSelect.value = lastLeaderboardState.chapter;
 
           // Level Selector
           const levelSelect = document.createElement("select");
@@ -11084,6 +11142,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           resultsDiv.innerHTML =
             "<div style='text-align:center; color:#888;'>Select options to view scores</div>";
 
+          let isInitializing = true;
           const updateLevels = async () => {
             levelSelect.innerHTML = "";
 
@@ -11111,6 +11170,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                     opt.text = a.title;
                     chapSelect.appendChild(opt);
                   });
+                  if (isInitializing) {
+                    chapSelect.value = lastLeaderboardState.chapter;
+                  }
                 }
               }
               // Levels for Awards
@@ -11132,6 +11194,9 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                   opt.text = "Chapter " + c;
                   chapSelect.appendChild(opt);
                 });
+                if (isInitializing) {
+                  chapSelect.value = lastLeaderboardState.chapter;
+                }
               }
 
               const ch = parseInt(chapSelect.value) || 1;
@@ -11187,6 +11252,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               });
             }
 
+            if (isInitializing) {
+              levelSelect.value = lastLeaderboardState.level;
+              catSelect.value = lastLeaderboardState.category;
+            }
+
             if (
               modeSelect.value === "deathrun" ||
               modeSelect.value === "chapter_speedrun" ||
@@ -11206,6 +11276,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             const chapVal = chapSelect.value;
             const lvlVal = parseInt(levelSelect.value);
             const cat = catSelect.value;
+
+            lastLeaderboardState.mode = mode;
+            lastLeaderboardState.chapter = chapVal;
+            lastLeaderboardState.level = lvlVal.toString();
+            lastLeaderboardState.category = cat;
 
             // Construct key
             let key = "";
@@ -11251,6 +11326,13 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                       `;
                 })
                 .join("");
+
+              if (isInitializing) {
+                setTimeout(() => {
+                  resultsDiv.scrollTop = lastLeaderboardState.scrollPos;
+                }, 0);
+                isInitializing = false;
+              }
             }
           };
 
@@ -11589,19 +11671,45 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           if (customMenuSource === "main") {
             currentGameMode = "custom";
           }
-
           const isMobile = document.body.classList.contains("mobile-mode");
-
-          // Reset mode if coming from main menu (fixes getting stuck in speedrun mode)
-          if (customMenuSource === "main") {
-            currentGameMode = "custom";
-          }
-
           // Mobile Landscape Optimization for Custom Levels
           if (document.body.classList.contains("mobile-mode")) {
             container.style.flexDirection = "row";
             container.style.flexWrap = "wrap";
             container.style.justifyContent = "center";
+          }
+
+          if (!isMobile) {
+            const topControls = document.createElement("div");
+            topControls.style.cssText =
+              "width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:20px;";
+
+            const btnBrowser = document.createElement("button");
+            btnBrowser.className = "btn";
+            btnBrowser.textContent = "BROWSE LEVELS";
+            btnBrowser.style.background = "#2ecc71";
+            btnBrowser.style.borderColor = "#27ae60";
+            btnBrowser.onclick = () => showMenu("browse-levels");
+            topControls.appendChild(btnBrowser);
+
+            const btnEditor = document.createElement("button");
+            btnEditor.className = "btn";
+            btnEditor.textContent = "LEVEL EDITOR";
+            btnEditor.style.background = "#e67e22";
+            btnEditor.style.borderColor = "#d35400";
+            btnEditor.onclick = () =>
+              window.open("Block Architect Pro.html", "_blank");
+            topControls.appendChild(btnEditor);
+
+            const addLabel = document.createElement("label");
+            addLabel.className = "btn";
+            addLabel.textContent = "+ ADD LEVEL (.JSON)";
+            addLabel.htmlFor = "file-input";
+            addLabel.style.cssText =
+              "display:inline-flex; align-items:center; justify-content:center; background:#335699; border-color:#2a4a7a; margin-top:0;";
+            topControls.appendChild(addLabel);
+
+            container.appendChild(topControls);
           }
 
           // List existing custom levels
@@ -11758,32 +11866,18 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             });
           }
 
-          // Add Level Button logic
-          const controlsDiv = document.createElement("div");
-          controlsDiv.style.cssText =
-            "width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:20px;";
-
-          const label = document.createElement("label");
-          label.className = "file-label";
-          label.textContent = "+ Add Level (.json)";
-          label.htmlFor = "file-input";
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
-          btnBack.style.marginTop = "0"; // Reset margin for flex
+          btnBack.style.marginTop = "20px";
           btnBack.onclick = () => {
             if (customMenuSource === "source-select") showMenu("source-select");
-            else if (document.body.classList.contains("mobile-mode"))
-              showMenu("main");
             else showMenu("main");
           };
-
-          controlsDiv.appendChild(label);
-          controlsDiv.appendChild(btnBack);
-          container.appendChild(controlsDiv);
           container.appendChild(btnBack);
         } else if (view === "browse-levels") {
           subtitle.textContent = "COMMUNITY LEVELS";
+
           container.style.maxWidth = "900px";
 
           if (context && context.viewLevel) {
