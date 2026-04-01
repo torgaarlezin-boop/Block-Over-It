@@ -2730,6 +2730,14 @@
       };
       const LATEST_NEWS_VERSION = "1.7"; // Not even really related to supabase
       const GAME_NEWS = [
+                  {
+          headline:
+            "Happy April Fools...",
+          date: "2026-03-31",
+          image: "skateboard.png",
+          story:
+            "All you have to do is beat a level to claim a free sports series skin..."
+            },
           {
           headline:
             "John takes first place on level 1 leaderboard, and his skin is already out!",
@@ -3719,6 +3727,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         chapter4Beaten: false,
         chapter5Beaten: false,
         awardProgress: {},
+        afClaimed: {},
       };
 
       // Migration for existing saves
@@ -3737,6 +3746,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
       if (gameState.chapter5Beaten === undefined)
         gameState.chapter5Beaten = false;
       if (gameState.awardProgress === undefined) gameState.awardProgress = {};
+      if (gameState.afClaimed === undefined) gameState.afClaimed = {};
 
       // Custom Levels Storage
       let customLevels =
@@ -5554,6 +5564,66 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           }
         }
       }
+
+      function isAprilFools() {
+        const now = new Date();
+        return now.getMonth() === 3 && now.getDate() === 1;
+      }
+
+      function awardAprilFoolsSkin() {
+        const sportsSkins = [
+          "basketball", "ski", "soccer", "football", 
+          "tennis", "golf", "skateboard", "bike"
+        ];
+        const randomSkin = sportsSkins[Math.floor(Math.random() * sportsSkins.length)];
+        
+        const popupHtml = `
+          <div style="text-align:center;">
+            <div id="af-anim-box" style="width:100px; height:200px; margin:0 auto 20px auto; background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#335699; border-radius:8px;"></div>
+            <div id="af-skin-name" style="font-weight:bold; font-size:1.2rem; color:#335699; height:1.5em;">???</div>
+          </div>
+        `;
+        
+        popupManager.show({
+          title: "APRIL FOOLS REWARD!",
+          html: popupHtml,
+          buttons: [{
+            text: "CLAIM",
+            onClick: () => {
+              if (!currentUserSkins.includes(randomSkin)) {
+                currentUserSkins.push(randomSkin);
+                syncDataToCloud();
+              }
+            }
+          }]
+        });
+
+        setTimeout(() => {
+          let count = 0;
+          const totalSteps = 25;
+          const interval = setInterval(() => {
+            const skin = sportsSkins[count % sportsSkins.length];
+            const imgEl = document.getElementById('af-anim-box');
+            const nameEl = document.getElementById('af-skin-name');
+            if (!imgEl) {
+              clearInterval(interval);
+              return;
+            }
+            imgEl.style.backgroundImage = `url('${skin}.png')`;
+            imgEl.style.backgroundColor = "transparent";
+            nameEl.textContent = SKIN_DEFINITIONS[skin]?.name || skin;
+            
+            count++;
+            if (count > totalSteps && skin === randomSkin) {
+              clearInterval(interval);
+              nameEl.innerHTML = `UNLOCKED: ${SKIN_DEFINITIONS[randomSkin]?.name || randomSkin}`;
+              triggerConfetti();
+            }
+          }, 80);
+        }, 100);
+      }
+
+
 
       async function checkSkinUnlocks(silent = false) {
         checkBlueCoinSkinUnlock(silent);
@@ -8313,6 +8383,14 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             if (gp.buttons[9] && gp.buttons[9].pressed) reusableInputs.p = true;
           }
         }
+        if (isAprilFools()) {
+          const year = new Date().getFullYear();
+          if (!gameState.afClaimed[year]) {
+            const temp = reusableInputs.left;
+            reusableInputs.left = reusableInputs.right;
+            reusableInputs.right = temp;
+          }
+        }
         return reusableInputs;
       }
 
@@ -8718,7 +8796,13 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
         currentLevelIndex = index;
         // currentPlayingType = type; // Not strictly needed if we use currentGameMode, but kept for compatibility if used elsewhere
-
+              if (isAprilFools()) {
+                const year = new Date().getFullYear();
+                const claimKey = `boi_af_claimed_${year}`;
+                if (!safeStorage.getItem(claimKey)) {
+                  awardAprilFoolsSkin();
+                }
+              }
         if (
           (currentGameMode === "chapter_speedrun" ||
             currentGameMode === "impossible") &&
@@ -8855,6 +8939,14 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                 startGameLevel(levelData, index, type, chapter);
                 return;
               }
+
+              if (isAprilFools()) {
+                const year = new Date().getFullYear();
+                if (!gameState.afClaimed[year]) {
+                  awardAprilFoolsSkin();
+                }
+              }
+
               if (
                 currentGameMode === "chapter_speedrun" ||
                 currentGameMode === "impossible"
