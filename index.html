@@ -2721,20 +2721,20 @@
       };
       const LATEST_NEWS_VERSION = "1.7"; // Not even really related to supabase
       const GAME_NEWS = [
+          {
+          headline:
+            "John takes first place on level 1 leaderboard, and his skin is already out!",
+          date: "2026-03-31",
+          image: "smiley.gif",
+          story:
+            "On March 31st, the account Himjohn surpassed Mcdongos by an incredibly close amount of 0.001. His first place skin (shown above) is called Smiley, and we may get a chance to obtain it with the new replica system. In an interview, Mcdongos reported he would 'regrettably' get back into speedrunning instead of playing other modes."
+        },
         {
           headline: "Some new cool honorary skins to honor players!",
           date: "2026-03-21",
           image: "mistymountains.png",
           story:
             "Recently added to Block Over It are some new honorary skins. Eroberson, Dbumbgarner, and Novalis all got honorary skins. Eroberson got an iconic EfanBalloon, Deacon got 'Deacy', and Novalis got the most requested of all, 'Misty Mountains', designed by Novalis and Torgaar in an amazing collaberation (shown above). Luckily, these will all be availible in the new Replica system, where players will be able to obtain replicas of popular skins a month mininum after they have released. Only one replica skin will release each month (this will be voted for).",
-        },
-        {
-          headline:
-            "The new Oregon x Cool Guy skin can be claimed for free - here's how",
-          date: "2026-03-21",
-          image: "coolguyoregon.png",
-          story:
-            "A brand new Oregon skin just got added to Block Over It! Featuring a variation of the classic cool guy logo, this skin accompanies the new Signature Cool Guy skins as well as the Cool Guy Logo skins. To claim it, just go to settings -> User settings - > Enter Code and enter the code OREGON to get the skin for free!",
         },
         {
           headline: "The Biggest Update EVER Just Released - Update 1.7",
@@ -7907,9 +7907,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                 } else if (skin === "vintageemo") {
                   el.style.backgroundImage = `url('vintageemowin.png')`;
                 } else if (skin === "rainbownoir" || skin === "coolguynoir") {
-                  el.style.backgroundImage = `url('${skin}.png')`;
+                  const ext = skin === "smiley" ? "gif" : "png";
+                  el.style.backgroundImage = `url('${skin}.${ext}')`;
                 } else {
-                  el.style.backgroundImage = `url('${skin}.png')`;
+                  const ext = skin === "smiley" ? "gif" : "png";
+                  el.style.backgroundImage = `url('${skin}.${ext}')`;
                   el.style.filter =
                     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
                 }
@@ -7936,7 +7938,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                       ? `url('vintageemodeath.png')`
                       : `url('vintageemo.png')`;
                 } else {
-                  el.style.backgroundImage = `url('${skin}.png')`;
+                  const ext = skin === "smiley" ? "gif" : "png";
+                  el.style.backgroundImage = `url('${skin}.${ext}')`;
                 }
                 el.style.filter = "";
               }
@@ -9335,7 +9338,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           modalPreview.style.borderRadius = "8px";
         } else {
           modalPreview.style.backgroundColor = "transparent";
-          const img = customImg || `${id}.png`;
+          const ext = id === "smiley" ? "gif" : "png";
+          const img = customImg || `${id}.${ext}`;
           modalPreview.style.backgroundImage = `url('${img}')`;
         }
       }
@@ -9443,7 +9447,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             preview.style.borderRadius = "4px";
             preview.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
           } else {
-            preview.style.backgroundImage = `url('${skinId}.png')`;
+            const ext = skinId === "smiley" ? "gif" : "png";
+            preview.style.backgroundImage = `url('${skinId}.${ext}')`;
             preview.style.backgroundSize = "contain";
             preview.style.backgroundRepeat = "no-repeat";
             preview.style.backgroundPosition = "center";
