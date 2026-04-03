@@ -352,8 +352,12 @@
       }
 
       @keyframes boi-shimmer {
-        0% { transform: translateX(-150%) skewX(-25deg); }
-        100% { transform: translateX(250%) skewX(-25deg); }
+        0% {
+          transform: translateX(-150%) skewX(-25deg);
+        }
+        100% {
+          transform: translateX(250%) skewX(-25deg);
+        }
       }
       .metallic-shimmer {
         position: relative !important;
@@ -1441,7 +1445,11 @@
                   id="prop-name"
                   type="text"
                   value="New Level"
-                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500" oninput="settingsManager.syncToModal(); updateVisualTextPreview();"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                  oninput="
+                    settingsManager.syncToModal();
+                    updateVisualTextPreview();
+                  "
                 />
               </div>
               <div>
@@ -1453,7 +1461,11 @@
                   id="prop-creator"
                   type="text"
                   value="Anonymous"
-                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500" oninput="settingsManager.syncToModal(); updateVisualTextPreview();"
+                  class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-blue-100 outline-none focus:border-blue-500"
+                  oninput="
+                    settingsManager.syncToModal();
+                    updateVisualTextPreview();
+                  "
                 />
               </div>
               <div>
@@ -1486,8 +1498,7 @@
                   <div
                     class="flex justify-between text-[8px] font-bold text-slate-600 uppercase px-0.5"
                   >
-                    <span>Easy</span><span>Medium</span><span>Hard</span
-                    ><span>Expert</span><span>Extreme</span>
+                    <span>No Skill</span><span>Hard</span><span>U. Extreme</span>
                   </div>
                 </div>
                 <input type="hidden" id="prop-diff" value="1" />
@@ -1934,7 +1945,7 @@
                 onchange="projectManager.importFromMenu(this)"
               />
               <a
-                href="index.html"
+                href="blockoverit.html"
                 class="col-span-2 p-3 bg-slate-900 border border-slate-800 rounded-xl hover:border-blue-500 transition-all text-center group block"
               >
                 <div
@@ -2230,6 +2241,9 @@
           </button>
         </div>
         <div class="p-6 space-y-4">
+          <p class="text-xs text-slate-400">
+            Share your creation with the world or export it locally.
+          </p>
           <button
             id="btn-share-upload"
             onclick="shareManager.startUpload()"
@@ -2260,6 +2274,10 @@
           >
             Download JSON File
           </button>
+          <div class="text-[10px] text-slate-500 mt-2 text-center">
+            Uploading requires being signed in on the main game site (or
+            configuring here).
+          </div>
         </div>
       </div>
     </div>
@@ -2950,8 +2968,14 @@
                   ></textarea>
                 </div>
                 <div class="setting-item">
-                  <label class="text-[10px] text-slate-500 font-bold uppercase block mb-2">Difficulty</label>
-                  <div class="flex gap-1 h-6 items-center" id="set-diff-bars-modal"></div>
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Difficulty</label
+                  >
+                  <div
+                    class="flex gap-1 h-6 items-center"
+                    id="set-diff-bars-modal"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -3558,6 +3582,18 @@
         "@": "t-player",
         " ": "",
       };
+      const DIFFICULTY_NAMES = {
+        1: "No Skill",
+        2: "Very Easy",
+        3: "Easy",
+        4: "Medium",
+        5: "Hard",
+        6: "Very Hard",
+        7: "Ultra Hard",
+        8: "Nightmare",
+        9: "Extreme",
+        10: "Ultra Extreme",
+      };
       const BLOCK_NAMES = {
         x: "Wall",
         W: "Wall Block",
@@ -3970,7 +4006,6 @@
           document.getElementById("prop-w").value =
             document.getElementById("set-prop-w").value;
           document.getElementById("prop-h").value =
-
             document.getElementById("set-prop-h").value;
 
           // Sync Text
@@ -4139,13 +4174,18 @@
           const n = parseInt(document.getElementById("prop-diff").value);
           const colors = [
             "#22c55e",
+            "#22c55e",
+            "#84cc16",
             "#84cc16",
             "#eab308",
+            "#eab308",
             "#f97316",
+            "#f97316",
+            "#ef4444",
             "#ef4444",
           ];
 
-          for (let i = 1; i <= 5; i++) {
+          for (let i = 1; i <= 10; i++) {
             const btn = document.createElement("button");
             btn.className = `diff-btn border border-slate-800 bg-slate-900 ${i <= n ? "active" : ""}`;
             if (i <= n) {
@@ -4606,7 +4646,10 @@
           cell.style.backgroundColor = color;
           cell.style.borderColor = adjustColor(color, -20);
 
-          if (typeof color === 'string' && METALLIC_COLORS.includes(color.toUpperCase())) {
+          if (
+            typeof color === "string" &&
+            METALLIC_COLORS.includes(color.toUpperCase())
+          ) {
             cell.classList.add("metallic-shimmer");
           }
 
@@ -4738,7 +4781,8 @@
 
         const title = document.getElementById("prop-vis-title").value || "";
         const author = document.getElementById("prop-vis-author").value || "";
-        const font = document.getElementById("prop-vis-font").value || "Courier New";
+        const font =
+          document.getElementById("prop-vis-font").value || "Courier New";
 
         if (!title && !author) {
           if (overlay) overlay.remove();
@@ -4748,7 +4792,8 @@
         if (!overlay) {
           overlay = document.createElement("div");
           overlay.id = "visual-text-overlay";
-          overlay.style.cssText = "position:absolute; top:10%; left:0; width:100%; pointer-events:none; z-index:100; display:flex; flex-direction:column; align-items:center; text-align:center; text-transform:uppercase;";
+          overlay.style.cssText =
+            "position:absolute; top:10%; left:0; width:100%; pointer-events:none; z-index:100; display:flex; flex-direction:column; align-items:center; text-align:center; text-transform:uppercase;";
           grid.appendChild(overlay);
         }
 
@@ -4757,14 +4802,16 @@
 
         if (title) {
           const tEl = document.createElement("div");
-          tEl.style.cssText = "font-size:40px; font-weight:900; color:white; text-shadow:4px 4px 0px #335699; letter-spacing:2px; margin-bottom:5px;";
+          tEl.style.cssText =
+            "font-size:40px; font-weight:900; color:white; text-shadow:4px 4px 0px #335699; letter-spacing:2px; margin-bottom:5px;";
           tEl.textContent = title;
           overlay.appendChild(tEl);
         }
 
         if (author) {
           const aEl = document.createElement("div");
-          aEl.style.cssText = "font-size:16px; font-weight:bold; color:#aaa; letter-spacing:1px;";
+          aEl.style.cssText =
+            "font-size:16px; font-weight:bold; color:#aaa; letter-spacing:1px;";
           aEl.textContent = "BY " + author;
           overlay.appendChild(aEl);
         }
@@ -6227,12 +6274,24 @@
 
       function setDifficulty(n) {
         document.getElementById("prop-diff").value = n;
-        document.getElementById("diff-val").innerText = n;
+        document.getElementById("diff-val").innerText =
+          DIFFICULTY_NAMES[n] || "Custom" + "(" + n + ")";
         const container = document.getElementById("diff-bars");
         container.innerHTML = "";
-        const colors = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
+        const colors = [
+          "#22c55e",
+          "#22c55e",
+          "#84cc16",
+          "#84cc16",
+          "#eab308",
+          "#eab308",
+          "#f97316",
+          "#f97316",
+          "#ef4444",
+          "#ef4444",
+        ];
 
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 10; i++) {
           const btn = document.createElement("button");
           btn.className = `diff-btn border border-slate-800 bg-slate-900 ${i <= n ? "active" : ""}`;
           if (i <= n) {
@@ -8468,7 +8527,7 @@
                   px,
                   py,
                   px + cellSize,
-                    py + cellSize,
+                  py + cellSize,
                 );
                 grad.addColorStop(0, "rgba(255,255,255,0.4)");
                 grad.addColorStop(0.5, "rgba(255,255,255,0)");
