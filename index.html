@@ -9159,6 +9159,27 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                     checkBlueCoinSkinUnlock();
                   }
                 }
+
+                // Verification Logic for Community Levels
+                if (levelData.dbId != null && _supabase) {
+                  _supabase
+                    .from("published_levels")
+                    .select("verified")
+                    .eq("id", levelData.dbId)
+                    .single()
+                    .then(({ data }) => {
+                      if (data && !data.verified) {
+                        _supabase
+                          .from("published_levels")
+                          .update({ verified: true, verifier: currentUser })
+                          .eq("id", levelData.dbId)
+                          .then(({ error }) => {
+                            if (!error) showTopNotification("Level Verified!");
+                          });
+                      }
+                    });
+                }
+
                 exitToMenu();
               } else {
                 exitToMenu();
@@ -9591,7 +9612,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         scrollPos: 0,
       };
 
-      async function openUserProfile(username) {
+      async function openUserProfile(username, sourceView, sourceContext) {
         if (!_supabase) return;
 
         // Save scroll position before showMenu clears the leaderboard
@@ -9606,7 +9627,12 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         }
 
         // Optimistic UI: Show loading state immediately
-        showMenu("user-profile", { username, loading: true });
+        showMenu("user-profile", {
+          username,
+          loading: true,
+          sourceView,
+          sourceContext,
+        });
 
         const { data, error } = await _supabase
           .from("users")
@@ -9616,7 +9642,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
         if (error || !data) {
           showPopup("ERROR", "Could not load profile.", () =>
-            showMenu("leaderboards-new"),
+            showMenu(sourceView, sourceContext),
           );
           return;
         }
@@ -9624,6 +9650,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           username,
           skins: data.skins || ["default"],
           userData: data.data,
+          sourceView,
+          sourceContext,
         });
       }
 
@@ -10785,7 +10813,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           closeBtn.className = "settings-close-btn";
           closeBtn.innerHTML = "&times;";
           closeBtn.style.top = "20px";
-          closeBtn.onclick = () => showMenu("leaderboards-new");
+          closeBtn.onclick = () =>
+            showMenu(data.sourceView || "leaderboards-new", data.sourceContext);
           container.appendChild(closeBtn);
 
           // Calculate total blue coins in game
@@ -11120,7 +11149,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               else if (mode === "deathrun") prefix = "deathrun_";
               else if (mode === "chapter_speedrun")
                 key = `chapter_speedrun_${chapVal}`;
-              else if (mode === "impossible") key = `impossible_chapter_${ch}`;
+              else if (mode === "impossible")
+                key = `impossible_chapter_${chapVal}`;
               else if (mode === "level_awards") {
                 key = `speedrun_award_${chapVal}_${lvlVal}`;
                 if (cat === "blue") key += "_blue";
@@ -11151,7 +11181,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
                     const isMe = s.username === currentUser;
                     return `
-                            <div class="leaderboard-card ${isMe ? "is-me" : ""}" style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;" onclick="openUserProfile('${s.username}')">
+                            <div class="leaderboard-card ${isMe ? "is-me" : ""}" style="background:${isMe ? "#1a2a40" : "#222"}; padding:15px; margin-bottom:8px; border-radius:8px; border:1px solid ${isMe ? "#335699" : "#333"}; display:flex; justify-content:space-between; align-items:center;" onclick="openUserProfile('${s.username}', 'leaderboards-new')">
                               <div style="display:flex; align-items:center; gap:10px;">
                                   <span style="font-size:1.2rem; font-weight:bold; color:#666; width:25px;">${i + 1}</span>
                                   <span style="font-weight:bold; color:${isMe ? "#fff" : "#ccc"}; cursor:pointer;" onclick="openUserProfile('${s.username}')">${s.username}</span>
@@ -11453,7 +11483,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                   const min = String(Math.floor(t / 60000)).padStart(2, "0");
                   timeString = `${min}:${sec}.${ms}`;
                   return `
-                        <div class="leaderboard-list-item" style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333; ${s.username === currentUser ? "color:#335699; font-weight:bold;" : "color:#ccc;"}">
+                        <div class="leaderboard-list-item" style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333; ${s.username === currentUser ? "color:#335699; font-weight:bold;" : "color:#ccc;"}" onclick="openUserProfile('${s.username}', 'leaderboards-new')">
                           <span>${i + 1}. <span style="cursor:pointer;" onclick="openUserProfile('${s.username}')">${s.username}</span></span>
                           <span style="font-family:monospace;">${timeString}</span>
                         </div>
@@ -11857,8 +11887,23 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               const row = document.createElement("div");
               row.className = "custom-level-row";
               row.style.cursor = "pointer";
-              row.onclick = () => {
-                openCustomLevelPopup(idx);
+              row.onclick = async () => {
+                if (lvl.isShortcut && lvl.dbId != null) {
+                  if (!_supabase) return;
+                  showTopNotification("Opened level in browser.");
+                  const { data } = await _supabase
+                    .from("published_levels")
+                    .select("*")
+                    .eq("id", lvl.dbId)
+                    .single();
+                  if (data) {
+                    showMenu("browse-levels", { viewLevel: data });
+                  } else {
+                    showPopup("ERROR", "Community level not found.", () => {});
+                  }
+                } else {
+                  openCustomLevelPopup(idx);
+                }
               };
 
               // Get level dimensions
@@ -11878,9 +11923,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
               const detailsEl = document.createElement("div");
               detailsEl.className = "custom-level-details";
-              detailsEl.innerHTML = `
-                            <div class="custom-level-detail-item">[${levelWidth}x${levelHeight}]</div>
-                          `;
+              let detailsHtml = `<div class="custom-level-detail-item">[${levelWidth}x${levelHeight}]</div>`;
+              if (lvl.isShortcut) {
+                detailsHtml += `<div class="custom-level-detail-item" style="color:#335699; font-weight:bold;">★ COMMUNITY LEVEL</div>`;
+              }
+              detailsEl.innerHTML = detailsHtml;
 
               // Status section
               const statusDiv = document.createElement("div");
@@ -12701,6 +12748,14 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               <div style="border-bottom:1px solid #333; padding-bottom:15px;">
                   <div style="font-size:2rem; font-weight:bold; color:#fff;">${currentLvl.name}</div>
                   <div style="color:#888;">by ${currentLvl.creator}</div>
+                  ${
+                    currentLvl.verified
+                      ? `<div style="margin-top:10px; font-size:0.8rem; color:#2ecc71; font-weight:bold; display:flex; align-items:center; gap:5px;">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                    VERIFIED BY <span id="verifier-link" style="text-decoration:underline; cursor:pointer;">${currentLvl.verifier}</span>
+                  </div>`
+                      : `<div style="margin-top:10px; font-size:0.8rem; color:#aaa; font-weight:bold;">UNVERIFIED</div>`
+                  }
               </div>
               <div style="display:flex; justify-content:space-between; background:#111; padding:15px; border-radius:8px;">
                   <div style="text-align:center;"><div>DIFFICULTY</div><div style="color:#e67e22; font-weight:bold;">${currentLvl.difficulty}/5</div></div>
@@ -12712,8 +12767,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               <div id="level-action-container" style="display:flex; gap:10px; justify-content:center; margin-top:10px;"></div>
 
               <div style="display:flex; gap:10px; justify-content:center;">
-                  <button class="btn" style="flex:1; background:#222; border-color:#444;" onclick="voteLevel(${currentLvl.id}, 1)">UPVOTE</button>
-                  <button class="btn" style="flex:1; background:#222; border-color:#444;" onclick="voteLevel(${currentLvl.id}, -1)">DOWNVOTE</button>
+                  <button id="upvote-btn" class="btn" style="flex:1; background:#222; border-color:#444;">UPVOTE</button>
+                  <button id="downvote-btn" class="btn" style="flex:1; background:#222; border-color:#444;">DOWNVOTE</button>
               </div>
 
               <div style="margin-top:20px;">
@@ -12723,10 +12778,25 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                   </div>
                   <div style="display:flex; gap:10px;">
                       <input id="comment-input" type="text" placeholder="Write a comment..." style="flex:1; background:#333; border:1px solid #555; padding:10px; color:white; border-radius:4px;">
-                      <button class="btn" style="padding:10px; min-width:auto;" onclick="postComment(${currentLvl.id})">POST</button>
+                      <button id="post-comment-btn" class="btn" style="padding:10px; min-width:auto;">POST</button>
                   </div>
               </div>
           `;
+
+        const verifierLink = details.querySelector("#verifier-link");
+        if (verifierLink) {
+          verifierLink.onclick = () =>
+            openUserProfile(currentLvl.verifier, "browse-levels", {
+              viewLevel: currentLvl,
+            });
+        }
+
+        details.querySelector("#upvote-btn").onclick = () =>
+          voteLevel(currentLvl.id, 1);
+        details.querySelector("#downvote-btn").onclick = () =>
+          voteLevel(currentLvl.id, -1);
+        details.querySelector("#post-comment-btn").onclick = () =>
+          postComment(currentLvl);
 
         // Safe button creation to avoid JSON stringify issues in HTML attributes
         const actionContainer = details.querySelector(
@@ -12735,9 +12805,27 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
 
         const playBtn = document.createElement("button");
         playBtn.className = "btn";
-        playBtn.style.cssText =
-          "flex:1; background:#335699; border-color:#2a4a7a;";
-        playBtn.textContent = "PLAY";
+
+        let label = "PLAY";
+        let bg = "#335699";
+        let bdr = "#2a4a7a";
+
+        if (currentGameMode === "speedrun") {
+          label = "SPEEDRUN";
+          bg = "#e67e22";
+          bdr = "#d35400";
+        } else if (currentGameMode === "deathrun") {
+          label = "DEATHRUN";
+          bg = "#a04040";
+          bdr = "#802020";
+        } else if (currentGameMode === "practice") {
+          label = "PRACTICE";
+          bg = "#2ecc71";
+          bdr = "#27ae60";
+        }
+
+        playBtn.style.cssText = `flex:1; background:${bg}; border-color:${bdr};`;
+        playBtn.textContent = label;
         playBtn.onclick = () => {
           const playsEl = document.getElementById("level-plays-display");
           if (playsEl) {
@@ -12751,7 +12839,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         saveBtn.style.cssText =
           "flex:1; background:#27ae60; border-color:#219150;";
         saveBtn.textContent = "SAVE";
-        saveBtn.onclick = () => saveCommunityLevel(currentLvl.data);
+        saveBtn.onclick = () =>
+          saveCommunityLevel(currentLvl.data, currentLvl.id);
 
         actionContainer.appendChild(playBtn);
         actionContainer.appendChild(saveBtn);
@@ -12764,7 +12853,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         btnBack.onclick = () => showMenu("browse-levels");
         container.appendChild(btnBack);
 
-        loadComments(currentLvl.id);
+        loadComments(currentLvl);
       }
 
       window.playCommunityLevel = async (id, dataObj) => {
@@ -12774,8 +12863,15 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
               ? JSON.parse(decodeURIComponent(dataObj))
               : dataObj;
 
+          data.dbId = id; // Attach database ID for verification logic
           // Start game immediately for better UX
-          currentGameMode = "custom";
+          if (
+            currentGameMode !== "speedrun" &&
+            currentGameMode !== "deathrun" &&
+            currentGameMode !== "practice"
+          ) {
+            currentGameMode = "custom";
+          }
           startGameLevel(data, -1, "custom");
 
           // Then, try to update the play count in the background.
@@ -12793,15 +12889,25 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         }
       };
 
-      window.saveCommunityLevel = (dataObj) => {
+      window.saveCommunityLevel = (dataObj, dbId) => {
         try {
           const data =
             typeof dataObj === "string"
               ? JSON.parse(decodeURIComponent(dataObj))
               : dataObj;
-          customLevels.push(data);
+
+          // Save as a shortcut rather than cloning the full data
+          const shortcut = {
+            name: data.name,
+            creator: data.creator,
+            dbId: dbId,
+            isShortcut: true,
+            plan: data.plan, // Keep plan for thumbnail/stat rendering in the list
+          };
+
+          customLevels.push(shortcut);
           saveCustomLevels();
-          showPopup("SUCCESS", "Level saved to My Levels!", () => {});
+          showPopup("SUCCESS", "Shortcut saved to My Levels!", () => {});
         } catch (e) {}
       };
 
@@ -12835,10 +12941,11 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         }
       };
 
-      window.loadComments = async (id) => {
+      window.loadComments = async (lvlOrId) => {
         const list = document.getElementById("comments-list");
         if (!_supabase)
           return (list.innerHTML = "<div>Comments unavailable</div>");
+        const id = typeof lvlOrId === "object" ? lvlOrId.id : lvlOrId;
         const { data } = await _supabase
           .from("level_comments")
           .select("*")
@@ -12848,19 +12955,40 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
         if (!data || data.length === 0)
           return (list.innerHTML =
             "<div style='color:#666;'>No comments yet.</div>");
-        list.innerHTML = data
-          .map(
-            (c) => `
-              <div style="background:#222; padding:10px; border-radius:4px; font-size:0.9rem;">
-                  <span style="color:#335699; font-weight:bold;">${c.username}:</span> <span style="color:#ccc;">${c.content}</span>
-              </div>
-          `,
-          )
-          .join("");
+
+        list.innerHTML = "";
+        data.forEach((c) => {
+          const div = document.createElement("div");
+          div.style.cssText =
+            "background:#222; padding:10px; border-radius:4px; font-size:0.9rem;";
+
+          const userSpan = document.createElement("span");
+          userSpan.style.cssText =
+            "color:#335699; font-weight:bold; cursor:pointer; text-decoration:underline;";
+          userSpan.textContent = c.username + ":";
+          userSpan.onclick = () => {
+            if (typeof lvlOrId === "object") {
+              openUserProfile(c.username, "browse-levels", {
+                viewLevel: lvlOrId,
+              });
+            } else {
+              openUserProfile(c.username, "browse-levels");
+            }
+          };
+
+          const contentSpan = document.createElement("span");
+          contentSpan.style.color = "#ccc";
+          contentSpan.textContent = " " + c.content;
+
+          div.appendChild(userSpan);
+          div.appendChild(contentSpan);
+          list.appendChild(div);
+        });
       };
 
-      window.postComment = async (id) => {
+      window.postComment = async (lvl) => {
         if (!currentUser) return openLoginModal();
+        const id = typeof lvl === "object" ? lvl.id : lvl;
         const input = document.getElementById("comment-input");
         const text = input.value.trim();
         if (!text) return;
@@ -12869,7 +12997,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           .insert([{ level_id: id, username: currentUser, content: text }]);
 
         input.value = "";
-        loadComments(id);
+        loadComments(lvl);
       };
 
       // --- Start ---
