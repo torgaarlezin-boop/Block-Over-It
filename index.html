@@ -125,7 +125,6 @@
         background: #4a148c;
         border: 2px solid #ea80fc;
         box-sizing: border-box;
-        position: relative;
         border-radius: 50%;
         box-shadow: 0 0 8px #d946ef;
       }
@@ -2618,7 +2617,7 @@
         7: "Ultra Hard",
         8: "Nightmare",
         9: "Extreme",
-        10: "Insane"
+        10: "Insane",
       };
 
       window.DIFFICULTY_COLORS = {
@@ -2631,7 +2630,7 @@
         7: "#e74c3c",
         8: "#c0392b",
         9: "#8e44ad",
-        10: 'white'
+        10: "white",
       };
 
       const safeStorage = {
@@ -3105,7 +3104,8 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
             const mergedSkins = new Set([...currentUserSkins, ...data.skins]);
             currentUserSkins = Array.from(mergedSkins);
           }
-          if (data && data.beaten_levels) currentUserBeatenLevels = data.beaten_levels;
+          if (data && data.beaten_levels)
+            currentUserBeatenLevels = data.beaten_levels;
           if (currentUser === "test")
             currentUserSkins = Object.keys(SKIN_DEFINITIONS);
           if (data && data.data) {
@@ -8060,8 +8060,10 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
           var roundedY = Math.round(visualY * s);
           el.style.left = roundedX + "px";
           el.style.top = roundedY + "px";
-          el.style.width = Math.round((visualX + visualW) * s) - roundedX + "px";
-          el.style.height = Math.round((visualY + visualH) * s) - roundedY + "px";
+          el.style.width =
+            Math.round((visualX + visualW) * s) - roundedX + "px";
+          el.style.height =
+            Math.round((visualY + visualH) * s) - roundedY + "px";
 
           if (actor.text) {
             el.style.fontSize = Math.round(s * 0.8) + "px";
@@ -8785,26 +8787,29 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
       let currentUserBeatenLevels = [];
       async function trackBeatenCommunityLevel(levelData) {
         if (!_supabase || !currentUser || !levelData.dbId) return;
-        
+
         try {
           const { data: user, error: fetchError } = await _supabase
             .from("users")
             .select("beaten_levels")
             .eq("username", currentUser)
             .single();
-            
+
           if (fetchError) throw fetchError;
-          
+
           let beaten = user.beaten_levels || [];
-          if (!beaten.some(l => l.id === levelData.dbId)) {
+          if (!beaten.some((l) => l.id === levelData.dbId)) {
             beaten.push({
               id: levelData.dbId,
               name: levelData.name,
-              difficulty: levelData.difficulty
+              difficulty: levelData.difficulty,
             });
             currentUserBeatenLevels = beaten;
-            
-            await _supabase.from("users").update({ beaten_levels: beaten }).eq("username", currentUser);
+
+            await _supabase
+              .from("users")
+              .update({ beaten_levels: beaten })
+              .eq("username", currentUser);
           }
         } catch (e) {
           console.error("Failed to update beaten levels:", e);
@@ -12752,7 +12757,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                               ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
                           </div>
                           <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
-                          <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || '#e67e22'}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span></div>
+                          <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span></div>
                       </div>
                       <div style="text-align:right; display:flex; flex-direction:column; gap:8px;">
                           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
@@ -12822,7 +12827,7 @@ Community & UI A new level sharing platform lets you upload, rate, and comment o
                   }
               </div>
               <div style="display:flex; justify-content:space-between; background:#111; padding:15px; border-radius:8px;">
-                  <div style="text-align:center;"><div>DIFFICULTY</div><div style="color:${window.DIFFICULTY_COLORS[currentLvl.difficulty] || '#e67e22'}; font-weight:bold;">${window.DIFFICULTY_LABELS[currentLvl.difficulty] || currentLvl.difficulty} (${currentLvl.difficulty}/10)</div></div>
+                  <div style="text-align:center;"><div>DIFFICULTY</div><div style="color:${window.DIFFICULTY_COLORS[currentLvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[currentLvl.difficulty] || currentLvl.difficulty} (${currentLvl.difficulty}/10)</div></div>
                   <div style="text-align:center;"><div>SCORE</div><div id="level-score-display" style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:bold;">${score}</div></div>
                   <div style="text-align:center;"><div>PLAYS</div><div id="level-plays-display" style="color:#335699; font-weight:bold;">${currentLvl.plays || 0}</div></div>
               </div>
