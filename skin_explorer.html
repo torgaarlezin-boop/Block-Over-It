@@ -665,7 +665,7 @@
           name: "Cool Guy (Glasses Down)",
           copies: "1/1",
           artist: "Torgaar",
-          competetive: true,
+          competitive: true,
         },
         dasher: {
           name: "Dasher",
@@ -792,11 +792,16 @@
           artist: "Torgaar",
           honorary: true,
         },
+        deathfire: {
+          name: "Death Fire",
+          copies: "1/1",
+          firstPlace: true,
+          artist: "Jude",
+        },
         coolguyoregon: {
           name: "Cool Guy (Oregon Signature)",
           copies: "1/3",
           artist: "Torgaar",
-          code: true
         },
         mistymountains: {
           name: "Misty Mountains",
@@ -808,7 +813,7 @@
           name: "J_imbo Tree",
           copies: "1/1",
           artist: "Seppe & Torgaar",
-          honorary: "True",
+          honorary: true,
         },
         smiley: {
           name: "Smiley",
@@ -936,7 +941,7 @@
           modalPreview.style.borderRadius = "8px";
         } else {
           modalPreview.style.backgroundColor = "transparent";
-          const ext = id === "smiley" ? "gif" : "png";
+          const ext = (id === "smiley" || id === "deathfire") ? "gif" : "png";
           const img = customImg || `${id}.${ext}`;
           modalPreview.style.backgroundImage = `url('${img}')`;
         }
@@ -1041,7 +1046,7 @@
               preview.style.backgroundColor = "#335699";
               preview.style.borderRadius = "4px";
             } else {
-              const ext = id === "smiley" ? "gif" : "png";
+              const ext = (id === "smiley" || id === "deathfire") ? "gif" : "png";
               preview.style.backgroundImage = `url('${id}.${ext}')`;
             }
 
