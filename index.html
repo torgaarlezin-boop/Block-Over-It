@@ -2739,8 +2739,6 @@
               deathfire: {
                 name: "Death Fire",
                 copies: "1/1",
-                firstPlace: true,
-                artist: "Jude",
               },
               basketball: { name: "Basketball (Sports Edition)", copies: "1/5" },
               ski: { name: "Ski (Sports Edition)", copies: "1/5" },
@@ -6093,7 +6091,6 @@
             function SlideRight(pos) {
               this.pos = pos;
               this.size = new Vector(1, 1);
-              this.text = "»";
             }
             SlideRight.prototype.type = "slide-right";
             SlideRight.prototype.act = function (step, level) {};
@@ -6101,7 +6098,6 @@
             function SlideLeft(pos) {
               this.pos = pos;
               this.size = new Vector(1, 1);
-              this.text = "«";
             }
             SlideLeft.prototype.type = "slide-left";
             SlideLeft.prototype.act = function (step, level) {};
@@ -9659,7 +9655,7 @@
                   preview.style.borderRadius = "4px";
                   preview.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
                 } else {
-                  const ext = skinId === "smiley" ? "gif" : "png";
+            const ext = (skinId === "smiley" || skinId === "deathfire") ? "gif" : "png";
                   preview.style.backgroundImage = `url('${skinId}.${ext}')`;
                   preview.style.backgroundSize = "contain";
                   preview.style.backgroundRepeat = "no-repeat";
