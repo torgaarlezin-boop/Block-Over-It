@@ -2752,12 +2752,12 @@
             const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
             const GAME_NEWS = [
               {
-                headline: "Jude First Place Skin Announced!",
+                headline: "Himejohn verifies The Nightmare and The Last Face!",
                 date: "2026-04-03",
                 image: "deathfire.gif",
                 story:
-                  "On April 1st, the account Jude surpassed John by an incredibe record of 8.308. His first place skin (shown above) is called Death Fire, and we may get a chance to obtain it with the new replica system. Himejohn reported he 'has to get the record back from jude'.",
-              },
+                  "Himejohn has been on a verification streak, verifying many difficult levels, with the highlights being the two insanes The Last Face and The Nightmare. "
+                },
               {
                 headline: "1.8 Released- Verifications and a New Difficulty System!",
                 date: "2026-03-28",
@@ -2767,12 +2767,12 @@
               },
               {
                 headline:
-                  "April Level Award Predictions Announced!",
-                date: "2026-04-3",
+                  "Final Levels of Chapter 5 in Beta!",
+                date: "2026-04-8",
                 image: null,
                 story:
-                  "After 3 days of voting the Level Award Predictions for April 2026 have been decided. You can see the results on the Level Awards page in-game."
-               },
+                  "1.9 is now in beta, and with it, the final levels of Chapter 5. Later in the beta well see more features, just as Chapter 6 and potentionally Chapter 7, but for now we have the difficult Chapter 5. 1.9 also comes with some new small changes that will, together, substantially improve the game."
+            },
             ];
             const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
@@ -2959,6 +2959,89 @@
               }
             }
 
+      async function syncLocalWithCloud(d, skins, beatenLevels) {
+        if (skins) {
+          const mergedSkins = new Set([...currentUserSkins, ...skins]);
+          currentUserSkins = Array.from(mergedSkins);
+        }
+        if (beatenLevels) {
+          const cloudBeaten = beatenLevels || [];
+          const localBeaten = currentUserBeatenLevels || [];
+          const merged = [...localBeaten];
+          cloudBeaten.forEach((cb) => {
+            if (!merged.some((lb) => lb.id === cb.id)) merged.push(cb);
+          });
+          currentUserBeatenLevels = merged;
+        }
+        if (currentUser === "test")
+          currentUserSkins = Object.keys(SKIN_DEFINITIONS);
+
+        if (d) {
+          if (d.gameState) {
+            if (d.gameState.levelBlueCoins) {
+              gameState.levelBlueCoins = {
+                ...gameState.levelBlueCoins,
+                ...d.gameState.levelBlueCoins,
+              };
+            }
+            gameState.unlockedLevel = Math.max(
+              gameState.unlockedLevel,
+              d.gameState.unlockedLevel || 0,
+            );
+            gameState.unlockedLevelCh2 = Math.max(
+              gameState.unlockedLevelCh2,
+              d.gameState.unlockedLevelCh2 || 0,
+            );
+            gameState.unlockedLevelCh3 = Math.max(
+              gameState.unlockedLevelCh3,
+              d.gameState.unlockedLevelCh3 || 0,
+            );
+            gameState.unlockedLevelCh4 = Math.max(
+              gameState.unlockedLevelCh4,
+              d.gameState.unlockedLevelCh4 || 0,
+            );
+            gameState.unlockedLevelCh5 = Math.max(
+              gameState.unlockedLevelCh5,
+              d.gameState.unlockedLevelCh5 || 0,
+            );
+            if (d.gameState.chapter1Beaten) gameState.chapter1Beaten = true;
+            if (d.gameState.chapter2Beaten) gameState.chapter2Beaten = true;
+            if (d.gameState.chapter3Beaten) gameState.chapter3Beaten = true;
+            if (d.gameState.chapter4Beaten) gameState.chapter4Beaten = true;
+            if (d.gameState.chapter5Beaten) gameState.chapter5Beaten = true;
+            if (d.gameState.gameBeaten) gameState.gameBeaten = true;
+            if (d.gameState.blueCoinUnlockShown)
+              gameState.blueCoinUnlockShown = true;
+          }
+          if (d.customLevelsProgress) {
+            customLevelsProgress = {
+              ...customLevelsProgress,
+              ...d.customLevelsProgress,
+            };
+          }
+          if (d.highscores) {
+            for (const key in d.highscores) {
+              if (!highscores[key] || d.highscores[key] < highscores[key])
+                highscores[key] = d.highscores[key];
+            }
+          }
+          if (d.customLevels && d.customLevels.length > customLevels.length) {
+            customLevels = d.customLevels;
+          }
+          if (d.gameSettings) {
+            gameSettings = { ...gameSettings, ...d.gameSettings };
+          }
+
+          saveGame(true);
+          saveCustomLevels(true);
+          saveCustomLevelsProgress(true);
+          saveHighscores(true);
+          saveSettings(true);
+          syncDataToCloud();
+          await checkSkinUnlocks(true);
+        }
+      }
+
             async function handleAuth(type, username, password, withReward = false) {
               if (!_supabase)
                 return showPopup("ERROR", "Supabase not configured.", () => {});
@@ -3024,65 +3107,7 @@
                     return showPopup("ERROR", "Invalid credentials.", () => {});
 
                   currentUser = username;
-                  if (currentUser === "test") {
-                    currentUserSkins = Object.keys(SKIN_DEFINITIONS);
-                  } else if (data.skins) {
-                    const mergedSkins = new Set([...currentUserSkins, ...data.skins]);
-                    currentUserSkins = Array.from(mergedSkins);
-                  }
-                  if (data.data) {
-                    // Load data
-                    const d = data.data;
-                    if (d.gameState) {
-                      if (d.gameState.levelBlueCoins) {
-                        gameState.levelBlueCoins = d.gameState.levelBlueCoins;
-                      }
-                      gameState.unlockedLevel = Math.max(
-                        gameState.unlockedLevel,
-                        d.gameState.unlockedLevel || 0,
-                      );
-                      gameState.unlockedLevelCh2 = Math.max(
-                        gameState.unlockedLevelCh2,
-                        d.gameState.unlockedLevelCh2 || 0,
-                      );
-                      gameState.unlockedLevelCh3 = Math.max(
-                        gameState.unlockedLevelCh3,
-                        d.gameState.unlockedLevelCh3 || 0,
-                      );
-                      gameState.unlockedLevelCh4 = Math.max(
-                        gameState.unlockedLevelCh4,
-                        d.gameState.unlockedLevelCh4 || 0,
-                      );
-                      gameState.unlockedLevelCh5 = Math.max(
-                        gameState.unlockedLevelCh5,
-                        d.gameState.unlockedLevelCh5 || 0,
-                      );
-                      if (d.gameState.chapter1Beaten) gameState.chapter1Beaten = true;
-                      if (d.gameState.chapter2Beaten) gameState.chapter2Beaten = true;
-                      if (d.gameState.chapter3Beaten) gameState.chapter3Beaten = true;
-                      if (d.gameState.gameBeaten) gameState.gameBeaten = true;
-                      if (d.gameState.blueCoinUnlockShown)
-                        gameState.blueCoinUnlockShown = true;
-                    }
-                    if (d.customLevelsProgress)
-                      customLevelsProgress = d.customLevelsProgress;
-                    if (d.highscores) {
-                      for (const key in d.highscores) {
-                        if (!highscores[key] || d.highscores[key] < highscores[key])
-                          highscores[key] = d.highscores[key];
-                      }
-                    }
-                    if (d.customLevels) customLevels = d.customLevels;
-                    if (d.gameSettings)
-                      gameSettings = { ...gameSettings, ...d.gameSettings };
-                    saveGame(true);
-                    saveCustomLevels(true);
-                    saveCustomLevelsProgress(true);
-                    saveHighscores(true);
-                    saveSettings();
-                    syncDataToCloud();
-                    await checkSkinUnlocks(false);
-                  }
+            await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
                   showPopup("SUCCESS", "Logged in! Data synced.", () => {});
                 }
                 updateLoginButton();
@@ -3101,66 +3126,7 @@
                   .eq("username", currentUser)
                   .single();
 
-                if (data && data.skins) {
-                  const mergedSkins = new Set([...currentUserSkins, ...data.skins]);
-                  currentUserSkins = Array.from(mergedSkins);
-                }
-                if (data && data.beaten_levels)
-                  currentUserBeatenLevels = data.beaten_levels;
-                if (currentUser === "test")
-                  currentUserSkins = Object.keys(SKIN_DEFINITIONS);
-                if (data && data.data) {
-                  const d = data.data;
-                  if (d.gameState) {
-                    if (d.gameState.levelBlueCoins)
-                      gameState.levelBlueCoins = d.gameState.levelBlueCoins;
-                    gameState.unlockedLevel = Math.max(
-                      gameState.unlockedLevel,
-                      d.gameState.unlockedLevel || 0,
-                    );
-                    gameState.unlockedLevelCh2 = Math.max(
-                      gameState.unlockedLevelCh2,
-                      d.gameState.unlockedLevelCh2 || 0,
-                    );
-                    gameState.unlockedLevelCh3 = Math.max(
-                      gameState.unlockedLevelCh3,
-                      d.gameState.unlockedLevelCh3 || 0,
-                    );
-                    gameState.unlockedLevelCh4 = Math.max(
-                      gameState.unlockedLevelCh4,
-                      d.gameState.unlockedLevelCh4 || 0,
-                    );
-                    gameState.unlockedLevelCh5 = Math.max(
-                      gameState.unlockedLevelCh5,
-                      d.gameState.unlockedLevelCh5 || 0,
-                    );
-                    if (d.gameState.chapter1Beaten) gameState.chapter1Beaten = true;
-                    if (d.gameState.chapter2Beaten) gameState.chapter2Beaten = true;
-                    if (d.gameState.chapter3Beaten) gameState.chapter3Beaten = true;
-                    if (d.gameState.gameBeaten) gameState.gameBeaten = true;
-                    if (d.gameState.blueCoinUnlockShown)
-                      gameState.blueCoinUnlockShown = true;
-                  }
-                  if (d.customLevelsProgress)
-                    customLevelsProgress = d.customLevelsProgress;
-                  if (d.highscores) {
-                    for (const key in d.highscores) {
-                      if (!highscores[key] || d.highscores[key] < highscores[key])
-                        highscores[key] = d.highscores[key];
-                    }
-                  }
-                  if (d.customLevels) customLevels = d.customLevels;
-                  if (d.gameSettings && d.gameSettings.playlist)
-                    gameSettings.playlist = d.gameSettings.playlist;
-
-                  saveGame(true);
-                  saveCustomLevels(true);
-                  saveCustomLevelsProgress(true);
-                  saveHighscores(true);
-                  saveSettings();
-                  syncDataToCloud();
-                  await checkSkinUnlocks(false);
-                }
+          if (data) await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
               } catch (e) {
                 console.warn("Sync error:", e);
               }
@@ -3953,8 +3919,9 @@
             if (!gameSettings.playlist)
               gameSettings.playlist = MUSIC_LIBRARY.map((t) => t.id);
 
-            function saveSettings() {
+      function saveSettings(skipCloud = false) {
               safeStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
+        if (!skipCloud) syncDataToCloud();
             }
 
             function saveHighscores(skipCloud = false) {
@@ -5421,10 +5388,142 @@
                   "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
                 ],
               },
-              // PASTE LEVEL 5-4 JSON HERE
-              { plan: ["@ o B"], gravity: 27, name: "Level 5-4" },
-              // PASTE LEVEL 5-5 JSON HERE
-              { plan: ["@ o B"], gravity: 27, name: "Level 5-5" },
+{
+  "name": "New Level",
+  "creator": "Anonymous",
+  "description": "",
+  "difficulty": 7,
+  "gravity": 79,
+  "riseInterval": 0,
+  "forceZoom": false,
+  "disableZoom": false,
+  "visualTitle": "",
+  "visualAuthor": "",
+  "visualWin": "",
+  "visualFont": "Courier New",
+  "disableDeathAnim": false,
+  "music": "time",
+  "musicSpeed": 2,
+  "background": "",
+  "bgAnimation": null,
+  "colors": {},
+  "fakes": [],
+  "risingThrough": [],
+  "illusions": [
+    "22,8",
+    "23,8",
+    "24,8",
+    "30,4",
+    "31,4",
+    "32,4",
+    "7,13",
+    "8,13",
+    "9,13"
+  ],
+  "flickers": [],
+  "touchFlickers": [],
+  "jumpFlickers": [],
+  "risingSpeeds": {},
+  "blockConfigs": {},
+  "plan": [
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "C                                      [",
+    "C                                      [",
+    "C    @                                 [",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxGGGxxxxxxx",
+    "]                                      C",
+    "]                                      C",
+    "]                                      C",
+    "xxxxxxxxxxxxxxkxxxxxkxGGGxxxxxKKKxxxxxxx",
+    "                                       C",
+    "                                       C",
+    "  B                                    C",
+    "              J     J                  C",
+    "xxxxxxxGGGxxxxxxxxxxxxxKKxxxxxxxxxxxxxxx",
+    "C    }     {kkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "C    }     {                            ",
+    "C    }     {                            ",
+    "C                                       ",
+    "C                 J     J     J        o",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ]
+},
+              {
+  "name": "Chapter 5 Level 5",
+  "creator": "Mcdongos & Torgaar",
+  "description": "",
+  "difficulty": 1,
+  "gravity": 49,
+  "riseInterval": 0,
+  "forceZoom": false,
+  "disableZoom": false,
+  "visualTitle": "",
+  "visualAuthor": "",
+  "visualWin": "",
+  "visualFont": "Courier New",
+  "disableDeathAnim": false,
+  "music": null,
+  "musicSpeed": 1,
+  "background": "",
+  "bgAnimation": null,
+  "colors": {},
+  "fakes": [],
+  "risingThrough": [],
+  "illusions": [
+    "33,22",
+    "10,15",
+    "6,11",
+    "5,11"
+  ],
+  "flickers": [],
+  "touchFlickers": [],
+  "jumpFlickers": [],
+  "risingSpeeds": {},
+  "blockConfigs": {},
+  "plan": [
+    "                                       C",
+    "                                       C",
+    "                o                      C",
+    "       HHH     HHH   HHH   HHH x       C",
+    "                                       C",
+    "   oxKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK",
+    "    {x                                  ",
+    "    xk                                  ",
+    "                                        ",
+    "                                        ",
+    "   J                                    ",
+    "   x!GG}                                ",
+    "                                        ",
+    "                                        ",
+    "        J o                             ",
+    "KKKKKKK xKGKK                           ",
+    "   !!!}                                 ",
+    "B  |||}                                 ",
+    "      }                                 ",
+    "                    o                   ",
+    "                                        ",
+    "                J                o      ",
+    "                xxxKKKx        xKGK     ",
+    "                 | || |                 ",
+    "                                        ",
+    "  J                                   J ",
+    "  xKKx                                x ",
+    "                                        ",
+    "          o                   oH        ",
+    "                            xHHH       x",
+    "                                        ",
+    "        xKKKG                           ",
+    "                                        ",
+    "                                        ",
+    "                 o o o J                ",
+    "                 x!x!x!x                ",
+    "                                        ",
+    "                                        ",
+    "  @ J                                   ",
+    "xxxxx                                   "
+  ]
+}
+              
             ];
             CHAPTER_5[0].music = "showcase.mp3";
             CHAPTER_5[4].music = "breakcore.mp3";
