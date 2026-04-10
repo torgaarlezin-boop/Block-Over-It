@@ -5448,7 +5448,7 @@
     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   ]
 },
-              {
+{
   "name": "Chapter 5 Level 5",
   "creator": "Mcdongos & Torgaar",
   "description": "",
@@ -5473,7 +5473,9 @@
     "33,22",
     "10,15",
     "6,11",
-    "5,11"
+    "5,11",
+    "27,22",
+    "28,22"
   ],
   "flickers": [],
   "touchFlickers": [],
@@ -5503,8 +5505,8 @@
     "                    o                   ",
     "                                        ",
     "                J                o      ",
-    "                xxxKKKx        xKGK     ",
-    "                 | || |                 ",
+    "                xxxKKKx    GG  xKGK     ",
+    "                 | || |    !!           ",
     "                                        ",
     "  J                                   J ",
     "  xKKx                                x ",
@@ -9134,11 +9136,11 @@
                       currentGameMode === "impossible"
                     ) {
                       let chapterData =
-                        chapter === 1
-                          ? CHAPTER_1
-                          : chapter === 2
-                            ? CHAPTER_2
-                            : CHAPTER_3;
+                        chapter === 1 ? CHAPTER_1 :
+                        chapter === 2 ? CHAPTER_2 :
+                        chapter === 3 ? CHAPTER_3 :
+                        chapter === 4 ? CHAPTER_4 :
+                        CHAPTER_5;
 
                       // Check if there is a next level in this chapter
                       if (index < chapterData.length - 1) {
@@ -11022,7 +11024,7 @@
 
                 // Calculate total blue coins in game
                 let totalBlueCoinsInGame = 0;
-                [CHAPTER_1, CHAPTER_2, CHAPTER_3, CHAPTER_4].forEach((ch) => {
+          [CHAPTER_1, CHAPTER_2, CHAPTER_3, CHAPTER_4, CHAPTER_5].forEach((ch) => {
                   ch.forEach((lvl) => {
                     if (lvl.plan && lvl.plan.some((r) => r.includes("B")))
                       totalBlueCoinsInGame++;
@@ -11050,23 +11052,22 @@
                     isEpic = true;
                   }
 
-                  let chapterText = "CHAPTER 1";
-                  let levelText = "LEVEL 1";
-                  let campaignClass = "";
-                  if (
-                    gs.gameBeaten ||
-                    gs.chapter4Beaten ||
-                    gs.chapter5Beaten ||
-                    (gs.unlockedLevelCh4 || 0) >= 5
-                  ) {
-                    chapterText = "GAME";
-                    levelText = "COMPLETE";
-                    campaignClass = "text-rainbow";
-                  } else if (gs.chapter3Beaten) {
-                    chapterText = "CHAPTER 4";
-                    levelText = `LEVEL ${(gs.unlockedLevelCh4 || 0) + 1}`;
-                  } else if (gs.chapter2Beaten) {
-                    chapterText = "CHAPTER 3";
+            let chapterText = "CHAPTER 1";
+            let levelText = "LEVEL 1";
+            let campaignClass = "";
+            if (gs.gameBeaten || gs.chapter5Beaten) {
+              chapterText = "GAME";
+              levelText = "COMPLETE";
+              campaignClass = "text-rainbow";
+            } else if (gs.chapter4Beaten) {
+              chapterText = "CHAPTER 5";
+              levelText = `LEVEL ${(gs.unlockedLevelCh5 || 0) + 1}`;
+            } else if (gs.chapter3Beaten) {
+              chapterText = "CHAPTER 4";
+              levelText = `LEVEL ${(gs.unlockedLevelCh4 || 0) + 1}`;
+            } else if (gs.chapter2Beaten) {
+              chapterText = "CHAPTER 3";
+
                     levelText = `LEVEL ${(gs.unlockedLevelCh3 || 0) + 1}`;
                   } else if (gs.chapter1Beaten) {
                     chapterText = "CHAPTER 2";
@@ -11164,7 +11165,7 @@
                   const chapSelect = document.createElement("select");
                   chapSelect.style.cssText =
                     "flex:1; padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;";
-                  [1, 2, 3, 4].forEach((c) => {
+            [1, 2, 3, 4, 5].forEach((c) => {
                     const opt = document.createElement("option");
                     opt.value = c;
                     opt.text = "Ch " + c;
@@ -11250,7 +11251,7 @@
                       if (needsRebuild) {
                         // Reset Chapter Select for Campaign
                         chapSelect.innerHTML = "";
-                        [1, 2, 3, 4].forEach((c) => {
+                  [1, 2, 3, 4, 5].forEach((c) => {
                           const opt = document.createElement("option");
                           opt.value = c;
                           opt.text = "Chapter " + c;
@@ -11264,18 +11265,11 @@
                       const ch = parseInt(chapSelect.value) || 1;
                       let levels;
                       switch (ch) {
-                        case 1:
-                          levels = CHAPTER_1;
-                          break;
-                        case 2:
-                          levels = CHAPTER_2;
-                          break;
-                        case 3:
-                          levels = CHAPTER_3;
-                          break;
-                        case 4:
-                          levels = CHAPTER_4;
-                          break;
+                  case 1: levels = CHAPTER_1; break;
+                  case 2: levels = CHAPTER_2; break;
+                  case 3: levels = CHAPTER_3; break;
+                  case 4: levels = CHAPTER_4; break;
+                  case 5: levels = CHAPTER_5; break;
                         default:
                           levels = CHAPTER_5;
                       }
@@ -11293,18 +11287,11 @@
                       const ch = parseInt(chapSelect.value) || 1;
                       let levels;
                       switch (ch) {
-                        case 1:
-                          levels = CHAPTER_1;
-                          break;
-                        case 2:
-                          levels = CHAPTER_2;
-                          break;
-                        case 3:
-                          levels = CHAPTER_3;
-                          break;
-                        case 4:
-                          levels = CHAPTER_4;
-                          break;
+                case 1: levels = CHAPTER_1; break;
+                case 2: levels = CHAPTER_2; break;
+                case 3: levels = CHAPTER_3; break;
+                case 4: levels = CHAPTER_4; break;
+                case 5: levels = CHAPTER_5; break;
                         default:
                           levels = CHAPTER_5;
                       }
@@ -11466,7 +11453,7 @@
                 chapSelect.style.background = "#333";
                 chapSelect.style.color = "white";
                 chapSelect.style.border = "1px solid #555";
-                [1, 2, 3, 4].forEach((c) => {
+          [1, 2, 3, 4, 5].forEach((c) => {
                   const opt = document.createElement("option");
                   opt.value = c;
                   opt.text = "Chapter " + c;
@@ -11555,7 +11542,7 @@
                     if (needsRebuild) {
                       // Reset Chapter Select
                       chapSelect.innerHTML = "";
-                      [1, 2, 3, 4].forEach((c) => {
+                [1, 2, 3, 4, 5].forEach((c) => {
                         const opt = document.createElement("option");
                         opt.value = c;
                         opt.text = "Chapter " + c;
@@ -11789,8 +11776,8 @@
                 const btnCh5 = document.createElement("button");
                 btnCh5.className = "btn";
                 btnCh5.textContent = "Chapter V";
-                btnCh5.disabled = true;
-                // btnCh5.onclick = () => startChapterRun(5);
+          if (!gameState.chapter4Beaten) btnCh5.disabled = true;
+          btnCh5.onclick = () => startChapterRun(5);
 
                 const btnBack = document.createElement("button");
                 btnBack.className = "btn";
