@@ -9365,25 +9365,25 @@
                       // Update beaten_levels column in Supabase
                       trackBeatenCommunityLevel(levelData);
 
-                      // Verification Logic for Community Levels
-                      if (levelData.dbId != null && _supabase) {
-                        if (currentUser && !levelData.isShortcut) { // Added currentUser and !levelData.isShortcut checks
-                          .from("published_levels")
-                          .select("verified")
-                          .eq("id", levelData.dbId)
-                          .single()
-                          .then(({ data }) => {
-                            if (data && !data.verified) {
-                              _supabase
-                                .from("published_levels")
-                                .update({ verified: true, verifier: currentUser })
-                                .eq("id", levelData.dbId)
-                                .then(({ error }) => {
-                                  if (!error) showTopNotification("Level Verified!");
-                                }); // End of .then
-                            }
-                          });
-                      }
+            // Verification Logic for Community Levels
+            if (levelData && levelData.dbId != null && _supabase) {
+              _supabase
+                .from("published_levels")
+                .select("verified, verifier")
+                .eq("id", levelData.dbId)
+                .single()
+                .then(({ data }) => {
+                  if (data && !data.verified) {
+                    _supabase
+                      .from("published_levels")
+                      .update({ verified: true, verifier: currentUser })
+                      .eq("id", levelData.dbId)
+                      .then(({ error }) => {
+                        if (!error) showTopNotification("Level Verified!");
+                      });
+                  }
+                });
+            }
 
                       exitToMenu();
                     } else {
