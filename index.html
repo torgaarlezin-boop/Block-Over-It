@@ -1373,14 +1373,14 @@
       .mobile-controls-overlay {
         display: none;
         position: fixed;
-        bottom: 20px;
+        bottom: 0;
         left: 0;
         width: 100%;
-        height: 140px;
+        height: auto;
         pointer-events: none;
         z-index: 1000;
         justify-content: space-between;
-        padding: 0 30px;
+        padding: 0 5vw 5vh 5vw;
         box-sizing: border-box;
       }
 
@@ -3717,9 +3717,9 @@
       if (gameState.unlockedLevelCh3 === undefined)
         gameState.unlockedLevelCh3 = 0;
       if (gameState.chapter1Beaten === undefined)
-        gameState.chapter1Beaten = (gameState.unlockedLevel >= 5);
+        gameState.chapter1Beaten = gameState.unlockedLevel >= 5;
       if (gameState.chapter2Beaten === undefined)
-        gameState.chapter2Beaten = (gameState.unlockedLevelCh2 >= 5);
+        gameState.chapter2Beaten = gameState.unlockedLevelCh2 >= 5;
       if (gameState.chapter3Beaten === undefined)
         gameState.chapter3Beaten = false;
       if (gameState.unlockedLevelCh4 === undefined)
@@ -3932,8 +3932,14 @@
       function updateMobileButtonSize() {
         const val = gameSettings.mobileButtonSize || 50;
         const multiplier = val / 50;
-        document.documentElement.style.setProperty('--mobile-btn-size', (16 * multiplier) + 'vw');
-        document.documentElement.style.setProperty('--mobile-btn-max', (70 * multiplier) + 'px');
+        document.documentElement.style.setProperty(
+          "--mobile-btn-size",
+          16 * multiplier + "vw",
+        );
+        document.documentElement.style.setProperty(
+          "--mobile-btn-max",
+          70 * multiplier + "px",
+        );
       }
       updateMobileButtonSize();
 
@@ -8667,8 +8673,10 @@
 
         const isFinalLevel = index === chapterData.length - 1;
 
-        if (isFinalLevel && ch === 1) { gameState.chapter1Beaten = true; saveGame(); }
-        else if (isFinalLevel && ch === 2) gameState.chapter2Beaten = true;
+        if (isFinalLevel && ch === 1) {
+          gameState.chapter1Beaten = true;
+          saveGame();
+        } else if (isFinalLevel && ch === 2) gameState.chapter2Beaten = true;
         else if (isFinalLevel && ch === 3) {
           gameState.chapter3Beaten = true;
         } else if (isFinalLevel && ch === 4) {
