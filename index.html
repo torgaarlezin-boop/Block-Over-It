@@ -1397,10 +1397,10 @@
       }
 
       .mc-btn {
-        width: 16vw;
-        height: 16vw;
-        max-width: 70px;
-        max-height: 70px;
+        width: var(--mobile-btn-size, 16vw);
+        height: var(--mobile-btn-size, 16vw);
+        max-width: var(--mobile-btn-max, 70px);
+        max-height: var(--mobile-btn-max, 70px);
         background: rgba(255, 255, 255, 0.15);
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.1);
@@ -3857,6 +3857,7 @@
       let gameSettings = JSON.parse(safeStorage.getItem(SETTINGS_KEY)) || {
         alternateBlueCoinStyle: false, // New setting for alternate blue coin style
         volume: 50,
+        mobileButtonSize: 50,
         menuMusic: "synth",
         confirmDelete: true,
         sensitivity: 50,
@@ -3919,12 +3920,22 @@
         gameSettings.showHitboxes = false;
       if (gameSettings.currentSkin === undefined)
         gameSettings.currentSkin = "default";
+      if (gameSettings.mobileButtonSize === undefined)
+        gameSettings.mobileButtonSize = 50;
       if (gameSettings.lastReadNews === undefined) {
         // Migrate legacy local storage if exists
         gameSettings.lastReadNews = safeStorage.getItem("lastReadNews") || null;
       }
       if (!gameSettings.playlist)
         gameSettings.playlist = MUSIC_LIBRARY.map((t) => t.id);
+
+      function updateMobileButtonSize() {
+        const val = gameSettings.mobileButtonSize || 50;
+        const multiplier = val / 50;
+        document.documentElement.style.setProperty('--mobile-btn-size', (16 * multiplier) + 'vw');
+        document.documentElement.style.setProperty('--mobile-btn-max', (70 * multiplier) + 'px');
+      }
+      updateMobileButtonSize();
 
       function saveSettings(skipCloud = false) {
         safeStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
@@ -10357,6 +10368,26 @@
           };
           volDiv.appendChild(volSlider);
           settingsContent.appendChild(volDiv);
+
+          // Mobile Button Size
+          const sizeDiv = document.createElement("div");
+          sizeDiv.style.cssText =
+            "background: #222; padding: 15px; border-radius: 12px; border: 1px solid #333;";
+          sizeDiv.innerHTML = `<div style="margin-bottom:10px; font-weight:bold; color: #ccc; font-size: 0.9rem;">BUTTON SIZE <span id="m-size-val" style="float:right; color: #335699;">${gameSettings.mobileButtonSize}%</span></div>`;
+          const sizeSlider = document.createElement("input");
+          sizeSlider.type = "range";
+          sizeSlider.min = "10";
+          sizeSlider.max = "100";
+          sizeSlider.value = gameSettings.mobileButtonSize;
+          sizeSlider.oninput = (e) => {
+            gameSettings.mobileButtonSize = parseInt(e.target.value);
+            document.getElementById("m-size-val").innerText =
+              gameSettings.mobileButtonSize + "%";
+            updateMobileButtonSize();
+            saveSettings();
+          };
+          sizeDiv.appendChild(sizeSlider);
+          settingsContent.appendChild(sizeDiv);
 
           // Alt Coin
           const altCoinDiv = document.createElement("div");
