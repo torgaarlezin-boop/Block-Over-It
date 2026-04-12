@@ -642,7 +642,7 @@
 
       .status-badge {
         padding: 3px 8px;
-        border-radius: 3px;
+        border-radius: 0;
         font-size: 0.8rem;
         font-weight: bold;
         text-transform: uppercase;
@@ -3716,6 +3716,10 @@
         gameState.unlockedLevelCh2 = 0;
       if (gameState.unlockedLevelCh3 === undefined)
         gameState.unlockedLevelCh3 = 0;
+      if (gameState.chapter1Beaten === undefined)
+        gameState.chapter1Beaten = (gameState.unlockedLevel >= 5);
+      if (gameState.chapter2Beaten === undefined)
+        gameState.chapter2Beaten = (gameState.unlockedLevelCh2 >= 5);
       if (gameState.chapter3Beaten === undefined)
         gameState.chapter3Beaten = false;
       if (gameState.unlockedLevelCh4 === undefined)
@@ -5655,7 +5659,6 @@
       }
 
       function checkEarthSkinUnlock(silent = false) {
-        if (!currentUser) return;
         if (currentUserSkins.includes("earth")) return;
 
         if (gameState.chapter1Beaten) {
@@ -8635,8 +8638,6 @@
           levelInstance.totalBlueCoins > 0
         )
           gameState.levelBlueCoins[blueCoinKey] = true;
-        checkBlueCoinSkinUnlock();
-        checkGalaxySkinUnlock();
 
         if (ch === 1 && index >= gameState.unlockedLevel)
           gameState.unlockedLevel = index + 1;
@@ -8655,7 +8656,7 @@
 
         const isFinalLevel = index === chapterData.length - 1;
 
-        if (isFinalLevel && ch === 1) gameState.chapter1Beaten = true;
+        if (isFinalLevel && ch === 1) { gameState.chapter1Beaten = true; saveGame(); }
         else if (isFinalLevel && ch === 2) gameState.chapter2Beaten = true;
         else if (isFinalLevel && ch === 3) {
           gameState.chapter3Beaten = true;
@@ -8666,6 +8667,10 @@
           gameState.gameBeaten = true;
         }
         saveGame();
+
+        checkBlueCoinSkinUnlock();
+        checkGalaxySkinUnlock();
+        checkEarthSkinUnlock();
       }
       var activeLevelDisplay = null;
       var currentPlayingType = null; // 'campaign' or 'custom'
@@ -9314,6 +9319,15 @@
                   case 5:
                     chapterData = CHAPTER_5;
                     break;
+                  case 3:
+                    chapterData = CHAPTER_3;
+                    break;
+                  case 4:
+                    chapterData = CHAPTER_4;
+                    break;
+                  case 5:
+                    chapterData = CHAPTER_5;
+                    break;
                 }
                 const isFinalLevel = index === chapterData.length - 1;
 
@@ -9388,7 +9402,13 @@
                 trackBeatenCommunityLevel(levelData);
 
                 // Verification Logic for Community Levels
-                if (levelData && levelData.dbId != null && _supabase) {
+                if (
+                  levelData &&
+                  levelData.dbId != null &&
+                  _supabase &&
+                  (currentGameMode === "custom" ||
+                    currentGameMode === "speedrun")
+                ) {
                   _supabase
                     .from("published_levels")
                     .select("verified, verifier")
@@ -12833,6 +12853,7 @@
                   <option value="likes">Popular</option>
                   <option value="featured">Featured</option>
                   <option value="awards">Level Awards</option>
+                  <option value="unverified">Unverified</option>
                   <option value="newest">Newest</option>
                   <option value="plays">Most Plays</option>
                   <option value="oldest">Classic</option>
@@ -12865,26 +12886,31 @@
           let query = _supabase.from("published_levels").select("*");
 
           // Sort logic
-          if (sort === "newest")
+          if (sort === "newest") {
             query = query.order("created_at", { ascending: false });
-          else if (sort === "oldest")
+          } else if (sort === "oldest") {
             query = query.order("created_at", { ascending: true });
-          else if (sort === "likes")
+          } else if (sort === "likes") {
             query = query.order("upvotes", { ascending: false });
-          else if (sort === "plays")
+          } else if (sort === "plays") {
             query = query.order("plays", { ascending: false });
-          else if (sort === "difficulty_asc")
+          } else if (sort === "difficulty_asc") {
             query = query.order("difficulty", { ascending: true });
-          else if (sort === "difficulty_desc")
+          } else if (sort === "difficulty_desc") {
             query = query.order("difficulty", { ascending: false });
-          else if (sort === "featured")
+          } else if (sort === "featured") {
             query = query
               .eq("featured", true)
               .order("created_at", { ascending: false });
-          else if (sort === "awards")
+          } else if (sort === "awards") {
             query = query
               .eq("awards", true)
               .order("created_at", { ascending: false });
+          } else if (sort === "unverified") {
+            query = query
+              .or("verified.eq.false,verified.is.null")
+              .order("created_at", { ascending: false });
+          }
 
           query = query.limit(50);
 
@@ -12921,8 +12947,8 @@
                             <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
                                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                                     <span style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:0.5px;">${lvl.name}</span>
-                                    ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
-                                    ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:20px; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
+                                    ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
+                                    ${lvl.awards ? '<span style="background:#ffd700; color:black; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
                                 </div>
                                 <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
                                 <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span></div>
