@@ -6445,6 +6445,7 @@
         this.flickers = new Set(levelData.flickers || []);
         this.touchFlickers = new Set(levelData.touchFlickers || []);
         this.jumpFlickers = new Set(levelData.jumpFlickers || []);
+        this.invisibles = new Set(levelData.invisibles || []);
         this.blockConfigs = levelData.blockConfigs || {};
         this.age = 0;
         this.practiceStack = [];
@@ -6462,6 +6463,7 @@
 
             var color = this.colors[`${x},${y}`];
             var isFake = this.fakes.has(x + "," + y);
+            var isInvisible = this.invisibles.has(`${x},${y}`) || color === "invisible";
 
             // Merging Moving Blocks
             if (ch === "H") {
@@ -6611,16 +6613,15 @@
                   actor.flickerVisibleTime = 0;
                 }
 
-                if (
+                if (isInvisible) actor.color = "invisible";
+                else if (
                   color &&
                   color !== "flicker" &&
                   color !== "touch_flicker" &&
-                  color !== "jump_flicker" &&
-                  color !== "invisible"
+                  color !== "jump_flicker"
                 ) {
                   actor.color = color;
                 }
-                if (color === "invisible") actor.color = "invisible";
 
                 if (isFake) actor.fake = true;
                 if (
@@ -6640,17 +6641,13 @@
                 actor.id = this.nextActorId++;
                 this.actors.push(actor);
               }
-            } else if (ch === "x") {
-              let isFlicker =
-                this.flickers.has(`${x},${y}`) || color === "flicker";
-              let isTouchFlicker =
-                this.touchFlickers.has(`${x},${y}`) ||
-                color === "touch_flicker";
-              let isJumpFlicker =
-                this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
+            } else if (ch === "x" || ch === "!") {
+              let isFlicker = this.flickers.has(`${x},${y}`) || color === "flicker";
+              let isTouchFlicker = this.touchFlickers.has(`${x},${y}`) || color === "touch_flicker";
+              let isJumpFlicker = this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
 
-              if (isFlicker || isTouchFlicker || isJumpFlicker) {
-                var wall = new VisualWall(new Vector(x, y), color);
+              if (isFlicker || isTouchFlicker || isJumpFlicker || isInvisible || isFake) {
+                var wall = (ch === "x") ? new VisualWall(new Vector(x, y), color) : new Lava(new Vector(x, y), "!");
                 wall.isFlicker = isFlicker;
                 wall.isTouchFlicker = isTouchFlicker;
                 wall.isJumpFlicker = isJumpFlicker;
@@ -6659,23 +6656,16 @@
                 wall.flickerTimer = 0;
                 wall.flickerVisibleTime = 0;
                 if (isFake) wall.fake = true;
+                if (isInvisible) wall.color = "invisible";
+                else if (color && color !== "flicker" && color !== "touch_flicker" && color !== "jump_flicker") {
+                  wall.color = color;
+                }
+                if (ch === "!" && this.risingThrough.has(`${x},${y}`)) wall.throughBlocks = true;
                 wall.id = this.nextActorId++;
                 this.actors.push(wall);
-                fieldType = null; // Removed "wall" to allow physical flickering and fakes via actor logic
+                fieldType = null;
               } else {
-                fieldType = "wall";
-              }
-            } else if (ch === "!") {
-              if (color || isFake) {
-                var lava = new Lava(new Vector(x, y), "!");
-                lava.id = this.nextActorId++;
-                if (color) lava.color = color;
-                if (isFake) lava.fake = true;
-                if (this.risingThrough.has(x + "," + y))
-                  lava.throughBlocks = true;
-                this.actors.push(lava);
-              } else {
-                fieldType = "lava";
+                fieldType = (ch === "x") ? "wall" : "lava";
               }
             }
             gridLine.push(fieldType);
