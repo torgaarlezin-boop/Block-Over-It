@@ -2243,6 +2243,30 @@
         font-size: 1.4rem !important;
       }
 
+      /* --- Loading Layer Styles --- */
+      #loading-layer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 10000;
+        display: none;
+        background-size: cover;
+        background-position: center;
+      }
+      .loading-bar-text {
+        position: absolute;
+        bottom: 30px;
+        width: 100%;
+        padding: 0 40px;
+        display: flex;
+        justify-content: space-between;
+        box-sizing: border-box;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      }
+
       /* Browser Row Style */
       .browser-level-row {
         display: flex;
@@ -2574,6 +2598,13 @@
       </div>
     </div>
 
+    <div id="loading-layer">
+      <div class="loading-bar-text">
+        <div id="loading-artist" style="color: #aaa; font-size: 0.9rem"></div>
+        <div style="font-weight: bold; letter-spacing: 2px">Loading...</div>
+      </div>
+    </div>
+
     <div id="intro-layer">
       <div id="intro-sellwood">Sellwood Game Studios</div>
       <div id="intro-anim-container">
@@ -2752,12 +2783,13 @@
       };
       const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
       const GAME_NEWS = [
-                {
-          headline: "Level Awards April Starts- The Day One Category is Best Looking Level",
+        {
+          headline:
+            "Level Awards April Starts- The Day One Category is Best Looking Level",
           date: "2026-04-12",
           image: null,
           story:
-            "The Level Awards April is here! The first category, decided on April 12th, was best looking level. Day two will be best gameplay, day three best difficult gameplay, and day four best overall level. On day four you will be able to use code 'LEVELAWARDS' to get a free skin."
+            "The Level Awards April is here! The first category, decided on April 12th, was best looking level. Day two will be best gameplay, day three best difficult gameplay, and day four best overall level. On day four you will be able to use code 'LEVELAWARDS' to get a free skin.",
         },
         {
           headline: "1.8 Released- Verifications and a New Difficulty System!",
@@ -6463,7 +6495,8 @@
 
             var color = this.colors[`${x},${y}`];
             var isFake = this.fakes.has(x + "," + y);
-            var isInvisible = this.invisibles.has(`${x},${y}`) || color === "invisible";
+            var isInvisible =
+              this.invisibles.has(`${x},${y}`) || color === "invisible";
 
             // Merging Moving Blocks
             if (ch === "H") {
@@ -6642,12 +6675,25 @@
                 this.actors.push(actor);
               }
             } else if (ch === "x" || ch === "!") {
-              let isFlicker = this.flickers.has(`${x},${y}`) || color === "flicker";
-              let isTouchFlicker = this.touchFlickers.has(`${x},${y}`) || color === "touch_flicker";
-              let isJumpFlicker = this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
+              let isFlicker =
+                this.flickers.has(`${x},${y}`) || color === "flicker";
+              let isTouchFlicker =
+                this.touchFlickers.has(`${x},${y}`) ||
+                color === "touch_flicker";
+              let isJumpFlicker =
+                this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
 
-              if (isFlicker || isTouchFlicker || isJumpFlicker || isInvisible || isFake) {
-                var wall = (ch === "x") ? new VisualWall(new Vector(x, y), color) : new Lava(new Vector(x, y), "!");
+              if (
+                isFlicker ||
+                isTouchFlicker ||
+                isJumpFlicker ||
+                isInvisible ||
+                isFake
+              ) {
+                var wall =
+                  ch === "x"
+                    ? new VisualWall(new Vector(x, y), color)
+                    : new Lava(new Vector(x, y), "!");
                 wall.isFlicker = isFlicker;
                 wall.isTouchFlicker = isTouchFlicker;
                 wall.isJumpFlicker = isJumpFlicker;
@@ -6657,15 +6703,21 @@
                 wall.flickerVisibleTime = 0;
                 if (isFake) wall.fake = true;
                 if (isInvisible) wall.color = "invisible";
-                else if (color && color !== "flicker" && color !== "touch_flicker" && color !== "jump_flicker") {
+                else if (
+                  color &&
+                  color !== "flicker" &&
+                  color !== "touch_flicker" &&
+                  color !== "jump_flicker"
+                ) {
                   wall.color = color;
                 }
-                if (ch === "!" && this.risingThrough.has(`${x},${y}`)) wall.throughBlocks = true;
+                if (ch === "!" && this.risingThrough.has(`${x},${y}`))
+                  wall.throughBlocks = true;
                 wall.id = this.nextActorId++;
                 this.actors.push(wall);
                 fieldType = null;
               } else {
-                fieldType = (ch === "x") ? "wall" : "lava";
+                fieldType = ch === "x" ? "wall" : "lava";
               }
             }
             gridLine.push(fieldType);
@@ -13290,17 +13342,108 @@
         loadComments(lvl);
       };
 
-      // --- Start ---
-      if (!safeStorage.getItem("hasSeenIntro")) {
-        safeStorage.setItem("hasSeenIntro", "true");
+      // --- Loading Screen Logic ---
+      const LOADING_SCREENS = [
+        { img: "fluffy.png", artist: "Torgaar" },
+        { img: "loading.png", artist: "J_imbo" },
+      ];
 
-        playIntro();
-      } else {
-        document.getElementById("intro-layer").style.display = "none";
-        showMenu("main");
-        startNewsBanner();
+      async function performLoading() {
+        const loadingLayer = document.getElementById("loading-layer");
+        const artistEl = document.getElementById("loading-artist");
+
+        // Pick random screen
+        const screen =
+          LOADING_SCREENS[Math.floor(Math.random() * LOADING_SCREENS.length)];
+        loadingLayer.style.backgroundImage = `url('${screen.img}')`;
+        artistEl.textContent = `Artist: ${screen.artist}`;
+        loadingLayer.style.display = "block";
+
+        // 1. Load Supabase Data
+        const dataPromise = (async () => {
+          const savedUser = safeStorage.getItem("blockoverit_username");
+          if (savedUser) {
+            currentUser = savedUser;
+            updateLoginButton();
+            await fetchAndSyncUserData();
+          }
+        })();
+
+        // 2. Load Image Assets
+        const imagePromise = (async () => {
+          const skinImages = Object.keys(SKIN_DEFINITIONS).map((id) => {
+            if (id === "default") return "blockoverit.png";
+            const ext = id === "smiley" || id === "deathfire" ? "gif" : "png";
+            return `${id}.${ext}`;
+          });
+          const otherAssets = [
+            "blockoverit.png",
+            "supabase-logo-wordmark--dark.png",
+          ];
+          const allToLoad = [
+            ...new Set([...skinImages, ...otherAssets, screen.img]),
+          ];
+
+          const loadImg = (url) =>
+            new Promise((resolve) => {
+              const img = new Image();
+              img.onload = img.onerror = resolve;
+              img.src = url;
+            });
+
+          await Promise.all(allToLoad.map(loadImg));
+        })();
+
+        // Minimum display time of 3s for the loading screen vibes
+        const timerPromise = new Promise((r) => setTimeout(r, 3000));
+
+        await Promise.all([dataPromise, imagePromise, timerPromise]);
+        loadingLayer.style.opacity = "0";
+        loadingLayer.style.transition = "opacity 0.5s";
         setTimeout(() => {
+          loadingLayer.style.display = "none";
+        }, 500);
+      }
+
+      // --- Start ---
+      (async function initGame() {
+        if (!safeStorage.getItem("hasSeenIntro")) {
+          safeStorage.setItem("hasSeenIntro", "true");
+          playIntro();
+        } else {
+          if (!document.body.classList.contains("mobile-mode")) {
+            await performLoading();
+          } else {
+            const savedUser = safeStorage.getItem("blockoverit_username");
+            if (savedUser) {
+              currentUser = savedUser;
+              updateLoginButton();
+              fetchAndSyncUserData();
+            }
+          }
+          document.getElementById("intro-layer").style.display = "none";
+          showMenu("main");
+          startNewsBanner();
+
           if (!currentPlayingTrackId) playMusic();
+
+          // Check for login reward if not logged in
+          if (!safeStorage.getItem("blockoverit_username")) {
+            setTimeout(() => {
+              const html = `
+                <div style="margin-bottom:15px; color:#ccc;">Create an account to unlock the exclusive <strong>Dino</strong> skin!</div>
+                <img src="dino.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+              `;
+              popupManager.show({
+                title: "GET THE FREE DINO SKIN!",
+                html: html,
+                buttons: [
+                  { text: "CLAIM REWARD", onClick: () => openLoginModal(true) },
+                  { text: "LATER", class: "secondary", onClick: () => {} },
+                ],
+              });
+            }, 500);
+          }
 
           // Check News
           if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
@@ -13309,11 +13452,11 @@
             );
             if (latestUpdate) {
               const html = `
-                            <div style="text-align:left; margin-bottom:20px;">
-                              <div style="color:#335699; font-weight:bold; font-size:1.2rem; margin-bottom:5px;">v${latestUpdate.v} - ${latestUpdate.t}</div>
-                              <div style="color:#ccc; font-size:0.9rem; line-height:1.4;">${latestUpdate.d}</div>
-                            </div>
-                          `;
+                <div style="text-align:left; margin-bottom:20px;">
+                  <div style="color:#335699; font-weight:bold; font-size:1.2rem; margin-bottom:5px;">v${latestUpdate.v} - ${latestUpdate.t}</div>
+                  <div style="color:#ccc; font-size:0.9rem; line-height:1.4;">${latestUpdate.d}</div>
+                </div>
+              `;
               const setRead = () => {
                 gameSettings.lastReadNews = LATEST_NEWS_VERSION;
                 saveSettings();
@@ -13323,10 +13466,7 @@
                 title: "NEW UPDATE",
                 html: html,
                 buttons: [
-                  {
-                    text: "OK",
-                    onClick: setRead,
-                  },
+                  { text: "OK", onClick: setRead },
                   {
                     text: "ALL NEWS",
                     class: "secondary",
@@ -13339,8 +13479,8 @@
               });
             }
           }
-        }, 100);
-      }
+        }
+      })();
     </script>
   </body>
 </html>
