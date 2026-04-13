@@ -2242,6 +2242,17 @@
         display: inline-block;
         font-size: 1.4rem !important;
       }
+      @keyframes loading-dots {
+        0% { opacity: 0.2; }
+        20% { opacity: 1; }
+        100% { opacity: 0.2; }
+      }
+      .loading-dot {
+        animation: loading-dots 1.4s infinite;
+        animation-fill-mode: both;
+      }
+      .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+      .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 
       /* --- Loading Layer Styles --- */
       #loading-layer {
@@ -2601,7 +2612,10 @@
     <div id="loading-layer">
       <div class="loading-bar-text">
         <div id="loading-artist" style="color: #aaa; font-size: 0.9rem"></div>
-        <div style="font-weight: bold; letter-spacing: 2px">Loading...</div>
+        <div style="font-weight: bold; letter-spacing: 2px">
+          Loading<span class="loading-dot">.</span
+          ><span class="loading-dot">.</span><span class="loading-dot">.</span>
+        </div>
       </div>
     </div>
 
@@ -10620,23 +10634,35 @@
                 "<div style='text-align:center; color:#888;'>No news right now.</div>";
               return;
             }
+
+            const showDetail = (newsItem) => {
+              contentContainer.innerHTML = `
+                <button class="btn" style="margin-bottom:15px; padding: 8px 20px; font-size: 0.8rem; min-width: auto; border-radius: 20px; background: rgba(255,255,255,0.05); border-color: #444;" onclick="showMenu('news', {tab: 'news'})">BACK</button>
+                <div style="background:#222; border: 2px solid #333; border-radius:8px; padding:20px;">
+                    <h2 style="font-size:1.5rem; color:#fff; margin-bottom:5px;">${newsItem.headline}</h2>
+                    <div style="font-size:0.8rem; color:#888; margin-bottom:15px;">${newsItem.date}</div>
+                    ${newsItem.image ? `<img src="${newsItem.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px; border:1px solid #444;">` : ""}
+                    <p style="color:#ccc; line-height:1.6;">${newsItem.story}</p>
+                </div>
+              `;
+            };
+
+            if (context && context.expand) {
+              const story = GAME_NEWS.find(
+                (n) => n.headline === context.expand,
+              );
+              if (story) {
+                showDetail(story);
+                return;
+              }
+            }
+
             GAME_NEWS.forEach((newsItem) => {
               const itemEl = document.createElement("div");
               itemEl.className = "news-item-card";
               itemEl.style.cssText =
                 "background: #222; border: 2px solid #333; border-radius: 8px; margin-bottom: 15px; cursor: pointer; overflow: hidden; transition: transform 0.2s;";
-              itemEl.onclick = () => {
-                // Show Detail View
-                contentContainer.innerHTML = `
-                          <button class="btn" style="margin-bottom:15px; padding: 5px 15px; font-size: 0.9rem;" onclick="showMenu('news')">Back</button>
-                          <div style="background:#222; border: 2px solid #333; border-radius:8px; padding:20px;">
-                              <h2 style="font-size:1.5rem; color:#fff; margin-bottom:5px;">${newsItem.headline}</h2>
-                              <div style="font-size:0.8rem; color:#888; margin-bottom:15px;">${newsItem.date}</div>
-                              ${newsItem.image ? `<img src="${newsItem.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px; border:1px solid #444;">` : ""}
-                              <p style="color:#ccc; line-height:1.6;">${newsItem.story}</p>
-                          </div>
-                       `;
-              };
+              itemEl.onclick = () => showDetail(newsItem);
 
               const headerEl = document.createElement("div");
               const isMobile = document.body.classList.contains("mobile-mode");
@@ -10652,11 +10678,6 @@
 
               itemEl.appendChild(headerEl);
               contentContainer.appendChild(itemEl);
-
-              // Auto-expand if coming from banner
-              if (context && context.expand === newsItem.headline) {
-                itemEl.click();
-              }
             });
           };
 
@@ -12419,7 +12440,8 @@
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
-          btnBack.style.marginTop = "20px";
+          btnBack.style.cssText =
+            "margin-top: 20px; padding: 10px 30px; font-size: 1rem; min-width: 150px; border-radius: 4px;";
           btnBack.onclick = () => showMenu("main");
           container.appendChild(btnBack);
 
