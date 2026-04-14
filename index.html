@@ -2797,6 +2797,7 @@
       };
       const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
       const GAME_NEWS = [
+        
 
         {
           headline:
@@ -6698,13 +6699,7 @@
               let isJumpFlicker =
                 this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
 
-              if (
-                isFlicker ||
-                isTouchFlicker ||
-                isJumpFlicker ||
-                isInvisible ||
-                isFake
-              ) {
+              if (isFlicker || isTouchFlicker || isJumpFlicker || (ch === "!" && (isFake || isInvisible))) {
                 var wall =
                   ch === "x"
                     ? new VisualWall(new Vector(x, y), color)
@@ -6712,18 +6707,19 @@
                 wall.isFlicker = isFlicker;
                 wall.isTouchFlicker = isTouchFlicker;
                 wall.isJumpFlicker = isJumpFlicker;
-                wall.flickerType = color || "combined";
-                wall.isVisible = false;
+
+                if (isFlicker || isTouchFlicker || isJumpFlicker) {
+                  wall.flickerType = color || "combined";
+                  wall.isVisible = false;
+                } else {
+                  wall.isVisible = true;
+                }
+
                 wall.flickerTimer = 0;
                 wall.flickerVisibleTime = 0;
                 if (isFake) wall.fake = true;
                 if (isInvisible) wall.color = "invisible";
-                else if (
-                  color &&
-                  color !== "flicker" &&
-                  color !== "touch_flicker" &&
-                  color !== "jump_flicker"
-                ) {
+                else if (color && !["flicker", "touch_flicker", "jump_flicker"].includes(color)) {
                   wall.color = color;
                 }
                 if (ch === "!" && this.risingThrough.has(`${x},${y}`))
