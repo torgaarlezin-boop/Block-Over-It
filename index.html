@@ -2242,17 +2242,10 @@
         display: inline-block;
         font-size: 1.4rem !important;
       }
-      @keyframes loading-dots {
-        0% { opacity: 0.2; }
-        20% { opacity: 1; }
-        100% { opacity: 0.2; }
+      @keyframes loading-jump {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
       }
-      .loading-dot {
-        animation: loading-dots 1.4s infinite;
-        animation-fill-mode: both;
-      }
-      .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-      .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 
       /* --- Loading Layer Styles --- */
       #loading-layer {
@@ -2610,11 +2603,11 @@
     </div>
 
     <div id="loading-layer">
-      <div class="loading-bar-text">
+      <div class="loading-bar-text" style="align-items: flex-end;">
         <div id="loading-artist" style="color: #aaa; font-size: 0.9rem"></div>
-        <div style="font-weight: bold; letter-spacing: 2px">
-          Loading<span class="loading-dot">.</span
-          ><span class="loading-dot">.</span><span class="loading-dot">.</span>
+        <div id="loading-animation" style="display: flex; flex-direction: column; align-items: center; gap: 0;">
+          <div id="loading-block" style="width: 20px; height: 40px; background: #335699; animation: loading-jump 0.8s infinite ease-in-out;"></div>
+          <div id="loading-platform" style="width: 50px; height: 10px; background: #444; border: 2px solid #333; box-sizing: border-box;"></div>
         </div>
       </div>
     </div>
@@ -2794,11 +2787,11 @@
         bike: { name: "Mountain Biking (Sports Edition)", copies: "1/5" },
         earth: { name: "Earth", copies: "N/A" },
         tothemoon: { name: "Cool Guy (To the Moon)", copies: "1/7" },
+        WINSTONTHEGREAT: {name: "WINSTONTHEGREAT", copies: "1/1"},
+
       };
       const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
       const GAME_NEWS = [
-        
-
         {
           headline:
             "Level Awards April Starts- The Day One Category is Best Looking Level",
@@ -6432,10 +6425,16 @@
 
       function cloneActor(actor) {
         if (actor.type === "lava-group") {
-          return new LavaGroup(actor.members.map((m) => cloneActor(m)));
+          return new LavaGroup(
+            actor.members.map((m) => cloneActor(m)),
+            new Vector(actor.speed.x, actor.speed.y),
+          );
         }
         if (actor.type === "moving-group") {
-          return new MovingGroup(actor.members.map((m) => cloneActor(m)));
+          return new MovingGroup(
+            actor.members.map((m) => cloneActor(m)),
+            new Vector(actor.speed.x, actor.speed.y),
+          );
         }
         let newActor = Object.create(Object.getPrototypeOf(actor));
         Object.assign(newActor, actor);
@@ -6699,7 +6698,12 @@
               let isJumpFlicker =
                 this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
 
-              if (isFlicker || isTouchFlicker || isJumpFlicker || (ch === "!" && (isFake || isInvisible))) {
+              if (
+                isFlicker ||
+                isTouchFlicker ||
+                isJumpFlicker ||
+                (ch === "!" && (isFake || isInvisible))
+              ) {
                 var wall =
                   ch === "x"
                     ? new VisualWall(new Vector(x, y), color)
@@ -6719,7 +6723,10 @@
                 wall.flickerVisibleTime = 0;
                 if (isFake) wall.fake = true;
                 if (isInvisible) wall.color = "invisible";
-                else if (color && !["flicker", "touch_flicker", "jump_flicker"].includes(color)) {
+                else if (
+                  color &&
+                  !["flicker", "touch_flicker", "jump_flicker"].includes(color)
+                ) {
                   wall.color = color;
                 }
                 if (ch === "!" && this.risingThrough.has(`${x},${y}`))
@@ -7043,10 +7050,10 @@
       // --- Physics ---
 
       // Lava Grouping Logic
-      function LavaGroup(members) {
+      function LavaGroup(members, speed) {
         this.members = members;
         this.type = "lava-group";
-        this.speed = members[0].speed;
+        this.speed = speed || members[0].speed;
       }
 
       LavaGroup.prototype.act = function (step, level) {
@@ -7133,10 +7140,10 @@
       };
 
       // Moving Block Grouping Logic
-      function MovingGroup(members) {
+      function MovingGroup(members, speed) {
         this.members = members;
         this.type = "moving-group";
-        this.speed = members[0].speed;
+        this.speed = speed || members[0].speed;
       }
 
       MovingGroup.prototype.act = function (step, level) {
@@ -8194,11 +8201,11 @@
                   el.style.backgroundImage = `url('vintageemowin.png')`;
                 } else if (skin === "rainbownoir" || skin === "coolguynoir") {
                   const ext =
-                    skin === "smiley" || skin === "deathfire" ? "gif" : "png";
+                    skin === "smiley" || skin === "deathfire" || skin === "WINSTONTHEGREAT"? "gif" : "png";
                   el.style.backgroundImage = `url('${skin}.${ext}')`;
                 } else {
                   const ext =
-                    skin === "smiley" || skin === "deathfire" ? "gif" : "png";
+                    skin === "smiley" || skin === "deathfire" || skin === "WINSTONTHEGREAT" ? "gif" : "png";
                   el.style.backgroundImage = `url('${skin}.${ext}')`;
                   el.style.filter =
                     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
@@ -8227,7 +8234,7 @@
                       : `url('vintageemo.png')`;
                 } else {
                   const ext =
-                    skin === "smiley" || skin === "deathfire" ? "gif" : "png";
+                    skin === "smiley" || skin === "deathfire"|| skin === "WINSTONTHEGREAT" ? "gif" : "png";
                   el.style.backgroundImage = `url('${skin}.${ext}')`;
                 }
                 el.style.filter = "";
@@ -9760,7 +9767,7 @@
           modalPreview.style.borderRadius = "8px";
         } else {
           modalPreview.style.backgroundColor = "transparent";
-          const ext = id === "smiley" || id === "deathfire" ? "gif" : "png";
+          const ext = id === "smiley" || id === "deathfire" || id === "WINSTONTHEGREAT"? "gif" : "png";
           const img = customImg || `${id}.${ext}`;
           modalPreview.style.backgroundImage = `url('${img}')`;
         }
@@ -9870,7 +9877,7 @@
             preview.style.boxShadow = "0 4px 10px rgba(0,0,0,0.5)";
           } else {
             const ext =
-              skinId === "smiley" || skinId === "deathfire" ? "gif" : "png";
+              skinId === "smiley" || skinId === "deathfire"|| skinId === "WINSTONTHEGREAT" ? "gif" : "png";
             preview.style.backgroundImage = `url('${skinId}.${ext}')`;
             preview.style.backgroundSize = "contain";
             preview.style.backgroundRepeat = "no-repeat";
@@ -10468,6 +10475,24 @@
           };
           altCoinDiv.appendChild(acToggle);
           settingsContent.appendChild(altCoinDiv);
+
+          // Hitboxes
+          const hbDiv = document.createElement("div");
+          hbDiv.style.cssText =
+            "display:flex; justify-content:space-between; align-items:center; background:#222; padding:15px; border-radius:12px; border:1px solid #333;";
+          hbDiv.innerHTML = "<span>SHOW HITBOXES</span>";
+          const hbToggle = document.createElement("div");
+          hbToggle.className =
+            "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
+          hbToggle.innerHTML = '<div class="toggle-slider"></div>';
+          hbToggle.onclick = () => {
+            gameSettings.showHitboxes = !gameSettings.showHitboxes;
+            hbToggle.className =
+              "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
+            saveSettings();
+          };
+          hbDiv.appendChild(hbToggle);
+          settingsContent.appendChild(hbDiv);
 
           // Redeem Code Button
           if (currentUser) {
@@ -13365,11 +13390,16 @@
       const LOADING_SCREENS = [
         { img: "fluffy.png", artist: "Torgaar" },
         { img: "loading.png", artist: "J_imbo" },
+        { img: "platforms.png", artist: "MidgeMidge22" },
+        { img: "blocks.png", artist: "Chairlord" },
+        { img: "coolguyloading.png", artist: "Chairlord" },
+
       ];
 
       async function performLoading() {
         const loadingLayer = document.getElementById("loading-layer");
         const artistEl = document.getElementById("loading-artist");
+        const blockEl = document.getElementById("loading-block");
 
         // Pick random screen
         const screen =
@@ -13392,7 +13422,7 @@
         const imagePromise = (async () => {
           const skinImages = Object.keys(SKIN_DEFINITIONS).map((id) => {
             if (id === "default") return "blockoverit.png";
-            const ext = id === "smiley" || id === "deathfire" ? "gif" : "png";
+            const ext = id === "smiley" || id === "deathfire" || id === "WINSTONTHEGREAT"? "gif" : "png";
             return `${id}.${ext}`;
           });
           const otherAssets = [
@@ -13417,6 +13447,19 @@
         const timerPromise = new Promise((r) => setTimeout(r, 3000));
 
         await Promise.all([dataPromise, imagePromise, timerPromise]);
+
+        // Update loading block skin if available
+        if (blockEl && gameSettings.currentSkin && gameSettings.currentSkin !== "default") {
+          const skin = gameSettings.currentSkin;
+          const ext = (skin === "smiley" || skin === "deathfire"|| skin === "WINSTONTHEGREAT") ? "gif" : "png";
+          blockEl.style.backgroundImage = `url('${skin}.${ext}')`;
+          blockEl.style.backgroundSize = "contain";
+          blockEl.style.backgroundRepeat = "no-repeat";
+          blockEl.style.backgroundPosition = "center";
+          blockEl.style.backgroundColor = "transparent";
+          blockEl.style.width = "40px"; // Wider for skins to match aspect ratio
+        }
+
         loadingLayer.style.opacity = "0";
         loadingLayer.style.transition = "opacity 0.5s";
         setTimeout(() => {
