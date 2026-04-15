@@ -9232,7 +9232,7 @@
                 startGameLevel(levelData, index, type, chapter, true);
               }
             } else if (status == "won") {
-              if (gameSettings.currentSkin === "cityboi") {
+              if (gameSettings.currentSkin === "cityboi" || gameSettings.currentSkin === "cityboilegend") {
                 const winSound = new Audio("city-boy.mp3");
                 winSound.volume = gameSettings.volume / 100;
                 winSound.play().catch(e => console.warn("Failed to play cityboy.mp3", e));
