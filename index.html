@@ -1149,33 +1149,11 @@
         transform: scale(1.05);
       }
 
-      /* Credits Button */
-      .credits-btn {
-        position: absolute;
-        bottom: 20px;
-        right: 300px; /* Positioned between Beats and News */
-        background: #333;
-        border: 2px solid #555;
-        color: white;
-        font-family: inherit;
-        font-size: 1rem;
-        cursor: pointer;
-        padding: 10px 20px;
-        text-transform: uppercase;
-        transition: all 0.2s;
-        z-index: 110;
-      }
-      .credits-btn:hover {
-        background: #444;
-        border-color: #335699;
-        transform: scale(1.05);
-      }
-
       /* News Button */
       .news-btn {
         position: absolute;
         bottom: 20px;
-        right: 440px;
+        right: 300px;
         background: #333;
         border: 2px solid #555;
         color: white;
@@ -2433,14 +2411,6 @@
         >
           <span>News</span>
           <div id="news-notif" class="notif-dot"></div>
-        </button>
-
-        <button
-          class="credits-btn btn"
-          style="min-width: auto; padding: 10px 20px; font-size: 1rem"
-          onclick="showMenu('credits')"
-        >
-          <span>Credits</span>
         </button>
 
         <button
@@ -9262,6 +9232,11 @@
                 startGameLevel(levelData, index, type, chapter, true);
               }
             } else if (status == "won") {
+              if (gameSettings.currentSkin === "cityboi") {
+                const winSound = new Audio("city-boy.mp3");
+                winSound.volume = gameSettings.volume / 100;
+                winSound.play().catch(e => console.warn("Failed to play cityboy.mp3", e));
+              }
               if (currentGameMode === "deathrun") {
                 // Failed deathrun (survived level), restart
                 startGameLevel(levelData, index, type, chapter);
@@ -10359,17 +10334,24 @@
 
           container.appendChild(createAccordion("AUDIO", audioItems));
 
-          // --- User Section ---
-
-          // --- Controls Section ---
-          const controlsItems = [];
+          // --- Info Section ---
+          const infoItems = [];
           const controlsBtn = document.createElement("button");
           controlsBtn.className = "btn";
           controlsBtn.textContent = "VIEW CONTROLS";
           controlsBtn.style.width = "100%";
           controlsBtn.onclick = () => showMenu("controls");
-          controlsItems.push(controlsBtn);
-          container.appendChild(createAccordion("CONTROLS", controlsItems));
+          infoItems.push(controlsBtn);
+
+          const creditsBtn = document.createElement("button");
+          creditsBtn.className = "btn";
+          creditsBtn.textContent = "CREDITS";
+          creditsBtn.style.width = "100%";
+          creditsBtn.style.marginTop = "10px";
+          creditsBtn.onclick = () => showMenu("credits");
+          infoItems.push(creditsBtn);
+
+          container.appendChild(createAccordion("INFO", infoItems));
 
           // --- User Section ---
           const userItems = [];
