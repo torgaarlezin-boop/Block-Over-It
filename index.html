@@ -2766,17 +2766,10 @@
           name: "Death Fire",
           copies: "1/1",
         },
-        basketball: { name: "Basketball (Sports Edition)", copies: "1/5" },
-        ski: { name: "Ski (Sports Edition)", copies: "1/5" },
-        soccer: { name: "Soccer (Sports Edition)", copies: "1/5" },
-        football: { name: "Football (Sports Edition)", copies: "1/5" },
-        tennis: { name: "Tennis (Sports Edition)", copies: "1/5" },
-        golf: { name: "Golf (Sports Edition)", copies: "1/5" },
-        skateboard: { name: "Skateboard (Sports Edition)", copies: "1/5" },
-        bike: { name: "Mountain Biking (Sports Edition)", copies: "1/5" },
         earth: { name: "Earth", copies: "N/A" },
         tothemoon: { name: "Cool Guy (To the Moon)", copies: "1/7" },
         WINSTONTHEGREAT: { name: "WINSTONTHEGREAT", copies: "1/1" },
+        coolguygalaxy: {name: "Cool Guy (Galaxy)", copies: "1/3"}
       };
       const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
       const GAME_NEWS = [
@@ -9620,6 +9613,24 @@
           return;
         }
 
+        if (currentMenuView === "browse-levels") {
+          if (lastBrowserState.isViewingDetails) {
+            showMenu("browse-levels");
+          } else {
+            const list = document.getElementById("browser-list-container");
+            if (list) lastBrowserState.scrollPos = list.scrollTop;
+
+            lastBrowserState = {
+              searchTerm: "",
+              sortValue: "likes",
+              scrollPos: 0,
+              isViewingDetails: false,
+            };
+            showMenu("custom");
+          }
+          return;
+        }
+
         if (currentMenuView === "controls") {
           showMenu("settings");
           return;
@@ -12982,22 +12993,23 @@
         overlay.appendChild(container);
         document.body.appendChild(overlay);
       }
-      // Persistence for Browser State
+
       let lastBrowserState = {
         searchTerm: "",
         sortValue: "likes",
         scrollPos: 0,
+        isViewingDetails: false,
       };
 
       async function renderLevelBrowserList(container) {
-        // If we are returning to the list, we want to restore the previous view
+        lastBrowserState.isViewingDetails = false;
         const list = document.createElement("div");
+        list.id = "browser-list-container";
         list.style.cssText =
           "width:100%; display:flex; flex-direction:column; gap:10px; max-height:65vh; overflow-y:auto; padding-right:10px;";
 
         // Controls
         const controls = document.createElement("div");
-
         controls.style.cssText =
           "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;";
 
@@ -13005,15 +13017,14 @@
         const searchInput = document.createElement("input");
         searchInput.type = "text";
         searchInput.id = "browser-search";
-        searchInput.value = lastBrowserState.searchTerm;
         searchInput.placeholder = "Search levels or creators...";
         searchInput.style.cssText =
           "flex:1; padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; box-sizing: border-box; font-family: inherit;";
 
         // Sort
-        // Default to Most Likes
         const sortSelect = document.createElement("select");
         sortSelect.id = "browser-sort";
+        // Default to Most Likes
         sortSelect.style.cssText =
           "padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; font-family: inherit; cursor: pointer;";
         sortSelect.innerHTML = `
@@ -13028,7 +13039,7 @@
                   <option value="difficulty_asc">Easiest</option>
                   <option value="difficulty_desc">Hardest</option>
               `;
-        sortSelect.value = lastBrowserState.sortValue;
+        sortSelect.value = "likes";
 
         controls.appendChild(searchInput);
         controls.appendChild(sortSelect);
@@ -13048,12 +13059,8 @@
             return;
           }
 
-          // Save current state for persistence
-          lastBrowserState.searchTerm = searchInput.value;
-          lastBrowserState.sortValue = sortSelect.value;
-
-          const term = lastBrowserState.searchTerm.toLowerCase();
-          const sort = lastBrowserState.sortValue;
+          const term = searchInput.value.toLowerCase();
+          const sort = sortSelect.value;
 
           let query = _supabase.from("published_levels").select("*");
 
@@ -13064,7 +13071,7 @@
             query = query.order("created_at", { ascending: true });
           } else if (sort === "likes") {
             const recentDate = new Date();
-            recentDate.setDate(recentDate.getDate() - 20); // Filter for levels from last 60 days
+            recentDate.setDate(recentDate.getDate() - 60); // Filter for levels from last 60 days
             query = query
               .gte("created_at", recentDate.toISOString())
               .order("upvotes", { ascending: false });
@@ -13152,11 +13159,6 @@
               };
               list.appendChild(card);
             });
-
-            // Restore scroll position after content is rendered
-            requestAnimationFrame(() => {
-              list.scrollTop = lastBrowserState.scrollPos;
-            });
           }
         };
 
@@ -13179,6 +13181,7 @@
             searchTerm: "",
             sortValue: "likes",
             scrollPos: 0,
+            isViewingDetails: false,
           };
           showMenu("custom");
         };
@@ -13189,6 +13192,7 @@
       }
 
       async function renderLevelDetails(container, lvl) {
+        lastBrowserState.isViewingDetails = true;
         // Fetch fresh data for this level to ensure votes/comments are current
         let currentLvl = lvl;
         if (_supabase) {
