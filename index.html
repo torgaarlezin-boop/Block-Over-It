@@ -2771,26 +2771,29 @@
         WINSTONTHEGREAT: { name: "WINSTONTHEGREAT", copies: "1/1" },
         coolguygalaxy: {name: "Cool Guy (Galaxy)", copies: "1/3"}
       };
-      const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
+      const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
-        {
-          headline: "Level Awards April Ends with best overall level",
-          date: "2026-04-16",
+       {
+          headline: "New Cool Guy (Galaxy) skin!",
+          date: "2026-04-19",
+          image: "coolguygalaxy.png",
+          story:
+            "The new Cool Guy (Galaxy) skin (shown above) just released. It's a blend of the classic Cool Guy and Galaxy skins. This alternate will possibly be availible in upcoming events."        },
+                   {
+          headline: "1.9 Released!",
+          date: "2026-04-19",
           image: null,
           story:
-            "The Level Awards April just ended with the final category of best overall winner. The winner of this category, Seppe, will obtain a ticket to the Legends Level Awards in addition to the standard Cool Guy reward. Rewards for the Level Awards have been handed out, and you can use the code LEVELAWARDS to get the Cool Guy (Signature) skin for free. The rankings for best overall level were: First Place - The Nightmare by J_imbo, Second Place - H@rdc0re Ragequit by g@v1n1stheg0@t, Third Place - Just Level 2 by Torgaar.",
-        },
-        {
-          headline: "Rewards for level award winners being handed out!",
-          date: "2026-04-16",
-          image: null,
-          story:
-            "The winners of each Level Awards April category have been awarded the Cool Guy skin. In addition to this, Seppe, the winner of Best Overall Level has been awarded a ticket to the Legends Level Awards.",
-        },
+            "The new 1.9 update just released. A new legendary rank for featured levels has been added in addition to a new impossible tag for impossible levels. Of course, Chapter 5 has been added. There is also a new unverified level browser section, and exiting a level browser level goes back exactly to where you were before. Finally, the last major change is the new loading screen system, with art from many different atists and a bouncing block that transforms into your equipped skin right before loading in."          },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
       const NEWS_UPDATES = [
+                {
+          v: "1.9",
+          t: "Campaign Part Three",
+          d: "Chapter five added. In custom levels, there is a new featured rank called Legendary (glowing blue) in addition to a new impossible tag for impossible levels. There is also a new unverified level browser section, and exiting a level browser level goes back exactly to where you were before. This update adds loading screens, which feature art from artists including Torgaar, J_imbo, Chairlord, and MidgeMidge22. More loading screens will be added in future updates. This update also comes with many bug fixes, including a major one with practice mode. Practice mode as a whole has been polished, and moving blocks inside practice mode continue moving in their direction if you set a point while they are moving in that direction (instead of resetting). Show hitboxes was also redesigned, and the UI for news and settings was too. Mny small UI changes and bug fixes are also included in this update."        
+        },
         {
           v: "1.8",
           t: "Level Sharing",
