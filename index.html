@@ -3866,6 +3866,42 @@
           artist: "Chairlord",
           file: "[BREAKCORE]In-tHE-mInD__!.mp3",
         },
+        {
+          id: "bloodlines",
+          title: "Bloodlines",
+          artist: "nstryder",
+          file: "bloodlines.mp3",
+        },
+        {
+          id: "impaler",
+          title: "The Impaler",
+          artist: "nstryder",
+          file: "impaler.mp3",
+        },
+        {
+          id: "secrets",
+          title: "A Miserable Pile of Secrets",
+          artist: "nstryder",
+          file: "secrets.mp3",
+        },
+        {
+          id: "matter",
+          title: "Dark Matter",
+          artist: "Hex-Hammer",
+          file: "matter.mp3",
+        },
+        {
+          id: "speaki",
+          title: "Angry Speaki",
+          artist: "Karshaper",
+          file: "speaki.mp3",
+        },
+        {
+          id: "bonanza",
+          title: "Bonanza Extragavanca",
+          artist: "wineplume",
+          file: "bonanza.mp3",
+        },
       ];
 
       const SETTINGS_KEY = "blockoverit_settings";
@@ -3923,6 +3959,18 @@
         gameSettings.playlist.push("showcase");
       if (!gameSettings.playlist.includes("breakcore"))
         gameSettings.playlist.push("breakcore");
+      if (!gameSettings.playlist.includes("bloodlines"))
+        gameSettings.playlist.push("bloodlines");
+      if (!gameSettings.playlist.includes("impaler"))
+        gameSettings.playlist.push("impaler");
+      if (!gameSettings.playlist.includes("secrets"))
+        gameSettings.playlist.push("secrets");
+      if (!gameSettings.playlist.includes("matter"))
+        gameSettings.playlist.push("matter");
+      if (!gameSettings.playlist.includes("speaki"))
+        gameSettings.playlist.push("speaki");
+      if (!gameSettings.playlist.includes("bonanza"))
+        gameSettings.playlist.push("bonanza");
 
       if (gameSettings.shuffleMusic === undefined)
         gameSettings.shuffleMusic = true;
