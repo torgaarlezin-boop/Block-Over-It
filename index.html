@@ -2781,24 +2781,23 @@
       const LATEST_NEWS_VERSION = "1.8"; // Not even really related to supabase
       const GAME_NEWS = [
         {
-          headline:
-            "Level Awards April Ends with best overall level",
+          headline: "Level Awards April Ends with best overall level",
           date: "2026-04-16",
           image: null,
           story:
-            "The Level Awards April just ended with the final category of best overall winner. The winner of this category, Seppe, will obtain a ticket to the Legends Level Awards in addition to the standard Cool Guy reward. Rewards for the Level Awards have been handed out, and you can use the code LEVELAWARDS to get the Cool Guy (Signature) skin for free. The rankings for best overall level were: First Place - The Nightmare by J_imbo, Second Place - H@rdc0re Ragequit by g@v1n1stheg0@t, Third Place - Just Level 2 by Torgaar."
+            "The Level Awards April just ended with the final category of best overall winner. The winner of this category, Seppe, will obtain a ticket to the Legends Level Awards in addition to the standard Cool Guy reward. Rewards for the Level Awards have been handed out, and you can use the code LEVELAWARDS to get the Cool Guy (Signature) skin for free. The rankings for best overall level were: First Place - The Nightmare by J_imbo, Second Place - H@rdc0re Ragequit by g@v1n1stheg0@t, Third Place - Just Level 2 by Torgaar.",
         },
         {
           headline: "Rewards for level award winners being handed out!",
           date: "2026-04-16",
           image: null,
           story:
-            "The winners of each Level Awards April category have been awarded the Cool Guy skin. In addition to this, Seppe, the winner of Best Overall Level has been awarded a ticket to the Legends Level Awards." },
+            "The winners of each Level Awards April category have been awarded the Cool Guy skin. In addition to this, Seppe, the winner of Best Overall Level has been awarded a ticket to the Legends Level Awards.",
+        },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
       const NEWS_UPDATES = [
-
         {
           v: "1.8",
           t: "Level Sharing",
@@ -6604,6 +6603,14 @@
                   ) {
                     shouldSpawnBlueCoin = true;
                   }
+
+                  // Check community levels via beaten_levels storage
+                  if (
+                    levelData.dbId &&
+                    currentUserBeatenLevels.some((l) => l.id === levelData.dbId)
+                  ) {
+                    shouldSpawnBlueCoin = true;
+                  }
                 }
                 if (shouldSpawnBlueCoin) {
                   this.totalBlueCoins++;
@@ -9530,6 +9537,11 @@
           activeLevelDisplay = null;
         }
         clearGame();
+
+        const wasCommunityLevel =
+          currentLevelData && currentLevelData.dbId != null;
+        const savedLevelData = currentLevelData; // Keep reference before cleanup
+
         document.getElementById("hud").style.display = "none";
         document.getElementById("hud").innerText = "ESC"; // Reset HUD text
         document.getElementById("restart-btn").style.display = "none";
@@ -9540,7 +9552,13 @@
         gameTimerStart = 0; // Ensure timer is reset when exiting
 
         playMusic(menuMusicState.trackId || "synth");
-        showMenu(currentMenuView);
+
+        if (wasCommunityLevel) {
+          // Go back to the Details View instead of the list
+          showMenu("browse-levels", { viewLevel: savedLevelData });
+        } else {
+          showMenu(currentMenuView);
+        }
       }
 
       function restartCurrentLevel() {
@@ -12964,14 +12982,22 @@
         overlay.appendChild(container);
         document.body.appendChild(overlay);
       }
+      // Persistence for Browser State
+      let lastBrowserState = {
+        searchTerm: "",
+        sortValue: "likes",
+        scrollPos: 0,
+      };
 
       async function renderLevelBrowserList(container) {
+        // If we are returning to the list, we want to restore the previous view
         const list = document.createElement("div");
         list.style.cssText =
           "width:100%; display:flex; flex-direction:column; gap:10px; max-height:65vh; overflow-y:auto; padding-right:10px;";
 
         // Controls
         const controls = document.createElement("div");
+
         controls.style.cssText =
           "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;";
 
@@ -12979,14 +13005,15 @@
         const searchInput = document.createElement("input");
         searchInput.type = "text";
         searchInput.id = "browser-search";
+        searchInput.value = lastBrowserState.searchTerm;
         searchInput.placeholder = "Search levels or creators...";
         searchInput.style.cssText =
           "flex:1; padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; box-sizing: border-box; font-family: inherit;";
 
         // Sort
+        // Default to Most Likes
         const sortSelect = document.createElement("select");
         sortSelect.id = "browser-sort";
-        // Default to Most Likes
         sortSelect.style.cssText =
           "padding: 10px; background: #222; color: white; border: 2px solid #444; border-radius: 4px; font-family: inherit; cursor: pointer;";
         sortSelect.innerHTML = `
@@ -13001,7 +13028,7 @@
                   <option value="difficulty_asc">Easiest</option>
                   <option value="difficulty_desc">Hardest</option>
               `;
-        sortSelect.value = "likes";
+        sortSelect.value = lastBrowserState.sortValue;
 
         controls.appendChild(searchInput);
         controls.appendChild(sortSelect);
@@ -13021,8 +13048,12 @@
             return;
           }
 
-          const term = searchInput.value.toLowerCase();
-          const sort = sortSelect.value;
+          // Save current state for persistence
+          lastBrowserState.searchTerm = searchInput.value;
+          lastBrowserState.sortValue = sortSelect.value;
+
+          const term = lastBrowserState.searchTerm.toLowerCase();
+          const sort = lastBrowserState.sortValue;
 
           let query = _supabase.from("published_levels").select("*");
 
@@ -13033,10 +13064,14 @@
             query = query.order("created_at", { ascending: true });
           } else if (sort === "likes") {
             const recentDate = new Date();
-            recentDate.setDate(recentDate.getDate() - 60); // Filter for levels from last 60 days
-            query = query.gte("created_at", recentDate.toISOString()).order("upvotes", { ascending: false });
+            recentDate.setDate(recentDate.getDate() - 20); // Filter for levels from last 60 days
+            query = query
+              .gte("created_at", recentDate.toISOString())
+              .order("upvotes", { ascending: false });
           } else if (sort === "legendary") {
-            query = query.eq("legendary", true).order("created_at", { ascending: false });
+            query = query
+              .eq("legendary", true)
+              .order("created_at", { ascending: false });
           } else if (sort === "plays") {
             query = query.order("plays", { ascending: false });
           } else if (sort === "difficulty_asc") {
@@ -13110,9 +13145,17 @@
                             </div>
                         </div>
                                 `;
-              card.onclick = () =>
+              card.onclick = () => {
+                // Save scroll position before navigating away
+                lastBrowserState.scrollPos = list.scrollTop;
                 showMenu("browse-levels", { viewLevel: lvl });
+              };
               list.appendChild(card);
+            });
+
+            // Restore scroll position after content is rendered
+            requestAnimationFrame(() => {
+              list.scrollTop = lastBrowserState.scrollPos;
             });
           }
         };
@@ -13130,7 +13173,15 @@
         btnBack.className = "btn";
         btnBack.textContent = "BACK";
         btnBack.style.marginTop = "20px";
-        btnBack.onclick = () => showMenu("custom");
+        btnBack.onclick = () => {
+          // Clear state when exiting the browser entirely
+          lastBrowserState = {
+            searchTerm: "",
+            sortValue: "likes",
+            scrollPos: 0,
+          };
+          showMenu("custom");
+        };
         container.appendChild(btnBack);
 
         // Initial Load
