@@ -1640,24 +1640,24 @@
       .mobile-mode #social-notif {
         display: none !important;
       }
-              /* Settings Responsiveness */
-        .mobile-mode .accordion-header {
-          padding: 12px;
-          font-size: 1.1rem;
-        }
-        .mobile-mode .accordion-content {
-          padding: 10px;
-          gap: 10px;
-        }
-        .mobile-mode .menu-container {
-          padding-bottom: 100px;
-        }
-        .mobile-mode .accordion-header span:first-child {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 80%;
-        }
+      /* Settings Responsiveness */
+      .mobile-mode .accordion-header {
+        padding: 12px;
+        font-size: 1.1rem;
+      }
+      .mobile-mode .accordion-content {
+        padding: 10px;
+        gap: 10px;
+      }
+      .mobile-mode .menu-container {
+        padding-bottom: 100px;
+      }
+      .mobile-mode .accordion-header span:first-child {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80%;
+      }
 
       .mobile-mode .mobile-menu-grid {
         display: flex;
@@ -2140,8 +2140,13 @@
         font-size: 1.4rem !important;
       }
       @keyframes loading-jump {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-20px); }
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
       }
 
       /* --- Loading Layer Styles --- */
@@ -2180,7 +2185,7 @@
         display: flex;
         justify-content: space-between;
         box-sizing: border-box;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
       }
 
       /* Browser Row Style */
@@ -2302,13 +2307,13 @@
         font-size: 1rem;
         margin-bottom: 20px;
       }
-            /* Social Media Style Browser UI */
+      /* Social Media Style Browser UI */
       .browser-level-row {
         background: #1a1a1a !important;
         border: 2px solid #333 !important;
         padding: 20px !important;
         border-radius: 2px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
         transition: all 0.2s !important;
       }
       .browser-level-row:hover {
@@ -8184,7 +8189,9 @@
                   const ext =
                     skin === "smiley" ||
                     skin === "deathfire" ||
-                    skin === "WINSTONTHEGREAT"
+                    skin === "WINSTONTHEGREAT" ||
+                    skin === "coolguymagma" ||
+                    skin === "coolguypurplemagma"
                       ? "gif"
                       : "png";
                   el.style.backgroundImage = `url('${skin}.${ext}')`;
@@ -8192,7 +8199,9 @@
                   const ext =
                     skin === "smiley" ||
                     skin === "deathfire" ||
-                    skin === "WINSTONTHEGREAT"
+                    skin === "WINSTONTHEGREAT" ||
+                    skin === "coolguymagma" ||
+                    skin === "coolguypurplemagma"
                       ? "gif"
                       : "png";
                   el.style.backgroundImage = `url('${skin}.${ext}')`;
@@ -13487,12 +13496,23 @@
         const loadingLayer = document.getElementById("loading-layer");
         const artistEl = document.getElementById("loading-artist");
         const blockEl = document.getElementById("loading-block");
+        const titleEl = document.getElementById("loading-title");
+        const isMobile = document.body.classList.contains("mobile-mode");
 
         // Pick random screen
         const screen =
           LOADING_SCREENS[Math.floor(Math.random() * LOADING_SCREENS.length)];
-        loadingLayer.style.backgroundImage = `url('${screen.img}')`;
-        artistEl.textContent = `Artist: ${screen.artist}`;
+
+        if (isMobile) {
+          loadingLayer.style.backgroundImage = "none";
+          loadingLayer.style.background = "#111"; // Solid dark background for mobile
+          artistEl.textContent = "";
+          titleEl.style.display = "block";
+        } else {
+          loadingLayer.style.backgroundImage = `url('${screen.img}')`;
+          artistEl.textContent = `Artist: ${screen.artist}`;
+          titleEl.style.display = "none";
+        }
         loadingLayer.style.display = "block";
 
         // 1. Load Supabase Data
@@ -13510,7 +13530,11 @@
           const skinImages = Object.keys(SKIN_DEFINITIONS).map((id) => {
             if (id === "default") return "blockoverit.png";
             const ext =
-              id === "smiley" || id === "deathfire" || id === "WINSTONTHEGREAT"
+              id === "smiley" ||
+              id === "deathfire" ||
+              id === "WINSTONTHEGREAT" ||
+              id === "coolguymagma" ||
+              id === "coolguypurplemagma"
                 ? "gif"
                 : "png";
             return `${id}.${ext}`;
@@ -13520,7 +13544,11 @@
             "supabase-logo-wordmark--dark.png",
           ];
           const allToLoad = [
-            ...new Set([...skinImages, ...otherAssets, screen.img]),
+            ...new Set([
+              ...skinImages,
+              ...otherAssets,
+              ...(isMobile ? [] : [screen.img]),
+            ]),
           ];
 
           const loadImg = (url) =>
@@ -13548,7 +13576,9 @@
           const ext =
             skin === "smiley" ||
             skin === "deathfire" ||
-            skin === "WINSTONTHEGREAT"
+            skin === "WINSTONTHEGREAT" ||
+            skin === "coolguymagma" ||
+            skin === "coolguypurplemagma"
               ? "gif"
               : "png";
           blockEl.style.backgroundImage = `url('${skin}.${ext}')`;
