@@ -797,7 +797,7 @@
           name: "Cool Guy (Oregon Signature)",
           copies: "1/3",
           artist: "Torgaar",
-          code: true,
+          unlockCode: true,
         },
         mistymountains: {
           name: "Misty Mountains",
@@ -822,13 +822,13 @@
           name: "Earth",
           copies: "N/A",
           artist: "MidgeMidge22",
-          unlock: true,
+          gameUnlock: true,
         },
         tothemoon: {
           name: "Cool Guy (To the Moon)",
           copies: "1/7",
           artist: "Torgaar",
-          code: true,
+          unlockCode: true,
         },
         WINSTONTHEGREAT: {
           name: "WINSTONTHEGREAT",
@@ -855,6 +855,16 @@
           name: "Cool Guy (Purple Magma)",
           copies: "1/3",
           artist: "Torgaar",
+        },
+        coolguyice: {
+          name: "Cool Guy (Ice)",
+          copies: "1/3",
+          artist: "Torgaar",
+        },
+        earthpolluted: {
+          name: "Earth (Polluted)",
+          copies: "1/3",
+          artist: "MidgeMidge22 & Torgaar",
         },
       };
 
@@ -937,7 +947,11 @@
         } else {
           modalPreview.style.backgroundColor = "transparent";
           const ext =
-            id === "smiley" || id === "deathfire" || id === "WINSTONTHEGREAT"
+            id === "smiley" ||
+            id === "deathfire" ||
+            id === "WINSTONTHEGREAT" ||
+            id === "coolguymagma" ||
+            id === "coolguypurplemagma"
               ? "gif"
               : "png";
           const img = customImg || `${id}.${ext}`;
@@ -1047,7 +1061,9 @@
               const ext =
                 id === "smiley" ||
                 id === "deathfire" ||
-                id === "WINSTONTHEGREAT"
+                id === "WINSTONTHEGREAT" ||
+                id === "coolguymagma" ||
+                id === "coolguypurplemagma"
                   ? "gif"
                   : "png";
               preview.style.backgroundImage = `url('${id}.${ext}')`;
