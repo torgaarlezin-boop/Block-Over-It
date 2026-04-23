@@ -2940,6 +2940,9 @@
       }
 
       async function syncLocalWithCloud(d, skins, beatenLevels) {
+        // Mark that we have attempted to sync and it was successful (database response received)
+        isCloudDataLoaded = true;
+
         if (skins) {
           const mergedSkins = new Set([...currentUserSkins, ...skins]);
           currentUserSkins = Array.from(mergedSkins);
@@ -2958,44 +2961,42 @@
 
         if (d) {
           if (d.gameState) {
-            if (d.gameState.levelBlueCoins) {
+            const cg = d.gameState;
+            if (cg.levelBlueCoins) {
               gameState.levelBlueCoins = {
                 ...gameState.levelBlueCoins,
-                ...d.gameState.levelBlueCoins,
+                ...cg.levelBlueCoins,
               };
             }
-            gameState.unlockedLevel = Math.max(
-              gameState.unlockedLevel,
-              d.gameState.unlockedLevel || 0,
-            );
-            gameState.unlockedLevelCh2 = Math.max(
-              gameState.unlockedLevelCh2,
-              d.gameState.unlockedLevelCh2 || 0,
-            );
-            gameState.unlockedLevelCh3 = Math.max(
-              gameState.unlockedLevelCh3,
-              d.gameState.unlockedLevelCh3 || 0,
-            );
-            gameState.unlockedLevelCh4 = Math.max(
-              gameState.unlockedLevelCh4,
-              d.gameState.unlockedLevelCh4 || 0,
-            );
-            gameState.unlockedLevelCh5 = Math.max(
-              gameState.unlockedLevelCh5,
-              d.gameState.unlockedLevelCh5 || 0,
-            );
-            if (d.gameState.chapter1Beaten) gameState.chapter1Beaten = true;
-            if (d.gameState.chapter2Beaten) gameState.chapter2Beaten = true;
-            if (d.gameState.chapter3Beaten) gameState.chapter3Beaten = true;
-            if (d.gameState.chapter4Beaten) gameState.chapter4Beaten = true;
-            if (d.gameState.chapter5Beaten) gameState.chapter5Beaten = true;
-            if (d.gameState.gameBeaten) gameState.gameBeaten = true;
-            if (d.gameState.blueCoinUnlockShown)
-              gameState.blueCoinUnlockShown = true;
+            
+            // Merge unlocked levels (take the highest)
+            const unlockKeys = [
+                'unlockedLevel', 'unlockedLevelCh2', 'unlockedLevelCh3', 
+                'unlockedLevelCh4', 'unlockedLevelCh5'
+            ];
+            unlockKeys.forEach(key => {
+                gameState[key] = Math.max(gameState[key] || 0, cg[key] || 0);
+            });
+
+            // Merge boolean flags (if true in either, it's true)
+            const booleanFlags = [
+                'chapter1Beaten', 'chapter2Beaten', 'chapter3Beaten', 
+                'chapter4Beaten', 'chapter5Beaten', 'gameBeaten', 'blueCoinUnlockShown'
+            ];
+            booleanFlags.forEach(flag => {
+                if (cg[flag]) gameState[flag] = true;
+            });
+            
+            if (cg.awardProgress) {
+                gameState.awardProgress = { ...(gameState.awardProgress || {}), ...cg.awardProgress };
+            }
+            if (cg.afClaimed) {
+                gameState.afClaimed = { ...(gameState.afClaimed || {}), ...cg.afClaimed };
+            }
           }
           if (d.customLevelsProgress) {
             customLevelsProgress = {
-              ...customLevelsProgress,
+              ...(customLevelsProgress || {}),
               ...d.customLevelsProgress,
             };
           }
@@ -3005,20 +3006,38 @@
                 highscores[key] = d.highscores[key];
             }
           }
-          if (d.customLevels) customLevels = d.customLevels;
+          
+          // Merge Custom Levels (by name and plan content to avoid duplicates)
+          if (d.customLevels) {
+            const localLevels = customLevels || [];
+            const cloudLevels = d.customLevels || [];
+            const merged = [...localLevels];
+            cloudLevels.forEach(cl => {
+              const exists = merged.some(ll => 
+                ll.name === cl.name && 
+                JSON.stringify(ll.plan) === JSON.stringify(cl.plan)
+              );
+              if (!exists) merged.push(cl);
+            });
+            customLevels = merged;
+          }
+
           if (d.gameSettings) {
             gameSettings = { ...gameSettings, ...d.gameSettings };
           }
-
-          isCloudDataLoaded = true;
-          saveGame(true);
-          saveCustomLevels(true);
-          saveCustomLevelsProgress(true);
-          saveHighscores(true);
-          saveSettings(true);
-          syncDataToCloud();
-          await checkSkinUnlocks(true);
         }
+
+        // Save the result of the merge locally
+        saveGame(true);
+        saveCustomLevels(true);
+        saveCustomLevelsProgress(true);
+        saveHighscores(true);
+        saveSettings(true);
+        
+        // Push merged state back to cloud to ensure consistency
+        syncDataToCloud();
+        
+        await checkSkinUnlocks(true);
       }
 
       async function handleAuth(type, username, password, withReward = false) {
@@ -13540,7 +13559,6 @@
           if (savedUser) {
             currentUser = savedUser;
             updateLoginButton();
-            await fetchAndSyncUserData();
             await fetchAndSyncUserData();
           }
         })();
