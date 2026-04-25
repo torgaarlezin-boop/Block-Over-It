@@ -2723,7 +2723,7 @@
           name: "Cool Guy (Purple Magma)",
           copies: "1/3",
         },
-                coolguyice: {
+        coolguyice: {
           name: "Cool Guy (Ice)",
           copies: "1/3",
         },
@@ -2968,30 +2968,44 @@
                 ...cg.levelBlueCoins,
               };
             }
-            
+
             // Merge unlocked levels (take the highest)
             const unlockKeys = [
-                'unlockedLevel', 'unlockedLevelCh2', 'unlockedLevelCh3', 
-                'unlockedLevelCh4', 'unlockedLevelCh5'
+              "unlockedLevel",
+              "unlockedLevelCh2",
+              "unlockedLevelCh3",
+              "unlockedLevelCh4",
+              "unlockedLevelCh5",
             ];
-            unlockKeys.forEach(key => {
-                gameState[key] = Math.max(gameState[key] || 0, cg[key] || 0);
+            unlockKeys.forEach((key) => {
+              gameState[key] = Math.max(gameState[key] || 0, cg[key] || 0);
             });
 
             // Merge boolean flags (if true in either, it's true)
             const booleanFlags = [
-                'chapter1Beaten', 'chapter2Beaten', 'chapter3Beaten', 
-                'chapter4Beaten', 'chapter5Beaten', 'gameBeaten', 'blueCoinUnlockShown'
+              "chapter1Beaten",
+              "chapter2Beaten",
+              "chapter3Beaten",
+              "chapter4Beaten",
+              "chapter5Beaten",
+              "gameBeaten",
+              "blueCoinUnlockShown",
             ];
-            booleanFlags.forEach(flag => {
-                if (cg[flag]) gameState[flag] = true;
+            booleanFlags.forEach((flag) => {
+              if (cg[flag]) gameState[flag] = true;
             });
-            
+
             if (cg.awardProgress) {
-                gameState.awardProgress = { ...(gameState.awardProgress || {}), ...cg.awardProgress };
+              gameState.awardProgress = {
+                ...(gameState.awardProgress || {}),
+                ...cg.awardProgress,
+              };
             }
             if (cg.afClaimed) {
-                gameState.afClaimed = { ...(gameState.afClaimed || {}), ...cg.afClaimed };
+              gameState.afClaimed = {
+                ...(gameState.afClaimed || {}),
+                ...cg.afClaimed,
+              };
             }
           }
           if (d.customLevelsProgress) {
@@ -3006,16 +3020,17 @@
                 highscores[key] = d.highscores[key];
             }
           }
-          
+
           // Merge Custom Levels (by name and plan content to avoid duplicates)
           if (d.customLevels) {
             const localLevels = customLevels || [];
             const cloudLevels = d.customLevels || [];
             const merged = [...localLevels];
-            cloudLevels.forEach(cl => {
-              const exists = merged.some(ll => 
-                ll.name === cl.name && 
-                JSON.stringify(ll.plan) === JSON.stringify(cl.plan)
+            cloudLevels.forEach((cl) => {
+              const exists = merged.some(
+                (ll) =>
+                  ll.name === cl.name &&
+                  JSON.stringify(ll.plan) === JSON.stringify(cl.plan),
               );
               if (!exists) merged.push(cl);
             });
@@ -3033,10 +3048,10 @@
         saveCustomLevelsProgress(true);
         saveHighscores(true);
         saveSettings(true);
-        
+
         // Push merged state back to cloud to ensure consistency
         syncDataToCloud();
-        
+
         await checkSkinUnlocks(true);
       }
 
@@ -6479,6 +6494,7 @@
           levelData.customLevelIndex !== undefined
             ? levelData.customLevelIndex
             : -1; // Track custom level index
+        this.blockHitboxes = levelData.blockHitboxes || false;
         this.musicSpeed = levelData.musicSpeed || 1.0;
         this.width = plan[0].length;
         this.height = plan.length;
@@ -8297,7 +8313,7 @@
           }
 
           // Hitbox Debugging
-          if (gameSettings.showHitboxes) {
+          if (gameSettings.showHitboxes && !this.level.blockHitboxes) {
             let hb = this.hitboxElements.get(actor.id);
             if (!hb) {
               hb = element("div");
@@ -8318,7 +8334,7 @@
         });
 
         // Hitbox Debugging for Grid
-        if (gameSettings.showHitboxes) {
+        if (gameSettings.showHitboxes && !this.level.blockHitboxes) {
           for (var y = 0; y < this.level.height; y++) {
             for (var x = 0; x < this.level.width; x++) {
               var type = this.level.grid[y][x];
@@ -8597,6 +8613,10 @@
         // H for Hitboxes
         if (e.key.toLowerCase() === "h") {
           if (activeLevelDisplay) {
+            if (activeLevelDisplay.level.blockHitboxes) {
+              showTopNotification("Hitboxes are blocked on this level.");
+              return;
+            }
             gameSettings.showHitboxes = !gameSettings.showHitboxes;
             saveSettings();
             activeLevelDisplay.syncActors(); // Refresh visuals
@@ -9834,7 +9854,6 @@
         updateModalImage(currentModalSkinId, v.img);
       }
 
-
       function updateModalImage(id, customImg) {
         const modalPreview = document.getElementById("modal-preview");
         if (id === "default") {
@@ -9855,7 +9874,6 @@
           modalPreview.style.backgroundImage = `url('${img}')`;
         }
       }
-
 
       function changeVersion(dir) {
         if (!currentSkinData || !currentSkinData.versions) return;
@@ -9965,7 +9983,7 @@
               skinId === "deathfire" ||
               skinId === "WINSTONTHEGREAT" ||
               skinId === "coolguymagma" ||
-              skinId === "coolguypurplemagma" 
+              skinId === "coolguypurplemagma"
                 ? "gif"
                 : "png";
             preview.style.backgroundImage = `url('${skinId}.${ext}')`;
