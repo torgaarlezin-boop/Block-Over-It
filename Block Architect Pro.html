@@ -4695,6 +4695,8 @@
         const char = state.grid[y][x];
         cell.className = `cell ${TILE_MAP[char]}`;
         cell.innerHTML = "";
+        const isModern = document.body.classList.contains("style-modern");
+
         cell.style.backgroundColor = "";
         cell.style.borderColor = "";
         cell.style.borderRadius = "";
@@ -4708,8 +4710,10 @@
 
         const color = state.colors[`${x},${y}`];
         if (color) {
-          cell.style.backgroundColor = color;
-          cell.style.borderColor = adjustColor(color, -20);
+          if (!["S", "s", "[", "]", ">", "<"].includes(char)) {
+            cell.style.backgroundColor = color;
+            cell.style.borderColor = adjustColor(color, -20);
+          }
 
           if (
             typeof color === "string" &&
@@ -4757,6 +4761,14 @@
               dot.style.boxShadow = `0 0 5px ${adjustColor(color, 40)}`;
             }
           }
+        }
+
+        if (char === ">") {
+          const c = color || (isModern ? "#334155" : "#444444");
+          cell.style.background = `linear-gradient(to top left, ${c} 50%, transparent 0)`;
+        } else if (char === "<") {
+          const c = color || (isModern ? "#334155" : "#444444");
+          cell.style.background = `linear-gradient(to top right, ${c} 50%, transparent 0)`;
         }
 
         if (char === "S") {
