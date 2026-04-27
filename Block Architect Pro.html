@@ -1184,12 +1184,6 @@
           Help
         </button>
         <button
-          onclick="whatsNewManager.open()"
-          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-purple-400 flex items-center gap-1"
-        >
-          What's New
-        </button>
-        <button
           onclick="io.importClick()"
           class="ml-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-slate-400"
         >
@@ -6299,45 +6293,38 @@
             const ty = startY + y;
             const tx = startX + x;
             if (ty < state.height && tx < state.width) {
-              state.grid[ty][tx] = clipboard[y][x * 4];
-              if (clipboard[y][x * 5 + 1])
-                state.colors[`${tx},${ty}`] = clipboard[y][x * 5 + 1];
+              const baseIdx = x * 9;
+              state.grid[ty][tx] = clipboard[y][baseIdx];
 
-              if (clipboard[y][x * 5 + 2]) state.fakes.add(`${tx},${ty}`);
+              const color = clipboard[y][baseIdx + 1];
+              if (color) state.colors[`${tx},${ty}`] = color;
+              else delete state.colors[`${tx},${ty}`];
+
+              if (clipboard[y][baseIdx + 2]) state.fakes.add(`${tx},${ty}`);
               else state.fakes.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 5 + 3]) state.illusions.add(`${tx},${ty}`);
+              if (clipboard[y][baseIdx + 3]) state.illusions.add(`${tx},${ty}`);
               else state.illusions.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 5 + 4])
-                state.risingThrough.add(`${tx},${ty}`);
+              if (clipboard[y][baseIdx + 4]) state.risingThrough.add(`${tx},${ty}`);
               else state.risingThrough.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 9 + 5]) state.flickers.add(`${tx},${ty}`);
+              if (clipboard[y][baseIdx + 5]) state.flickers.add(`${tx},${ty}`);
               else state.flickers.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 9 + 6])
-                state.touchFlickers.add(`${tx},${ty}`);
+              if (clipboard[y][baseIdx + 6]) state.touchFlickers.add(`${tx},${ty}`);
               else state.touchFlickers.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 9 + 7])
-                state.jumpFlickers.add(`${tx},${ty}`);
+              if (clipboard[y][baseIdx + 7]) state.jumpFlickers.add(`${tx},${ty}`);
               else state.jumpFlickers.delete(`${tx},${ty}`);
 
-              if (clipboard[y][x * 9 + 8])
-                state.blockConfigs[`${tx},${ty}`] = clipboard[y][x * 9 + 8];
+              const config = clipboard[y][baseIdx + 8];
+              if (config) state.blockConfigs[`${tx},${ty}`] = config;
               else delete state.blockConfigs[`${tx},${ty}`];
-
-              // Update visual
-              const cell =
-                document.getElementById("level-grid").children[
-                  ty * state.width + tx + 1
-                ];
-              if (cell) cell.className = `cell ${TILE_MAP[state.grid[ty][tx]]}`;
             }
           }
         }
-        render(); // Full render to be safe
+        render();
         history.push();
         updateStatus("Pasted");
       }
@@ -7811,6 +7798,11 @@
             document.getElementById("prop-creator").value = "Anonymous";
             document.getElementById("prop-desc").value = "";
             setDifficulty(1);
+            
+            state.music = null;
+            state.musicSpeed = 1.0;
+            state.blockConfigs = {};
+            state.colors = {};
 
             state.musicSpeed = 1.0;
             document.getElementById("prop-music-speed").value = 1;
@@ -7831,6 +7823,10 @@
               document.getElementById("prop-vis-author").value = "";
               document.getElementById("prop-vis-win").value = "";
               document.getElementById("prop-vis-font").value = "Courier New";
+              document.getElementById("prop-background").value = "";
+              document.getElementById("prop-bg-anim").value = "";
+              document.getElementById("prop-w").value = 40;
+              document.getElementById("prop-h").value = 20;
             } else {
               state.width = 40;
               state.height = 20;
@@ -7855,7 +7851,7 @@
             document.getElementById("gravity-val").innerText =
               document.getElementById("prop-gravity").value;
 
-            state.colors = {};
+
             state.fakes = new Set();
             state.risingThrough = new Set();
             state.illusions = new Set();
@@ -7864,8 +7860,10 @@
             state.jumpFlickers = new Set();
             state.risingSpeeds = {};
 
+            renderMusic();
             render();
             history.stack = [];
+            history.ptr = -1;
             history.push();
             settingsManager.syncToModal();
             editorApplyBackground();
@@ -8967,7 +8965,7 @@
             title: "Getting Started",
             content: `
               <p><strong>Block Architect Pro</strong> is the official level editor for Block Over It.</p>
-              <p class="mt-4">The left sidebar is where you main tools reside. Select a block from the palette and click on the grid to place it. Different tools have different uses (see Left Sidebar Tools). The most common tool will be the pencil, which allows you to place blocks on the grid. You can also click and drag with this tool. On the right sidebar, which is expandable through a circle arrow button, are a variety of configuration tools for your level. The <strong>Main</strong> section allows you to change the name, description, difficulty, and more of your level. Other sections allow you to customize different things or have different functions. The <strong>Selection Tools</strong> section is the main way of using the select tool, and allows you to fill, delete, paint, and do more with the selected space (see Selection Tools).</p>
+              <p class="mt-4">The left sidebar is where you main tools reside. Select a block from the palette and click on the grid to place it. Different tools have different uses (see Left Sidebar Tools). The most common tools will be the <strong>pencil</strong> and the <strong>selection</strong> tool. The pencil allows you to place blocks on the grid. You can also click and drag with the pencil. Selection tools allow you to select an area and do something with it. For more info about the selection tools, see 'Selection Tools'. For more info about the left sidebar, see 'Left Sidebar Tools'. On the right sidebar, which is expandable through a circle arrow button, are a variety of configuration tools for your level. The <strong>Main</strong> section allows you to change the name, description, difficulty, and more of your level. In this section, you can use the <strong>All Settings</strong> button to view the full settings for the metadata and more of your level. The <strong>appearance</strong> section allows you to modify the appearance of the editor. The <strong>Structure Templates<strong> button allows you to view all templates, including your own. </p>
             `,
           },
           {
@@ -9128,80 +9126,6 @@
             document.getElementById("help-topic-title").innerText = topic.title;
             document.getElementById("help-content").innerHTML = topic.content;
           }
-        },
-      };
-
-      const whatsNewManager = {
-        versions: [
-          {
-            id: "1.2",
-            v: "1.2",
-            date: "Current",
-            changes: [
-              "Added new blocks to the editor: spikes",
-              "Added the ability to add background music to your levels",
-              "Added a help menu with various help guides",
-              "Added Block Keyboard Shortcuts (Shift+Key) and expanded keyboard shortcuts",
-              "Added painting blocks",
-              "Added What's New Menu",
-              "Improved image export with many new features to edit the image before exporting",
-              "Added minimap",
-              "Various other features and bug fixes",
-            ],
-          },
-          {
-            id: "1.1",
-            v: "1.1",
-            date: "Previous",
-            changes: [
-              "Redesigned the UI for a more professional look, and added a main menu",
-              "Fixed various bugs",
-              "Added countless new features, including a redesign featuring many new functions in the right sidebar",
-              "Added the new blocks",
-            ],
-          },
-          {
-            id: "v8.0",
-            v: "v8.0",
-            date: "Base",
-            changes: ["Initial release of a Block Over It level editor"],
-          },
-        ],
-        open(activeId = "pro") {
-          document.getElementById("help-modal").classList.remove("hidden");
-          document.getElementById("help-topic-title").innerText =
-            "Version History";
-          this.renderNav(activeId);
-          this.renderContent(activeId);
-        },
-        renderNav(activeId) {
-          const nav = document.getElementById("help-nav");
-          nav.innerHTML = this.versions
-            .map(
-              (v) => `
-                <button onclick="whatsNewManager.renderNav('${v.id}'); whatsNewManager.renderContent('${v.id}')"
-                  class="w-full text-left px-4 py-2 rounded text-xs font-medium transition-colors ${v.id === activeId ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}">
-                  ${v.v} <span class="opacity-50 ml-1 text-[10px]">${v.date}</span>
-                </button>
-            `,
-            )
-            .join("");
-        },
-        renderContent(id) {
-          const v = this.versions.find((ver) => ver.id === id);
-          if (!v) return;
-          const content = document.getElementById("help-content");
-          content.innerHTML = `
-                <div class="mb-6">
-                    <div class="flex justify-between items-baseline mb-4 border-b border-slate-800 pb-2">
-                        <h4 class="text-xl font-bold text-white">${v.v}</h4>
-                        <span class="text-xs text-slate-500 font-mono">${v.date}</span>
-                    </div>
-                    <ul class="list-disc pl-5 space-y-2 text-slate-400 text-sm">
-                        ${v.changes.map((c) => `<li>${c}</li>`).join("")}
-                    </ul>
-                </div>
-            `;
         },
       };
 
