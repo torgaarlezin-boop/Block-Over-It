@@ -3912,6 +3912,36 @@
           artist: "wineplume",
           file: "bonanza.mp3",
         },
+        {
+          id: "frown",
+          title: "Blank Frown",
+          artist: "SamaadBae5",
+          file: "frown.mp3",
+        },
+        {
+          id: "autumn",
+          title: "Autumn",
+          artist: "8BITPICE",
+          file: "autumn.mp3",
+        },
+        {
+          id: "sunfire",
+          title: "Sunfire",
+          artist: "Preds",
+          file: "sunfire.mp3",
+        },
+        {
+          id: "castle",
+          title: "Castle",
+          artist: "Xamolxix",
+          file: "castle.mp3",
+        },
+        {
+          id: "beginning",
+          title: "A Beginning",
+          artist: "LHPixel8",
+          file: "beginning.mp3",
+        },
       ];
 
       const SETTINGS_KEY = "blockoverit_settings";
@@ -3981,6 +4011,16 @@
         gameSettings.playlist.push("speaki");
       if (!gameSettings.playlist.includes("bonanza"))
         gameSettings.playlist.push("bonanza");
+      if (!gameSettings.playlist.includes("frown"))
+        gameSettings.playlist.push("frown");
+      if (!gameSettings.playlist.includes("autumn"))
+        gameSettings.playlist.push("autumn");
+      if (!gameSettings.playlist.includes("sunfire"))
+        gameSettings.playlist.push("sunfire");
+      if (!gameSettings.playlist.includes("castle"))
+        gameSettings.playlist.push("castle");
+      if (!gameSettings.playlist.includes("beginning"))
+        gameSettings.playlist.push("beginning");
 
       if (gameSettings.shuffleMusic === undefined)
         gameSettings.shuffleMusic = true;
