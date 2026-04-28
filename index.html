@@ -5768,6 +5768,27 @@
         }
       }
 
+      function checkEarthPollutedSkinUnlock(silent = false) {
+        if (!currentUser) return;
+        if (currentUserSkins.includes("earthpolluted")) return;
+
+        if (gameState.chapter5Beaten) {
+          currentUserSkins.push("earthpolluted");
+          syncDataToCloud();
+          if (!silent) {
+            const html = `
+                <div style="margin-bottom:15px; color:#ccc;">You unlocked the <strong>Earth (Polluted)</strong> skin!</div>
+                <img src="earthpolluted.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+            `;
+            popupManager.show({
+              title: "SKIN UNLOCKED",
+              html: html,
+              buttons: [{ text: "OK", onClick: () => {} }],
+            });
+          }
+        }
+      }
+
       function checkVintageEmoUnlock(silent = false) {
         if (!currentUser) return;
         if (currentUserSkins.includes("vintageemo")) return;
@@ -5895,6 +5916,7 @@
         checkBlueCoinSkinUnlock(silent);
         checkGalaxySkinUnlock(silent);
         checkEarthSkinUnlock(silent);
+        checkEarthPollutedSkinUnlock(silent);
         checkVintageEmoUnlock(silent);
         await checkMetallicAngerUnlock(silent);
         await checkClockSkinUnlock(silent);
@@ -8845,6 +8867,7 @@
         checkBlueCoinSkinUnlock();
         checkGalaxySkinUnlock();
         checkEarthSkinUnlock();
+        checkEarthPollutedSkinUnlock();
       }
       var activeLevelDisplay = null;
       var currentPlayingType = null; // 'campaign' or 'custom'
@@ -9200,23 +9223,6 @@
 
         currentLevelData = levelData;
         currentLevelChapter = chapter;
-
-        // Increment plays for community levels
-        if (originalLevelData && originalLevelData.dbId != null && _supabase) {
-          const targetId = originalLevelData.dbId;
-          _supabase
-            .from("published_levels")
-            .select("plays")
-            .eq("id", targetId)
-            .single()
-            .then(({ data }) => {
-              if (data)
-                _supabase
-                  .from("published_levels")
-                  .update({ plays: (data.plays || 0) + 1 })
-                  .eq("id", targetId);
-            });
-        }
 
         // Highscore Display
         if (
@@ -13441,6 +13447,7 @@
         loadComments(currentLvl);
       }
 
+      let communityPlayCounterTimeout = null;
       window.playCommunityLevel = async (id, dataObj) => {
         try {
           const data =
@@ -13459,15 +13466,19 @@
           }
           startGameLevel(data, -1, "custom");
 
-          // Then, try to update the play count in the background.
-          if (_supabase) {
-            const { error } = await _supabase.rpc("increment_plays", {
-              row_id: parseInt(id),
-            });
-            if (error) {
-              console.error("Failed to increment play count:", error);
+          // Then, try to update the play count after 20 seconds.
+          if (communityPlayCounterTimeout) clearTimeout(communityPlayCounterTimeout);
+          communityPlayCounterTimeout = setTimeout(async () => {
+            if (_supabase && activeLevelDisplay && currentLevelData && currentLevelData.dbId === id) {
+              const { error } = await _supabase.rpc("increment_plays", {
+                row_id: parseInt(id),
+              });
+              if (error) {
+                console.error("Failed to increment play count:", error);
+              }
             }
-          }
+            communityPlayCounterTimeout = null;
+          }, 20000);
         } catch (e) {
           console.error("Failed to start level:", e);
           // Don't show a popup as the game might have started.
