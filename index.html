@@ -2734,7 +2734,7 @@
         blockynosleep: {
           name: "Blocky (No Sleep)",
           copies: "1/3",
-        },        
+        },
         cubemouthdevourer: {
           name: "Cubemouth (Devourer)",
           copies: "1/3",
@@ -2742,18 +2742,20 @@
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
-                {
+        {
           headline: "Skin Awards Concluded!",
           date: "2026-04-26",
-          image: 'cubemouthdevourer.png',
+          image: "cubemouthdevourer.png",
           story:
-            "The April Skin Awards have just concluded. First place was awarded to Cubemouth (Devourer) (shown above) by Torgaar. 2nd place was awarded to Blocky (No Sleep), and 3rd place was awarded to Cool Guy (Magma). The winner received the Cool Guy (Pristine) skin."        },
+            "The April Skin Awards have just concluded. First place was awarded to Cubemouth (Devourer) (shown above) by Torgaar. 2nd place was awarded to Blocky (No Sleep), and 3rd place was awarded to Cool Guy (Magma). The winner received the Cool Guy (Pristine) skin.",
+        },
         {
-          headline: "New Music Tracks in Block Over It beats!",
+          headline: "New Music Tracks in Block Over It beats! (again)",
           date: "2026-04-19",
           image: null,
           story:
-            "New music tracks have been added to Block Over It beats, with more coming soon! The songs are: Bloodlines by nstryder, The Impaler by nstryder, A Miserable Pile of Secrets by nstryde, Dark Matter by Hex-Hammer, Angry Speaki by Karshaper, and Bonanza Extragavanca by wineplume"       },
+            "New music tracks have been added to Block Over It beats again. Recently was the arrival of some new hits, and here are some more. The songs are: Blank Frown by SamaadBae5, Autumn by 8BITPICE, Sunfire by Preds, Castle by Xamolxix, and A Beginning by LHPixel8. You can check them out in the Block Over It beats interface in-game or in the editor.",
+        },
         {
           headline: "1.9 Released!",
           date: "2026-04-19",
@@ -13507,9 +13509,15 @@
           startGameLevel(data, -1, "custom");
 
           // Then, try to update the play count after 20 seconds.
-          if (communityPlayCounterTimeout) clearTimeout(communityPlayCounterTimeout);
+          if (communityPlayCounterTimeout)
+            clearTimeout(communityPlayCounterTimeout);
           communityPlayCounterTimeout = setTimeout(async () => {
-            if (_supabase && activeLevelDisplay && currentLevelData && currentLevelData.dbId === id) {
+            if (
+              _supabase &&
+              activeLevelDisplay &&
+              currentLevelData &&
+              currentLevelData.dbId === id
+            ) {
               const { error } = await _supabase.rpc("increment_plays", {
                 row_id: parseInt(id),
               });
@@ -13642,6 +13650,8 @@
         { img: "loading.png", artist: "J_imbo" },
         { img: "platforms.png", artist: "MidgeMidge22" },
         { img: "coolguyloading.png", artist: "Chairlord" },
+        { img: "blockoverit!!.png", artist: "Jude" },
+        { img: "kingblocky.png", artist: "Benjuhuman1" },
       ];
 
       async function performLoading() {
