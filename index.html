@@ -18,7 +18,7 @@
         width: 100vw;
       }
 
-      /* --- Game Grid Styles --- */
+      /* Game Engine*/
       .background {
         table-layout: fixed;
         border-spacing: 0;
@@ -55,14 +55,14 @@
         border: 1px solid #c2c828;
       }
 
-      /* Bonus Coin Style - Flattened as requested */
-      .bonus-coin {
+      /* Blue Coin*/
+      .blue-coin {
         background: #335699;
         border-radius: 50%;
         z-index: 5;
       }
-      /* Alternate visuals for Bonus Coin (from blockoverit(1).html) */
-      .bonus-coin-alt-visuals {
+      /* Alt Blue Coin*/
+      .blue-coin-alt-visuals {
         border: 2px solid #fff;
         box-shadow: 0 0 8px #33f;
       }
@@ -108,7 +108,7 @@
         border: 3px solid #333;
         box-sizing: border-box;
       }
-      /* Hide text content for these in game if any */
+      /* Hide text content for these in game */
       .spike-block,
       .wall-block,
       .spike-block-u,
@@ -281,18 +281,16 @@
         flex-direction: column;
         justify-content: flex-end;
         align-items: center;
-        /* Camera Fix: Hide overflow so we can use transform for camera */
         overflow: hidden;
       }
 
-      /* Zoomed out state */
+      /* Zoomed out view */
       .game.zoomed-out .world {
-        /* Transform is handled in JS, but we ensure origin */
         transform-origin: center center;
         transition: transform 0.2s ease-out;
       }
 
-      /* --- Custom Popup Styles --- */
+      /* Popups */
       .popup-overlay {
         position: fixed;
         top: 0;
@@ -396,7 +394,7 @@
         color: #fff;
       }
 
-      /* --- Main Menu Styles --- */
+      /* Main Menu */
       #main-menu {
         position: absolute;
         top: 0;
@@ -427,7 +425,7 @@
         cursor: pointer;
         z-index: 120;
         overflow: hidden;
-        height: 35px; /* Fixed height */
+        height: 35px; 
         display: flex;
         align-items: center;
         justify-content: center;
@@ -469,7 +467,6 @@
         padding: 10px;
       }
 
-      /* Custom Scrollbar for Menu Container */
       .menu-container::-webkit-scrollbar {
         width: 8px;
       }
@@ -490,7 +487,6 @@
         margin-bottom: 20px;
       }
 
-      /* Generic Button Style */
       .btn {
         background: #333;
         border: 2px solid #555;
@@ -515,7 +511,6 @@
         cursor: not-allowed;
       }
 
-      /* Level Select Button specific */
       .level-btn {
         width: 80px;
         height: 80px;
@@ -562,7 +557,6 @@
         -webkit-user-select: none;
       }
 
-      /* File Input styling */
       #file-input {
         display: none;
       }
@@ -709,8 +703,6 @@
         align-items: center;
         justify-content: center;
       }
-
-      /* Settings Button */
       .settings-btn {
         position: absolute;
         bottom: 20px;
@@ -732,7 +724,6 @@
         transform: scale(1.05);
       }
 
-      /* Editor Button */
       .editor-btn,
       .skins-btn {
         background: #333;
@@ -760,7 +751,6 @@
         transform: scale(1.05);
       }
 
-      /* Notification Dot */
       .notif-dot {
         position: absolute;
         top: -5px;
@@ -773,7 +763,6 @@
         display: none;
       }
 
-      /* Top Left Controls */
       .top-left-controls {
         position: absolute;
         top: 55px;
@@ -783,7 +772,6 @@
         z-index: 110;
       }
 
-      /* Leaderboard Button */
       .leaderboard-btn {
         position: relative;
         top: auto;
@@ -805,7 +793,6 @@
         transform: scale(1.05);
       }
 
-      /* Awards Button */
       .awards-btn {
         background: #333;
         border: 2px solid #555;
@@ -823,7 +810,6 @@
         transform: scale(1.05);
       }
 
-      /* Login Button */
       .login-btn {
         position: absolute;
         top: 55px;
@@ -905,7 +891,6 @@
         z-index: 110;
       }
 
-      /* Toggle Switch */
       .toggle-btn {
         width: 60px;
         height: 30px;
@@ -936,7 +921,6 @@
         left: 33px;
       }
 
-      /* Settings Close Button */
       .settings-close-btn {
         position: absolute;
         top: 40px;
@@ -957,7 +941,6 @@
         transform: scale(1.1);
       }
 
-      /* Custom Level Popup */
       .cl-popup-overlay {
         position: fixed;
         top: 0;
@@ -1075,7 +1058,6 @@
         box-shadow: 0 0 5px #e55;
       }
 
-      /* Blocky Volume Slider */
       input[type="range"] {
         -webkit-appearance: none;
         appearance: none;
@@ -1118,7 +1100,6 @@
         border: 2px solid #999;
       }
 
-      /* Practice Marker */
       .practice-marker {
         background: rgba(46, 204, 113, 0.5);
         border: 2px solid #2ecc71;
@@ -1127,7 +1108,6 @@
         z-index: 4;
       }
 
-      /* Beats Button */
       .beats-btn {
         position: absolute;
         bottom: 20px;
@@ -1149,7 +1129,6 @@
         transform: scale(1.05);
       }
 
-      /* News Button */
       .news-btn {
         position: absolute;
         bottom: 20px;
@@ -1193,7 +1172,6 @@
         background: #1a2a40;
       }
 
-      /* Music Notification */
       .music-notification {
         position: fixed;
         bottom: 20px;
@@ -1303,51 +1281,6 @@
         text-align: center;
       }
 
-      /* --- Cheat Animation Styles --- */
-      #cheat-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        z-index: 3000;
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: "Courier New", monospace;
-      }
-
-      .cheat-text {
-        font-size: 3rem;
-        color: #0f0;
-        text-shadow: 0 0 10px #0f0;
-        margin-bottom: 30px;
-        text-align: center;
-        font-weight: bold;
-        letter-spacing: 5px;
-      }
-
-      .cheat-progress-container {
-        width: 60%;
-        max-width: 600px;
-        height: 4px;
-        background: #111;
-        border: 1px solid #333;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .cheat-progress-bar {
-        height: 100%;
-        background: #0f0;
-        width: 0%;
-        box-shadow: 0 0 20px #0f0;
-        transition: width 0.1s linear;
-      }
-
-      /* Mobile Controls */
       .mobile-controls-overlay {
         display: none;
         position: fixed;
@@ -1413,7 +1346,7 @@
           font-size: 2.5rem;
           letter-spacing: 2px;
         }
-        /* --- Mobile Mode Overhaul --- */
+        /* Mobile Mode*/
         .mobile-mode h1 {
           font-size: 2rem;
           letter-spacing: 2px;
@@ -1450,7 +1383,7 @@
           padding: 0;
         }
 
-        /* Mobile Menu Grid */
+        /* Mobile Menu */
         .mobile-mode .mobile-menu-grid {
           display: flex;
           gap: 30px;
@@ -1505,7 +1438,6 @@
           fill: currentColor;
         }
 
-        /* Center Campaign Button (Larger) */
         .mobile-mode .mobile-icon-btn.campaign-btn {
           width: 25vw;
           height: 25vw;
@@ -1520,7 +1452,6 @@
           height: 60px;
         }
 
-        /* Mobile Beats Button */
         #mobile-beats-btn {
           position: fixed;
           bottom: 20px;
@@ -1543,7 +1474,6 @@
           fill: currentColor;
         }
       }
-      /* Mobile News UI Redesign */
       .mobile-mode .news-updates-content {
         padding-right: 0;
         max-height: none;
@@ -1558,7 +1488,6 @@
         line-height: 1.3;
       }
 
-      /* Mobile Landscape Optimizations */
       @media screen and (orientation: landscape) and (max-height: 500px) {
         #main-menu {
           padding-top: 10px;
@@ -1613,7 +1542,6 @@
           margin: 5px;
         }
 
-        /* Adjust level grid in landscape */
         .mobile-mode .level-grid {
           max-height: 60vh;
           overflow-y: auto;
@@ -1627,7 +1555,6 @@
         }
       }
 
-      /* Global Mobile Mode Overrides (Apply regardless of screen width if class is present) */
       .mobile-mode .bottom-controls,
       .mobile-mode .top-left-controls,
       .mobile-mode .news-banner,
@@ -1640,7 +1567,6 @@
       .mobile-mode #social-notif {
         display: none !important;
       }
-      /* Settings Responsiveness */
       .mobile-mode .accordion-header {
         padding: 12px;
         font-size: 1.1rem;
@@ -1667,7 +1593,6 @@
         flex-direction: column; /* Default Portrait */
       }
 
-      /* Mobile Landscape Redesign */
       @media screen and (orientation: landscape) and (max-height: 600px) {
         .mobile-mode .mobile-menu-grid {
           flex-direction: row !important;
@@ -1690,7 +1615,6 @@
           display: none;
         }
 
-        /* Settings Grid in Landscape */
         .mobile-mode .settings-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -1698,7 +1622,6 @@
           width: 100%;
         }
 
-        /* Leaderboard in Landscape */
         .mobile-mode .mobile-leaderboard-container {
           flex-direction: row !important;
         }
@@ -1710,7 +1633,6 @@
           justify-content: center;
         }
 
-        /* Gamemode Carousel in Landscape */
         .mobile-mode .gamemode-carousel {
           height: 50vh !important;
         }
@@ -1745,7 +1667,6 @@
         margin-top: 5px;
       }
 
-      /* Accordion Styles */
       .accordion-section {
         width: 100%;
         border: 2px solid #333;
@@ -1781,7 +1702,6 @@
       .accordion-content.open {
         display: flex;
       }
-      /* Custom Scrollbar for Accordion */
       .accordion-content::-webkit-scrollbar {
         width: 6px;
       }
@@ -1799,7 +1719,6 @@
         transform: rotate(180deg);
       }
 
-      /* News & Updates UI Styles */
       .news-updates-tabs {
         display: flex;
         gap: 10px;
@@ -1875,7 +1794,7 @@
         color: #ccc;
       }
       .news-accordion-content.open {
-        max-height: 1000px; /* Large enough for content */
+        max-height: 1000px;
         padding: 0 20px 20px 20px;
       }
       .news-accordion-content img {
@@ -1914,7 +1833,7 @@
         line-height: 1.5;
       }
 
-      /* --- Intro Styles --- */
+      /* Intro */
       #intro-layer {
         position: fixed;
         top: 0;
@@ -1969,7 +1888,6 @@
         transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
 
-      /* Leaderboard Hover Effects */
       .leaderboard-card {
         transition:
           transform 0.2s,
@@ -1996,7 +1914,6 @@
         padding-left: 12px !important;
       }
 
-      /* Practice Controls */
       .practice-controls {
         position: absolute;
         top: 70px;
@@ -2022,7 +1939,6 @@
         border-color: #335699;
       }
 
-      /* Mobile Practice Controls */
       .mobile-mode .practice-controls {
         top: 10px;
         right: 10px;
@@ -2054,7 +1970,6 @@
         content: "✕";
       }
 
-      /* Top Notification */
       .top-notification {
         position: fixed;
         top: 20px;
@@ -2099,7 +2014,7 @@
         animation: rainbow 2s linear infinite;
       }
 
-      /* Level Award Animations */
+      /* Level Award Effects */
       @keyframes sheen {
         0% {
           background-position: 0% 50%;
@@ -2149,7 +2064,6 @@
         }
       }
 
-      /* --- Loading Layer Styles --- */
       #loading-layer {
         position: fixed;
         top: 0;
@@ -2188,7 +2102,6 @@
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
       }
 
-      /* Browser Row Style */
       .browser-level-row {
         display: flex;
         align-items: center;
@@ -2217,24 +2130,6 @@
         margin-bottom: 15px;
       }
 
-      /* In-game Leaderboard Button */
-      #ingame-lb-btn {
-        position: absolute;
-        top: 80px;
-        left: 200px; /* Positioned to the right of highscore text */
-        background: transparent;
-        border: none;
-        color: #ffd700;
-        cursor: pointer;
-        display: none;
-        z-index: 50;
-        transition: transform 0.2s;
-      }
-      #ingame-lb-btn:hover {
-        transform: scale(1.1);
-      }
-
-      /* Mobile optimizations for list views */
       .mobile-mode .custom-level-row,
       .mobile-mode .browser-level-row {
         flex-direction: column;
@@ -2254,7 +2149,6 @@
         flex-direction: column;
       }
 
-      /* --- Skin Modal Styles --- */
       .modal-overlay {
         position: fixed;
         top: 0;
@@ -2307,7 +2201,6 @@
         font-size: 1rem;
         margin-bottom: 20px;
       }
-      /* Social Media Style Browser UI */
       .browser-level-row {
         background: #1a1a1a !important;
         border: 2px solid #333 !important;
@@ -2578,8 +2471,6 @@
     </div>
 
     <script>
-      // --- Safe Storage Helper ---
-      // Global difficulty names and colors for custom/community levels
       window.DIFFICULTY_LABELS = {
         1: "No Skill",
         2: "Very Easy",
@@ -2631,14 +2522,14 @@
         },
       };
 
-      // --- Supabase Stuff ---
+      //Supabase Stuff
       const supabaseUrl = "https://heqmnluegbbglmhtublu.supabase.co";
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
       let isCloudDataLoaded = false;
       let currentUserSkins = ["default"];
-      const SKIN_DEFINITIONS = {
+      const skin_definitions = {
         default: { name: "Default", copies: "N/A" },
         chairlord: { name: "Chairlord", copies: "1/1" },
         sunset: { name: "Sunset", copies: "1/2" },
@@ -2890,7 +2781,6 @@
             .single();
 
           if (error && error.code !== "PGRST116") {
-            // PGRST116 is "Row not found" which is fine
             console.warn("Supabase fetch error:", error);
             return null;
           }
@@ -2959,7 +2849,6 @@
       }
 
       async function syncLocalWithCloud(d, skins, beatenLevels) {
-        // Mark that we have attempted to sync and it was successful (database response received)
         isCloudDataLoaded = true;
 
         if (skins) {
@@ -2976,7 +2865,7 @@
           currentUserBeatenLevels = merged;
         }
         if (currentUser === "test")
-          currentUserSkins = Object.keys(SKIN_DEFINITIONS);
+          currentUserSkins = Object.keys(skin_definitions);
 
         if (d) {
           if (d.gameState) {
@@ -2988,7 +2877,7 @@
               };
             }
 
-            // Merge unlocked levels (take the highest)
+            // Merge unlocked levels
             const unlockKeys = [
               "unlockedLevel",
               "unlockedLevelCh2",
@@ -3000,7 +2889,7 @@
               gameState[key] = Math.max(gameState[key] || 0, cg[key] || 0);
             });
 
-            // Merge boolean flags (if true in either, it's true)
+            // Merge boolean flags
             const booleanFlags = [
               "chapter1Beaten",
               "chapter2Beaten",
@@ -3040,7 +2929,7 @@
             }
           }
 
-          // Merge Custom Levels (by name and plan content to avoid duplicates)
+          // Merge Custom Levels
           if (d.customLevels) {
             const localLevels = customLevels || [];
             const cloudLevels = d.customLevels || [];
@@ -3061,14 +2950,14 @@
           }
         }
 
-        // Save the result of the merge locally
+        // Save the result of the merge
         saveGame(true);
         saveCustomLevels(true);
         saveCustomLevelsProgress(true);
         saveHighscores(true);
         saveSettings(true);
 
-        // Push merged state back to cloud to ensure consistency
+        // Push merged state back to cloud
         syncDataToCloud();
 
         await checkSkinUnlocks(true);
@@ -3340,7 +3229,7 @@
               .eq("code", code);
           }
 
-          const skinName = SKIN_DEFINITIONS[skinReward]?.name || skinReward;
+          const skinName = skin_definitions[skinReward]?.name || skinReward;
           const html = `
                   <div style="margin-bottom:15px; color:#ccc;">You have unlocked the <strong>${skinName}</strong> skin!</div>
                   <img src="${skinReward}.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
@@ -3438,7 +3327,7 @@
 
         // Determine target track logic
         if (specificTrackId) {
-          // User clicked a specific track
+          // User clicked track
           targetId = specificTrackId;
           const libItem = MUSIC_LIBRARY.find((t) => t.id === targetId);
           if (libItem) {
@@ -3577,14 +3466,12 @@
           restoreTime = menuMusicState.time;
         }
 
-        // Update menu state if in menu to prevent reverting to old track
         if (!activeLevelDisplay) {
           menuMusicState.trackId = id;
           menuMusicState.time = 0;
         }
 
         if (file) {
-          // Play Song
           currentAudio = new Audio(file);
           currentAudio.onerror = () => {
             console.warn("Audio load error, falling back to synth");
@@ -3596,7 +3483,6 @@
             currentAudio.loop = true;
           } else {
             currentAudio.loop = false;
-            // Restore time if resuming menu track
             if (shouldRestore) {
               currentAudio.currentTime = restoreTime;
             }
@@ -3624,7 +3510,6 @@
             if (info) showMusicNotification(info.title, info.artist);
           }
         } else {
-          // Play Synth
           playSynth();
           if (!activeLevelDisplay && id === "synth" && !isTransitioning) {
             showMusicNotification("Blockoverit", "Classic Synth");
@@ -3670,7 +3555,6 @@
         synthStartTime = Date.now();
 
         function playNextNote() {
-          // Stop if we switched to a file or stopped synth
           if (thisSynthId !== currentSynthId) return;
           if (currentPlayingTrackId !== "synth") return;
           if (isMusicPaused) {
@@ -3678,7 +3562,6 @@
             return;
           }
 
-          // Synth duration limit (1.5 mins)
           if (Date.now() - synthStartTime > 90000) {
             if (activeLevelDisplay) {
               synthStartTime = Date.now();
@@ -3718,12 +3601,11 @@
         playNextNote();
       }
 
-      // --- Data & Persistence ---
       const SAVE_KEY = "blockoverit_v3_save";
       const CUSTOM_LEVELS_KEY = "blockoverit_custom_levels";
       const CUSTOM_LEVELS_PROGRESS_KEY = "blockoverit_custom_levels_progress";
 
-      // Campaign Progress
+      // Campaign
       let gameState = JSON.parse(safeStorage.getItem(SAVE_KEY)) || {
         unlockedLevel: 0,
         unlockedLevelCh2: 0,
@@ -3763,17 +3645,14 @@
         gameState.chapter5Beaten = false;
       if (gameState.awardProgress === undefined) gameState.awardProgress = {};
       if (gameState.afClaimed === undefined) gameState.afClaimed = {};
-
-      // Custom Levels Storage
       let customLevels =
         JSON.parse(safeStorage.getItem(CUSTOM_LEVELS_KEY)) || [];
 
-      // Custom Levels Progress (tracks which levels have been beaten)
       let customLevelsProgress =
         JSON.parse(safeStorage.getItem(CUSTOM_LEVELS_PROGRESS_KEY)) || {};
 
       // Game Modes
-      let currentGameMode = "campaign"; // 'campaign', 'custom', 'speedrun', 'deathrun'
+      let currentGameMode = "campaign";
       let gameTimer = 0;
       let gameTimerRunning = false;
       let gameTimerStart = 0;
@@ -3952,7 +3831,7 @@
 
       const SETTINGS_KEY = "blockoverit_settings";
       let gameSettings = JSON.parse(safeStorage.getItem(SETTINGS_KEY)) || {
-        alternateBlueCoinStyle: false, // New setting for alternate blue coin style
+        alternateBlueCoinStyle: false, 
         volume: 50,
         mobileButtonSize: 50,
         menuMusic: "synth",
@@ -3986,7 +3865,6 @@
           "level6",
         ];
       }
-      // Add new songs to default playlist for new users
       if (!gameSettings.playlist.includes("skate"))
         gameSettings.playlist.push("skate");
       if (!gameSettings.playlist.includes("arcade"))
@@ -4042,7 +3920,6 @@
       if (gameSettings.mobileButtonSize === undefined)
         gameSettings.mobileButtonSize = 50;
       if (gameSettings.lastReadNews === undefined) {
-        // Migrate legacy local storage if exists
         gameSettings.lastReadNews = safeStorage.getItem("lastReadNews") || null;
       }
       if (!gameSettings.playlist)
@@ -4101,8 +3978,7 @@
         safeStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
         if (!skipCloud) syncDataToCloud();
       }
-
-      // --- Confetti System ---
+      // Confetti Animation (from GitHub)
       const confettiCanvas = document.getElementById("confetti-canvas");
       const confettiCtx = confettiCanvas.getContext("2d");
       let confettiParticles = [];
@@ -4173,7 +4049,6 @@
         if (!skipCloud) syncDataToCloud();
       }
 
-      // --- Popup System ---
       const popupManager = {
         queue: [],
         isActive: false,
@@ -4221,7 +4096,6 @@
               console.error("Popup callback error:", e);
             }
             overlay.remove();
-            // Use a small timeout to prevent UI flicker if another popup is in the queue
             setTimeout(() => this.processQueue(), 50);
           };
 
@@ -4265,12 +4139,11 @@
         });
       }
 
-      // --- Confirmation Popup ---
       function showConfirmPopup(title, message, onConfirm, onCancel) {
         popupManager.show({
           title,
           message,
-          onCancel, // for the 'x' button
+          onCancel, 
           buttons: [
             {
               text: "YES",
@@ -4296,7 +4169,6 @@
         const seconds = String(totalSeconds % 60).padStart(2, "0");
         return `${hours}:${minutes}:${seconds}`;
       }
-      // --- Custom Level Popup ---
       function openAwardLevelPopup(lvl) {
         const difficulty = lvl.difficulty || 1;
         const desc = lvl.description || "No description provided.";
@@ -4312,8 +4184,8 @@
         }
 
         overlay.innerHTML = `
-                        <div class="cl-popup">
-                            <div class="cl-header">
+                  <div class="cl-popup" style="background: ${themeColor};">
+                      <div class="cl-header" style="background: ${adjustColor(themeColor, 10)};">
                                 <div class="cl-title">
                                     ${lvl.name || "Custom Level"}
                                     <div style="font-size:0.8rem; color:#888; font-weight:normal; margin-top:5px;">by ${creator}</div>
@@ -4354,8 +4226,8 @@
         const isBeaten = customLevelsProgress[index] || false;
         const hasBlueCoin =
           gameState.levelBlueCoins[`custom_${index}`] || false;
+        const themeColor = lvl.themeColor || "#1a1a1a";
 
-        // Get Highscore
         const key = getHighscoreKey("custom", 1, index, "any", lvl.awardKey);
         const bestTime = highscores[key];
         let timeStr = "--:--.---";
@@ -4370,7 +4242,6 @@
         const desc = lvl.description || "No description provided.";
         const creator = lvl.creator || "Anonymous";
 
-        // Determine Buttons based on Mode
         let buttonsHtml = "";
         if (currentGameMode === "speedrun") {
           buttonsHtml = `<button class="btn" style="background:#e67e22; border-color:#d35400; color:#fff; font-size:1rem; padding:10px 20px;" id="cl-action-btn">SPEEDRUN</button>`;
@@ -4419,7 +4290,7 @@
                                     <div class="cl-stat-box"><div class="cl-stat-label">Gravity</div><div class="cl-stat-value">${lvl.gravity || 27}</div></div>
                                 </div>
                             </div>
-                            <div class="cl-actions">
+                      <div class="cl-actions" style="background: ${adjustColor(themeColor, 10)};">
                                 ${buttonsHtml}
                             </div>
                         </div>
@@ -4475,8 +4346,6 @@
         );
       }
 
-      // --- Level Data ---
-      // converted to objects to support gravity
       const RAW_LEVEL_PLANS = [
         [
           "                                                                                ",
@@ -4655,7 +4524,6 @@
         ],
       ];
 
-      // Format for game: { plan: [...], gravity: 27 }
       const CHAPTER_1 = RAW_LEVEL_PLANS.map((p) => ({
         plan: p,
         gravity: 27,
@@ -5664,7 +5532,7 @@
       CHAPTER_5[0].music = "showcase.mp3";
       CHAPTER_5[4].music = "breakcore.mp3";
 
-      // --- Engine  ---
+      // Engine
 
       function adjustColor(color, amount) {
         if (!color) return null;
@@ -5915,12 +5783,12 @@
             }
             imgEl.style.backgroundImage = `url('${skin}.png')`;
             imgEl.style.backgroundColor = "transparent";
-            nameEl.textContent = SKIN_DEFINITIONS[skin]?.name || skin;
+            nameEl.textContent = skin_definitions[skin]?.name || skin;
 
             count++;
             if (count > totalSteps && skin === randomSkin) {
               clearInterval(interval);
-              nameEl.innerHTML = `UNLOCKED: ${SKIN_DEFINITIONS[randomSkin]?.name || randomSkin}`;
+              nameEl.innerHTML = `UNLOCKED: ${skin_definitions[randomSkin]?.name || randomSkin}`;
               triggerConfetti();
             }
           }, 80);
@@ -6065,12 +5933,12 @@
       }
       Coin.prototype.type = "coin";
 
-      function BonusCoin(pos) {
+      function BlueCoin(pos) {
         this.basePos = this.pos = pos.plus(new Vector(0.2, 0.2));
         this.size = new Vector(0.6, 0.6);
-        this.wobble = 0; // No wobble for flat look
+        this.wobble = 0; // No wobble
       }
-      BonusCoin.prototype.type = "bonus-coin";
+      BlueCoin.prototype.type = "blue-coin";
 
       function MovingBlock(pos, ch) {
         this.pos = pos;
@@ -6534,7 +6402,7 @@
         "=": Lava,
         "|": Lava,
         v: Lava,
-        B: BonusCoin,
+        B: BlueCoin,
         H: MovingBlock,
         V: MovingBlock,
         "^": RisingLava,
@@ -6768,7 +6636,7 @@
                   }
                 }
                 if (shouldSpawnBlueCoin) {
-                  this.totalBlueCoins++;
+                  if (!isFake) this.totalBlueCoins++;
                   actor = new Actor(new Vector(x, y), ch);
                 }
               } else {
@@ -7190,9 +7058,8 @@
         return this.status != null && this.finishDelay < 0;
       };
 
-      // --- Physics ---
 
-      // Lava Grouping Logic
+      // Lava Grouping
       function LavaGroup(members, speed) {
         this.members = members;
         this.type = "lava-group";
@@ -7741,7 +7608,7 @@
         this.pos = this.basePos.plus(new Vector(0, wobblePos));
       };
 
-      BonusCoin.prototype.act = function (step) {
+      BlueCoin.prototype.act = function (step) {
         // Static, no wobble
       };
 
@@ -7911,7 +7778,9 @@
           }
         } else if (type == "coin") {
           this.actors = this.actors.filter((other) => other != actor);
-          if (!this.actors.some((actor) => actor.type == "coin")) {
+          if (
+            !this.actors.some((actor) => actor.type == "coin" && !actor.fake)
+          ) {
             if (currentGameMode === "speedrun") {
               if (gameTimerStart > 0) {
                 speedrunEndTime = Date.now(); // Immediate stop
@@ -7923,9 +7792,9 @@
             this.finishDelay = 1;
             if (this.visualWin) showTopNotification(this.visualWin);
           }
-        } else if (type == "bonus-coin") {
+        } else if (type == "blue-coin") {
           this.actors = this.actors.filter((other) => other != actor);
-          this.blueCoinsCollected++;
+          if (!actor.fake) this.blueCoinsCollected++;
           // Trigger blueCoin actions
           this.parsedActions.forEach((a) => {
             if (a.triggerStr === "blueCoin") {
@@ -7939,7 +7808,6 @@
         }
       };
 
-      // --- Display ---
       function element(name, className) {
         var elem = document.createElement(name);
         if (className) elem.className = className;
@@ -8072,7 +7940,7 @@
           if (actor.members) {
             actor.members.forEach((m) => {
               if (
-                m.type === "bonus-coin" &&
+                m.type === "blue-coin" &&
                 gameSettings.alternateBlueCoinStyle
               )
                 m.altStyle = true;
@@ -8113,7 +7981,7 @@
                 ![
                   "spike",
                   "upside-down-spike",
-                  "bonus-coin",
+                  "blue-coin",
                   "slide-right",
                   "slide-left",
                   "spike-left",
@@ -8249,12 +8117,12 @@
           }
 
           if (
-            actor.type === "bonus-coin" &&
+            actor.type === "blue-coin" &&
             gameSettings.alternateBlueCoinStyle
           ) {
-            el.classList.add("bonus-coin-alt-visuals");
+            el.classList.add("blue-coin-alt-visuals");
           } else {
-            el.classList.remove("bonus-coin-alt-visuals");
+            el.classList.remove("blue-coin-alt-visuals");
           }
 
           if (actor.type === "breakable-block") {
@@ -8602,19 +8470,16 @@
         this.wrap.parentNode.removeChild(this.wrap);
       };
 
-      // --- Game Loop ---
       var arrowCodes = {
         65: "left",
         87: "up",
         68: "right",
-        // 83: "down", // S is now Switch Skin
         37: "left",
         38: "up",
         39: "right",
         40: "down",
         32: "up",
         80: "p",
-        // 82: "r", // R is handled globally
       };
       function trackKeys(codes) {
         var pressed = Object.create(null);
@@ -9090,8 +8955,8 @@
         if (activeLevelDisplay) activeLevelDisplay.syncActors();
         showTopNotification(
           "Skin: " +
-            (SKIN_DEFINITIONS[gameSettings.currentSkin]
-              ? SKIN_DEFINITIONS[gameSettings.currentSkin].name
+            (skin_definitions[gameSettings.currentSkin]
+              ? skin_definitions[gameSettings.currentSkin].name
               : gameSettings.currentSkin),
         );
       }
@@ -9856,7 +9721,6 @@
         }
       }
 
-      // --- Menu System ---
 
       function createAccordion(title, contentElements, isOpen = false) {
         const section = document.createElement("div");
@@ -9893,13 +9757,12 @@
         return section;
       }
 
-      // --- Skin Modal Logic ---
       let currentModalSkinId = null;
       let currentSkinData = null;
       let currentVersionIdx = 0;
 
       function showFullScreenSkin(skinId) {
-        const data = SKIN_DEFINITIONS[skinId] || {
+        const data = skin_definitions[skinId] || {
           name: skinId,
           copies: "Unknown",
         };
@@ -9996,7 +9859,7 @@
         let dragSrcEl = null;
 
         skins.forEach((skinId, index) => {
-          const meta = SKIN_DEFINITIONS[skinId] || {
+          const meta = skin_definitions[skinId] || {
             name: skinId,
             copies: "Unknown",
           };
@@ -10424,7 +10287,6 @@
         } else if (view === "settings") {
           subtitle.textContent = "SETTINGS";
 
-          // --- Gameplay Section ---
           const gameplayItems = [];
 
           // Alternate Blue Coin Style Toggle
@@ -10489,7 +10351,6 @@
             createAccordion("GAMEPLAY", gameplayItems, openGameplay),
           );
 
-          // --- Audio Section ---
           const audioItems = [];
 
           // Volume Slider
@@ -10521,7 +10382,6 @@
 
           container.appendChild(createAccordion("AUDIO", audioItems));
 
-          // --- Info Section ---
           const infoItems = [];
           const controlsBtn = document.createElement("button");
           controlsBtn.className = "btn";
@@ -10540,7 +10400,6 @@
 
           container.appendChild(createAccordion("INFO", infoItems));
 
-          // --- User Section ---
           const userItems = [];
           const accountBtn = document.createElement("button");
           accountBtn.className = "btn";
@@ -12900,7 +12759,6 @@
         showMenu("credits");
       }
 
-      // --- File Upload Handling ---
       document
         .getElementById("file-input")
         .addEventListener("change", function (e) {
@@ -12942,7 +12800,7 @@
         showMenu("beats-menu");
       };
 
-      // --- Auth UI ---
+
       function openLoginModal(withReward = false) {
         const html = `
                         ${withReward ? '<div style="color:#ffd700; margin-bottom:10px; font-weight:bold;">Sign Up to get Dino Skin!</div>' : ""}
@@ -13014,7 +12872,7 @@
         }, 1000);
       }
 
-      // --- Intro Sequence ---
+      // Intro
       function playIntro() {
         const layer = document.getElementById("intro-layer");
         const sellwood = document.getElementById("intro-sellwood");
@@ -13307,6 +13165,8 @@
               const score = (lvl.upvotes || 0) - (lvl.downvotes || 0);
               const card = document.createElement("div");
               card.className = "browser-level-row";
+              const themeColor = lvl.data?.themeColor || lvl.themeColor || "#1a1a1a";
+              card.style.setProperty('background', themeColor, 'important');
               card.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                             <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
@@ -13384,8 +13244,9 @@
 
         const score = (currentLvl.upvotes || 0) - (currentLvl.downvotes || 0);
         const details = document.createElement("div");
+        const themeColor = currentLvl.data?.themeColor || currentLvl.themeColor || "#1a1a1a";
         details.style.cssText =
-          "width:100%; background:#1a1a1a; border:2px solid #333; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:15px;";
+          `width:100%; background:${themeColor} !important; border:2px solid #333; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:15px;`;
 
         details.innerHTML = `
                     <div style="border-bottom:1px solid #333; padding-bottom:15px;">
@@ -13562,6 +13423,7 @@
             creator: data.creator,
             dbId: dbId,
             isShortcut: true,
+            themeColor: data.themeColor || "#1a1a1a",
             plan: data.plan, // Keep plan for thumbnail/stat rendering in the list
           };
 
@@ -13660,8 +13522,7 @@
         loadComments(lvl);
       };
 
-      // --- Loading Screen Logic ---
-      const LOADING_SCREENS = [
+      const loading_screens = [
         { img: "fluffy.png", artist: "Torgaar" },
         { img: "loading.png", artist: "J_imbo" },
         { img: "platforms.png", artist: "MidgeMidge22" },
@@ -13679,7 +13540,7 @@
 
         // Pick random screen
         const screen =
-          LOADING_SCREENS[Math.floor(Math.random() * LOADING_SCREENS.length)];
+          loading_screens[Math.floor(Math.random() * loading_screens.length)];
 
         if (isMobile) {
           loadingLayer.style.backgroundImage = "none";
@@ -13705,7 +13566,7 @@
 
         // 2. Load Image Assets
         const imagePromise = (async () => {
-          const skinImages = Object.keys(SKIN_DEFINITIONS).map((id) => {
+          const skinImages = Object.keys(skin_definitions).map((id) => {
             if (id === "default") return "blockoverit.png";
             const ext =
               id === "smiley" ||
@@ -13780,7 +13641,7 @@
           safeStorage.setItem("hasSeenIntro", "true");
           playIntro();
         } else {
-          // Always perform loading for a consistent, high-quality startup
+          // Loading
           await performLoading();
           document.getElementById("intro-layer").style.display = "none";
           showMenu("main");
