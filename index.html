@@ -425,7 +425,7 @@
         cursor: pointer;
         z-index: 120;
         overflow: hidden;
-        height: 35px; 
+        height: 35px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2860,7 +2860,12 @@
           const localBeaten = currentUserBeatenLevels || [];
           const merged = [...localBeaten];
           cloudBeaten.forEach((cb) => {
-            if (!merged.some((lb) => lb.id === cb.id)) merged.push(cb);
+            const existing = merged.find((lb) => lb.id === cb.id);
+            if (!existing) {
+              merged.push(cb);
+            } else if (cb.hasBlueCoin) {
+              existing.hasBlueCoin = true;
+            }
           });
           currentUserBeatenLevels = merged;
         }
@@ -3831,7 +3836,7 @@
 
       const SETTINGS_KEY = "blockoverit_settings";
       let gameSettings = JSON.parse(safeStorage.getItem(SETTINGS_KEY)) || {
-        alternateBlueCoinStyle: false, 
+        alternateBlueCoinStyle: false,
         volume: 50,
         mobileButtonSize: 50,
         menuMusic: "synth",
@@ -4143,7 +4148,7 @@
         popupManager.show({
           title,
           message,
-          onCancel, 
+          onCancel,
           buttons: [
             {
               text: "YES",
@@ -7058,7 +7063,6 @@
         return this.status != null && this.finishDelay < 0;
       };
 
-
       // Lava Grouping
       function LavaGroup(members, speed) {
         this.members = members;
@@ -7939,10 +7943,7 @@
         this.level.actors.forEach(function (actor) {
           if (actor.members) {
             actor.members.forEach((m) => {
-              if (
-                m.type === "blue-coin" &&
-                gameSettings.alternateBlueCoinStyle
-              )
+              if (m.type === "blue-coin" && gameSettings.alternateBlueCoinStyle)
                 m.altStyle = true;
               drawList.push(m);
             });
@@ -9046,7 +9047,7 @@
       }
 
       let currentUserBeatenLevels = [];
-      async function trackBeatenCommunityLevel(levelData) {
+      async function trackBeatenCommunityLevel(levelData, hasBlueCoin = false) {
         if (!_supabase || !currentUser || !levelData.dbId) return;
 
         try {
@@ -9059,14 +9060,24 @@
           if (fetchError) throw fetchError;
 
           let beaten = user.beaten_levels || [];
-          if (!beaten.some((l) => l.id === levelData.dbId)) {
+          let existingIdx = beaten.findIndex((l) => l.id === levelData.dbId);
+
+          let changed = false;
+          if (existingIdx === -1) {
             beaten.push({
               id: levelData.dbId,
               name: levelData.name,
               difficulty: levelData.difficulty,
+              hasBlueCoin: hasBlueCoin,
             });
-            currentUserBeatenLevels = beaten;
+            changed = true;
+          } else if (hasBlueCoin && !beaten[existingIdx].hasBlueCoin) {
+            beaten[existingIdx].hasBlueCoin = true;
+            changed = true;
+          }
 
+          if (changed) {
+            currentUserBeatenLevels = beaten;
             await _supabase
               .from("users")
               .update({ beaten_levels: beaten })
@@ -9499,10 +9510,13 @@
                   }
                 }
 
-                // Update beaten_levels column in Supabase
-                trackBeatenCommunityLevel(levelData);
+                const collectedBlueCoin =
+                  levelInstance.blueCoinsCollected >=
+                    levelInstance.totalBlueCoins &&
+                  levelInstance.totalBlueCoins > 0;
 
-                // Verification Logic for Community Levels
+                trackBeatenCommunityLevel(levelData, collectedBlueCoin);
+
                 if (
                   levelData &&
                   levelData.dbId != null &&
@@ -9540,7 +9554,7 @@
       function exitToMenu() {
         cancelAnimationFrame(activeAnimationFrame);
         activeAnimationFrame = false;
-        document.body.classList.remove("in-game"); // Hide mobile controls
+        document.body.classList.remove("in-game");
         if (document.body.classList.contains("mobile-mode")) {
           if (screen.orientation && screen.orientation.lock) {
             screen.orientation.lock("portrait").catch(() => {});
@@ -9720,7 +9734,6 @@
           return;
         }
       }
-
 
       function createAccordion(title, contentElements, isOpen = false) {
         const section = document.createElement("div");
@@ -12800,7 +12813,6 @@
         showMenu("beats-menu");
       };
 
-
       function openLoginModal(withReward = false) {
         const html = `
                         ${withReward ? '<div style="color:#ffd700; margin-bottom:10px; font-weight:bold;">Sign Up to get Dino Skin!</div>' : ""}
@@ -13162,11 +13174,17 @@
 
             list.innerHTML = "";
             filtered.forEach((lvl) => {
+              const status = currentUserBeatenLevels.find(
+                (b) => b.id === lvl.id,
+              );
+              const isBeaten = !!status;
+              const hasBlue = status && status.hasBlueCoin;
               const score = (lvl.upvotes || 0) - (lvl.downvotes || 0);
               const card = document.createElement("div");
               card.className = "browser-level-row";
-              const themeColor = lvl.data?.themeColor || lvl.themeColor || "#1a1a1a";
-              card.style.setProperty('background', themeColor, 'important');
+              const themeColor =
+                lvl.data?.themeColor || lvl.themeColor || "#1a1a1a";
+              card.style.setProperty("background", themeColor, "important");
               card.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                             <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
@@ -13174,6 +13192,10 @@
                                     <span style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:0.5px;">${lvl.name}</span>
                                     ${lvl.legendary ? '<span style="background:#1e3a8a; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px #3b82f6;">LEGENDARY</span>' : ""}
                                     ${lvl.impossible ? '<span style="background:#e74c3c; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">IMPOSSIBLE</span>' : ""}
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                        ${isBeaten ? '<span class="status-badge status-beaten" style="font-size:0.6rem; padding:2px 6px;">✓ BEATEN</span>' : ""}
+                                        ${hasBlue ? '<span class="status-badge status-blue-coin" style="font-size:0.6rem; padding:2px 6px;">★ BLUE COIN</span>' : ""}
+                                    </div>
                                     ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
                                     ${lvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
                                 </div>
@@ -13242,17 +13264,26 @@
           if (data) currentLvl = data;
         }
 
+        const status = currentUserBeatenLevels.find(
+          (b) => b.id === currentLvl.id,
+        );
+        const isBeaten = !!status;
+        const hasBlue = status && status.hasBlueCoin;
         const score = (currentLvl.upvotes || 0) - (currentLvl.downvotes || 0);
         const details = document.createElement("div");
-        const themeColor = currentLvl.data?.themeColor || currentLvl.themeColor || "#1a1a1a";
-        details.style.cssText =
-          `width:100%; background:${themeColor} !important; border:2px solid #333; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:15px;`;
+        const themeColor =
+          currentLvl.data?.themeColor || currentLvl.themeColor || "#1a1a1a";
+        details.style.cssText = `width:100%; background:${themeColor} !important; border:2px solid #333; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:15px;`;
 
         details.innerHTML = `
                     <div style="border-bottom:1px solid #333; padding-bottom:15px;">
                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:5px;">
                             <div style="font-size:2rem; font-weight:bold; color:#fff;">${currentLvl.name}</div>
                             ${currentLvl.legendary ? '<span style="background:#1e3a8a; color:white; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px #3b82f6;">LEGENDARY</span>' : ""}
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                ${isBeaten ? '<div class="status-badge status-beaten">✓ BEATEN</div>' : ""}
+                                ${hasBlue ? '<div class="status-badge status-blue-coin">★ BLUE COIN</div>' : ""}
+                            </div>
                             ${currentLvl.impossible ? '<span style="background:#e74c3c; color:white; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px;">IMPOSSIBLE</span>' : ""}
                             ${currentLvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
                             ${currentLvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
