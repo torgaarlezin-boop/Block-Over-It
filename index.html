@@ -7343,7 +7343,8 @@
         for (var i = 0; i < this.actors.length; i++) {
           var other = this.actors[i];
           if (other === exceptActor) continue;
-          if (other.flickerType && !other.isVisible) continue;
+          if ((other.isTouchFlicker || other.isJumpFlicker) && !other.isVisible)
+            continue;
           if (other.fake) continue;
 
           var members = other.members || [other];
@@ -13108,7 +13109,12 @@
           }
 
           const term = searchInput.value.toLowerCase();
-          const sort = sortSelect.value;
+          let sort = sortSelect.value;
+
+          if (!term) {
+            sort = "likes";
+            sortSelect.value = "likes";
+          }
 
           let query = _supabase.from("published_levels").select("*");
 
@@ -13118,11 +13124,12 @@
           } else if (sort === "oldest") {
             query = query.order("created_at", { ascending: true });
           } else if (sort === "likes") {
-            const recentDate = new Date();
-            recentDate.setDate(recentDate.getDate() - 20);
-            query = query
-              .gte("created_at", recentDate.toISOString())
-              .order("upvotes", { ascending: false });
+            if (!term) {
+              const recentDate = new Date();
+              recentDate.setDate(recentDate.getDate() - 20);
+              query = query.gte("created_at", recentDate.toISOString());
+            }
+            query = query.order("upvotes", { ascending: false });
           } else if (sort === "legendary") {
             query = query
               .eq("legendary", true)
