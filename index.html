@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <title>Block Over It</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/newgrounds.io/dist/newgroundsio.min.js"></script>
     <link rel="icon" href="blockoverit.png" />
     <style>
       body {
@@ -2340,6 +2341,7 @@
         position: absolute;
         top: 20px;
         right: 70px;
+        min-width: auto;
         width: 44px;
         height: 44px;
         padding: 0;
@@ -2351,6 +2353,31 @@
       <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
         <path
           d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"
+        />
+      </svg>
+    </button>
+    <button
+      id="hitbox-btn"
+      class="btn"
+      onclick="toggleHitboxes()"
+      style="
+        display: none;
+        position: absolute;
+        top: 20px;
+        right: 120px;
+        min-width: auto;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        z-index: 60;
+        align-items: center;
+        justify-content: center;
+      "
+      title="Toggle Hitboxes (H)"
+    >
+      <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path
+          d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
         />
       </svg>
     </button>
@@ -2634,29 +2661,33 @@
           name: "MidgeMidge",
           copies: "1/1",
         },
+        blackbeard: {
+          name: "Blocky (Blackbeard)",
+          copies: "1/5",
+        },
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
         {
-          headline: "Skin Awards Concluded!",
-          date: "2026-04-26",
-          image: "cubemouthdevourer.png",
+          headline: "Use code BLACKBEARD to get the Blackbeard skin!",
+          date: "2026-05-09",
+          image: "blackbeard.png",
           story:
-            "The April Skin Awards have just concluded. First place was awarded to Cubemouth (Devourer) (shown above) by Torgaar. 2nd place was awarded to Blocky (No Sleep), and 3rd place was awarded to Cool Guy (Magma). The winner received the Cool Guy (Pristine) skin.",
+            "You can now use code BLACKBEARD to claim the Blocky (Blackbeard) skin! Claim it soon as this won't last long.",
         },
         {
-          headline: "New Music Tracks in Block Over It beats! (again)",
-          date: "2026-04-19",
+          headline: "Level Awards Approaching...",
+          date: "2026-05-09",
           image: null,
           story:
-            "New music tracks have been added to Block Over It beats again. Recently was the arrival of some new hits, and here are some more. The songs are: Blank Frown by SamaadBae5, Autumn by 8BITPICE, Sunfire by Preds, Castle by Xamolxix, and A Beginning by LHPixel8. You can check them out in the Block Over It beats interface in-game or in the editor.",
+            "The May Level Awards are coming up. The voting for the first category will be on Monday.",
         },
         {
-          headline: "1.9 Released!",
-          date: "2026-04-19",
+          headline: "Newgrounds is coming to Block Over It!",
+          date: "2026-05-09",
           image: null,
           story:
-            "The new 1.9 update just released. A new legendary rank for featured levels has been added in addition to a new impossible tag for impossible levels. Of course, Chapter 5 has been added. There is also a new unverified level browser section, and exiting a level browser level goes back exactly to where you were before. Finally, the last major change is the new loading screen system, with art from many different atists and a bouncing block that transforms into your equipped skin right before loading in.",
+            "Using the Newgrounds API, all songs marked for API use (such as the ones in Geometry Dash) will now be available in Block Over It!",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
@@ -3296,6 +3327,45 @@
         if (currentMenuView === "beats-menu") showMenu("beats-menu");
       }
 
+      const NG_APP_ID = "62057";
+      const NG_ENC_KEY = "2GwdzuqJ";
+      const ngCache = new Map();
+
+      function resolveNewgroundsAudio(id, callback) {
+        const sid = String(id);
+        if (ngCache.has(sid)) return callback(ngCache.get(sid));
+
+        try {
+          const ng = new Newgrounds.io.core(NG_APP_ID, NG_ENC_KEY);
+          ng.call("Audio.get", { id: parseInt(id) }, (result) => {
+            if (result.success && result.audio) {
+              const data = {
+                id: sid,
+                title: result.audio.name,
+                artist: result.audio.artist,
+                file: result.audio.url,
+              };
+              ngCache.set(sid, data);
+              callback(data);
+            } else {
+              callback({
+                id: sid,
+                title: "Newgrounds Audio",
+                artist: "ID: " + id,
+                file: `https://www.newgrounds.com/audio/download/${id}`,
+              });
+            }
+          });
+        } catch (e) {
+          callback({
+            id: sid,
+            title: "Newgrounds Audio",
+            artist: "ID: " + id,
+            file: `https://www.newgrounds.com/audio/download/${id}`,
+          });
+        }
+      }
+
       function getNextPlaylistTrack() {
         const playlist = gameSettings.playlist || [];
         if (playlist.length === 0) return "synth";
@@ -3337,6 +3407,18 @@
           const libItem = MUSIC_LIBRARY.find((t) => t.id === targetId);
           if (libItem) {
             targetFile = libItem.file;
+          } else if (
+            targetId &&
+            !isNaN(targetId) &&
+            String(targetId).trim() !== ""
+          ) {
+            resolveNewgroundsAudio(targetId, (data) => {
+              if (data && data.file) {
+                startTrack(data.id, data.file);
+                isTransitioning = false;
+              }
+            });
+            return;
           } else {
             // Fallback for direct file paths or if unknown ID
             targetFile = targetId.includes(".") ? targetId : null;
@@ -3367,6 +3449,18 @@
             if (libItem) {
               targetId = libItem.id;
               targetFile = libItem.file;
+            } else if (
+              currentLevelData.music &&
+              !isNaN(currentLevelData.music) &&
+              String(currentLevelData.music).trim() !== ""
+            ) {
+              resolveNewgroundsAudio(currentLevelData.music, (data) => {
+                if (data && data.file) {
+                  startTrack(data.id, data.file);
+                  isTransitioning = false;
+                }
+              });
+              return;
             } else {
               targetId = "level_custom";
               targetFile = currentLevelData.music;
@@ -3513,6 +3607,13 @@
           if (!activeLevelDisplay) {
             const info = MUSIC_LIBRARY.find((t) => t.id === id);
             if (info) showMusicNotification(info.title, info.artist);
+            else if (id && !isNaN(id)) {
+              const cached = ngCache.get(String(id));
+              showMusicNotification(
+                cached ? cached.title : "Newgrounds Audio",
+                cached ? cached.artist : "ID: " + id,
+              );
+            }
           }
         } else {
           playSynth();
@@ -4178,6 +4279,7 @@
         const difficulty = lvl.difficulty || 1;
         const desc = lvl.description || "No description provided.";
         const creator = lvl.creator || "Anonymous";
+        const themeColor = lvl.themeColor || "#1a1a1a";
 
         const overlay = document.createElement("div");
         overlay.className = "cl-popup-overlay";
@@ -8591,18 +8693,7 @@
 
         // H for Hitboxes
         if (e.key.toLowerCase() === "h") {
-          if (activeLevelDisplay) {
-            if (activeLevelDisplay.level.blockHitboxes) {
-              showTopNotification("Hitboxes are blocked on this level.");
-              return;
-            }
-            gameSettings.showHitboxes = !gameSettings.showHitboxes;
-            saveSettings();
-            activeLevelDisplay.syncActors(); // Refresh visuals
-            showTopNotification(
-              "Hitboxes " + (gameSettings.showHitboxes ? "ON" : "OFF"),
-            );
-          }
+          toggleHitboxes();
         }
 
         // S for Switch Skin (In-game)
@@ -8853,6 +8944,21 @@
         highscoreCategory = highscoreCategory === "any" ? "blue" : "any";
         updateHighscoreDisplay();
       };
+
+      function toggleHitboxes() {
+        if (activeLevelDisplay) {
+          if (activeLevelDisplay.level.blockHitboxes) {
+            showTopNotification("Hitboxes are blocked on this level.");
+            return;
+          }
+          gameSettings.showHitboxes = !gameSettings.showHitboxes;
+          saveSettings();
+          activeLevelDisplay.syncActors(); // Refresh visuals
+          showTopNotification(
+            "Hitboxes " + (gameSettings.showHitboxes ? "ON" : "OFF"),
+          );
+        }
+      }
 
       async function updateHighscoreDisplay() {
         if (
@@ -9159,6 +9265,7 @@
         document.getElementById("restart-btn").style.display = "block";
         // Always show zoom button
         document.getElementById("zoom-btn").style.display = "flex";
+        document.getElementById("hitbox-btn").style.display = "flex";
         document.getElementById("restart-btn").style.display = "flex";
         document.body.classList.add("in-game"); // Show mobile controls
         if (document.body.classList.contains("mobile-mode")) {
@@ -9574,6 +9681,7 @@
         document.getElementById("hud").innerText = "ESC"; // Reset HUD text
         document.getElementById("restart-btn").style.display = "none";
         document.getElementById("zoom-btn").style.display = "none";
+        document.getElementById("hitbox-btn").style.display = "none";
         document.getElementById("timer-display").style.display = "none";
         document.getElementById("highscore-display").style.display = "none";
         document.getElementById("practice-controls").style.display = "none";
@@ -10341,24 +10449,6 @@
           cdRow.appendChild(confirmDelToggle);
           gameplayItems.push(cdRow);
 
-          // Hitbox Toggle
-          const hbRow = document.createElement("div");
-          hbRow.style.cssText =
-            "display:flex; align-items:center; justify-content:space-between;";
-          hbRow.innerHTML = `<span style="font-size:1.2rem;">SHOW HITBOXES</span>`;
-          const hbToggle = document.createElement("div");
-          hbToggle.className =
-            "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
-          hbToggle.innerHTML = '<div class="toggle-slider"></div>';
-          hbToggle.onclick = () => {
-            gameSettings.showHitboxes = !gameSettings.showHitboxes;
-            hbToggle.className =
-              "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
-            saveSettings();
-          };
-          hbRow.appendChild(hbToggle);
-          gameplayItems.push(hbRow);
-
           const openGameplay = !context || context === "gameplay";
           container.appendChild(
             createAccordion("GAMEPLAY", gameplayItems, openGameplay),
@@ -10559,24 +10649,6 @@
           };
           altCoinDiv.appendChild(acToggle);
           settingsContent.appendChild(altCoinDiv);
-
-          // Hitboxes
-          const hbDiv = document.createElement("div");
-          hbDiv.style.cssText =
-            "display:flex; justify-content:space-between; align-items:center; background:#222; padding:15px; border-radius:12px; border:1px solid #333;";
-          hbDiv.innerHTML = "<span>SHOW HITBOXES</span>";
-          const hbToggle = document.createElement("div");
-          hbToggle.className =
-            "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
-          hbToggle.innerHTML = '<div class="toggle-slider"></div>';
-          hbToggle.onclick = () => {
-            gameSettings.showHitboxes = !gameSettings.showHitboxes;
-            hbToggle.className =
-              "toggle-btn" + (gameSettings.showHitboxes ? " active" : "");
-            saveSettings();
-          };
-          hbDiv.appendChild(hbToggle);
-          settingsContent.appendChild(hbDiv);
 
           // Redeem Code Button
           if (currentUser) {
