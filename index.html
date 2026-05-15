@@ -2665,16 +2665,10 @@
           name: "Blocky (Blackbeard)",
           copies: "1/5",
         },
+        coolguy
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
-        {
-          headline: "Use code BLACKBEARD to get the Blackbeard skin!",
-          date: "2026-05-09",
-          image: "blackbeard.png",
-          story:
-            "You can now use code BLACKBEARD to claim the Blocky (Blackbeard) skin! Claim it soon as this won't last long.",
-        },
         {
           headline: "Level Awards Approaching...",
           date: "2026-05-09",
@@ -2683,11 +2677,11 @@
             "The May Level Awards are coming up. The voting for the first category will be on Monday.",
         },
         {
-          headline: "Newgrounds is coming to Block Over It!",
-          date: "2026-05-09",
+          headline: "1.10 Coming Soon!",
+          date: "2026-05-14",
           image: null,
           story:
-            "Using the Newgrounds API, all songs marked for API use (such as the ones in Geometry Dash) will now be available in Block Over It!",
+            "Update 1.10 is approaching. In the update will be a new shop for buying skins with the blue coins you collect (they will reappear after 24 hours for each level), decoration blocks (with plenty of different types and settings), and multiple new mods including disguise (make an object look like another), ghost (moving things except for players can go through), and death (auto-kills when you touch the object). There will also possibly be support for Newgrounds and plenty of other major features not announced yet.",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
@@ -3327,43 +3321,31 @@
         if (currentMenuView === "beats-menu") showMenu("beats-menu");
       }
 
-      const NG_APP_ID = "62057";
-      const NG_ENC_KEY = "2GwdzuqJ";
-      const ngCache = new Map();
+      let ng = null;
 
       function resolveNewgroundsAudio(id, callback) {
         const sid = String(id);
         if (ngCache.has(sid)) return callback(ngCache.get(sid));
-
-        try {
-          const ng = new Newgrounds.io.core(NG_APP_ID, NG_ENC_KEY);
-          ng.call("Audio.get", { id: parseInt(id) }, (result) => {
-            if (result.success && result.audio) {
-              const data = {
-                id: sid,
-                title: result.audio.name,
-                artist: result.audio.artist,
-                file: result.audio.url,
-              };
-              ngCache.set(sid, data);
-              callback(data);
-            } else {
-              callback({
-                id: sid,
-                title: "Newgrounds Audio",
-                artist: "ID: " + id,
-                file: `https://www.newgrounds.com/audio/download/${id}`,
-              });
-            }
-          });
-        } catch (e) {
-          callback({
-            id: sid,
-            title: "Newgrounds Audio",
-            artist: "ID: " + id,
-            file: `https://www.newgrounds.com/audio/download/${id}`,
-          });
+                if (!ng && typeof Newgrounds !== "undefined") {
+          ng = new Newgrounds.io.core("62057", "2GwdzuqJ");
         }
+        if (!ng) return callback(null);
+
+        ng.call("Audio.get", { id: parseInt(id) }, (result) => {
+          if (result.success && result.audio) {
+            const data = {
+              id: sid,
+              title: result.audio.name,
+              artist: result.audio.artist,
+              file: result.audio.url,
+            };
+            ngCache.set(sid, data);
+            callback(data);
+          } else {
+            console.warn("Newgrounds resolution failed for ID:", id);
+            callback(null);
+          }
+        });
       }
 
       function getNextPlaylistTrack() {
@@ -3416,6 +3398,8 @@
               if (data && data.file) {
                 startTrack(data.id, data.file);
                 isTransitioning = false;
+              } else {
+                isTransitioning = false;
               }
             });
             return;
@@ -3458,6 +3442,10 @@
                 if (data && data.file) {
                   startTrack(data.id, data.file);
                   isTransitioning = false;
+              } else {
+                // Fallback to synth if NG fails
+                startTrack("synth", null);
+                isTransitioning = false;
                 }
               });
               return;
@@ -10956,7 +10944,7 @@
                             Novalis <br>
                             MidgeMidge22 <br>
                             benjuhman1 <br>
-                            
+
                             </div>
 
                          <div class="cred-role">Level Design</div>
@@ -13632,6 +13620,8 @@
         { img: "coolguyloading.png", artist: "Chairlord" },
         { img: "blockoverit!!.png", artist: "Jude" },
         { img: "kingblocky.png", artist: "Benjuhuman1" },
+        { img: "sinking.png", artist: "LigmaDaddy69" },
+        { img: "letters.png", artist: "Torgaar" },
       ];
 
       async function performLoading() {
