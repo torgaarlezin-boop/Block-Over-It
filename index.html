@@ -2665,16 +2665,13 @@
           name: "Blocky (Blackbeard)",
           copies: "1/5",
         },
+        coolguypaint: {
+          name: "Cool Guy (Paint)",
+          copies:"1/5"
+        }
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
-        {
-          headline: "Use code BLACKBEARD to get the Blackbeard skin!",
-          date: "2026-05-09",
-          image: "blackbeard.png",
-          story:
-            "You can now use code BLACKBEARD to claim the Blocky (Blackbeard) skin! Claim it soon as this won't last long.",
-        },
         {
           headline: "Level Awards Approaching...",
           date: "2026-05-09",
@@ -2683,11 +2680,11 @@
             "The May Level Awards are coming up. The voting for the first category will be on Monday.",
         },
         {
-          headline: "Newgrounds is coming to Block Over It!",
-          date: "2026-05-09",
+          headline: "1.10 Coming Soon!",
+          date: "2026-05-14",
           image: null,
           story:
-            "Using the Newgrounds API, all songs marked for API use (such as the ones in Geometry Dash) will now be available in Block Over It!",
+            "Update 1.10 is approaching. In the update will be a new shop for buying skins with the blue coins you collect (they will reappear after 24 hours for each level), decoration blocks (with plenty of different types and settings), and multiple new mods including disguise (make an object look like another), ghost (moving things except for players can go through), and death (auto-kills when you touch the object). There will also possibly be support for Newgrounds and plenty of other major features not announced yet.",
         },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
@@ -9760,6 +9757,11 @@
           return;
         }
 
+        if (currentMenuView === "my-levels" || currentMenuView === "saved-levels") {
+          showMenu("custom");
+          return;
+        }
+
         if (currentMenuView === "browse-levels") {
           if (lastBrowserState.isViewingDetails) {
             showMenu("browse-levels");
@@ -10126,8 +10128,43 @@
         scrollPos: 0,
       };
 
-      async function openUserProfile(username, sourceView, sourceContext) {
-        if (!_supabase) return;
+    function getIconSvg(name) {
+      const icons = {
+        upload: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>',
+        bookmarks: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>',
+        hammer: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+        fire: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.99 7.99 0 01-2.343 5.657z"/><path d="M9.879 16.121A3 3 0 1012.015 11L11 14a4.5 4.5 0 00.879 2.121z"/></svg>',
+        crown: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
+        star: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
+        trophy: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L12 12M12 2L8 6M12 2L16 6M4 22L20 22M4 22L4 18M20 22L20 18M12 12C9 12 7 10 7 7M12 12C15 12 17 10 17 7M7 7C7 4 9 2 12 2M17 7C17 4 15 2 12 2"/></svg>',
+        question: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        gauge: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>',
+        clock: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        play: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      };
+      return icons[name] || '';
+    }
+
+    function openDifficultySelectionPopup() {
+      let buttons = [];
+      for (let i = 1; i <= 10; i++) {
+        buttons.push({
+          text: `${i} - ${window.DIFFICULTY_LABELS[i]}`,
+          class: "difficulty-btn",
+          onClick: () => showMenu("browse-levels", { filterDifficulty: i, sort: "upvotes" })
+        });
+      }
+      popupManager.show({
+        title: "SELECT DIFFICULTY",
+        message: "Show every level of this difficulty starting with most upvoted.",
+        buttons: buttons
+      });
+    }
+
+    async function openUserProfile(username, sourceView, sourceContext) {
+      if (!_supabase) return;
+
+
 
         // Save scroll position before showMenu clears the leaderboard
         if (currentMenuView === "leaderboards-new") {
@@ -12376,140 +12413,113 @@
           container.appendChild(grid);
           container.appendChild(btnBack);
         } else if (view === "custom") {
-          subtitle.textContent = "Custom Levels";
+          subtitle.textContent = "CUSTOM LEVELS";
 
           // Reset mode if coming from main menu (fixes getting stuck in speedrun mode)
           if (customMenuSource === "main") {
             currentGameMode = "custom";
           }
-          const isMobile = document.body.classList.contains("mobile-mode");
-          // Mobile Landscape Optimization for Custom Levels
-          if (document.body.classList.contains("mobile-mode")) {
-            container.style.flexDirection = "row";
-            container.style.flexWrap = "wrap";
-            container.style.justifyContent = "center";
-          }
 
-          if (!isMobile) {
-            const topControls = document.createElement("div");
-            topControls.style.cssText =
-              "width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:20px;";
+          const grid = document.createElement("div");
+          grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; width: 100%; max-width: 800px; padding: 10px; box-sizing: border-box;";
 
-            const btnBrowser = document.createElement("button");
-            btnBrowser.className = "btn";
-            btnBrowser.textContent = "BROWSE LEVELS";
-            btnBrowser.style.background = "#2ecc71";
-            btnBrowser.style.borderColor = "#27ae60";
-            btnBrowser.onclick = () => showMenu("browse-levels");
-            topControls.appendChild(btnBrowser);
+          const navButtons = [
+            { name: "My Levels", icon: "upload", color: "#335699", action: () => showMenu("my-levels") },
+            { name: "Saved Levels", icon: "bookmarks", color: "#27ae60", action: () => showMenu("saved-levels") },
+            { name: "Level Editor", icon: "hammer", color: "#e67e22", action: () => window.open("Block Architect Pro.html", "_blank") },
+            { name: "Popular", icon: "fire", color: "#e74c3c", action: () => showMenu("browse-levels", { sort: "likes" }) },
+            { name: "Legendary", icon: "crown", color: "#8e44ad", action: () => showMenu("browse-levels", { sort: "legendary" }) },
+            { name: "Featured", icon: "star", color: "#f1c40f", action: () => showMenu("browse-levels", { sort: "featured" }) },
+            { name: "Level Awards", icon: "trophy", color: "#bf953f", action: () => showMenu("browse-levels", { sort: "awards" }) },
+            { name: "Unverified", icon: "question", color: "#7f8c8d", action: () => showMenu("browse-levels", { sort: "unverified" }) },
+            { name: "By Difficulty", icon: "gauge", color: "#2980b9", action: () => openDifficultySelectionPopup() },
+            { name: "Recent", icon: "clock", color: "#16a085", action: () => showMenu("browse-levels", { sort: "newest" }) },
+            { name: "Most Plays", icon: "play", color: "#d35400", action: () => showMenu("browse-levels", { sort: "plays" }) }
+          ];
 
-            const btnEditor = document.createElement("button");
-            btnEditor.className = "btn";
-            btnEditor.textContent = "LEVEL EDITOR";
-            btnEditor.style.background = "#e67e22";
-            btnEditor.style.borderColor = "#d35400";
-            btnEditor.onclick = () =>
-              window.open("Block Architect Pro.html", "_blank");
-            topControls.appendChild(btnEditor);
+          navButtons.forEach(btn => {
+            const b = document.createElement("button");
+            b.className = "btn";
+            b.style.cssText = `background: #1a1a1a; border: 2px solid ${btn.color}; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0;`;
+            b.innerHTML = `
+              <div style="color: ${btn.color};">${getIconSvg(btn.icon)}</div>
+              <span style="font-size: 0.9rem; font-weight: bold;">${btn.name}</span>
+            `;
+            b.onclick = btn.action;
+            grid.appendChild(b);
+          });
 
+          container.appendChild(grid);
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("main");
+          container.appendChild(btnBack);
+        } else if (view === "my-levels" || view === "saved-levels") {
+          subtitle.textContent = view === "my-levels" ? "MY LEVELS" : "SAVED LEVELS";
+          
+          const isMyLevels = view === "my-levels";
+          const filteredLevels = customLevels.map((lvl, idx) => ({lvl, idx})).filter(item => isMyLevels ? !item.lvl.isShortcut : item.lvl.isShortcut);
+
+          if (isMyLevels) {
             const addLabel = document.createElement("label");
             addLabel.className = "btn";
             addLabel.textContent = "+ ADD LEVEL (.JSON)";
             addLabel.htmlFor = "file-input";
-            addLabel.style.cssText =
-              "display:inline-flex; align-items:center; justify-content:center; background:#335699; border-color:#2a4a7a; margin-top:0;";
-            topControls.appendChild(addLabel);
-
-            container.appendChild(topControls);
+            addLabel.style.cssText = "display:inline-flex; align-items:center; justify-content:center; background:#335699; border-color:#2a4a7a; margin-bottom:20px;";
+            container.appendChild(addLabel);
           }
 
-          // List existing custom levels
-          if (customLevels.length === 0) {
+          if (filteredLevels.length === 0) {
             const emptyMsg = document.createElement("div");
-            emptyMsg.textContent = "No levels uploaded.";
+            emptyMsg.textContent = isMyLevels ? "No levels created yet." : "No community levels saved yet.";
             emptyMsg.style.color = "#888";
             container.appendChild(emptyMsg);
           } else {
-            customLevels.forEach((lvl, idx) => {
+            filteredLevels.forEach(({lvl, idx}) => {
               const row = document.createElement("div");
               row.className = "custom-level-row";
               row.style.cursor = "pointer";
               row.onclick = async () => {
                 if (lvl.isShortcut && lvl.dbId != null) {
                   if (!_supabase) return;
-                  showTopNotification("Opened level in browser.");
-                  const { data } = await _supabase
-                    .from("published_levels")
-                    .select("*")
-                    .eq("id", lvl.dbId)
-                    .single();
-                  if (data) {
-                    showMenu("browse-levels", { viewLevel: data });
-                  } else {
-                    showPopup("ERROR", "Community level not found.", () => {});
-                  }
+                  showTopNotification("Opening community level...");
+                  const { data } = await _supabase.from("published_levels").select("*").eq("id", lvl.dbId).single();
+                  if (data) showMenu("browse-levels", { viewLevel: data });
+                  else showPopup("ERROR", "Community level not found.", () => {});
                 } else {
                   openCustomLevelPopup(idx);
                 }
               };
 
-              // Get level dimensions
               const levelWidth = lvl.plan[0]?.length || 0;
               const levelHeight = lvl.plan?.length || 0;
               const isBeaten = customLevelsProgress[idx] || false;
-              const hasBlueCoins =
-                gameState.levelBlueCoins[`custom_${idx}`] || false;
+              const hasBlueCoins = gameState.levelBlueCoins[`custom_${idx}`] || false;
 
-              // Info section
               const infoDiv = document.createElement("div");
               infoDiv.className = "custom-level-info";
+              infoDiv.innerHTML = `
+                <div class="custom-level-name">${lvl.name || `Level ${idx + 1}`}</div>
+                <div class="custom-level-details">
+                  <div class="custom-level-detail-item">[${levelWidth}x${levelHeight}]</div>
+                  ${lvl.isShortcut ? '<div class="custom-level-detail-item" style="color:#335699; font-weight:bold;">★ COMMUNITY</div>' : ""}
+                </div>
+                <div class="custom-level-status">
+                  ${isBeaten ? '<div class="status-badge status-beaten">✓ BEATEN</div>' : ""}
+                  ${hasBlueCoins ? '<div class="status-badge status-blue-coin">★ BLUE COIN</div>' : ""}
+                </div>
+              `;
 
-              const nameEl = document.createElement("div");
-              nameEl.className = "custom-level-name";
-              nameEl.textContent = lvl.name || `Custom Level ${idx + 1}`;
-
-              const detailsEl = document.createElement("div");
-              detailsEl.className = "custom-level-details";
-              let detailsHtml = `<div class="custom-level-detail-item">[${levelWidth}x${levelHeight}]</div>`;
-              if (lvl.isShortcut) {
-                detailsHtml += `<div class="custom-level-detail-item" style="color:#335699; font-weight:bold;">★ COMMUNITY LEVEL</div>`;
-              }
-              detailsEl.innerHTML = detailsHtml;
-
-              // Status section
-              const statusDiv = document.createElement("div");
-              statusDiv.className = "custom-level-status";
-              if (isBeaten) {
-                const beatenBadge = document.createElement("div");
-                beatenBadge.className = "status-badge status-beaten";
-                beatenBadge.textContent = "✓ BEATEN";
-                statusDiv.appendChild(beatenBadge);
-              }
-              if (hasBlueCoins) {
-                const blueCoinBadge = document.createElement("div");
-                blueCoinBadge.className = "status-badge status-blue-coin";
-                blueCoinBadge.textContent = "★ BLUE COIN";
-                statusDiv.appendChild(blueCoinBadge);
-              }
-
-              infoDiv.appendChild(nameEl);
-              infoDiv.appendChild(detailsEl);
-              infoDiv.appendChild(statusDiv);
-
-              // Actions section
               const actionsDiv = document.createElement("div");
               actionsDiv.className = "custom-level-actions";
-
               const delBtn = document.createElement("button");
               delBtn.className = "btn";
               delBtn.textContent = "DELETE";
-              delBtn.style.background = "#a44";
-              delBtn.style.border = "2px solid #822";
-              delBtn.style.padding = "8px 16px";
-              delBtn.style.minWidth = "80px";
-              delBtn.style.fontSize = "0.9rem";
+              delBtn.style.cssText = "background: #a44; border: 2px solid #822; padding: 8px 16px; min-width: 80px; font-size: 0.9rem;";
               delBtn.onmousedown = (e) => {
-                // Use mousedown to prevent triggering row click
                 e.stopPropagation();
                 const doDelete = () => {
                   // Shift Custom Levels Progress
@@ -12570,15 +12580,12 @@
 
                   customLevels.splice(idx, 1);
                   saveCustomLevels();
-                  showMenu("custom");
+                  showMenu(view);
                 };
-
                 if (gameSettings.confirmDelete) {
                   showConfirmPopup(
                     "DELETE LEVEL",
-                    `Are you sure you want to delete "${
-                      lvl.name || "Custom Level " + (idx + 1)
-                    }"?`,
+                    `Are you sure you want to delete "${lvl.name || "Level " + (idx + 1)}"?`,
                     doDelete,
                   );
                 } else {
@@ -12593,15 +12600,11 @@
               container.appendChild(row);
             });
           }
-
           const btnBack = document.createElement("button");
           btnBack.className = "btn";
           btnBack.textContent = "BACK";
           btnBack.style.marginTop = "20px";
-          btnBack.onclick = () => {
-            if (customMenuSource === "source-select") showMenu("source-select");
-            else showMenu("main");
-          };
+          btnBack.onclick = () => showMenu("custom");
           container.appendChild(btnBack);
         } else if (view === "browse-levels") {
           subtitle.textContent = "COMMUNITY LEVELS";
@@ -12614,7 +12617,7 @@
             renderLevelDetails(container, lvl);
           } else {
             // List View
-            renderLevelBrowserList(container);
+            renderLevelBrowserList(container, context);
           }
         } else if (view === "level-awards") {
           subtitle.textContent = "LEVEL AWARDS";
@@ -12867,7 +12870,7 @@
 
               customLevels.push(lvl);
               saveCustomLevels();
-              showMenu("custom"); // refresh
+              showMenu(currentMenuView === "my-levels" ? "my-levels" : "custom");
             } catch (err) {
               showPopup("ERROR", "Failed to parse JSON file. ", () => {});
             }
@@ -13121,7 +13124,7 @@
         isViewingDetails: false,
       };
 
-      async function renderLevelBrowserList(container) {
+      async function renderLevelBrowserList(container, context) {
         lastBrowserState.isViewingDetails = false;
         const list = document.createElement("div");
         list.id = "browser-list-container";
@@ -13159,7 +13162,7 @@
                   <option value="difficulty_asc">Easiest</option>
                   <option value="difficulty_desc">Hardest</option>
               `;
-        sortSelect.value = "likes";
+        sortSelect.value = (context && context.sort) || "likes";
 
         controls.appendChild(searchInput);
         controls.appendChild(sortSelect);
@@ -13217,6 +13220,12 @@
             query = query
               .or("verified.eq.false,verified.is.null")
               .order("created_at", { ascending: false });
+          } else if (sort === "upvotes") {
+              query = query.order("upvotes", { ascending: false });
+            }
+
+          if (context && context.filterDifficulty) {
+            query = query.eq("difficulty", context.filterDifficulty);
           }
 
           query = query.limit(50);
@@ -13632,6 +13641,9 @@
         { img: "coolguyloading.png", artist: "Chairlord" },
         { img: "blockoverit!!.png", artist: "Jude" },
         { img: "kingblocky.png", artist: "Benjuhuman1" },
+        { img: "sinking.png", artist: "LigmaDaddy69" },
+        { img: "letters.png", artist: "Torgaar" },
+        {img: "dinos.png", artist: "Mcdongos"}
       ];
 
       async function performLoading() {
