@@ -2145,21 +2145,6 @@
         border-top: 1px solid #333;
         padding-top: 10px;
       }
-      .mobile-mode .beaten-level-card-mobile {
-        flex-direction: row !important;
-        align-items: center;
-        gap: 12px;
-        padding: 16px !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-        transform: none !important;
-      }
-      .mobile-mode .beaten-level-card-mobile:active {
-        background: rgba(255, 255, 255, 0.08) !important;
-        transform: scale(0.98) !important;
-        transition: transform 0.1s;
-      }
       .mobile-mode .browser-controls {
         flex-direction: column;
       }
@@ -2228,6 +2213,44 @@
         border-color: #335699 !important;
         transform: translateY(-2px) scale(1.01) !important;
         background: #222 !important;
+      }
+
+      .feedback-admin-row {
+        position: relative;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 6px;
+        padding: 16px 18px;
+        width: 100%;
+        box-sizing: border-box;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+      }
+      .feedback-admin-row:hover {
+        background: #222;
+        border-color: #335699;
+        z-index: 60;
+      }
+      .feedback-admin-tooltip {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: #0d0d0d;
+        border: 2px solid #335699;
+        border-radius: 8px;
+        padding: 14px 16px;
+        z-index: 60;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+        pointer-events: none;
+      }
+      .feedback-admin-row:hover .feedback-admin-tooltip {
+        display: block;
+      }
+      .mobile-mode .feedback-admin-tooltip {
+        display: none !important;
       }
     </style>
   </head>
@@ -2568,6 +2591,8 @@
       const supabaseKey = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
       let _supabase = null;
       let currentUser = null;
+      let adminUsers = new Set(); // Store usernames of admin users
+      let currentUserIsAdmin = false;
       let isCloudDataLoaded = false;
       let currentUserSkins = ["default"];
       let currentUserBeatenLevels = [];
@@ -2688,27 +2713,40 @@
           name: "Red Trail",
           copies: "1/3",
         },
+        coolguydeepbluespecial: {
+          name: "Cool Guy (Deep Blue)",
+          copies: "1/3",
+        },
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
         {
-          headline: "Level Awards Approaching...",
-          date: "2026-05-09",
+          headline: "1.10 V2 Coming Soon!",
+          date: "2026-06-20",
           image: null,
           story:
-            "The May Level Awards are coming up. The voting for the first category will be on Monday.",
-        },
+            "The final version of 1.10 V2 is releasing soon. The update adds many new features, including decoration blocks, the illusion mod, official levels, new rewards, viewing other players' beaten levels, and many more features. Stay tuned..."        },
         {
-          headline: "1.10 Coming Soon!",
-          date: "2026-05-14",
-          image: null,
-          story:
-            "Update 1.10 is approaching. In the update will be a new shop for buying skins with the blue coins you collect (they will reappear after 24 hours for each level), decoration blocks (with plenty of different types and settings), and multiple new mods including disguise (make an object look like another), ghost (moving things except for players can go through), and death (auto-kills when you touch the object). There will also possibly be support for Newgrounds and plenty of other major features not announced yet.",
+          headline: "Cool Guy (Torgaar Signature) gets redesigned",
+          date: "2026-06-20",
+          image: "coolguytorgaarsignature.png",
+          story: "Recently, creator of Block Over It 'Torgaar's honorary skin has gotten a large redesign. The redesign keeps the original elements and layout of the skins but with a more artistic approach (shown above)."
         },
+                {
+          headline: "A exclusive skin with only THREE copies is hidden inside the game. Who will find the copies first?",
+          date: "2026-06-20",
+          image: "coolguydeepbluespecial.png",
+          story: "Shown above, the Cool Guy (Deep Blue Special) skin is an exclusive skin that will be available to the first 3 people to redeem it. The first clue is the following: Under the sea."        },
+
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
       const NEWS_UPDATES = [
+        {
+          v: "1.10",
+          t: "1.10 V1",
+          d: "Completely redesigned the custom levels UI. Added new loading screens. Added game mode selecion in the level browser. Added a new block hitboxes toggle for custom levels. Added 'Show my progres' in comments to show a player's progress on a level. Fixed bug where practice mode and sometimes deathruns counted as verifying. In addition to these features are many more features I either forgot about or that are just minor improvements."        
+        },
         {
           v: "1.9",
           t: "Campaign Part Three",
@@ -2907,7 +2945,21 @@
           const localBeaten = currentUserBeatenLevels || [];
           const merged = [...localBeaten];
           cloudBeaten.forEach((cb) => {
-            const existing = merged.find((lb) => lb.id === cb.id);
+            const cbId =
+              typeof cb === "object" && cb !== null
+                ? cb.id !== undefined
+                  ? cb.id
+                  : cb.dbId
+                : cb;
+            const existing = merged.find((lb) => {
+              const lbId =
+                typeof lb === "object" && lb !== null
+                  ? lb.id !== undefined
+                    ? lb.id
+                    : lb.dbId
+                  : lb;
+              return String(lbId) === String(cbId);
+            });
             if (!existing) {
               merged.push(cb);
             } else if (cb.hasBlueCoin) {
@@ -3081,6 +3133,8 @@
               return showPopup("ERROR", "Invalid credentials.", () => {});
 
             currentUser = username;
+            if (data.admin) adminUsers.add(currentUser);
+            currentUserIsAdmin = data.admin || false;
             await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
@@ -3096,14 +3150,28 @@
         try {
           const { data, error } = await _supabase
             .from("users")
-            .select("data, skins, beaten_levels")
+            .select("data, skins, beaten_levels, admin")
             .eq("username", currentUser)
             .single();
 
-          if (data)
+          if (data) {
+            if (data.admin) adminUsers.add(currentUser);
+            currentUserIsAdmin = data.admin || false;
             await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
+          }
         } catch (e) {
           console.warn("Sync error:", e);
+        }
+      }
+
+      async function fetchAdminUsers() {
+        if (!_supabase) return;
+        const { data: admins } = await _supabase
+          .from("users")
+          .select("username")
+          .eq("admin", true);
+        if (admins) {
+          admins.forEach((a) => adminUsers.add(a.username));
         }
       }
 
@@ -3127,6 +3195,10 @@
       }
 
       function openFeedbackModal() {
+        if (currentUserIsAdmin) {
+          showMenu("admin-feedback");
+          return;
+        }
         const html = `<textarea id="feedback-text" placeholder="Enter your feedback here..." style="width: 100%; height: 150px; background: #333; color: white; border: 1px solid #555; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; margin-bottom: 15px;"></textarea>`;
         popupManager.show({
           title: "FEEDBACK",
@@ -6646,9 +6718,11 @@
         this.colors = levelData.colors || {};
         this.gravity = levelData.gravity || 27; // Use level gravity or default
         this.riseInterval = levelData.riseInterval || 3;
-        this.mirrorLevel = levelData.mirrorLevel || false;
-        this.forceZoom = levelData.forceZoom || false;
-        this.disableZoom = levelData.disableZoom || false;
+        this.mirrorLevel =
+          levelData.mirrorLevel || levelData.mirror_level || false;
+        this.forceZoom = levelData.forceZoom || levelData.force_zoom || false;
+        this.disableZoom =
+          levelData.disableZoom || levelData.disable_zoom || false;
         this.disableDeathAnim = levelData.disableDeathAnim || false;
         this.visualTitle = levelData.visualTitle || null;
         this.visualAuthor = levelData.visualAuthor || null;
@@ -6660,8 +6734,10 @@
           levelData.customLevelIndex !== undefined
             ? levelData.customLevelIndex
             : -1; // Track custom level index
-        this.blockHitboxes = levelData.blockHitboxes || false;
-        this.forceDefaultSkin = levelData.forceDefaultSkin || false;
+        this.blockHitboxes =
+          levelData.blockHitboxes || levelData.block_hitboxes || false;
+        this.forceDefaultSkin =
+          levelData.forceDefaultSkin || levelData.force_default_skin || false;
         this.musicSpeed = levelData.musicSpeed || 1.0;
         this.width = plan[0].length;
         this.height = plan.length;
@@ -8478,8 +8554,6 @@
             el.style.border = "";
             el.style.backgroundColor = actor.color || "";
 
-
-
             if (skin === "redtrail") {
               el.style.backgroundColor = "red";
               el.style.backgroundImage = "none";
@@ -10006,6 +10080,11 @@
           return;
         }
 
+        if (currentMenuView === "admin-feedback") {
+          showMenu("main");
+          return;
+        }
+
         if (
           currentMenuView === "my-levels" ||
           currentMenuView === "saved-levels"
@@ -10418,6 +10497,8 @@
           dice: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>',
           search:
             '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>',
+          shield:
+            '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM12 8v4m0 4h.01"/></svg>',
         };
         return icons[name] || "";
       }
@@ -11604,7 +11685,18 @@
           let boxStyle =
             "background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align:center; flex: 1; min-width: 100px; display: flex; flex-direction: column; justify-content: center;";
 
-          const communityBeatenCount = (currentUserBeatenLevels || []).length;
+          const beatenIds = (currentUserBeatenLevels || [])
+            .map((l) => {
+              if (typeof l === "object" && l !== null) {
+                return parseInt(l.id !== undefined ? l.id : l.dbId);
+              }
+              return parseInt(l);
+            })
+            .filter((id) => !isNaN(id));
+
+          const uniqueBeatenIds = [...new Set(beatenIds)];
+          const communityBeatenCount = uniqueBeatenIds.length;
+
           let totalPossibleBlue = 0;
           [CHAPTER_1, CHAPTER_2, CHAPTER_3, CHAPTER_4, CHAPTER_5].forEach(
             (ch) => {
@@ -11623,7 +11715,7 @@
                           </div>
                           <div id="beaten-levels-box" style="${boxStyle} cursor:pointer; transition: transform 0.2s;">
                               <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">COMMUNITY</div>
-                              <div style="font-size:1.5rem; font-weight:bold; color:#2ecc71;">${communityBeatenCount}</div>
+                              <div id="dashboard-beaten-count-val" style="font-size:1.5rem; font-weight:bold; color:#2ecc71;">${communityBeatenCount}</div>
                               <div style="font-size:0.7rem; color:#888; letter-spacing:1px; margin-top:5px;">VIEW LIST</div>
                           </div>
                         `;
@@ -11637,6 +11729,21 @@
               beatenLevels: currentUserBeatenLevels,
               fromAccount: true,
             });
+
+          if (_supabase && uniqueBeatenIds.length > 0) {
+            _supabase
+              .from("published_levels")
+              .select("id", { count: "exact", head: true })
+              .in("id", uniqueBeatenIds)
+              .then(({ count, error }) => {
+                if (!error && count !== null) {
+                  const el = document.getElementById(
+                    "dashboard-beaten-count-val",
+                  );
+                  if (el) el.innerText = count;
+                }
+              });
+          }
           container.appendChild(statsDiv);
 
           const skinHeader = document.createElement("div");
@@ -11840,7 +11947,17 @@
             }
           }
 
-          const communityBeatenCount = (data.beatenLevels || []).length;
+          const profileBeatenIds = (data.beatenLevels || [])
+            .map((l) => {
+              if (typeof l === "object" && l !== null) {
+                return parseInt(l.id !== undefined ? l.id : l.dbId);
+              }
+              return parseInt(l);
+            })
+            .filter((id) => !isNaN(id));
+
+          const uniqueProfileBeatenIds = [...new Set(profileBeatenIds)];
+          const communityBeatenCount = uniqueProfileBeatenIds.length;
 
           const statsDiv = document.createElement("div");
           statsDiv.style.cssText = isMobile
@@ -11862,7 +11979,7 @@
                               </div>
                               <div id="beaten-levels-box" style="${boxStyle} cursor:pointer; transition: transform 0.2s;">
                                   <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">BEATEN LEVELS</div>
-                                  <div style="font-size:1.5rem; font-weight:bold; color:#2ecc71;">${communityBeatenCount}</div>
+                                  <div id="profile-beaten-count-val" style="font-size:1.5rem; font-weight:bold; color:#2ecc71;">${communityBeatenCount}</div>
                                   <div style="font-size:0.7rem; color:#888; letter-spacing:1px; margin-top:5px;">VIEW LIST</div>
                               </div>
                            `;
@@ -11873,6 +11990,21 @@
             (beatenBox.style.transform = "scale(1.05)");
           beatenBox.onmouseout = () => (beatenBox.style.transform = "scale(1)");
           beatenBox.onclick = () => showMenu("beaten-levels-list", data);
+
+          if (_supabase && uniqueProfileBeatenIds.length > 0) {
+            _supabase
+              .from("published_levels")
+              .select("id", { count: "exact", head: true })
+              .in("id", uniqueProfileBeatenIds)
+              .then(({ count, error }) => {
+                if (!error && count !== null) {
+                  const el = document.getElementById(
+                    "profile-beaten-count-val",
+                  );
+                  if (el) el.innerText = count;
+                }
+              });
+          }
 
           container.appendChild(statsDiv);
 
@@ -11885,6 +12017,11 @@
           renderSkinGrid(container, data.skins || ["default"], false);
         } else if (view === "beaten-levels-list") {
           const data = context || {};
+          if (!data.filterDifficulties) data.filterDifficulties = [];
+          if (data.filterDifficulty && data.filterDifficulty !== "any") {
+            data.filterDifficulties = [data.filterDifficulty];
+            delete data.filterDifficulty;
+          }
           lastBeatenListContext = data;
           subtitle.textContent =
             "BEATEN BY " + (data.username || "USER").toUpperCase();
@@ -11924,11 +12061,16 @@
           // Add Search, Difficulty and Sort Controls
           const controls = document.createElement("div");
           controls.style.cssText =
-            "width:100%; display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;";
+            "width:100%; display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border:1px solid #333;";
           if (isMobile) {
             controls.style.flexDirection = "column";
-            controls.style.gap = "8px";
+            controls.style.gap = "12px";
           }
+
+          const resultCountEl = document.createElement("div");
+          resultCountEl.style.cssText =
+            "width:100%; color:#666; font-size:0.8rem; margin-bottom:10px; text-transform:uppercase; font-weight:bold;";
+          container.appendChild(resultCountEl);
 
           const sInput = document.createElement("input");
           sInput.type = "text";
@@ -11936,45 +12078,75 @@
           sInput.style.cssText =
             "flex:1; min-width:200px; padding:10px; background:#222; color:white; border:1px solid #333; border-radius:4px; font-family:inherit; outline:none; text-transform:uppercase;";
           sInput.value = data.searchTerm || "";
-          if (isMobile) {
-            sInput.style.minWidth = "0";
-            sInput.style.width = "100%";
-            sInput.style.padding = "13px";
-            sInput.style.fontSize = "1rem";
-            sInput.style.borderRadius = "10px";
-          }
+          if (isMobile) sInput.style.minWidth = "0";
           sInput.oninput = (e) => {
             data.searchTerm = e.target.value.toLowerCase();
             fetchAndRender();
           };
 
-          const diffSelect = document.createElement("select");
-          diffSelect.style.cssText =
-            "padding:10px; background:#222; color:white; border:1px solid #333; border-radius:4px; font-family:inherit; outline:none;";
-          const anyOpt = document.createElement("option");
-          anyOpt.value = "any";
-          anyOpt.text = "Difficulty: Any";
-          diffSelect.appendChild(anyOpt);
-          for (let i = 1; i <= 10; i++) {
-            const opt = document.createElement("option");
-            opt.value = i;
-            opt.text = `Diff: ${i} (${window.DIFFICULTY_LABELS[i]})`;
-            diffSelect.appendChild(opt);
-          }
-          diffSelect.value = data.filterDifficulty || "any";
-          if (isMobile) {
-            diffSelect.style.flex = "1";
-            diffSelect.style.width = "auto";
-            diffSelect.style.minWidth = "0";
-            diffSelect.style.padding = "13px 10px";
-            diffSelect.style.fontSize = "1rem";
-            diffSelect.style.borderRadius = "10px";
-          }
-          diffSelect.onchange = (e) => {
-            data.filterDifficulty =
-              e.target.value === "any" ? "any" : parseInt(e.target.value);
-            fetchAndRender();
+          const diffBtn = document.createElement("button");
+          diffBtn.className = "btn";
+          diffBtn.style.cssText =
+            "padding:10px; font-size:0.9rem; min-width:auto; background:#222; border-color:#333;";
+          if (isMobile) diffBtn.style.width = "100%";
+
+          const updateDiffBtnText = () => {
+            if (data.filterDifficulties.length === 0)
+              diffBtn.textContent = "DIFFICULTY: ANY";
+            else if (data.filterDifficulties.length === 1)
+              diffBtn.textContent = `DIFFICULTY: ${data.filterDifficulties[0]}`;
+            else
+              diffBtn.textContent = `DIFFICULTY: (${data.filterDifficulties.length})`;
           };
+          updateDiffBtnText();
+
+          diffBtn.onclick = () => {
+            let buttons = [];
+            for (let i = 1; i <= 10; i++) {
+              const isActive = data.filterDifficulties.includes(i);
+              buttons.push({
+                text: `${i} - ${window.DIFFICULTY_LABELS[i]} ${isActive ? "✓" : ""}`,
+                style: isActive
+                  ? "background:#335699; border-color:#5588cc;"
+                  : "",
+                onClick: () => {
+                  const idx = data.filterDifficulties.indexOf(i);
+                  if (idx === -1) data.filterDifficulties.push(i);
+                  else data.filterDifficulties.splice(idx, 1);
+                  updateDiffBtnText();
+                  diffBtn.click(); // Re-open to allow multiple selection
+                  fetchAndRender();
+                },
+              });
+            }
+            buttons.push({
+              text: "CLEAR ALL",
+              class: "secondary",
+              onClick: () => {
+                data.filterDifficulties = [];
+                updateDiffBtnText();
+                fetchAndRender();
+              },
+            });
+            popupManager.show({
+              title: "SELECT DIFFICULTIES",
+              buttons: buttons,
+            });
+          };
+
+          let officialGroup;
+          if (!isMobile) {
+            officialGroup = document.createElement("label");
+            officialGroup.style.cssText =
+              "display:flex; align-items:center; gap:8px; cursor:pointer; color:#ccc; background:#222; padding:10px; border:1px solid #333; border-radius:4px; font-size:0.9rem; user-select:none;";
+            officialGroup.innerHTML = `<input type="checkbox" id="official-check" style="width:18px; height:18px; accent-color:#335699;"> OFFICIAL`;
+            const offCheck = officialGroup.querySelector("input");
+            offCheck.checked = !!data.filterOfficial;
+            offCheck.onchange = (e) => {
+              data.filterOfficial = e.target.checked;
+              fetchAndRender();
+            };
+          }
 
           const sortSelect = document.createElement("select");
           sortSelect.style.cssText =
@@ -11992,31 +12164,16 @@
             sortSelect.appendChild(el);
           });
           sortSelect.value = data.sort || "recent";
-          if (isMobile) {
-            sortSelect.style.flex = "1";
-            sortSelect.style.width = "auto";
-            sortSelect.style.minWidth = "0";
-            sortSelect.style.padding = "13px 10px";
-            sortSelect.style.fontSize = "1rem";
-            sortSelect.style.borderRadius = "10px";
-          }
+          if (isMobile) sortSelect.style.width = "100%";
           sortSelect.onchange = (e) => {
             data.sort = e.target.value;
             fetchAndRender();
           };
 
           controls.appendChild(sInput);
-          if (isMobile) {
-            const filterRow = document.createElement("div");
-            filterRow.style.cssText =
-              "display:flex; gap:8px; width:100%;";
-            filterRow.appendChild(diffSelect);
-            filterRow.appendChild(sortSelect);
-            controls.appendChild(filterRow);
-          } else {
-            controls.appendChild(diffSelect);
-            controls.appendChild(sortSelect);
-          }
+          controls.appendChild(diffBtn);
+          if (officialGroup) controls.appendChild(officialGroup);
+          controls.appendChild(sortSelect);
           container.appendChild(controls);
 
           const list = document.createElement("div");
@@ -12055,7 +12212,7 @@
             const { data: validLevels, error } = await _supabase
               .from("published_levels")
               .select(
-                "id, name, difficulty, upvotes, downvotes, plays, data, legendary, impossible, featured, awards",
+                "id, name, creator, difficulty, upvotes, downvotes, plays, data, legendary, impossible, featured, awards, official_rating",
               )
               .in("id", ids);
 
@@ -12072,22 +12229,19 @@
                   lvl.name && lvl.name.toLowerCase().includes(data.searchTerm),
               );
             }
-            if (data.filterDifficulty && data.filterDifficulty !== "any") {
+            if (data.filterDifficulties && data.filterDifficulties.length > 0) {
+              filteredLevels = filteredLevels.filter((lvl) =>
+                data.filterDifficulties.includes(lvl.difficulty),
+              );
+            }
+            if (data.filterOfficial) {
               filteredLevels = filteredLevels.filter(
-                (lvl) => lvl.difficulty === data.filterDifficulty,
+                (lvl) => lvl.official_rating,
               );
             }
 
-            // Local sorting based on select
-            let sortedLevels = [...filteredLevels];
-            if (data.sort === "score") {
-              sortedLevels.sort(
-                (a, b) =>
-                  (b.upvotes || 0) -
-                  (b.downvotes || 0) -
-                  ((a.upvotes || 0) - (a.downvotes || 0)),
-              );
-            } else if (data.sort === "plays") {
+            let sortedLevels = filteredLevels;
+            if (data.sort === "plays") {
               sortedLevels.sort((a, b) => (b.plays || 0) - (a.plays || 0));
             } else if (data.sort === "difficulty") {
               sortedLevels.sort((a, b) => b.difficulty - a.difficulty);
@@ -12101,6 +12255,8 @@
             }
 
             list.innerHTML = "";
+            resultCountEl.textContent = `${sortedLevels.length} RESULTS FOUND`;
+
             if (sortedLevels.length === 0) {
               list.innerHTML = `<div style='text-align:center; color:#888; padding:20px;'>${data.searchTerm || (data.filterDifficulty && data.filterDifficulty !== "any") ? "No matching levels found." : "No community levels beaten yet."}</div>`;
               return;
@@ -12111,32 +12267,51 @@
               card.className = "browser-level-row";
               const themeColor = lvl.data?.themeColor || "#1a1a1a";
               card.style.setProperty("background", themeColor, "important");
+
               const diffColor =
                 window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22";
-              const diffLabel =
-                window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty;
+              const score = (lvl.upvotes || 0) - (lvl.downvotes || 0);
+
               if (isMobile) {
-                card.classList.add("beaten-level-card-mobile");
                 card.innerHTML = `
-                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px;">
-                    <div style="font-size:1.15rem; font-weight:bold; color:#fff; word-break:break-word; line-height:1.25;">${lvl.name}</div>
-                    <div style="display:inline-flex; align-items:center; align-self:flex-start; gap:6px; background:rgba(0,0,0,0.35); padding:5px 10px; border-radius:999px;">
-                      <span style="width:9px; height:9px; border-radius:50%; background:${diffColor}; flex-shrink:0;"></span>
-                      <span style="font-size:0.8rem; color:${diffColor}; font-weight:bold; text-transform:uppercase;">${diffLabel}</span>
-                    </div>
-                  </div>
-                  <div style="flex-shrink:0; color:#888; display:flex; align-items:center; align-self:center;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M9 6l6 6-6 6"/></svg>
+                  <div style="display:flex; flex-direction:column; gap:8px; width:100%; box-sizing:border-box;">
+                      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                          <span style="font-size:1.2rem; font-weight:900; color:#fff; letter-spacing:0.5px; word-break:break-word;">${lvl.name}</span>
+                          ${lvl.legendary ? '<span style="background:#1e3a8a; color:white; font-size:0.55rem; padding:2px 6px; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px #3b82f6;">LEGENDARY</span>' : ""}
+                          ${lvl.impossible ? '<span style="background:#e74c3c; color:white; font-size:0.55rem; padding:2px 6px; font-weight:900; letter-spacing:1px;">IMPOSSIBLE</span>' : ""}
+                          ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.55rem; padding:2px 6px; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
+                          ${lvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.55rem; padding:2px 6px; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
+                      </div>
+                      <div style="font-size:0.85rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
+                      <div style="color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${diffColor}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span>${lvl.official_rating ? '<svg width="14" height="14" fill="#335699" viewBox="0 0 24 24" style="margin-left:5px; vertical-align:middle; display:inline-block;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ""}</div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; margin-top:2px;">
+                          <div style="font-size:0.65rem; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${lvl.plays || 0} PLAYS</div>
+                          <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1rem; background:rgba(0,0,0,0.4); padding:6px 12px; border-radius:10px; border:1px solid #333;">${score > 0 ? "+" : ""}${score}</div>
+                      </div>
                   </div>
                 `;
               } else {
                 card.innerHTML = `
-                  <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <div>
-                      <div style="font-size:1.2rem; font-weight:bold; color:#fff;">${lvl.name}</div>
-                      <div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Difficulty: <span style="color:${diffColor}; font-weight:bold;">${diffLabel}</span></div>
-                    </div>
-                    <div style="text-align:right; font-size:0.7rem; color:#888; font-weight:bold; text-transform:uppercase;">CLICK TO VIEW</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing: border-box;">
+                      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:5px;">
+                              <span style="font-size:1.3rem; font-weight:900; color:#fff; letter-spacing:0.5px;">${lvl.name}</span>
+                              ${lvl.legendary ? '<span style="background:#1e3a8a; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px #3b82f6;">LEGENDARY</span>' : ""}
+                              ${lvl.impossible ? '<span style="background:#e74c3c; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">IMPOSSIBLE</span>' : ""}
+                              ${lvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
+                              ${lvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
+                          </div>
+                          <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
+                          <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span>${lvl.official_rating ? '<svg width="14" height="14" fill="#335699" viewBox="0 0 24 24" style="margin-left:5px; vertical-align:middle; display:inline-block;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ""}</div>
+                      </div>
+                      <div style="text-align:right; display:flex; flex-direction:column; gap:8px; flex-shrink:0;">
+                          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                              <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1.1rem; background:rgba(0,0,0,0.4); padding:6px 12px; border-radius:10px; border:1px solid #333;">
+                                  ${score > 0 ? "+" : ""}${score}
+                                  </div>
+                          </div>
+                          <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${lvl.plays || 0} PLAYS</div>
+                      </div>
                   </div>
                 `;
               }
@@ -12161,6 +12336,144 @@
           };
           container.appendChild(btnBack);
           fetchAndRender();
+        } else if (view === "admin-feedback") {
+          subtitle.textContent = "FEEDBACK INBOX";
+          container.style.maxWidth = "800px";
+          const isMobile = document.body.classList.contains("mobile-mode");
+
+          if (isMobile) {
+            container.style.padding = "20px";
+            container.style.width = "100%";
+            container.style.paddingTop = "80px";
+            container.style.paddingBottom = "80px";
+            container.style.justifyContent = "flex-start";
+          }
+
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "settings-close-btn";
+          closeBtn.innerHTML = "&times;";
+          closeBtn.style.top = "20px";
+          if (isMobile) {
+            closeBtn.style.right = "20px";
+            closeBtn.style.width = "44px";
+            closeBtn.style.height = "44px";
+            closeBtn.style.borderRadius = "50%";
+            closeBtn.style.background = "rgba(50,50,50,0.8)";
+            closeBtn.style.border = "2px solid rgba(255,255,255,0.1)";
+            closeBtn.style.display = "flex";
+            closeBtn.style.alignItems = "center";
+            closeBtn.style.justifyContent = "center";
+            closeBtn.style.fontSize = "2rem";
+          }
+          closeBtn.onclick = () => showMenu("main");
+          container.appendChild(closeBtn);
+
+          const resultCountEl = document.createElement("div");
+          resultCountEl.style.cssText =
+            "width:100%; color:#666; font-size:0.8rem; margin-bottom:15px; text-transform:uppercase; font-weight:bold;";
+          container.appendChild(resultCountEl);
+
+          const list = document.createElement("div");
+          list.style.cssText =
+            "width:100%; display:flex; flex-direction:column; gap:12px; margin-bottom:20px;";
+          list.innerHTML =
+            "<div style='text-align:center; color:#888; padding:20px;'>Loading feedback...</div>";
+          container.appendChild(list);
+
+          const escapeHtml = (s) =>
+            String(s ?? "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;");
+          const fmtDate = (v) => {
+            if (!v) return "";
+            const d = new Date(v);
+            return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+          };
+          const renderFields = (row, fields) =>
+            fields
+              .map((k) => {
+                let val = row[k];
+                if (k === "created_at") val = fmtDate(val);
+                if (val !== null && typeof val === "object")
+                  val = JSON.stringify(val);
+                return `<div style="display:flex; gap:10px; padding:4px 0; border-bottom:1px solid #222;"><span style="color:#335699; font-weight:bold; text-transform:uppercase; font-size:0.7rem; min-width:90px; flex-shrink:0;">${escapeHtml(k)}</span><span style="color:#ddd; font-size:0.8rem; word-break:break-word;">${escapeHtml(val)}</span></div>`;
+              })
+              .join("");
+
+          const loadFeedback = async () => {
+            if (!_supabase) {
+              list.innerHTML =
+                "<div style='text-align:center; color:#a44;'>Database not connected.</div>";
+              return;
+            }
+
+            const { data, error } = await _supabase
+              .from("feedback")
+              .select("*");
+            if (error) {
+              list.innerHTML = `<div style='text-align:center; color:#ef4444; padding:20px;'>Error fetching feedback: ${escapeHtml(error.message)}</div>`;
+              return;
+            }
+
+            const safeRows = Array.isArray(data) ? data : [];
+            if (!Array.isArray(data)) {
+              console.warn("Unexpected feedback response", data);
+            }
+
+            safeRows.sort((a, b) => {
+              const aTime = new Date(a?.created_at).getTime();
+              const bTime = new Date(b?.created_at).getTime();
+              if (isNaN(aTime) || isNaN(bTime)) return 0;
+              return bTime - aTime;
+            });
+
+            resultCountEl.textContent = `${safeRows.length} FEEDBACK ${safeRows.length === 1 ? "ENTRY" : "ENTRIES"}`;
+            if (safeRows.length === 0) {
+              list.innerHTML =
+                "<div style='text-align:center; color:#888; padding:20px;'>No feedback submitted yet.</div>";
+              return;
+            }
+            list.innerHTML = "";
+            safeRows.forEach((row) => {
+              const card = document.createElement("div");
+              card.className = "feedback-admin-row";
+              const username = row.username || "Anonymous";
+              const dateStr = fmtDate(row.created_at);
+              const allFields = Object.keys(row).filter(
+                (k) => k !== "feedback",
+              );
+              const extraFields = allFields.filter(
+                (k) => k !== "username" && k !== "created_at",
+              );
+              const feedbackHtml =
+                escapeHtml(row.feedback) ||
+                "<span style='color:#666;'>(empty)</span>";
+
+              card.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
+                    <div style="color:#eee; font-size:0.95rem; line-height:1.5; white-space:pre-wrap; word-break:break-word;">${feedbackHtml}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border-top:1px solid #333; padding-top:8px;">
+                        <span style="color:#335699; font-weight:bold; font-size:0.85rem;">${escapeHtml(username)}</span>
+                        <span style="color:#666; font-size:0.75rem;">${escapeHtml(dateStr)}</span>
+                    </div>
+                    ${isMobile && extraFields.length ? `<div style="display:flex; flex-direction:column; margin-top:2px;">${renderFields(row, extraFields)}</div>` : ""}
+                </div>
+                ${isMobile ? "" : `<div class="feedback-admin-tooltip"><div style="color:#335699; font-weight:bold; text-transform:uppercase; font-size:0.7rem; letter-spacing:1px; margin-bottom:8px;">Additional Info</div>${renderFields(row, allFields)}</div>`}
+              `;
+              list.appendChild(card);
+            });
+          };
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("main");
+          container.appendChild(btnBack);
+
+          loadFeedback();
         } else if (view === "leaderboards-new") {
           if (!currentUser) {
             popupManager.show({
@@ -13136,6 +13449,13 @@
                 showMenu("browse-levels", { sort: "likes", page: 0 }),
             },
             {
+              name: "Official",
+              icon: "shield",
+              color: "#2ecc71",
+              action: () =>
+                showMenu("browse-levels", { sort: "official", page: 0 }),
+            },
+            {
               name: "Legendary",
               icon: "crown",
               color: "#8e44ad",
@@ -13753,6 +14073,7 @@
         // Sequence
         setTimeout(() => {
           sellwood.style.opacity = 1;
+          fetchAdminUsers();
         }, 100);
         setTimeout(() => {
           sellwood.style.opacity = 0;
@@ -14019,6 +14340,10 @@
               .order("created_at", { ascending: false });
           } else if (sort === "upvotes") {
             query = query.order("upvotes", { ascending: false });
+          } else if (sort === "official") {
+            query = query
+              .eq("official_rating", true)
+              .order("created_at", { ascending: false });
           }
 
           if (context && context.filterDifficulty) {
@@ -14066,13 +14391,13 @@
                                       ${lvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.6rem; padding:2px 8px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
                                   </div>
                                   <div style="font-size:0.9rem; color:#335699; font-weight:bold;">by ${lvl.creator}</div>
-                                  <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span></div>
+                                                                   <div style="margin-top:10px; color:#aaa; font-size:0.8rem;">Difficulty: <span style="color:${window.DIFFICULTY_COLORS[lvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[lvl.difficulty] || lvl.difficulty}</span> <span style="color:#666; font-size:0.7rem;">(${lvl.difficulty}/10)</span>${lvl.official_rating ? '<svg width="14" height="14" fill="#335699" viewBox="0 0 24 24" style="margin-left:5px; vertical-align:middle; display:inline-block;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ""}</div>
                               </div>
                               <div style="text-align:right; display:flex; flex-direction:column; gap:8px;">
                                   <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
                                       <div style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:900; font-size:1.1rem; background:rgba(0,0,0,0.4); padding:6px 12px; border-radius:10px; border:1px solid #333;">
                                           ${score > 0 ? "+" : ""}${score}
-                                      </div>
+                                          </div>
                                   </div>
                                   <div style="font-size:0.7rem; color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">${lvl.plays || 0} PLAYS</div>
                               </div>
@@ -14163,6 +14488,13 @@
           if (data) currentLvl = data;
         }
 
+        if (
+          currentMenuView !== "browse-levels" ||
+          !lastBrowserState.isViewingDetails
+        )
+          return;
+        container.innerHTML = "";
+
         const profileBeaten =
           detailContext && detailContext.fromBeatenList
             ? detailContext.originalContext.beatenLevels
@@ -14178,12 +14510,13 @@
         const score = (currentLvl.upvotes || 0) - (currentLvl.downvotes || 0);
         const details = document.createElement("div");
         const themeColor = currentLvl.data?.themeColor || "#1a1a1a";
+        const isAdminCreator = adminUsers.has(currentLvl.creator);
         details.style.cssText = `width:100%; background:${themeColor} !important; border:2px solid #333; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:15px;`;
 
         details.innerHTML = `
                       <div style="border-bottom:1px solid #333; padding-bottom:15px;">
                           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:5px;">
-                              <div style="font-size:2rem; font-weight:bold; color:#fff;">${currentLvl.name}</div>
+                              <div style="font-size:2rem; font-weight:bold; color:#fff;">${currentLvl.name}${currentUserIsAdmin ? ` <button onclick="window.editLevelMetadata(${currentLvl.id}, 'name', '${currentLvl.name.replace(/'/g, "\\'")}', 'NAME')" style="background:none; border:none; color:#335699; text-decoration:underline; font-size:0.7rem; cursor:pointer; font-family:inherit; vertical-align:middle; margin-left:5px;">EDIT</button>` : ""}</div>
                               ${currentLvl.legendary ? '<span style="background:#1e3a8a; color:white; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px #3b82f6;">LEGENDARY</span>' : ""}
                               <div style="display:flex; align-items:center; gap:8px;">
                                 ${isBeaten ? '<div class="status-badge status-beaten" style="display:flex; align-items:center; gap:4px;"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> BEATEN</div>' : ""}
@@ -14204,11 +14537,34 @@
                           }
                       </div>
                       <div style="display:flex; justify-content:space-between; background:#111; padding:15px; border-radius:8px;">
-                          <div style="text-align:center;"><div>DIFFICULTY</div><div style="color:${window.DIFFICULTY_COLORS[currentLvl.difficulty] || "#e67e22"}; font-weight:bold;">${window.DIFFICULTY_LABELS[currentLvl.difficulty] || currentLvl.difficulty} (${currentLvl.difficulty}/10)</div></div>
+                          <div style="text-align:center;"><div>DIFFICULTY</div><div id="detail-difficulty-val" style="color:${window.DIFFICULTY_COLORS[currentLvl.difficulty] || "#e67e22"}; font-weight:bold; ${currentUserIsAdmin ? "cursor:pointer; text-decoration:underline;" : ""}">${window.DIFFICULTY_LABELS[currentLvl.difficulty] || currentLvl.difficulty} (${currentLvl.difficulty}/10)${currentLvl.official_rating ? '<svg width="18" height="18" fill="#335699" viewBox="0 0 24 24" style="margin-left:8px; vertical-align:middle; display:inline-block;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ""}</div></div>
                           <div style="text-align:center;"><div>SCORE</div><div id="level-score-display" style="color:${score >= 0 ? "#2ecc71" : "#e74c3c"}; font-weight:bold;">${score}</div></div>
                           <div style="text-align:center;"><div>PLAYS</div><div id="level-plays-display" style="color:#335699; font-weight:bold;">${currentLvl.plays || 0}</div></div>
                       </div>
-                      <div style="background:#222; padding:15px; border-radius:8px; color:#ccc; line-height:1.5;">${currentLvl.description || "No description."}</div>
+                      <div style="background:#222; padding:15px; border-radius:8px; color:#ccc; line-height:1.5; position:relative;">${currentLvl.description || "No description."}${currentUserIsAdmin ? `<button onclick="window.editLevelMetadata(${currentLvl.id}, 'description', '${(currentLvl.description || "").replace(/'/g, "\\'")}', 'DESCRIPTION')" style="position:absolute; top:5px; right:10px; background:none; border:none; color:#335699; text-decoration:underline; font-size:0.6rem; cursor:pointer; font-family:inherit;">EDIT</button>` : ""}</div>
+
+                      ${
+                        currentUserIsAdmin
+                          ? `
+                        <div style="background:rgba(51, 86, 153, 0.1); padding:15px; border-radius:8px; border:1px solid #335699; display:flex; flex-direction:column; gap:10px;">
+                            <div style="font-weight:bold; color:#335699; font-size:0.8rem; text-transform:uppercase;">Admin Controls</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:15px;">
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-official-check" ${currentLvl.official_rating ? "checked" : ""} style="width:18px; height:18px;"> OFFICIAL</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-featured-check" ${currentLvl.featured ? "checked" : ""} style="width:18px; height:18px;"> FEATURED</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-legendary-check" ${currentLvl.legendary ? "checked" : ""} style="width:18px; height:18px;"> LEGENDARY</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-impossible-check" ${currentLvl.impossible ? "checked" : ""} style="width:18px; height:18px;"> IMPOSSIBLE</label>
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:5px;">
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-hitboxes-check" ${currentLvl.data?.blockHitboxes || currentLvl.data?.block_hitboxes ? "checked" : ""} style="width:18px; height:18px;"> BLOCK HITBOXES</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-disable-zoom-check" ${currentLvl.data?.disableZoom || currentLvl.data?.disable_zoom ? "checked" : ""} style="width:18px; height:18px;"> BLOCK ZOOM</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-force-zoom-check" ${currentLvl.data?.forceZoom || currentLvl.data?.force_zoom ? "checked" : ""} style="width:18px; height:18px;"> FORCE ZOOM</label>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer; color:#ccc;"><input type="checkbox" id="admin-force-skin-check" ${currentLvl.data?.forceDefaultSkin || currentLvl.data?.force_default_skin ? "checked" : ""} style="width:18px; height:18px;"> FORCE DEFAULT SKIN</label>
+                            </div>
+                            <button onclick="window.deleteCommunityLevel(${currentLvl.id})" class="btn" style="background:#a44; border-color:#822; font-size:0.8rem; padding:8px 15px; width:fit-content; margin-top:10px;">DELETE LEVEL</button>
+                        </div>
+                      `
+                          : ""
+                      }
 
                       <div id="level-action-container" style="display:flex; gap:10px; justify-content:center; margin-top:10px;"></div>
 
@@ -14232,9 +14588,103 @@
                       </div>
                   `;
 
+        if (currentUserIsAdmin) {
+          const diffVal = details.querySelector("#detail-difficulty-val");
+          diffVal.onclick = () => {
+            let buttons = [];
+            for (let i = 1; i <= 10; i++) {
+              buttons.push({
+                text: `${i} - ${window.DIFFICULTY_LABELS[i]}`,
+                onClick: async () => {
+                  if (!_supabase) return;
+                  const { error } = await _supabase
+                    .from("published_levels")
+                    .update({ difficulty: i })
+                    .eq("id", currentLvl.id);
+                  if (!error) {
+                    currentLvl.difficulty = i;
+                    showTopNotification("Difficulty updated!");
+                    renderLevelDetails(container, currentLvl, detailContext);
+                  }
+                },
+              });
+            }
+            popupManager.show({ title: "CHANGE DIFFICULTY", buttons });
+          };
+
+          const addAdminToggle = (id, field, label, isDataField = false) => {
+            const el = details.querySelector("#" + id);
+            if (el) {
+              el.onchange = async (e) => {
+                const val = e.target.checked;
+                if (!_supabase) return;
+
+                let updatePayload = { [field]: val };
+                if (isDataField) {
+                  updatePayload = {
+                    data: { ...(currentLvl.data || {}), [field]: val },
+                  };
+                }
+
+                const { error } = await _supabase
+                  .from("published_levels")
+                  .update(updatePayload)
+                  .eq("id", currentLvl.id);
+                if (!error) {
+                  currentLvl[field] = val;
+                  showTopNotification(`${label} ${val ? "ON" : "OFF"}`);
+                  renderLevelDetails(container, currentLvl, detailContext);
+                }
+              };
+            }
+          };
+
+          addAdminToggle(
+            "admin-official-check",
+            "official_rating",
+            "Official Status",
+          );
+          addAdminToggle("admin-featured-check", "featured", "Featured Status");
+          addAdminToggle(
+            "admin-legendary-check",
+            "legendary",
+            "Legendary Status",
+          );
+          addAdminToggle(
+            "admin-impossible-check",
+            "impossible",
+            "Impossible Status",
+          );
+          addAdminToggle(
+            "admin-hitboxes-check",
+            "blockHitboxes",
+            "Block Hitboxes",
+            true,
+          );
+          addAdminToggle(
+            "admin-disable-zoom-check",
+            "disableZoom",
+            "Block Zoom",
+            true,
+          );
+          addAdminToggle(
+            "admin-force-zoom-check",
+            "forceZoom",
+            "Force Zoom",
+            true,
+          );
+          addAdminToggle(
+            "admin-force-skin-check",
+            "forceDefaultSkin",
+            "Force Default Skin",
+            true,
+          );
+        }
+
         const verifierLink = details.querySelector("#verifier-link");
         if (verifierLink) {
           verifierLink.onclick = () =>
+            // Pass currentLvl to openUserProfile to allow it to display admin tag
             openUserProfile(currentLvl.verifier, "browse-levels", {
               viewLevel: currentLvl,
             });
@@ -14242,6 +14692,7 @@
 
         details.querySelector("#upvote-btn").onclick = () =>
           voteLevel(currentLvl.id, 1);
+
         details.querySelector("#downvote-btn").onclick = () =>
           voteLevel(currentLvl.id, -1);
         details.querySelector("#post-comment-btn").onclick = () =>
@@ -14461,6 +14912,7 @@
         list.innerHTML = "";
         data.forEach((c) => {
           const div = document.createElement("div");
+          const isAdminCommenter = adminUsers.has(c.username);
           div.style.cssText =
             "background:#222; padding:10px; border-radius:4px; font-size:0.9rem;";
 
@@ -14480,7 +14932,7 @@
             if (c.beaten) indicators += beatenTag;
             if (c.blue_coin) indicators += blueCoinTag;
           }
-          userSpan.innerHTML = c.username + ":" + indicators;
+          userSpan.innerHTML = `${c.username}: ${indicators}`;
           userSpan.onclick = () => {
             if (typeof lvlOrId === "object") {
               openUserProfile(c.username, "browse-levels", {
@@ -14497,7 +14949,117 @@
 
           div.appendChild(userSpan);
           div.appendChild(contentSpan);
+
+          if (currentUserIsAdmin) {
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "EDIT";
+            editBtn.style.cssText =
+              "margin-left:10px; background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa; font-size:0.7rem; cursor:pointer; padding:3px 8px; font-family:inherit; border-radius:2px;";
+            editBtn.onclick = () => window.openCommentAdminUI(c, lvlOrId);
+            div.appendChild(editBtn);
+          }
+
           list.appendChild(div);
+        });
+      };
+
+      window.editLevelMetadata = (id, field, oldVal, label) => {
+        if (!currentUserIsAdmin || !_supabase) return;
+        popupManager.show({
+          title: "EDIT " + label,
+          html: `<textarea id="meta-edit-area" style="width:100%; height:100px; background:#222; color:white; border:1px solid #555; padding:10px; box-sizing:border-box; font-family:inherit; outline:none; font-size:1rem;">${oldVal}</textarea>`,
+          buttons: [
+            {
+              text: "SAVE",
+              onClick: async () => {
+                const newVal = document
+                  .getElementById("meta-edit-area")
+                  .value.trim();
+                if (!newVal) return;
+                const { data, error } = await _supabase
+                  .from("published_levels")
+                  .update({ [field]: newVal })
+                  .eq("id", id)
+                  .select()
+                  .single();
+                if (!error && data) {
+                  showTopNotification(label + " updated.");
+                  showMenu("browse-levels", {
+                    viewLevel: data,
+                    ...lastBrowserState.activeDetailContext,
+                  });
+                }
+              },
+            },
+          ],
+        });
+      };
+
+      window.deleteCommunityLevel = (id) => {
+        if (!_supabase || !currentUserIsAdmin) return;
+        showConfirmPopup(
+          "DELETE LEVEL",
+          "This will permanently remove this level from the community browser. Continue?",
+          async () => {
+            const { error } = await _supabase
+              .from("published_levels")
+              .delete()
+              .eq("id", id);
+            if (!error) {
+              showTopNotification("Level Deleted.");
+              showMenu("custom");
+            }
+          },
+        );
+      };
+
+      window.openCommentAdminUI = (comment, lvl) => {
+        if (!currentUserIsAdmin) return;
+        popupManager.show({
+          title: "ADMIN: MODERATION",
+          html: `
+            <div style="text-align:left; margin-bottom:15px; font-size:0.9rem; color:#888;">Editing comment by <strong>${comment.username}</strong>:</div>
+            <textarea id="edit-comment-area" style="width:100%; height:100px; background:#222; color:white; border:1px solid #555; padding:10px; box-sizing:border-box; font-family:inherit; outline:none; font-size:1rem;">${comment.content}</textarea>
+          `,
+          buttons: [
+            {
+              text: "SAVE CHANGES",
+              onClick: async () => {
+                const newText = document
+                  .getElementById("edit-comment-area")
+                  .value.trim();
+                if (!newText) return;
+                const { error } = await _supabase
+                  .from("level_comments")
+                  .update({ content: newText })
+                  .eq("id", comment.id);
+                if (!error) {
+                  showTopNotification("Comment updated.");
+                  loadComments(lvl);
+                }
+              },
+            },
+            {
+              text: "DELETE",
+              style: "background:#a44; border-color:#822;",
+              onClick: () => {
+                showConfirmPopup(
+                  "DELETE COMMENT",
+                  "Are you sure you want to permanently delete this comment?",
+                  async () => {
+                    const { error } = await _supabase
+                      .from("level_comments")
+                      .delete()
+                      .eq("id", comment.id);
+                    if (!error) {
+                      showTopNotification("Comment deleted.");
+                      loadComments(lvl);
+                    }
+                  },
+                );
+              },
+            },
+          ],
         });
       };
 
@@ -14575,6 +15137,7 @@
             updateLoginButton();
             await fetchAndSyncUserData();
           }
+          await fetchAdminUsers();
         })();
 
         // 2. Load Image Assets
