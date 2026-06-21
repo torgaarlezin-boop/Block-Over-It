@@ -942,6 +942,16 @@
           </svg>
         </button>
         <button
+          id="btn-sp-flash"
+          onclick="toggleFlashSelection()"
+          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
+          title="Flash"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+          </svg>
+        </button>
+        <button
           id="btn-sp-illusion"
           onclick="toggleIllusionSelection()"
           class="hidden p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400 flex justify-center items-center sp-btn"
@@ -1100,6 +1110,24 @@
             placeholder="1"
           />
           <span class="text-[8px] text-slate-600">Default: 1</span>
+        </div>
+        <div
+          id="sp-flash-interval-group"
+          class="hidden pt-2 border-t border-slate-700/50 flex items-center gap-2"
+        >
+          <span class="text-[9px] font-bold text-slate-400 uppercase"
+            >Flash Interval</span
+          >
+          <input
+            type="number"
+            id="sp-flash-interval-input"
+            min="0.05"
+            step="0.05"
+            class="w-20 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[9px] text-white outline-none focus:border-blue-500"
+            onchange="updateFlashInterval(this.value)"
+            placeholder="1"
+          />
+          <span class="text-[8px] text-slate-600">Seconds per flash</span>
         </div>
       </div>
     </div>
@@ -4956,6 +4984,9 @@
           } else if (color === "jump_flicker") {
             cell.style.opacity = "0.8";
             cell.style.border = "1px solid rgba(100,255,100,0.5)";
+          } else if (color === "flash") {
+            cell.style.opacity = "0.7";
+            cell.style.border = "1px dashed rgba(124,58,237,0.6)";
           } else if (!partialBlocks.includes(visualChar)) {
             cell.style.backgroundColor = color;
             cell.style.borderColor = adjustColor(color, -20);
@@ -5606,6 +5637,7 @@
         let allThrough = true;
         let allFake = true;
         let allInvisible = true;
+        let allFlash = true;
         let allFlicker = true;
         let allJumpFlicker = true;
         let allTouchFlicker = true;
@@ -5613,6 +5645,9 @@
         let hasConfigurable = false;
         let allPainted = true;
         let hasBlocks = false;
+        let hasFlash = false;
+        let commonFlashInterval = null;
+        let flashFirst = true;
         let hasDeco = false;
 
         for (let y = norm.y1; y <= norm.y2; y++) {
@@ -5640,10 +5675,21 @@
 
               const col = state.colors[`${x},${y}`];
               if (col !== "invisible") allInvisible = false;
+              if (col !== "flash") allFlash = false;
               if (!state.flickers.has(`${x},${y}`)) allFlicker = false;
               if (!state.jumpFlickers.has(`${x},${y}`)) allJumpFlicker = false;
               if (!state.touchFlickers.has(`${x},${y}`))
                 allTouchFlicker = false;
+              if (col === "flash") {
+                hasFlash = true;
+                const interval = state.blockConfigs[`${x},${y}`]?.flashInterval ?? 1;
+                if (flashFirst) {
+                  commonFlashInterval = interval;
+                  flashFirst = false;
+                } else if (commonFlashInterval !== interval) {
+                  commonFlashInterval = "";
+                }
+              }
               if (
                 !col ||
                 [
@@ -5651,6 +5697,7 @@
                   "flicker",
                   "jump_flicker",
                   "touch_flicker",
+                  "flash",
                 ].includes(col)
               )
                 allPainted = false;
@@ -5662,6 +5709,7 @@
           allIllusion = false;
           allFake = false;
           allInvisible = false;
+          allFlash = false;
           allFlicker = false;
           allJumpFlicker = false;
           allTouchFlicker = false;
@@ -5683,6 +5731,7 @@
           "btn-sp-flicker",
           "btn-sp-jump-flicker",
           "btn-sp-touch-flicker",
+          "btn-sp-flash",
           "btn-sp-illusion",
         ];
         modButtons.forEach((id) => {
@@ -5700,6 +5749,7 @@
           setBtn("btn-sp-flicker", allFlicker);
           setBtn("btn-sp-jump-flicker", allJumpFlicker);
           setBtn("btn-sp-touch-flicker", allTouchFlicker);
+          setBtn("btn-sp-flash", allFlash);
           setBtn("btn-sp-illusion", allIllusion);
         }
 
@@ -5738,6 +5788,25 @@
         } else {
           configOpt.classList.add("hidden");
           configOpt.classList.remove("flex");
+        }
+
+        const flashIntervalGroup = document.getElementById(
+          "sp-flash-interval-group",
+        );
+        const flashIntervalInput = document.getElementById(
+          "sp-flash-interval-input",
+        );
+        if (flashIntervalGroup) {
+          if (hasFlash) {
+            flashIntervalGroup.classList.remove("hidden");
+            flashIntervalGroup.classList.add("block");
+            flashIntervalInput.value =
+              commonFlashInterval !== null ? commonFlashInterval : "";
+          } else {
+            flashIntervalGroup.classList.add("hidden");
+            flashIntervalGroup.classList.remove("block");
+            flashIntervalInput.value = "";
+          }
         }
 
         minimap.render();
@@ -5930,6 +5999,66 @@
               } else {
                 state.colors[`${x},${y}`] = "jump_flicker";
               }
+            }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function toggleFlashSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel)
+          return dialog.alert("No Selection", "Please select an area first.");
+
+        let allFlash = true;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " " && state.colors[`${x},${y}`] !== "flash") {
+              allFlash = false;
+              break;
+            }
+          }
+          if (!allFlash) break;
+        }
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " ") {
+              if (allFlash) {
+                if (state.colors[`${x},${y}`] === "flash")
+                  delete state.colors[`${x},${y}`];
+                const cfg = state.blockConfigs[`${x},${y}`];
+                if (cfg) {
+                  delete cfg.flashInterval;
+                  if (Object.keys(cfg).length === 0) delete state.blockConfigs[`${x},${y}`];
+                }
+              } else {
+                state.colors[`${x},${y}`] = "flash";
+                const cfg = state.blockConfigs[`${x},${y}`] || {};
+                if (cfg.flashInterval === undefined) cfg.flashInterval = 1;
+                state.blockConfigs[`${x},${y}`] = cfg;
+              }
+            }
+          }
+        }
+        render();
+        history.push();
+      }
+
+      function updateFlashInterval(val) {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+
+        const interval = parseFloat(val);
+        if (!interval || interval <= 0) return;
+
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " " && state.colors[`${x},${y}`] === "flash") {
+              const cfg = state.blockConfigs[`${x},${y}`] || {};
+              cfg.flashInterval = interval;
+              state.blockConfigs[`${x},${y}`] = cfg;
             }
           }
         }
