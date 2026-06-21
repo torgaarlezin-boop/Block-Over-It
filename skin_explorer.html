@@ -711,9 +711,10 @@
           copies: "N/A",
           artist: "Torgaar",
           gameUnlock: true,
-          versions: [{name: "Golden Clock (Original)", img: "goldenclock"},
-            {name: "Golden (New)", img: "golden"}
-          ]
+          versions: [
+            { name: "Golden Clock (Original)", img: "goldenclock.png" },
+            { name: "Golden (New)", img: "golden.png" },
+          ],
         },
         rainbowcoolguy: {
           name: "Cool Guy (Rainbow Glasses)",
@@ -777,8 +778,8 @@
           artist: "Torgaar",
           honorary: true,
           versions: [
-            {name: "Original", img: "coolguytorgaarog"},
-            {name: "Remaster", img: "coolguytorgaarsignature"},
+            {name: "Original", img: "coolguytorgaarog.png"},
+            {name: "Remaster", img: "coolguytorgaarsignature.png"},
           ]
         },
         deathfire: {
@@ -893,13 +894,21 @@
           name: "Red Trail",
           copies: "1/3",
           artist: "Torgaar & pedro",
-          unlockCode: true
+          unlockCode: true,
+          img: "redtrail.png",
+          color: "#c0392b"
         },
         coolguydeepbluespecial: {
           name: "Cool Guy (Deep Blue)",
           copies: "1/3",
           artist: "Torgaar",
           unlockCode: true
+        },
+          coolguymoney: {
+          name: "Cool Guy (Money)",
+          copies: "1/3",
+          artist: "Torgaar",
+          gameUnlock: true
         },
       };
 
@@ -975,12 +984,13 @@
       }
 
       function updateModalImage(id, customImg) {
+        const data = currentSkinData || {};
         if (id === "default") {
           modalPreview.style.backgroundImage = "none";
           modalPreview.style.backgroundColor = "#335699";
           modalPreview.style.borderRadius = "8px";
         } else {
-          modalPreview.style.backgroundColor = "transparent";
+          modalPreview.style.borderRadius = "4px";
           const ext =
             id === "smiley" ||
             id === "deathfire" ||
@@ -989,8 +999,9 @@
             id === "coolguypurplemagma"
               ? "gif"
               : "png";
-          const img = customImg || `${id}.${ext}`;
+          const img = customImg || data.img || `${id}.${ext}`;
           modalPreview.style.backgroundImage = `url('${img}')`;
+          modalPreview.style.backgroundColor = data.color || "transparent";
         }
       }
 
@@ -1090,9 +1101,14 @@
             preview.className = "skin-preview";
 
             if (id === "default") {
+              preview.style.backgroundImage = "none";
               preview.style.backgroundColor = "#335699";
               preview.style.borderRadius = "4px";
             } else {
+              preview.style.borderRadius = "4px";
+              // Always apply a color fallback when provided so the grid shows a
+              // visible red preview even if the image asset is missing.
+              preview.style.backgroundColor = data.color || "transparent";
               const ext =
                 id === "smiley" ||
                 id === "deathfire" ||
@@ -1101,7 +1117,11 @@
                 id === "coolguypurplemagma"
                   ? "gif"
                   : "png";
-              preview.style.backgroundImage = `url('${id}.${ext}')`;
+              if (data.img) {
+                preview.style.backgroundImage = `url('${data.img}')`;
+              } else {
+                preview.style.backgroundImage = `url('${id}.${ext}')`;
+              }
             }
 
             const name = document.createElement("div");
