@@ -2717,6 +2717,14 @@
           name: "Cool Guy (Deep Blue)",
           copies: "1/3",
         },
+        demon: {
+          name: "Demon",
+          copies: "N/A",
+        },
+        coolguymoney: {
+          name: "Cool Guy (Money)",
+          copies: "1/3",
+        },
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
@@ -2725,19 +2733,22 @@
           date: "2026-06-20",
           image: null,
           story:
-            "The final version of 1.10 V2 is releasing soon. The update adds many new features, including decoration blocks, the illusion mod, official levels, new rewards, viewing other players' beaten levels, and many more features. Stay tuned..."        },
-        {
-          headline: "Cool Guy (Torgaar Signature) gets redesigned",
-          date: "2026-06-20",
-          image: "coolguytorgaarsignature.png",
-          story: "Recently, creator of Block Over It 'Torgaar's honorary skin has gotten a large redesign. The redesign keeps the original elements and layout of the skins but with a more artistic approach (shown above)."
+            "The final version of 1.10 V2 is releasing soon. The update adds many new features, including decoration blocks, the illusion mod, official levels, new rewards, viewing other players' beaten levels, and many more features. Stay tuned...",
         },
-                {
-          headline: "A exclusive skin with only THREE copies is hidden inside the game. Who will find the copies first?",
+        {
+          headline: "Beat an insane to get the demon skin!",
+          date: "2026-06-21",
+          image: "demon.png",
+          story:
+            "The brand new demon skin (shown above) can now be claimed by doing one of the most difficulty feats in the game - beating an insane. This makes the skin an absolute flex for anyone who has it. The demon skin will also be given to anyone who has previously beaten an insane in the game."        },
+        {
+          headline:
+            "A exclusive skin with only THREE copies is hidden inside the game. Who will find the copies first?",
           date: "2026-06-20",
           image: "coolguydeepbluespecial.png",
-          story: "Shown above, the Cool Guy (Deep Blue Special) skin is an exclusive skin that will be available to the first 3 people to redeem it. The first clue is the following: Under the sea."        },
-
+          story:
+            "Shown above, the Cool Guy (Deep Blue Special) skin is an exclusive skin that will be available to the first 3 people to redeem it. The first clue is the following: Under the sea.",
+        },
       ];
       const ROTATING_NEWS = GAME_NEWS.slice(0, 3);
 
@@ -2745,7 +2756,7 @@
         {
           v: "1.10",
           t: "1.10 V1",
-          d: "Completely redesigned the custom levels UI. Added new loading screens. Added game mode selecion in the level browser. Added a new block hitboxes toggle for custom levels. Added 'Show my progres' in comments to show a player's progress on a level. Fixed bug where practice mode and sometimes deathruns counted as verifying. In addition to these features are many more features I either forgot about or that are just minor improvements."        
+          d: "Completely redesigned the custom levels UI. Added new loading screens. Added game mode selecion in the level browser. Added a new block hitboxes toggle for custom levels. Added 'Show my progres' in comments to show a player's progress on a level. Fixed bug where practice mode and sometimes deathruns counted as verifying. In addition to these features are many more features I either forgot about or that are just minor improvements.",
         },
         {
           v: "1.9",
@@ -6062,6 +6073,58 @@
         }
       }
 
+      async function checkDemonSkinUnlock(silent = false) {
+        if (!_supabase || !currentUser) return;
+        if (currentUserSkins.includes("demon")) return;
+
+        const insaneBeaten = (currentUserBeatenLevels || []).filter((l) => {
+          const diff = typeof l === "object" && l !== null ? l.difficulty : null;
+          return diff === 10;
+        });
+
+        if (insaneBeaten.length === 0) return;
+
+        const insaneIds = insaneBeaten
+          .map((l) => {
+            return typeof l === "object" && l !== null
+              ? l.id !== undefined
+                ? l.id
+                : l.dbId
+              : l;
+          })
+          .filter((id) => id != null);
+
+        if (insaneIds.length === 0) return;
+
+        try {
+          const { data, error } = await _supabase
+            .from("published_levels")
+            .select("id")
+            .in("id", insaneIds)
+            .eq("official_rating", true);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            currentUserSkins.push("demon");
+            syncDataToCloud();
+            if (!silent) {
+              const html = `
+                  <div style="margin-bottom:15px; color:#ccc;">You unlocked the legendary <strong>Demon</strong> skin for beating an official insane-rated level!</div>
+                  <img src="demon.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
+                `;
+              popupManager.show({
+                title: "SKIN UNLOCKED",
+                html: html,
+                buttons: [{ text: "OK", onClick: () => {} }],
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to check Demon skin unlock:", e);
+        }
+      }
+
       async function checkSkinUnlocks(silent = false) {
         checkBlueCoinSkinUnlock(silent);
         checkGalaxySkinUnlock(silent);
@@ -6071,6 +6134,7 @@
         await checkMetallicAngerUnlock(silent);
         await checkClockSkinUnlock(silent);
         await checkNoSleepUnlock(silent);
+        await checkDemonSkinUnlock(silent);
       }
 
       function getAvailableSkins() {
@@ -6933,16 +6997,21 @@
                   color === "jump_flicker"
                 )
                   actor.isJumpFlicker = true;
+                if (color === "flash") actor.isFlash = true;
 
                 if (
                   actor.isFlicker ||
                   actor.isJumpFlicker ||
-                  actor.isTouchFlicker
+                  actor.isTouchFlicker ||
+                  actor.isFlash
                 ) {
                   actor.flickerType = color || "flicker";
                   actor.isVisible = false;
                   actor.flickerTimer = 0;
                   actor.flickerVisibleTime = 0;
+                  if (actor.isFlash)
+                    actor.flashInterval =
+                      this.blockConfigs[`${x},${y}`]?.flashInterval || 1;
                 }
 
                 if (isInvisible) actor.color = "invisible";
@@ -6950,7 +7019,8 @@
                   color &&
                   color !== "flicker" &&
                   color !== "touch_flicker" &&
-                  color !== "jump_flicker"
+                  color !== "jump_flicker" &&
+                  color !== "flash"
                 ) {
                   actor.color = color;
                 }
@@ -6983,12 +7053,14 @@
                 color === "touch_flicker";
               let isJumpFlicker =
                 this.jumpFlickers.has(`${x},${y}`) || color === "jump_flicker";
+              let isFlash = color === "flash";
               let isIllusion = this.illusions.has(`${x},${y}`);
 
               if (
                 isFlicker ||
                 isTouchFlicker ||
                 isJumpFlicker ||
+                isFlash ||
                 isIllusion ||
                 (ch === "!" && (isFake || isInvisible))
               ) {
@@ -6999,10 +7071,14 @@
                 wall.isFlicker = isFlicker;
                 wall.isTouchFlicker = isTouchFlicker;
                 wall.isJumpFlicker = isJumpFlicker;
+                wall.isFlash = isFlash;
 
-                if (isFlicker || isTouchFlicker || isJumpFlicker) {
+                if (isFlicker || isTouchFlicker || isJumpFlicker || isFlash) {
                   wall.flickerType = color || "combined";
                   wall.isVisible = false;
+                  if (isFlash)
+                    wall.flashInterval =
+                      this.blockConfigs[`${x},${y}`]?.flashInterval || 1;
                 } else {
                   wall.isVisible = true;
                 }
@@ -7024,7 +7100,12 @@
                 if (isInvisible) wall.color = "invisible";
                 else if (
                   color &&
-                  !["flicker", "touch_flicker", "jump_flicker"].includes(color)
+                  ![
+                    "flicker",
+                    "touch_flicker",
+                    "jump_flicker",
+                    "flash",
+                  ].includes(color)
                 ) {
                   wall.color = color;
                 }
@@ -7635,7 +7716,6 @@
         for (var i = 0; i < this.actors.length; i++) {
           var other = this.actors[i];
           if (other === exceptActor) continue;
-          if (other.flickerType && !other.isVisible) continue;
           if (other.fake) continue;
 
           var members = other.members || [other];
@@ -7662,7 +7742,7 @@
                 member.type === "dash-left" ||
                 member.type === "grinder" ||
                 member.type === "moving-group" ||
-                (member.type === "visual-wall" && member.isVisible)
+                member.type === "visual-wall"
               )
                 return member;
               if (member.type === "lava") return "lava";
@@ -7719,6 +7799,19 @@
       function updateFlicker(actor, step, level) {
         let shouldBeVisible = false;
 
+        if (actor.isFlash) {
+          actor.flickerTimer += step;
+          if (actor.flickerVisibleTime > 0) {
+            actor.flickerVisibleTime -= step;
+            shouldBeVisible = true;
+          }
+          if (actor.flickerTimer >= (actor.flashInterval || 1)) {
+            actor.flickerTimer -= actor.flashInterval || 1;
+            actor.flickerVisibleTime = 0.2;
+            shouldBeVisible = true;
+          }
+        }
+
         if (actor.isFlicker) {
           actor.flickerTimer += step;
           if (actor.flickerVisibleTime > 0) {
@@ -7773,7 +7866,8 @@
         while (step > 0) {
           var thisStep = Math.min(step, 0.05);
           this.actors.forEach(function (actor) {
-            if (actor.flickerType) updateFlicker(actor, thisStep, this);
+            if (actor.flickerType || actor.isFlash)
+              updateFlicker(actor, thisStep, this);
             actor.act(thisStep, this, keys);
           }, this);
           step -= thisStep;
@@ -8236,7 +8330,8 @@
                 self.level.touchFlickers.has(`${x},${y}`) ||
                 color === "flicker" ||
                 color === "jump_flicker" ||
-                color === "touch_flicker"
+                color === "touch_flicker" ||
+                color === "flash"
               ) {
                 el.style.background = "transparent";
                 el.style.border = "none";
@@ -9480,6 +9575,7 @@
               .from("users")
               .update({ beaten_levels: beaten })
               .eq("username", currentUser);
+            await checkDemonSkinUnlock(false);
           }
         } catch (e) {
           console.error("Failed to update beaten levels:", e);
