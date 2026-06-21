@@ -6073,18 +6073,11 @@
         }
       }
 
-      async function checkDemonSkinUnlock(silent = false) {
+            async function checkDemonSkinUnlock(silent = false) {
         if (!_supabase || !currentUser) return;
         if (currentUserSkins.includes("demon")) return;
 
-        const insaneBeaten = (currentUserBeatenLevels || []).filter((l) => {
-          const diff = typeof l === "object" && l !== null ? l.difficulty : null;
-          return diff === 10;
-        });
-
-        if (insaneBeaten.length === 0) return;
-
-        const insaneIds = insaneBeaten
+        const beatenIds = (currentUserBeatenLevels || [])
           .map((l) => {
             return typeof l === "object" && l !== null
               ? l.id !== undefined
@@ -6094,14 +6087,15 @@
           })
           .filter((id) => id != null);
 
-        if (insaneIds.length === 0) return;
+        if (beatenIds.length === 0) return;
 
         try {
           const { data, error } = await _supabase
             .from("published_levels")
             .select("id")
-            .in("id", insaneIds)
-            .eq("official_rating", true);
+            .in("id", beatenIds)
+            .eq("official_rating", true)
+            .eq("difficulty", 10);
 
           if (error) throw error;
 
@@ -6123,9 +6117,7 @@
         } catch (e) {
           console.warn("Failed to check Demon skin unlock:", e);
         }
-      }
-
-      async function checkSkinUnlocks(silent = false) {
+      }async function checkSkinUnlocks(silent = false) {
         checkBlueCoinSkinUnlock(silent);
         checkGalaxySkinUnlock(silent);
         checkEarthSkinUnlock(silent);
@@ -8300,6 +8292,7 @@
 
         var s = this.scale;
         var self = this;
+        this.bgFlashes = [];
 
         for (var y = 0; y < this.level.height; y++) {
           for (var x = 0; x < this.level.width; x++) {
@@ -8341,6 +8334,23 @@
               }
               el.style.borderWidth =
                 (s < 25 ? Math.max(1, s * 0.12) : 3) + "px";
+
+              var bConfig = self.level.blockConfigs[`${x},${y}`];
+              if (bConfig) {
+                if (bConfig.opacity !== undefined) {
+                  el.style.opacity = bConfig.opacity;
+                }
+                if (bConfig.glow) {
+                  el.style.boxShadow = `0 0 15px ${color && color !== 'invisible' ? color : 'rgba(255,255,255,0.7)'}`;
+                }
+                if (bConfig.colorflash) {
+                  this.bgFlashes.push({ el: el, config: bConfig.colorflash, baseColor: color });
+                  const c = bConfig.colorflash.colors[0];
+                  el.style.backgroundColor = c;
+                  el.style.borderColor = adjustColor(c, -20);
+                }
+              }
+
               this.bgLayer.appendChild(el);
             }
           }
@@ -15378,3 +15388,4 @@
     </script>
   </body>
 </html>
+
