@@ -431,8 +431,284 @@
         align-items: center;
         justify-content: center;
       }
+      .news-banner-event {
+        position: absolute;
+        left: 10px;
+        font-size: 0.62rem;
+        font-weight: bold;
+        letter-spacing: 0.3px;
+        opacity: 0.92;
+        white-space: nowrap;
+        z-index: 2;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        transition: background 0.2s;
+      }
+      .news-banner-event:hover {
+        background: rgba(0, 0, 0, 0.35);
+        text-decoration: underline;
+      }
       #news-banner-content {
         transition: opacity 0.5s ease-in-out;
+        max-width: calc(100% - 200px);
+        padding: 0 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .og-summer-streak-display {
+        font-size: 4rem;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 4px 4px 0 #335699;
+        line-height: 1;
+        margin: 8px 0;
+      }
+      .og-summer-panel {
+        width: 100%;
+        border: 2px solid #555;
+        background: #1a1a1a;
+        padding: 24px 28px;
+        box-sizing: border-box;
+      }
+      .og-summer-title {
+        font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: #fff;
+        text-shadow: 3px 3px 0 #335699;
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .og-summer-subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 0.85rem;
+        margin-bottom: 22px;
+        line-height: 1.4;
+      }
+      .og-summer-streak-box {
+        text-align: center;
+        border: 2px solid #335699;
+        background: #111;
+        padding: 18px 16px;
+        margin-bottom: 28px;
+      }
+      .og-summer-streak-label {
+        font-size: 0.75rem;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .og-summer-streak-unit {
+        font-size: 0.9rem;
+        color: #ccc;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .og-summer-hint {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #888;
+        margin-top: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .og-summer-signin-box {
+        border: 2px solid #444;
+        background: #111;
+        padding: 24px;
+        text-align: center;
+        color: #ccc;
+      }
+      .og-summer-sun-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+        margin-right: 4px;
+      }
+      .og-summer-sun-icon svg {
+        width: 11px;
+        height: 11px;
+        fill: currentColor;
+      }
+      .og-summer-track-wrap {
+        position: relative;
+        padding: 0 12px 12px;
+        margin-bottom: 8px;
+      }
+      .og-summer-track-stops-row {
+        position: relative;
+        height: 130px;
+        margin-bottom: 10px;
+      }
+      .og-summer-stop {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 96px;
+      }
+      .og-summer-stop-skin {
+        width: 52px;
+        height: 104px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+        border: 2px solid #444;
+        background-color: #111;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+      }
+      .og-summer-stop.reached .og-summer-stop-skin {
+        border-color: #335699;
+        box-shadow: 0 0 12px rgba(51, 86, 153, 0.45);
+      }
+      .og-summer-stop.locked .og-summer-stop-skin {
+        opacity: 0.35;
+        filter: grayscale(1);
+      }
+      .og-summer-stop-day {
+        font-size: 0.65rem;
+        color: #335699;
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+      }
+      .og-summer-stop.reached .og-summer-stop-day {
+        color: #7aa3e0;
+      }
+      .og-summer-stop-name {
+        font-size: 0.68rem;
+        color: #bbb;
+        text-align: center;
+        margin-top: 3px;
+        line-height: 1.15;
+        max-width: 92px;
+      }
+      .og-summer-track-rail {
+        position: relative;
+        height: 10px;
+        background: #222;
+        border: 2px solid #555;
+      }
+      .og-summer-track-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        background: #335699;
+        transition: width 0.5s ease;
+        max-width: 100%;
+      }
+      .og-summer-track-markers {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 0;
+        pointer-events: none;
+      }
+      .og-summer-stop-marker {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #555;
+        background: #222;
+        box-sizing: border-box;
+      }
+      .og-summer-stop-marker.reached {
+        background: #335699;
+        border-color: #7aa3e0;
+        box-shadow: 0 0 8px rgba(51, 86, 153, 0.7);
+      }
+      .og-summer-track-start {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.6rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        margin-top: 18px;
+      }
+      .og-summer-track-wrap.mobile-vertical {
+        padding: 0 0 0 8px;
+      }
+      .og-summer-track-wrap.mobile-vertical .og-summer-track-stops-row {
+        display: none;
+      }
+      .og-summer-vertical-stops {
+        display: none;
+      }
+      .og-summer-track-wrap.mobile-vertical .og-summer-vertical-stops {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .og-summer-vertical-stop {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 2px solid #333;
+        background: #111;
+        padding: 10px 12px;
+      }
+      .og-summer-vertical-stop.reached {
+        border-color: #335699;
+      }
+      .og-summer-vertical-stop.locked {
+        opacity: 0.55;
+      }
+      .og-summer-vertical-stop .og-summer-stop-skin {
+        width: 40px;
+        height: 80px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+      }
+      .og-summer-vertical-stop-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .og-summer-vertical-stop-status {
+        font-size: 0.65rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .og-summer-vertical-stop.reached .og-summer-vertical-stop-status {
+        color: #335699;
+      }
+      @media (max-width: 768px) {
+        .og-summer-panel {
+          padding: 16px;
+        }
+        .og-summer-track-wrap:not(.mobile-vertical) .og-summer-track-stops-row {
+          height: 110px;
+        }
+        .og-summer-stop {
+          width: 72px;
+        }
+        .og-summer-stop-skin {
+          width: 40px;
+          height: 80px;
+        }
+        .og-summer-stop-name {
+          font-size: 0.6rem;
+          max-width: 70px;
+        }
       }
 
       h1 {
@@ -2256,7 +2532,15 @@
   </head>
   <body>
     <div id="main-menu">
-      <div id="news-banner" class="news-banner" onclick="showNewsFromBanner()">
+      <div id="news-banner" class="news-banner" onclick="showNewsFromBanner(event)">
+        <div
+          id="news-banner-event"
+          class="news-banner-event"
+          onclick="event.stopPropagation(); openOgSummerEvent();"
+          title="OG Summer Event"
+        >
+          OG Summer
+        </div>
         <div id="news-banner-content"></div>
         <div
           id="version-display"
@@ -2596,6 +2880,14 @@
       let isCloudDataLoaded = false;
       let currentUserSkins = ["default"];
       let currentUserBeatenLevels = [];
+      let currentUserStreak = 0;
+      const OG_SUMMER_STREAK_SKINS = [
+        "reddino",
+        "rainbowmonsterremastered",
+        "bluedino",
+        "cubemouthdevourer",
+      ];
+      const OG_SUMMER_STREAK_INTERVAL = 5;
       const skin_definitions = {
         default: { name: "Default", copies: "N/A" },
         chairlord: { name: "Chairlord", copies: "1/1" },
@@ -2695,7 +2987,7 @@
         },
         cubemouthdevourer: {
           name: "Cubemouth (Devourer)",
-          copies: "1/3",
+          copies: "N/A",
         },
         midgemidge: {
           name: "MidgeMidge",
@@ -2725,16 +3017,30 @@
           name: "Cool Guy (Money)",
           copies: "1/3",
         },
+
+        reddino: {
+          name: "Dino (Red)",
+          copies: "N/A",
+        },
+        bluedino: {
+          name: "Dino (Blue)",
+          copies: "N/A",
+        },
+        rainbowmonsterremastered: {
+          name: "Rainbow Monster (Remastered)",
+          copies: "N/A",
+        },
+
+
       };
       const LATEST_NEWS_VERSION = "1.9"; // Not even really related to supabase
       const GAME_NEWS = [
         {
-          headline: "1.10 V2 Coming Soon!",
-          date: "2026-06-20",
-          image: null,
+          headline: "OG Summer Event has Started!",
+          date: "2026-06-24",
+          image: 'reddino',
           story:
-            "The final version of 1.10 V2 is releasing soon. The update adds many new features, including decoration blocks, the illusion mod, official levels, new rewards, viewing other players' beaten levels, and many more features. Stay tuned...",
-        },
+            "The new event 'OG Summer' has just started, and it comes with 4 exclusive skins. Each five days you maintain your streak you will get one of the event skins. These skins are the following: Dino (Red) (shown above), Rainbow Monster (Remastered), Dino (Blue), and Cubemouth (Devourer). Good luck maintaining your streak to get all four skins!"       },
         {
           headline: "Beat an insane to get the demon skin!",
           date: "2026-06-21",
@@ -2945,6 +3251,198 @@
         }
       }
 
+      function getLocalDateString(date = new Date()) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+
+      function daysBetweenDateStrings(fromStr, toStr) {
+        const [fy, fm, fd] = fromStr.split("-").map(Number);
+        const [ty, tm, td] = toStr.split("-").map(Number);
+        const from = new Date(fy, fm - 1, fd);
+        const to = new Date(ty, tm - 1, td);
+        return Math.round((to - from) / (1000 * 60 * 60 * 24));
+      }
+
+      function getOgSummerSkinsEarned(streak) {
+        const earned = [];
+        for (let i = 0; i < OG_SUMMER_STREAK_SKINS.length; i++) {
+          if (streak >= (i + 1) * OG_SUMMER_STREAK_INTERVAL) {
+            earned.push(OG_SUMMER_STREAK_SKINS[i]);
+          }
+        }
+        return earned;
+      }
+
+      function awardOgSummerStreakSkins(streak) {
+        let added = false;
+        getOgSummerSkinsEarned(streak).forEach((skinId) => {
+          if (!currentUserSkins.includes(skinId)) {
+            currentUserSkins.push(skinId);
+            added = true;
+          }
+        });
+        return added;
+      }
+
+      async function processOgSummerStreakOnLogin(
+        existingStreak = 0,
+        existingLastLogin = null,
+      ) {
+        if (!_supabase || !currentUser) return;
+
+        const today = getLocalDateString();
+        let streak = existingStreak || 0;
+        const lastLogin = existingLastLogin || null;
+
+        if (!lastLogin) {
+          streak = 1;
+        } else if (lastLogin === today) {
+          // Already logged in today — keep streak as-is
+        } else {
+          const diff = daysBetweenDateStrings(lastLogin, today);
+          if (diff === 1) {
+            streak += 1;
+          } else if (diff > 1) {
+            streak = Math.max(0, streak - (diff - 1));
+            streak += 1;
+          }
+        }
+
+        currentUserStreak = streak;
+        const skinsAdded = awardOgSummerStreakSkins(streak);
+
+        try {
+          const update = { streak, last_login: today };
+          if (skinsAdded) update.skins = currentUserSkins;
+          await _supabase
+            .from("users")
+            .update(update)
+            .eq("username", currentUser);
+        } catch (e) {
+          console.warn("OG Summer streak update error:", e);
+        }
+      }
+
+      function openOgSummerEvent() {
+        showMenu("og-summer-event");
+      }
+
+      function renderOgSummerEventMenu(container) {
+        container.style.maxWidth = "520px";
+        container.style.width = "100%";
+
+        const panel = document.createElement("div");
+        panel.style.cssText =
+          "width:100%; display:flex; flex-direction:column; align-items:center; gap:16px;";
+
+        const header = document.createElement("div");
+        header.style.cssText = "text-align:center; width:100%;";
+        header.innerHTML = `
+          <div style="font-size:1.6rem; font-weight:bold; color:#f1c40f; text-transform:uppercase; letter-spacing:2px;">OG Summer</div>
+          <div style="font-size:0.85rem; color:#aaa; margin-top:6px;">Log in every day to build your streak and unlock event skins.</div>
+        `;
+        panel.appendChild(header);
+
+        if (!currentUser) {
+          const signInMsg = document.createElement("div");
+          signInMsg.style.cssText =
+            "background:#1a1a1a; border:2px solid #444; border-radius:8px; padding:20px; text-align:center; color:#ccc; width:100%; box-sizing:border-box;";
+          signInMsg.innerHTML =
+            "<div style='margin-bottom:12px;'>Sign in for this event.</div>";
+          const signInBtn = document.createElement("button");
+          signInBtn.className = "btn";
+          signInBtn.textContent = "SIGN IN";
+          signInBtn.onclick = () => openLoginModal();
+          signInMsg.appendChild(signInBtn);
+          panel.appendChild(signInMsg);
+        } else {
+          const streak = currentUserStreak || 0;
+          const progressInCycle = streak % OG_SUMMER_STREAK_INTERVAL;
+          const progressPct =
+            streak === 0
+              ? 0
+              : progressInCycle === 0
+                ? 100
+                : (progressInCycle / OG_SUMMER_STREAK_INTERVAL) * 100;
+          const skinsEarned = getOgSummerSkinsEarned(streak).length;
+          const nextThreshold =
+            skinsEarned < OG_SUMMER_STREAK_SKINS.length
+              ? (skinsEarned + 1) * OG_SUMMER_STREAK_INTERVAL
+              : null;
+          const daysUntilNext = nextThreshold
+            ? nextThreshold - streak
+            : 0;
+
+          const streakBox = document.createElement("div");
+          streakBox.style.cssText =
+            "background:#1a1a1a; border:2px solid #f39c12; border-radius:8px; padding:20px; text-align:center; width:100%; box-sizing:border-box;";
+          streakBox.innerHTML = `
+            <div style="font-size:0.8rem; color:#aaa; text-transform:uppercase; letter-spacing:1px;">Current Streak</div>
+            <div class="og-summer-streak-display">${streak}</div>
+            <div style="font-size:0.85rem; color:#ccc; margin-bottom:12px;">day${streak === 1 ? "" : "s"}</div>
+            <div class="og-summer-progress-track"><div class="og-summer-progress-fill" style="width:${progressPct}%;"></div></div>
+            <div style="font-size:0.75rem; color:#888; margin-top:6px;">${
+              nextThreshold
+                ? daysUntilNext === 0
+                  ? "Next skin unlocks today!"
+                  : `${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"} until next skin`
+                : "All event skins unlocked!"
+            }</div>
+          `;
+          panel.appendChild(streakBox);
+
+          const rewardsTitle = document.createElement("div");
+          rewardsTitle.style.cssText =
+            "font-size:0.85rem; color:#aaa; text-transform:uppercase; letter-spacing:1px; align-self:flex-start;";
+          rewardsTitle.textContent = "Rewards";
+          panel.appendChild(rewardsTitle);
+
+          const rewardsList = document.createElement("div");
+          rewardsList.style.cssText =
+            "width:100%; display:flex; flex-direction:column; gap:8px;";
+
+          OG_SUMMER_STREAK_SKINS.forEach((skinId, index) => {
+            const requiredDays = (index + 1) * OG_SUMMER_STREAK_INTERVAL;
+            const unlocked = streak >= requiredDays;
+            const def = skin_definitions[skinId] || { name: skinId };
+
+            const row = document.createElement("div");
+            row.className =
+              "og-summer-reward-row " + (unlocked ? "unlocked" : "locked");
+
+            const preview = document.createElement("div");
+            preview.className = "og-summer-reward-preview";
+            preview.style.backgroundImage = `url('${skinId}.png')`;
+
+            const info = document.createElement("div");
+            info.style.flex = "1";
+            info.innerHTML = `
+              <div style="font-size:0.7rem; color:${unlocked ? "#f1c40f" : "#666"}; font-weight:bold;">${unlocked ? "UNLOCKED" : "LOCKED"} · ${requiredDays} DAYS</div>
+              <div style="font-size:1rem; font-weight:bold; color:#fff;">${def.name}</div>
+            `;
+
+            row.appendChild(preview);
+            row.appendChild(info);
+            rewardsList.appendChild(row);
+          });
+
+          panel.appendChild(rewardsList);
+        }
+
+        const btnBack = document.createElement("button");
+        btnBack.className = "btn";
+        btnBack.textContent = "BACK";
+        btnBack.style.cssText =
+          "margin-top: 8px; padding: 10px 30px; font-size: 1rem; min-width: 150px;";
+        btnBack.onclick = () => showMenu("main");
+        panel.appendChild(btnBack);
+
+        container.appendChild(panel);
+      }
+
       async function syncLocalWithCloud(d, skins, beatenLevels) {
         isCloudDataLoaded = true;
 
@@ -3114,12 +3612,20 @@
             const { error } = await _supabase
               .from("users")
               .insert([
-                { username, password, data: saveData, skins: initialSkins },
+                {
+                  username,
+                  password,
+                  data: saveData,
+                  skins: initialSkins,
+                  streak: 1,
+                  last_login: getLocalDateString(),
+                },
               ]);
             if (error) throw error;
 
             currentUser = username;
             currentUserSkins = initialSkins;
+            currentUserStreak = 1;
             isCloudDataLoaded = true;
             if (withReward) {
               const html = `
@@ -3147,7 +3653,9 @@
             currentUser = username;
             if (data.admin) adminUsers.add(currentUser);
             currentUserIsAdmin = data.admin || false;
+            currentUserStreak = data.streak || 0;
             await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
+            await processOgSummerStreakOnLogin(data.streak, data.last_login);
             showPopup("SUCCESS", "Logged in! Data synced.", () => {});
           }
           updateLoginButton();
@@ -3162,14 +3670,16 @@
         try {
           const { data, error } = await _supabase
             .from("users")
-            .select("data, skins, beaten_levels, admin")
+            .select("data, skins, beaten_levels, admin, streak, last_login")
             .eq("username", currentUser)
             .single();
 
           if (data) {
             if (data.admin) adminUsers.add(currentUser);
             currentUserIsAdmin = data.admin || false;
+            currentUserStreak = data.streak || 0;
             await syncLocalWithCloud(data.data, data.skins, data.beaten_levels);
+            await processOgSummerStreakOnLogin(data.streak, data.last_login);
           }
         } catch (e) {
           console.warn("Sync error:", e);
@@ -10175,7 +10685,8 @@
         }
       }
 
-      function showNewsFromBanner() {
+      function showNewsFromBanner(event) {
+        if (event && event.target.closest("#news-banner-event")) return;
         const story = ROTATING_NEWS[newsBannerIndex];
         if (story) {
           showMenu("news", { tab: "news", expand: story.headline });
@@ -10277,6 +10788,11 @@
         }
 
         if (currentMenuView === "level-awards") {
+          showMenu("main");
+          return;
+        }
+
+        if (currentMenuView === "og-summer-event") {
           showMenu("main");
           return;
         }
@@ -10927,6 +11443,16 @@
             mobAwardsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 8V7h2v3.52C8.17 10.07 7.54 9.13 7 8zm10 0c-.54 1.13-1.17 2.07-2 2.52V7h2v1z"/></svg>`;
             mobAwardsBtn.onclick = () => showMenu("level-awards");
             container.appendChild(mobAwardsBtn);
+
+            const mobEventBtn = document.createElement("button");
+            mobEventBtn.className =
+              "mobile-icon-btn event-btn-mobile mobile-fixed-btn";
+            mobEventBtn.style.cssText =
+              "position: fixed; top: 50px; left: 20px; width: 50px; height: 50px; z-index: 100; display:flex; font-size: 1.4rem;";
+            mobEventBtn.title = "OG Summer Event";
+            mobEventBtn.textContent = "☀️";
+            mobEventBtn.onclick = () => openOgSummerEvent();
+            container.appendChild(mobEventBtn);
           } else {
             const btnCampaign = document.createElement("button");
             btnCampaign.className = "btn";
@@ -13847,6 +14373,9 @@
             // List View
             renderLevelBrowserList(container, context);
           }
+        } else if (view === "og-summer-event") {
+          subtitle.textContent = "OG SUMMER";
+          renderOgSummerEventMenu(container);
         } else if (view === "level-awards") {
           subtitle.textContent = "LEVEL AWARDS";
           container.style.maxWidth = "800px";
@@ -14603,6 +15132,56 @@
         fetchLevels();
       }
 
+      function downloadCommunityLevelFile(levelRecord) {
+        const levelData = levelRecord.data || levelRecord;
+        const safeName = (levelRecord.name || "level").replace(
+          /[^a-z0-9]/gi,
+          "_",
+        );
+        const blob = new Blob([JSON.stringify(levelData, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${safeName}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function promptDownloadCommunityLevel(levelRecord) {
+        if (currentUserIsAdmin || levelRecord.copy) {
+          const requiredPassword = (levelRecord.copy_password || "").trim();
+
+          if (currentUserIsAdmin || !requiredPassword) {
+            downloadCommunityLevelFile(levelRecord);
+            return;
+          }
+
+          popupManager.show({
+            title: "DOWNLOAD LEVEL",
+            html: `<div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="color:#aaa; font-size:0.9rem;">This level requires a password to download.</div>
+              <input id="copy-password-input" type="password" placeholder="Enter password..." style="padding:10px; background:#333; color:white; border:1px solid #555; border-radius:4px;">
+            </div>`,
+            buttons: [
+              {
+                text: "DOWNLOAD",
+                onClick: () => {
+                  const entered = (
+                    document.getElementById("copy-password-input").value || ""
+                  ).trim();
+                  if (entered !== requiredPassword) {
+                    showPopup("ERROR", "Incorrect password.", () => {});
+                    return;
+                  }
+                  downloadCommunityLevelFile(levelRecord);
+                },
+              },
+            ],
+          });
+        }
+      }
+
       async function renderLevelDetails(container, lvl, detailContext) {
         lastBrowserState.isViewingDetails = true;
         lastBrowserState.activeDetailContext = detailContext;
@@ -14905,6 +15484,21 @@
         btnRow.appendChild(modesBtn);
         btnRow.appendChild(saveBtn);
         actionContainer.appendChild(btnRow);
+
+        if (currentUserIsAdmin || currentLvl.copy) {
+          const dlRow = document.createElement("div");
+          dlRow.style.cssText = "display:flex; gap:10px;";
+
+          const downloadBtn = document.createElement("button");
+          downloadBtn.className = "btn";
+          downloadBtn.style.cssText =
+            "flex:1; background:#555; border-color:#777; font-size:0.9rem; min-width:0;";
+          downloadBtn.textContent = "DOWNLOAD";
+          downloadBtn.onclick = () => promptDownloadCommunityLevel(currentLvl);
+
+          dlRow.appendChild(downloadBtn);
+          actionContainer.appendChild(dlRow);
+        }
 
         container.appendChild(details);
         const btnBack = document.createElement("button");
