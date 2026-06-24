@@ -11,7 +11,7 @@
         font-family: "Courier New", Courier, monospace;
         margin: 0;
         padding: 0;
-        display: flex; 
+        display: flex;
         flex-direction: column;
         height: 100vh;
         overflow: hidden;
@@ -234,6 +234,11 @@
         background-color: #2ecc71;
         color: #000;
         border: 1px solid #27ae60;
+      }
+      .skin-tag.event {
+        background-color: #e74c3c;
+        color: #fff;
+        border: 1px solid #c0392b;
       }
       .skin-artist {
         font-size: 0.65rem;
@@ -533,6 +538,7 @@
           <button class="filter-btn" data-tag="competitive">Competitive</button>
           <button class="filter-btn" data-tag="unlockCode">Code</button>
           <button class="filter-btn" data-tag="gameUnlock">Unlock</button>
+          <button class="filter-btn" data-tag="event">Event</button>
         </div>
         <select id="sort-select">
           <option value="name_asc">Sort: Name (A-Z)</option>
@@ -765,6 +771,25 @@
           copies: "1/2",
           artist: "Torgaar & Ligmadaddy69",
         },
+        coolguyblackwhitelogo: {
+          name: "Cool Guy (Black and White Logo)",
+          copies: "1/6",
+          artist: "Torgaar",
+          unlockCode: true
+        },
+        coolguywatercolorlogo: {
+          name: "Cool Guy (Watercolor Logo)",
+          copies: "1/3",
+          artist: "Torgaar",
+          unlockCode: true
+        },
+        coolguyscrapbooklogo: {
+          name: "Cool Guy (Scrapbook Logo)",
+          copies: "1/3",
+          artist: "Torgaar",
+          unlockCode: true
+        },
+
         coolguysignature: {
           name: "Cool Guy (Signature Logo)",
           copies: "1/3",
@@ -861,15 +886,34 @@
           artist: "MidgeMidge22 & Torgaar",
           gameUnlock: true,
         },
-                blockynosleep: {
+        blockynosleep: {
           name: "Blocky (No Sleep)",
           copies: "1/3",
           artist: "Crosby & Torgaar"
-        },        
+        },
+        reddino: {
+          name: "Dino (Red)",
+          copies: "N/A",
+          artist: "Torgaar & Mcdongos",
+          event: true,
+        },
+        rainbowmonsterremastered: {
+          name: "Rainbow Monster (Remastered)",
+          copies: "N/A",
+          artist: "Torgaar & Chairlord",
+          event: true,
+        },
+        bluedino: {
+          name: "Dino (Blue)",
+          copies: "N/A",
+          artist: "Torgaar & Mcdongos",
+          event: true,
+        },
         cubemouthdevourer: {
           name: "Cubemouth (Devourer)",
-          copies: "1/3",
-          artist: "Torgaar and Chairlord"
+          copies: "N/A",
+          artist: "Torgaar and Chairlord",
+          event: true,
         },
         midgemidge: {
           name: "MidgeMidge",
@@ -925,6 +969,7 @@
         if (typeof def.competitive === "undefined") def.competitive = false;
         if (typeof def.unlockCode === "undefined") def.unlockCode = false;
         if (typeof def.gameUnlock === "undefined") def.gameUnlock = false;
+        if (typeof def.event === "undefined") def.event = false;
         if (typeof def.forPlayer === "undefined") def.forPlayer = "";
       });
 
@@ -966,6 +1011,9 @@
         }
         if (data.gameUnlock) {
           detailsHtml += `<div class="skin-tag game-unlock" style="display:inline-block; margin-top:5px;">Game Unlock</div>`;
+        }
+        if (data.event) {
+          detailsHtml += `<div class="skin-tag event" style="display:inline-block; margin-top:5px;">Event</div>`;
         }
         modalDetails.innerHTML = detailsHtml;
 
@@ -1169,6 +1217,12 @@
               const t = document.createElement("div");
               t.className = "skin-tag game-unlock";
               t.textContent = "Unlock";
+              tags.appendChild(t);
+            }
+            if (data.event) {
+              const t = document.createElement("div");
+              t.className = "skin-tag event";
+              t.textContent = "Event";
               tags.appendChild(t);
             }
 
