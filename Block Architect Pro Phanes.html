@@ -780,6 +780,318 @@
       .sp-btn:active {
         transform: scale(0.95);
       }
+
+      /* Mod Button Styles */
+      .mod-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        overflow: hidden;
+      }
+      .mod-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .mod-btn:hover::before {
+        opacity: 1;
+      }
+      .mod-btn:active {
+        transform: scale(0.95);
+      }
+      .mod-btn-cf {
+        background: rgba(249, 115, 22, 0.12);
+        color: #fb923c;
+        border-color: rgba(249, 115, 22, 0.25);
+      }
+      .mod-btn-cf:hover {
+        background: rgba(249, 115, 22, 0.22);
+        border-color: rgba(249, 115, 22, 0.5);
+        box-shadow: 0 0 12px rgba(249, 115, 22, 0.2);
+      }
+      .mod-btn-gl {
+        background: rgba(234, 179, 8, 0.12);
+        color: #fbbf24;
+        border-color: rgba(234, 179, 8, 0.25);
+      }
+      .mod-btn-gl:hover {
+        background: rgba(234, 179, 8, 0.22);
+        border-color: rgba(234, 179, 8, 0.5);
+        box-shadow: 0 0 12px rgba(234, 179, 8, 0.2);
+      }
+      .mod-btn-tr {
+        background: rgba(139, 92, 246, 0.12);
+        color: #a78bfa;
+        border-color: rgba(139, 92, 246, 0.25);
+      }
+      .mod-btn-tr:hover {
+        background: rgba(139, 92, 246, 0.22);
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+      }
+      .mod-btn.active-mod {
+        box-shadow: 0 0 14px currentColor;
+      }
+
+      /* Mod Popup Styles */
+      .mod-popup-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        animation: modFadeIn 0.15s ease-out;
+      }
+      .mod-popup-overlay.open {
+        display: flex;
+      }
+      @keyframes modFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes modSlideIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .mod-popup-panel {
+        background: #0f121a;
+        border: 1px solid #1e293b;
+        border-radius: 14px;
+        padding: 20px;
+        width: 100%;
+        max-width: 340px;
+        box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6), 0 0 1px rgba(59, 130, 246, 0.1);
+        animation: modSlideIn 0.2s ease-out;
+      }
+      .mod-popup-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .mod-popup-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mod-popup-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #f1f5f9;
+        letter-spacing: -0.01em;
+      }
+      .mod-popup-subtitle {
+        font-size: 10px;
+        color: #64748b;
+        margin-top: 1px;
+      }
+      .mod-popup-section {
+        margin-bottom: 16px;
+      }
+      .mod-popup-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .mod-slider-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #0a0d14;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+      .mod-slider-wrap input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #1e293b;
+        outline: none;
+        cursor: pointer;
+      }
+      .mod-slider-wrap input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s;
+      }
+      .mod-slider-wrap input[type='range']::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+      .mod-slider-wrap input[type='range']::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      .mod-slider-val {
+        min-width: 36px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: 'Inter', monospace;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #1e293b;
+        color: #f1f5f9;
+      }
+      /* ColorFlash slider accent */
+      .slider-cf::-webkit-slider-thumb { background: #f97316; }
+      .slider-cf::-moz-range-thumb { background: #f97316; }
+      .slider-cf { background: linear-gradient(90deg, #1e293b, rgba(249, 115, 22, 0.3)) !important; }
+      /* Glow slider accent */
+      .slider-gl::-webkit-slider-thumb { background: #eab308; }
+      .slider-gl::-moz-range-thumb { background: #eab308; }
+      .slider-gl { background: linear-gradient(90deg, #1e293b, rgba(234, 179, 8, 0.3)) !important; }
+      /* Transparency slider accent */
+      .slider-tr::-webkit-slider-thumb { background: #8b5cf6; }
+      .slider-tr::-moz-range-thumb { background: #8b5cf6; }
+      .slider-tr { background: linear-gradient(90deg, #1e293b, rgba(139, 92, 246, 0.3)) !important; }
+
+      .mod-color-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .mod-color-chip {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        border: 2px solid #334155;
+        cursor: pointer;
+        transition: all 0.15s;
+        position: relative;
+      }
+      .mod-color-chip:hover {
+        transform: scale(1.15);
+        border-color: #94a3b8;
+      }
+      .mod-color-chip.selected {
+        border-color: #f97316;
+        box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+      }
+      .mod-color-chip .remove-chip {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 14px;
+        height: 14px;
+        background: #ef4444;
+        border-radius: 50%;
+        color: white;
+        font-size: 8px;
+        font-weight: bold;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .mod-color-chip:hover .remove-chip {
+        display: flex;
+      }
+      .mod-add-color-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        border: 2px dashed #334155;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.15s;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      .mod-add-color-btn:hover {
+        border-color: #64748b;
+        color: #94a3b8;
+        background: rgba(51, 65, 85, 0.3);
+      }
+      .mod-preview-bar {
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+        margin-top: 10px;
+      }
+      .mod-popup-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid #1e293b;
+      }
+      .mod-popup-footer button {
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .mod-btn-cancel {
+        background: #1e293b;
+        color: #94a3b8;
+        border: 1px solid #334155;
+      }
+      .mod-btn-cancel:hover {
+        background: #334155;
+        color: #f1f5f9;
+      }
+      .mod-btn-remove {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+      .mod-btn-remove:hover {
+        background: rgba(239, 68, 68, 0.2);
+      }
+      .mod-btn-apply {
+        background: #3b82f6;
+        color: white;
+        border: 1px solid #2563eb;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      }
+      .mod-btn-apply:hover {
+        background: #2563eb;
+      }
     </style>
   </head>
   <body class="flex flex-col">
@@ -865,25 +1177,6 @@
       </div>
       <div class="grid grid-cols-5 gap-1">
         <button
-          id="btn-sp-invisible"
-          onclick="makeSelectionInvisible()"
-          class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
-          title="Invisible"
-        >
-          <svg
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-            />
-          </svg>
-        </button>
-        <button
           id="btn-sp-flicker"
           onclick="toggleFlickerSelection()"
           class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400 flex justify-center items-center sp-btn"
@@ -968,6 +1261,23 @@
             <path
               d="M5 3v4M3 5h4M5 17v4M3 19h4M19 3v4M17 5h4M19 17v4M17 19h4M12 5v14"
             ></path>
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-3 gap-1 mb-1">
+        <button id="btn-sp-colorflash" onclick="openColorFlashPopup()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-orange-400 flex justify-center items-center sp-btn" title="Color Flash">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+        <button id="btn-sp-glow" onclick="openGlowPopup()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-yellow-400 flex justify-center items-center sp-btn" title="Glow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a7 7 0 00-4 12.7V17a2 2 0 002 2h4a2 2 0 002-2v-2.3A7 7 0 0012 2z"/><path d="M10 21h4"/>
+          </svg>
+        </button>
+        <button id="btn-sp-transparency" onclick="openTransparencyPopup()" class="p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-violet-400 flex justify-center items-center sp-btn" title="Transparency">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
           </svg>
         </button>
       </div>
@@ -2846,6 +3156,129 @@
           class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-blue-500 mb-4 hidden"
         />
         <div class="flex justify-end gap-2" id="dialog-buttons"></div>
+      </div>
+    </div>
+
+    <!-- COLOR FLASH POPUP -->
+    <div id="mod-colorflash-overlay" class="mod-popup-overlay" onclick="if(event.target===this)closeModPopup('colorflash')">
+      <div class="mod-popup-panel">
+        <div class="mod-popup-header">
+          <div class="mod-popup-icon" style="background:rgba(249,115,22,0.15)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mod-popup-title">Color Flash</div>
+            <div class="mod-popup-subtitle">Cycle through colors on selected blocks</div>
+          </div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Flash Colors</span>
+          <div id="cf-color-chips" class="mod-color-chips"></div>
+          <input type="color" id="cf-color-hidden" style="position:absolute;visibility:hidden;width:0;height:0" onchange="cfAddColorFromPicker(this.value)">
+          <div id="cf-preview-bar" class="mod-preview-bar"></div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Flash Interval</span>
+          <div class="mod-slider-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <input type="range" id="cf-interval-slider" class="slider-cf" min="50" max="2000" value="500" step="50" oninput="cfUpdateIntervalLabel(this.value)">
+            <span id="cf-interval-val" class="mod-slider-val">500ms</span>
+          </div>
+        </div>
+
+        <div class="mod-popup-footer">
+          <button class="mod-btn-remove" onclick="cfRemoveFromSelection()">Remove</button>
+          <div style="display:flex;gap:8px">
+            <button class="mod-btn-cancel" onclick="closeModPopup('colorflash')">Cancel</button>
+            <button class="mod-btn-apply" onclick="cfApplyToSelection()">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GLOW POPUP -->
+    <div id="mod-glow-overlay" class="mod-popup-overlay" onclick="if(event.target===this)closeModPopup('glow')">
+      <div class="mod-popup-panel">
+        <div class="mod-popup-header">
+          <div class="mod-popup-icon" style="background:rgba(234,179,8,0.15)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a7 7 0 00-4 12.7V17a2 2 0 002 2h4a2 2 0 002-2v-2.3A7 7 0 0012 2z"/><path d="M10 21h4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mod-popup-title">Glow Effect</div>
+            <div class="mod-popup-subtitle">Add a luminous glow around blocks</div>
+          </div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Glow Intensity</span>
+          <div class="mod-slider-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 3v1m0 16v1m-8-9H3m18 0h-1M5.6 5.6l.7.7m12.1 12.1l.7.7M5.6 18.4l.7-.7M18.4 5.6l.7-.7"/><circle cx="12" cy="12" r="4"/></svg>
+            <input type="range" id="gl-intensity-slider" class="slider-gl" min="2" max="30" value="10" step="1" oninput="glUpdatePreview()">
+            <span id="gl-intensity-val" class="mod-slider-val">10px</span>
+          </div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Preview</span>
+          <div style="display:flex;align-items:center;justify-content:center;padding:16px;background:#0a0d14;border:1px solid #1e293b;border-radius:8px">
+            <div id="gl-preview-block" style="width:40px;height:40px;background:#444;border:3px solid #333;border-radius:4px;transition:box-shadow 0.3s;box-shadow:0 0 10px #fbbf24"></div>
+          </div>
+        </div>
+
+        <div class="mod-popup-footer">
+          <button class="mod-btn-remove" onclick="glRemoveFromSelection()">Remove</button>
+          <div style="display:flex;gap:8px">
+            <button class="mod-btn-cancel" onclick="closeModPopup('glow')">Cancel</button>
+            <button class="mod-btn-apply" onclick="glApplyToSelection()">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSPARENCY POPUP -->
+    <div id="mod-transparency-overlay" class="mod-popup-overlay" onclick="if(event.target===this)closeModPopup('transparency')">
+      <div class="mod-popup-panel">
+        <div class="mod-popup-header">
+          <div class="mod-popup-icon" style="background:rgba(139,92,246,0.15)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mod-popup-title">Transparency</div>
+            <div class="mod-popup-subtitle">Adjust block opacity level</div>
+          </div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Opacity Level</span>
+          <div class="mod-slider-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 3l18 18" stroke-dasharray="3 3"/></svg>
+            <input type="range" id="tr-opacity-slider" class="slider-tr" min="0" max="100" value="50" step="1" oninput="trUpdatePreview()">
+            <span id="tr-opacity-val" class="mod-slider-val">50%</span>
+          </div>
+        </div>
+
+        <div class="mod-popup-section">
+          <span class="mod-popup-label">Preview</span>
+          <div style="display:flex;align-items:center;justify-content:center;padding:16px;background:repeating-conic-gradient(#1a1a2e 0% 25%, #0f0f1f 0% 50%) 50%/16px 16px;border:1px solid #1e293b;border-radius:8px">
+            <div id="tr-preview-block" style="width:50px;height:50px;background:#444;border:3px solid #555;border-radius:4px;transition:opacity 0.2s;opacity:0.5"></div>
+          </div>
+        </div>
+
+        <div class="mod-popup-footer">
+          <button class="mod-btn-remove" onclick="trRemoveFromSelection()">Remove</button>
+          <div style="display:flex;gap:8px">
+            <button class="mod-btn-cancel" onclick="closeModPopup('transparency')">Cancel</button>
+            <button class="mod-btn-apply" onclick="trApplyToSelection()">Apply</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -5097,6 +5530,24 @@
           cell.appendChild(ind);
         }
 
+        const bConfig = state.blockConfigs[`${x},${y}`];
+        if (bConfig) {
+          if (bConfig.opacity !== undefined) {
+            cell.style.opacity = bConfig.opacity;
+          }
+          if (bConfig.glow) {
+            const glowPx = typeof bConfig.glow === 'number' ? bConfig.glow : 10;
+            cell.style.boxShadow = `0 0 ${glowPx}px ${color && color !== 'invisible' ? color : 'white'}`;
+          }
+          if (bConfig.colorflash) {
+            const ind = document.createElement("div");
+            ind.className =
+              "absolute top-0 right-0 text-[8px] font-bold text-orange-400 px-0.5 leading-none pointer-events-none z-10";
+            ind.innerText = "CF";
+            cell.appendChild(ind);
+          }
+        }
+
         // Picker Highlight
         if (state.picker.active) {
           if (
@@ -5636,7 +6087,6 @@
         let hasRising = false;
         let allThrough = true;
         let allFake = true;
-        let allInvisible = true;
         let allFlash = true;
         let allFlicker = true;
         let allJumpFlicker = true;
@@ -5674,7 +6124,6 @@
               if (!state.fakes.has(`${x},${y}`)) allFake = false;
 
               const col = state.colors[`${x},${y}`];
-              if (col !== "invisible") allInvisible = false;
               if (col !== "flash") allFlash = false;
               if (!state.flickers.has(`${x},${y}`)) allFlicker = false;
               if (!state.jumpFlickers.has(`${x},${y}`)) allJumpFlicker = false;
@@ -5708,7 +6157,6 @@
         if (!hasBlocks) {
           allIllusion = false;
           allFake = false;
-          allInvisible = false;
           allFlash = false;
           allFlicker = false;
           allJumpFlicker = false;
@@ -5727,7 +6175,6 @@
         const modButtons = [
           "btn-sp-fake",
           "btn-sp-paint",
-          "btn-sp-invisible",
           "btn-sp-flicker",
           "btn-sp-jump-flicker",
           "btn-sp-touch-flicker",
@@ -5744,7 +6191,6 @@
 
         if (hasBlocks) {
           setBtn("btn-sp-fake", allFake);
-          setBtn("btn-sp-invisible", allInvisible);
           setBtn("btn-sp-paint", allPainted);
           setBtn("btn-sp-flicker", allFlicker);
           setBtn("btn-sp-jump-flicker", allJumpFlicker);
@@ -5865,40 +6311,6 @@
         }
       }
 
-      function makeSelectionInvisible() {
-        const sel = getNormalizedSelection();
-        if (!sel)
-          return dialog.alert("No Selection", "Please select an area first.");
-
-        let allInvisible = true;
-        for (let y = sel.y1; y <= sel.y2; y++) {
-          for (let x = sel.x1; x <= sel.x2; x++) {
-            if (
-              state.grid[y][x] !== " " &&
-              state.colors[`${x},${y}`] !== "invisible"
-            ) {
-              allInvisible = false;
-              break;
-            }
-          }
-          if (!allInvisible) break;
-        }
-
-        for (let y = sel.y1; y <= sel.y2; y++) {
-          for (let x = sel.x1; x <= sel.x2; x++) {
-            if (state.grid[y][x] !== " ") {
-              if (allInvisible) {
-                if (state.colors[`${x},${y}`] === "invisible")
-                  delete state.colors[`${x},${y}`];
-              } else {
-                state.colors[`${x},${y}`] = "invisible";
-              }
-            }
-          }
-        }
-        render();
-        history.push();
-      }
 
       function toggleFlickerSelection() {
         const sel = getNormalizedSelection();
@@ -6218,40 +6630,245 @@
         updateSelectionUI();
       }
 
-      function makeSelectionInvisible() {
-        const sel = getNormalizedSelection();
-        if (!sel)
-          return dialog.alert("No Selection", "Please select an area first.");
 
-        let allInvisible = true;
+      // --- MOD POPUP SYSTEM ---
+      let cfColors = ['#ef4444', '#3b82f6'];
+      
+      function closeModPopup(type) {
+        const map = { colorflash: 'mod-colorflash-overlay', glow: 'mod-glow-overlay', transparency: 'mod-transparency-overlay' };
+        document.getElementById(map[type]).classList.remove('open');
+      }
+
+      // ---- COLOR FLASH ----
+      function openColorFlashPopup() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        // Check if selection already has colorflash - load existing values
+        let existingColors = null, existingInterval = 500;
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
-            if (
-              state.grid[y][x] !== " " &&
-              state.colors[`${x},${y}`] !== "invisible"
-            ) {
-              allInvisible = false;
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf && conf.colorflash) {
+              existingColors = conf.colorflash.colors;
+              existingInterval = conf.colorflash.interval;
               break;
             }
           }
-          if (!allInvisible) break;
+          if (existingColors) break;
         }
+        
+        cfColors = existingColors ? [...existingColors] : ['#ef4444', '#3b82f6'];
+        document.getElementById('cf-interval-slider').value = existingInterval;
+        cfUpdateIntervalLabel(existingInterval);
+        cfRenderChips();
+        cfUpdatePreviewBar();
+        document.getElementById('mod-colorflash-overlay').classList.add('open');
+      }
 
+      function cfRenderChips() {
+        const container = document.getElementById('cf-color-chips');
+        container.innerHTML = '';
+        cfColors.forEach((color, i) => {
+          const chip = document.createElement('div');
+          chip.className = 'mod-color-chip';
+          chip.style.background = color;
+          chip.title = color;
+          chip.onclick = () => { cfColors.splice(i, 1); cfRenderChips(); cfUpdatePreviewBar(); };
+          const rm = document.createElement('div');
+          rm.className = 'remove-chip';
+          rm.innerText = '×';
+          chip.appendChild(rm);
+          container.appendChild(chip);
+        });
+        // Add color button
+        const addBtn = document.createElement('div');
+        addBtn.className = 'mod-add-color-btn';
+        addBtn.innerText = '+';
+        addBtn.title = 'Add color';
+        addBtn.onclick = () => document.getElementById('cf-color-hidden').click();
+        container.appendChild(addBtn);
+      }
+
+      function cfAddColorFromPicker(color) {
+        cfColors.push(color);
+        cfRenderChips();
+        cfUpdatePreviewBar();
+      }
+
+      function cfUpdateIntervalLabel(val) {
+        document.getElementById('cf-interval-val').innerText = val + 'ms';
+      }
+
+      function cfUpdatePreviewBar() {
+        const bar = document.getElementById('cf-preview-bar');
+        if (cfColors.length === 0) {
+          bar.innerHTML = '<div style="flex:1;background:#1e293b;border-radius:3px"></div>';
+          return;
+        }
+        bar.innerHTML = cfColors.map(c => `<div style="flex:1;background:${c};transition:all 0.2s"></div>`).join('');
+      }
+
+      function cfApplyToSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        if (cfColors.length < 2) return dialog.alert("Need Colors", "Add at least 2 colors for color flash.");
+        const interval = parseInt(document.getElementById('cf-interval-slider').value);
+        const colors = [...cfColors];
+        
         for (let y = sel.y1; y <= sel.y2; y++) {
           for (let x = sel.x1; x <= sel.x2; x++) {
             if (state.grid[y][x] !== " ") {
-              if (allInvisible) {
-                if (state.colors[`${x},${y}`] === "invisible")
-                  delete state.colors[`${x},${y}`];
-              } else {
-                state.colors[`${x},${y}`] = "invisible";
-              }
+              if (!state.blockConfigs[`${x},${y}`]) state.blockConfigs[`${x},${y}`] = {};
+              state.blockConfigs[`${x},${y}`].colorflash = { colors, interval };
             }
           }
         }
         render();
         history.push();
+        closeModPopup('colorflash');
       }
+
+      function cfRemoveFromSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf) delete conf.colorflash;
+          }
+        }
+        render();
+        history.push();
+        closeModPopup('colorflash');
+      }
+
+      // ---- GLOW ----
+      function openGlowPopup() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        // Check existing glow value
+        let existingIntensity = 10;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf && conf.glow) {
+              existingIntensity = typeof conf.glow === 'number' ? conf.glow : 10;
+              break;
+            }
+          }
+        }
+        
+        document.getElementById('gl-intensity-slider').value = existingIntensity;
+        glUpdatePreview();
+        document.getElementById('mod-glow-overlay').classList.add('open');
+      }
+
+      function glUpdatePreview() {
+        const val = document.getElementById('gl-intensity-slider').value;
+        document.getElementById('gl-intensity-val').innerText = val + 'px';
+        document.getElementById('gl-preview-block').style.boxShadow = `0 0 ${val}px #fbbf24`;
+      }
+
+      function glApplyToSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        const intensity = parseInt(document.getElementById('gl-intensity-slider').value);
+        
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " ") {
+              if (!state.blockConfigs[`${x},${y}`]) state.blockConfigs[`${x},${y}`] = {};
+              state.blockConfigs[`${x},${y}`].glow = intensity;
+            }
+          }
+        }
+        render();
+        history.push();
+        closeModPopup('glow');
+      }
+
+      function glRemoveFromSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf) delete conf.glow;
+          }
+        }
+        render();
+        history.push();
+        closeModPopup('glow');
+      }
+
+      // Keep the old function name for backward compatibility
+      function toggleGlowSelection() { openGlowPopup(); }
+
+      // ---- TRANSPARENCY ----
+      function openTransparencyPopup() {
+        const sel = getNormalizedSelection();
+        if (!sel) return dialog.alert("No Selection", "Please select an area first.");
+        
+        // Check existing opacity value
+        let existingOpacity = 50;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf && conf.opacity !== undefined) {
+              existingOpacity = Math.round(conf.opacity * 100);
+              break;
+            }
+          }
+        }
+        
+        document.getElementById('tr-opacity-slider').value = existingOpacity;
+        trUpdatePreview();
+        document.getElementById('mod-transparency-overlay').classList.add('open');
+      }
+
+      function trUpdatePreview() {
+        const val = document.getElementById('tr-opacity-slider').value;
+        document.getElementById('tr-opacity-val').innerText = val + '%';
+        document.getElementById('tr-preview-block').style.opacity = val / 100;
+      }
+
+      function trApplyToSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        const opacity = parseInt(document.getElementById('tr-opacity-slider').value) / 100;
+        
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            if (state.grid[y][x] !== " ") {
+              if (!state.blockConfigs[`${x},${y}`]) state.blockConfigs[`${x},${y}`] = {};
+              state.blockConfigs[`${x},${y}`].opacity = opacity;
+            }
+          }
+        }
+        render();
+        history.push();
+        closeModPopup('transparency');
+      }
+
+      function trRemoveFromSelection() {
+        const sel = getNormalizedSelection();
+        if (!sel) return;
+        for (let y = sel.y1; y <= sel.y2; y++) {
+          for (let x = sel.x1; x <= sel.x2; x++) {
+            const conf = state.blockConfigs[`${x},${y}`];
+            if (conf) delete conf.opacity;
+          }
+        }
+        render();
+        history.push();
+        closeModPopup('transparency');
+      }
+
+      // Keep old function names for backward compatibility
+      function promptTransparency() { openTransparencyPopup(); }
+      function promptColorFlash() { openColorFlashPopup(); }
 
       function toggleFlickerSelection() {
         const sel = getNormalizedSelection();
