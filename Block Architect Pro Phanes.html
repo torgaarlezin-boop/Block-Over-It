@@ -1867,7 +1867,50 @@
                     <span>No Skill</span><span>Hard</span><span>Insane</span>
                   </div>
                 </div>
+              </div>
+              <div class="pt-2">
+                <label
+                  class="flex items-center justify-between cursor-pointer group"
+                >
+                  <span class="text-[9px] font-bold text-slate-300 uppercase"
+                    >Allow Copying</span
+                  >
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      id="sidebar-prop-copy"
+                      class="sr-only peer"
+                      onchange="
+                        document.getElementById('prop-copy').value = this.checked;
+                        settingsManager.toggleCopyAllow();
+                        settingsManager.syncToModal();
+                      "
+                    />
+                    <div
+                      class="w-9 h-5 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                    ></div>
+                  </div>
+                </label>
+                <div id="sidebar-copy-password-group" class="hidden mt-2">
+                  <label
+                    class="text-[9px] text-slate-500 font-bold uppercase block mb-1.5"
+                    >Copy Password (optional)</label
+                  >
+                  <input
+                    id="sidebar-prop-copy-password"
+                    type="password"
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-300 outline-none focus:border-blue-500"
+                    placeholder="Leave empty for no password"
+                    oninput="
+                      document.getElementById('prop-copy-password').value =
+                        this.value;
+                      settingsManager.syncToModal();
+                    "
+                  />
+                </div>
                 <input type="hidden" id="prop-diff" value="1" />
+                <input type="hidden" id="prop-copy" value="false" />
+                <input type="hidden" id="prop-copy-password" value="" />
                 <input type="hidden" id="prop-mirror" value="false" />
                 <input type="hidden" id="prop-force-zoom" value="false" />
                 <input type="hidden" id="prop-no-death-anim" value="false" />
@@ -3556,6 +3599,44 @@
                     id="set-diff-bars-modal"
                   ></div>
                 </div>
+                <div
+                  class="col-span-2 setting-item pt-2 border-t border-slate-800"
+                >
+                  <label
+                    class="flex items-center justify-between cursor-pointer group"
+                  >
+                    <span class="text-xs font-bold text-slate-300"
+                      >Allow Copying</span
+                    >
+                    <div class="relative">
+                      <input
+                        type="checkbox"
+                        id="set-prop-copy"
+                        class="sr-only peer"
+                        onchange="
+                          settingsManager.toggleCopyAllow();
+                          settingsManager.syncFromModal();
+                        "
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
+                    </div>
+                  </label>
+                  <div id="copy-password-input-group" class="hidden mt-3">
+                    <label
+                      class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                      >Copy Password (optional)</label
+                    >
+                    <input
+                      id="set-prop-copy-password"
+                      type="password"
+                      class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-blue-500"
+                      placeholder="Leave empty for no password"
+                      oninput="settingsManager.syncFromModal()"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -4548,6 +4629,8 @@
           h: 20,
           blockHitboxes: false,
           forceDefaultSkin: false,
+          copy: false,
+          copyPassword: "",
         },
         visualDefaults: {
           background: "",
@@ -4632,6 +4715,23 @@
             document.getElementById("prop-w").value;
           document.getElementById("set-prop-h").value =
             document.getElementById("prop-h").value;
+          document.getElementById("set-prop-copy").checked =
+            document.getElementById("prop-copy").value === "true";
+          document.getElementById("set-prop-copy-password").value =
+            document.getElementById("prop-copy-password").value;
+          const sidebarCopy = document.getElementById("sidebar-prop-copy");
+          if (sidebarCopy) {
+            sidebarCopy.checked =
+              document.getElementById("prop-copy").value === "true";
+          }
+          const sidebarCopyPassword = document.getElementById(
+            "sidebar-prop-copy-password",
+          );
+          if (sidebarCopyPassword) {
+            sidebarCopyPassword.value =
+              document.getElementById("prop-copy-password").value;
+          }
+          this.toggleCopyAllow();
 
           // Sync Text
           const vTitle = document.getElementById("prop-vis-title").value;
@@ -4710,6 +4810,26 @@
             document.getElementById("set-prop-w").value;
           document.getElementById("prop-h").value =
             document.getElementById("set-prop-h").value;
+          document.getElementById("prop-copy").value =
+            document.getElementById("set-prop-copy").checked;
+          document.getElementById("prop-copy-password").value = document
+            .getElementById("set-prop-copy")
+            .checked
+            ? document.getElementById("set-prop-copy-password").value
+            : "";
+          const sidebarCopy = document.getElementById("sidebar-prop-copy");
+          if (sidebarCopy) {
+            sidebarCopy.checked =
+              document.getElementById("set-prop-copy").checked;
+          }
+          const sidebarCopyPassword = document.getElementById(
+            "sidebar-prop-copy-password",
+          );
+          if (sidebarCopyPassword) {
+            sidebarCopyPassword.value =
+              document.getElementById("prop-copy-password").value;
+          }
+          this.toggleCopyAllow();
 
           // Sync Text
           document.getElementById("prop-vis-title").value =
@@ -4871,6 +4991,33 @@
             : "hidden";
           this.syncFromModal();
         },
+        toggleCopyAllow() {
+          const modalToggle = document.getElementById("set-prop-copy");
+          const on =
+            modalToggle?.checked ||
+            document.getElementById("prop-copy").value === "true";
+          const modalGroup = document.getElementById("copy-password-input-group");
+          const sidebarGroup = document.getElementById(
+            "sidebar-copy-password-group",
+          );
+          if (modalGroup) {
+            modalGroup.className = on ? "block mt-3" : "hidden mt-3";
+          }
+          if (sidebarGroup) {
+            sidebarGroup.className = on ? "block mt-2" : "hidden mt-2";
+          }
+          if (modalToggle) modalToggle.checked = on;
+          const sidebarCopy = document.getElementById("sidebar-prop-copy");
+          if (sidebarCopy) sidebarCopy.checked = on;
+          if (!on) {
+            document.getElementById("prop-copy-password").value = "";
+            document.getElementById("set-prop-copy-password").value = "";
+            const sidebarCopyPassword = document.getElementById(
+              "sidebar-prop-copy-password",
+            );
+            if (sidebarCopyPassword) sidebarCopyPassword.value = "";
+          }
+        },
         renderDiffBarsModal() {
           const container = document.getElementById("set-diff-bars-modal");
           container.innerHTML = "";
@@ -4931,6 +5078,9 @@
             forceDefaultSkin: document.getElementById(
               "set-prop-force-default-skin",
             ).checked,
+            copy: document.getElementById("set-prop-copy").checked,
+            copyPassword: document.getElementById("set-prop-copy-password")
+              .value,
             w: parseInt(document.getElementById("set-prop-w").value),
             h: parseInt(document.getElementById("set-prop-h").value),
           };
@@ -4959,6 +5109,10 @@
             this.defaults.blockHitboxes;
           document.getElementById("set-prop-force-default-skin").checked =
             this.defaults.forceDefaultSkin;
+          document.getElementById("set-prop-copy").checked =
+            this.defaults.copy;
+          document.getElementById("set-prop-copy-password").value =
+            this.defaults.copyPassword;
           document.getElementById("set-vis-font").value =
             this.defaults.visualFont;
           document.getElementById("set-prop-w").value = this.defaults.w;
@@ -5311,12 +5465,21 @@
             const data = JSON.parse(io.export());
             data.creator = creatorName;
 
+            settingsManager.syncFromModal();
+            const allowCopy =
+              document.getElementById("prop-copy").value === "true";
+            const copyPassword = allowCopy
+              ? document.getElementById("prop-copy-password").value
+              : "";
+
             const payload = {
               name: data.name,
               creator: creatorName,
               description: data.description,
               difficulty: data.difficulty,
               data: data,
+              copy: allowCopy,
+              copy_password: copyPassword,
             };
 
             const { error } = await _supabase
@@ -9031,6 +9194,8 @@
               document.getElementById("prop-disable-zoom").value = "false";
               document.getElementById("prop-block-hitboxes").value = "false";
               document.getElementById("prop-no-death-anim").value = "false";
+              document.getElementById("prop-copy").value = "false";
+              document.getElementById("prop-copy-password").value = "";
               document.getElementById("prop-vis-title").value = "";
               document.getElementById("prop-vis-author").value = "";
               document.getElementById("prop-vis-win").value = "";
@@ -9050,6 +9215,8 @@
               document.getElementById("prop-disable-zoom").value = "false";
               document.getElementById("prop-block-hitboxes").value = "false";
               document.getElementById("prop-no-death-anim").value = "false";
+              document.getElementById("prop-copy").value = "false";
+              document.getElementById("prop-copy-password").value = "";
               document.getElementById("prop-vis-title").value = "";
               document.getElementById("prop-vis-author").value = "";
               document.getElementById("prop-vis-win").value = "";
