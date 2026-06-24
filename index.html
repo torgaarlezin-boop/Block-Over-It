@@ -2740,7 +2740,8 @@
           date: "2026-06-21",
           image: "demon.png",
           story:
-            "The brand new demon skin (shown above) can now be claimed by doing one of the most difficulty feats in the game - beating an insane. This makes the skin an absolute flex for anyone who has it. The demon skin will also be given to anyone who has previously beaten an insane in the game."        },
+            "The brand new demon skin (shown above) can now be claimed by doing one of the most difficulty feats in the game - beating an insane. This makes the skin an absolute flex for anyone who has it. The demon skin will also be given to anyone who has previously beaten an insane in the game.",
+        },
         {
           headline:
             "A exclusive skin with only THREE copies is hidden inside the game. Who will find the copies first?",
@@ -6073,7 +6074,7 @@
         }
       }
 
-            async function checkDemonSkinUnlock(silent = false) {
+      async function checkDemonSkinUnlock(silent = false) {
         if (!_supabase || !currentUser) return;
         if (currentUserSkins.includes("demon")) return;
 
@@ -6117,7 +6118,8 @@
         } catch (e) {
           console.warn("Failed to check Demon skin unlock:", e);
         }
-      }async function checkSkinUnlocks(silent = false) {
+      }
+      async function checkSkinUnlocks(silent = false) {
         checkBlueCoinSkinUnlock(silent);
         checkGalaxySkinUnlock(silent);
         checkEarthSkinUnlock(silent);
@@ -8341,10 +8343,15 @@
                   el.style.opacity = bConfig.opacity;
                 }
                 if (bConfig.glow) {
-                  el.style.boxShadow = `0 0 15px ${color && color !== 'invisible' ? color : 'rgba(255,255,255,0.7)'}`;
+                  const glowPx = typeof bConfig.glow === 'number' ? bConfig.glow : 15;
+                  el.style.boxShadow = `0 0 ${glowPx}px ${color && color !== "invisible" ? color : "rgba(255,255,255,0.7)"}`;
                 }
                 if (bConfig.colorflash) {
-                  this.bgFlashes.push({ el: el, config: bConfig.colorflash, baseColor: color });
+                  this.bgFlashes.push({
+                    el: el,
+                    config: bConfig.colorflash,
+                    baseColor: color,
+                  });
                   const c = bConfig.colorflash.colors[0];
                   el.style.backgroundColor = c;
                   el.style.borderColor = adjustColor(c, -20);
@@ -8912,6 +8919,22 @@
             this.bgAnimTimer = 0;
             this.bgAnimIndex++;
             this.updateBackground();
+          }
+        }
+
+        // ColorFlash animation - cycle through colors on timed blocks
+        if (this.bgFlashes && this.bgFlashes.length > 0) {
+          for (var i = 0; i < this.bgFlashes.length; i++) {
+            var bf = this.bgFlashes[i];
+            var interval = (bf.config.interval || 500) / 1000;
+            bf.cfTimer = (bf.cfTimer || 0) + (step || 0);
+            if (bf.cfTimer >= interval) {
+              bf.cfTimer = 0;
+              bf.cfIndex = ((bf.cfIndex || 0) + 1) % bf.config.colors.length;
+              var c = bf.config.colors[bf.cfIndex];
+              bf.el.style.backgroundColor = c;
+              bf.el.style.borderColor = adjustColor(c, -20);
+            }
           }
         }
 
@@ -15388,4 +15411,3 @@
     </script>
   </body>
 </html>
-
