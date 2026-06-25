@@ -3038,9 +3038,9 @@
         {
           headline: "OG Summer Event has Started!",
           date: "2026-06-24",
-          image: 'reddino',
+          image: 'ogsummer.png',
           story:
-            "The new event 'OG Summer' has just started, and it comes with 4 exclusive skins. Each five days you maintain your streak you will get one of the event skins. These skins are the following: Dino (Red) (shown above), Rainbow Monster (Remastered), Dino (Blue), and Cubemouth (Devourer). Good luck maintaining your streak to get all four skins!"       },
+            "The new event 'OG Summer' has just started, and it comes with 4 exclusive skins. Each five days you maintain your streak you will get one of the event skins. These skins are the following: Dino (Red), Rainbow Monster (Remastered), Dino (Blue), and Cubemouth (Devourer) (all shown above). Good luck maintaining your streak to get all four skins!"       },
         {
           headline: "Beat an insane to get the demon skin!",
           date: "2026-06-21",
@@ -11448,8 +11448,8 @@
             mobEventBtn.className =
               "mobile-icon-btn event-btn-mobile mobile-fixed-btn";
             mobEventBtn.style.cssText =
-              "position: fixed; top: 50px; left: 20px; width: 50px; height: 50px; z-index: 100; display:flex; font-size: 1.4rem;";
-            mobEventBtn.title = "OG Summer Event";
+              "position: fixed; top: 20px; left: 140px; width: 50px; height: 50px; z-index: 100; display:flex; font-size: 1.4rem;";
+            mobEventBtn.title = "OG Summer";
             mobEventBtn.textContent = "☀️";
             mobEventBtn.onclick = () => openOgSummerEvent();
             container.appendChild(mobEventBtn);
@@ -15816,8 +15816,7 @@
         input.value = "";
         loadComments(lvl);
       };
-
-      const loading_screens = [
+      /* Loading Screens (removed for og event):         
         { img: "fluffy.png", artist: "Torgaar" },
         { img: "loading.png", artist: "J_imbo" },
         { img: "platforms.png", artist: "MidgeMidge22" },
@@ -15827,6 +15826,10 @@
         { img: "sinking.png", artist: "LigmaDaddy69" },
         { img: "letters.png", artist: "Torgaar" },
         { img: "dinos.png", artist: "Mcdongos" },
+*/
+      const loading_screens = [
+
+        { img: "ogsummer.png", artist: "Keep your streak for OG rewards!" },
       ];
 
       async function performLoading() {
