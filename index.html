@@ -1698,6 +1698,13 @@
         color: #666;
         cursor: not-allowed;
       }
+      /* A listing you own carries Edit Price and Remove; they share the row. */
+      .shop-card .shop-btn-buy + .shop-btn-buy {
+        margin-top: 6px;
+      }
+      .shop-card-m-buy .shop-btn-buy + .shop-btn-buy {
+        margin-top: 0;
+      }
       .shop-btn-buy.danger {
         background: #4a2020;
         border-color: #822;
@@ -1724,6 +1731,44 @@
       }
       .shop-ribbon.mine {
         background: #335699;
+        color: #fff;
+      }
+      /* An offer aimed at you by name. Warm against the blue of everything
+         else, because it is the one card on the screen nobody else can see. */
+      .shop-ribbon.offer {
+        background: #e0a020;
+        color: #241a00;
+      }
+      .shop-card.offered {
+        border-color: #e0a020;
+      }
+      .shop-card.offered:hover {
+        border-color: #f0b840;
+      }
+      .shop-tab.has-offers {
+        border-color: #e0a020;
+        color: #f2d79a;
+      }
+      /* Free gift vs sell-to-them. Shares the picker grid so the dialog reads
+         as one column of choices rather than two different controls. */
+      .shop-mode-item {
+        background: #161616;
+        border: 2px solid #2a2a2a;
+        padding: 12px 6px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: #999;
+        transition: all 0.15s;
+      }
+      .shop-mode-item:hover {
+        border-color: #555;
+      }
+      .shop-mode-item.selected {
+        border-color: #335699;
+        background: #1b2c4a;
         color: #fff;
       }
       .shop-empty {
@@ -6235,6 +6280,78 @@
         return (skin_definitions[id] && skin_definitions[id].name) || id;
       }
 
+      // ---- OWNING MORE THAN ONE OF A SKIN ----------------------------------
+      // A collection is a multiset, not a set: the same skin can be held more
+      // than once, which is what makes a spare to gift or sell possible. The
+      // storage format is unchanged -- users.skins is still a text[] -- a
+      // repeated id simply now means a repeated copy instead of being a
+      // duplicate to squash. Copies are kept adjacent so the collection reads
+      // as one tile per skin with a count on it, and so reordering can move a
+      // stack as a unit.
+      function skinCopies(list, id) {
+        let n = 0;
+        for (let i = 0; i < list.length; i++) if (list[i] === id) n++;
+        return n;
+      }
+
+      function skinCounts(list) {
+        const counts = new Map();
+        list.forEach((id) => counts.set(id, (counts.get(id) || 0) + 1));
+        return counts;
+      }
+
+      // First-appearance order, one entry per distinct skin.
+      function skinStacks(list) {
+        const seen = new Map();
+        const out = [];
+        list.forEach((id) => {
+          if (seen.has(id)) {
+            out[seen.get(id)].count++;
+            return;
+          }
+          seen.set(id, out.length);
+          out.push({ id, count: 1 });
+        });
+        return out;
+      }
+
+      // Rewrites a collection in place so copies of a skin sit together,
+      // keeping the order the player arranged. Every mutation runs through
+      // this, so the flat array and the stacked view never disagree.
+      function regroupSkins(list) {
+        const stacks = skinStacks(list);
+        const flat = [];
+        stacks.forEach((st) => {
+          for (let i = 0; i < st.count; i++) flat.push(st.id);
+        });
+        const same =
+          flat.length === list.length && flat.every((id, i) => id === list[i]);
+        if (!same) {
+          list.length = 0;
+          flat.forEach((id) => list.push(id));
+        }
+        return list;
+      }
+
+      // Removes a single copy. Returns false when there was none to remove,
+      // so callers can refuse a gift rather than silently sending nothing.
+      function removeOneSkin(list, id) {
+        const at = list.lastIndexOf(id);
+        if (at === -1) return false;
+        list.splice(at, 1);
+        return true;
+      }
+
+      // How many copies are spare -- not worn, not already promised to a
+      // listing. Wearing a skin pins exactly one copy, so someone holding two
+      // can still trade one away.
+      function spareSkinCopies(id, listedCounts) {
+        let n = skinCopies(currentUserSkins, id);
+        if (gameSettings.currentSkin === id) n -= 1;
+        if (listedCounts) n -= listedCounts.get(id) || 0;
+        return Math.max(0, n);
+      }
+
       function shopCoinSVG(size) {
         return (
           '<svg width="' +
@@ -6260,11 +6377,50 @@
           .eq("active", true)
           .order("created_at", { ascending: false });
         if (error) return [];
-        // A finite game listing that has run dry is still "active" until
-        // someone tidies it up, so filter it out here rather than trusting the
-        // flag alone.
-        return (data || []).filter(
-          (l) => l.seller !== null || l.stock === null || l.stock > 0,
+        return (data || []).filter((l) => {
+          // A finite game listing that has run dry is still "active" until
+          // someone tidies it up, so filter it out here rather than trusting
+          // the flag alone. Stock is a scarcity mechanic for things that cost
+          // something; a giveaway the game is handing out for nothing never
+          // runs out, however its row was set up.
+          if (!l.seller) return !l.price || l.stock === null || l.stock > 0;
+          // A directed offer is private to the two people in it.
+          if (l.recipient)
+            return l.recipient === currentUser || l.seller === currentUser;
+          return true;
+        });
+      }
+
+      // Whether the shop row can carry a directed offer. Selecting a missing
+      // column is harmless with select(*), but writing one rejects the whole
+      // insert, so the offer half of the gift dialog is hidden until the
+      // column is confirmed present rather than failing at the last step.
+      let shopRecipientSupported = false;
+      const shopRecipientReady = (async () => {
+        await shopReady;
+        if (!shopSupported) return false;
+        try {
+          const { error } = await _supabase
+            .from("shop")
+            .select("recipient")
+            .limit(1);
+          shopRecipientSupported = !error;
+          if (error)
+            console.warn(
+              "shop.recipient missing; directed offers disabled.",
+              error.message,
+            );
+        } catch (e) {
+          shopRecipientSupported = false;
+        }
+        return shopRecipientSupported;
+      })();
+
+      // Offers aimed at this account by name. Kept out of the open market so
+      // a private offer never reads as something everyone can see.
+      function shopOffersToMe() {
+        return shopState.listings.filter(
+          (l) => l.recipient && l.recipient === currentUser,
         );
       }
 
@@ -6272,18 +6428,28 @@
       function shopVisibleListings() {
         const all = shopState.listings;
         if (shopState.tab === "game") return all.filter((l) => !l.seller);
+        if (shopState.tab === "offers") return shopOffersToMe();
         if (shopState.tab === "market")
-          return all.filter((l) => l.seller && l.seller !== currentUser);
-        return all.filter((l) => l.seller === currentUser);
+          return all.filter(
+            (l) => l.seller && l.seller !== currentUser && !l.recipient,
+          );
+        return currentUser ? all.filter((l) => l.seller === currentUser) : [];
       }
 
       function shopCardHTML(listing, isMobile) {
-        const owned = currentUserSkins.includes(listing.skin_id);
-        const mine = listing.seller === currentUser;
+        const copies = skinCopies(currentUserSkins, listing.skin_id);
+        const owned = copies > 0;
+        // Both sides are null for an official listing seen by a signed-out
+        // visitor, and null === null would hand them your-listing controls.
+        const mine = !!currentUser && listing.seller === currentUser;
         const isGame = !listing.seller;
         const free = !listing.price;
-        const soldOut =
-          isGame && listing.stock !== null && listing.stock <= 0;
+        const directed = !!listing.recipient;
+        const forMe = directed && listing.recipient === currentUser;
+        // Free official listings are unlimited, so they never read as sold out
+        // and never show a remaining count.
+        const gameLimited = isGame && !!listing.price && listing.stock !== null;
+        const soldOut = gameLimited && listing.stock <= 0;
         const meta = skin_definitions[listing.skin_id] || {};
 
         const preview =
@@ -6293,22 +6459,35 @@
               skinImageFile(listing.skin_id) +
               '\')"></div>';
 
+        // Owning one no longer rules a card out -- a second copy is a spare to
+        // gift or trade -- so OWNED became a count rather than a stop sign.
         let ribbon = "";
-        if (mine) ribbon = '<div class="shop-ribbon mine">YOUR LISTING</div>';
-        else if (owned) ribbon = '<div class="shop-ribbon">OWNED</div>';
-        else if (isGame && listing.stock !== null)
+        if (forMe) ribbon = '<div class="shop-ribbon offer">FOR YOU</div>';
+        else if (mine)
+          ribbon =
+            '<div class="shop-ribbon mine">' +
+            (directed ? "OFFERED" : "YOUR LISTING") +
+            "</div>";
+        else if (owned)
+          ribbon =
+            '<div class="shop-ribbon">OWNED' +
+            (copies > 1 ? " &times;" + copies : "") +
+            "</div>";
+        else if (gameLimited)
           ribbon =
             '<div class="shop-ribbon stock">' + listing.stock + " LEFT</div>";
 
         let action;
         if (mine) {
           action =
+            '<button class="shop-btn-buy" data-shop-price="' +
+            listing.id +
+            '">Edit Price</button>' +
             '<button class="shop-btn-buy danger" data-shop-delist="' +
             listing.id +
-            '">Remove Listing</button>';
-        } else if (owned) {
-          action =
-            '<button class="shop-btn-buy" disabled>Already Owned</button>';
+            '">' +
+            (directed ? "Withdraw" : "Remove Listing") +
+            "</button>";
         } else if (soldOut) {
           action = '<button class="shop-btn-buy" disabled>Sold Out</button>';
         } else {
@@ -6316,7 +6495,7 @@
             '<button class="shop-btn-buy" data-shop-buy="' +
             listing.id +
             '">' +
-            (free ? "Claim Free" : "Buy") +
+            (free ? "Claim Free" : owned ? "Buy Another" : "Buy") +
             "</button>";
         }
 
@@ -6330,7 +6509,11 @@
           "</div>";
         const sellerHTML = listing.seller
           ? '<div class="shop-card-seller">' +
-            (mine ? "LISTED BY YOU" : "BY " + escapeHtml(listing.seller)) +
+            (mine
+              ? directed
+                ? "OFFERED TO " + escapeHtml(listing.recipient)
+                : "LISTED BY YOU"
+              : "BY " + escapeHtml(listing.seller)) +
             "</div>"
           : '<div class="shop-card-seller">OFFICIAL STORE</div>';
         const priceHTML =
@@ -6343,7 +6526,7 @@
         const openTag =
           '<div class="shop-card' +
           (isMobile ? " shop-card-m" : "") +
-          (owned && !mine ? " owned" : "") +
+          (forMe ? " offered" : owned && !mine ? " owned" : "") +
           (soldOut ? " sold-out" : "") +
           '">';
 
@@ -6391,8 +6574,8 @@
         );
         if (!listing) return;
 
-        if (currentUserSkins.includes(listing.skin_id)) {
-          showTopNotification("You already own that skin.");
+        if (listing.recipient && listing.recipient !== currentUser) {
+          showTopNotification("That offer is for someone else.");
           return;
         }
         await loadBlueCoinWallet(true);
@@ -6409,13 +6592,20 @@
           return;
         }
 
-        const confirmText = listing.price
-          ? "Buy " +
-            skinDisplayName(listing.skin_id) +
-            " for " +
-            listing.price +
-            " Blue Coins?"
-          : "Claim " + skinDisplayName(listing.skin_id) + " for free?";
+        const already = skinCopies(currentUserSkins, listing.skin_id);
+        const confirmText =
+          (listing.price
+            ? "Buy " +
+              skinDisplayName(listing.skin_id) +
+              " for " +
+              listing.price +
+              " Blue Coins?"
+            : "Claim " + skinDisplayName(listing.skin_id) + " for free?") +
+          (already
+            ? " You already have " +
+              (already === 1 ? "one copy" : already + " copies") +
+              "; this would be another."
+            : "");
 
         showConfirmPopup("CONFIRM PURCHASE", confirmText, async () => {
           try {
@@ -6428,6 +6618,15 @@
               .maybeSingle();
             if (!fresh || !fresh.active) {
               showPopup("GONE", "That listing is no longer available.", () =>
+                showMenu("shop"),
+              );
+              return;
+            }
+            // Checked against the freshly read row rather than the cached one,
+            // and before anything is claimed: the sender may have withdrawn
+            // the offer or re-aimed it while the confirmation was open.
+            if (fresh.recipient && fresh.recipient !== currentUser) {
+              showPopup("GONE", "That offer is for someone else now.", () =>
                 showMenu("shop"),
               );
               return;
@@ -6459,19 +6658,42 @@
                 .select("skins")
                 .eq("username", fresh.seller)
                 .maybeSingle();
-              if (sellerRow) {
-                const remaining = asStoredArray(sellerRow.skins).filter(
-                  (sk) => sk !== fresh.skin_id,
-                );
+              // One copy changes hands. A seller with two keeps one -- but a
+              // seller with none has nothing to sell, and going ahead anyway
+              // would create a copy out of thin air and pay for it. Listings
+              // outlive the collection they came from: the seller can have
+              // given the copy away from another device since. Put the
+              // listing back rather than completing a sale that cannot be
+              // honoured.
+              const remaining = sellerRow
+                ? asStoredArray(sellerRow.skins).slice()
+                : null;
+              if (!remaining || !removeOneSkin(remaining, fresh.skin_id)) {
                 await _supabase
-                  .from("users")
-                  .update({ skins: remaining })
-                  .eq("username", fresh.seller);
+                  .from("shop")
+                  .update({ active: true, buyer: null, sold_at: null })
+                  .eq("id", fresh.id);
+                showPopup(
+                  "GONE",
+                  skinDisplayName(fresh.skin_id) +
+                    " is no longer in " +
+                    fresh.seller +
+                    "'s collection, so the sale could not go through. You have not been charged.",
+                  () => showMenu("shop"),
+                );
+                return;
               }
+              await _supabase
+                .from("users")
+                .update({ skins: remaining })
+                .eq("username", fresh.seller);
               if (fresh.price) {
                 await changeBlueCoinBalance(fresh.seller, fresh.price);
               }
-            } else if (fresh.stock !== null) {
+            } else if (fresh.stock !== null && fresh.price) {
+              // Only a paid official listing spends stock. A free one is a
+              // giveaway: claiming it again costs the store nothing, so the
+              // count is left alone and the row stays up.
               if (fresh.stock <= 0) {
                 showPopup("SOLD OUT", "That one has gone.", () =>
                   showMenu("shop"),
@@ -6488,10 +6710,12 @@
                 .eq("id", fresh.id);
             }
 
-            // Give the buyer the skin, then charge them.
-            if (!currentUserSkins.includes(fresh.skin_id)) {
-              currentUserSkins.push(fresh.skin_id);
-            }
+            // Give the buyer the skin, then charge them. Reconcile first so
+            // this write does not resurrect something the buyer sold earlier.
+            soldSkinLedger.at = 0;
+            await reconcileSoldSkins(true);
+            currentUserSkins.push(fresh.skin_id);
+            regroupSkins(currentUserSkins);
             await _supabase
               .from("users")
               .update({ skins: currentUserSkins })
@@ -6524,6 +6748,98 @@
         });
       }
 
+      // A sale is settled entirely by the BUYER's client: it strips the skin
+      // from the seller's row and pays them. The seller's own client knows
+      // nothing about it, so its next syncDataToCloud writes the in-memory
+      // skin list straight back over the top -- and mergeSkinsFromCloud only
+      // ever adds, so a fresh login restores it too. That is why a sold skin
+      // stays with the seller. The sold listings are the record of truth, so
+      // reconcile against them before every save and after every load.
+      const soldSkinLedger = { at: 0, verdict: new Map() };
+
+      async function fetchSoldSkinVerdicts(force) {
+        if (!_supabase || !currentUser) return soldSkinLedger.verdict;
+        await shopReady;
+        if (!shopSupported) return soldSkinLedger.verdict;
+        if (!force && Date.now() - soldSkinLedger.at < 30000)
+          return soldSkinLedger.verdict;
+
+        // sold_at is what marks a row settled. A directed offer that is still
+        // waiting also carries a name in `recipient`, and an accepted one
+        // fills in `buyer` -- neither may be mistaken for a completed sale.
+        const { data, error } = await _supabase
+          .from("shop")
+          .select("skin_id, seller, buyer, sold_at")
+          .not("buyer", "is", null)
+          .not("sold_at", "is", null)
+          .or("seller.eq." + currentUser + ",buyer.eq." + currentUser);
+        if (error || !data) return soldSkinLedger.verdict;
+
+        // A skin can be sold and bought back, so the most recent settled
+        // listing for it decides which side you ended up on.
+        const verdict = new Map();
+        const when = new Map();
+        data.forEach((row) => {
+          const t = Date.parse(row.sold_at || 0) || 0;
+          if (when.has(row.skin_id) && when.get(row.skin_id) > t) return;
+          when.set(row.skin_id, t);
+          verdict.set(row.skin_id, row.buyer === currentUser ? "own" : "sold");
+        });
+        soldSkinLedger.verdict = verdict;
+        soldSkinLedger.at = Date.now();
+        return verdict;
+      }
+
+      // Drops copies this account has parted with -- sold, or given away --
+      // from the local list. Returns true if anything changed, so callers can
+      // re-render.
+      //
+      // Copies make this a question of how many rather than whether. The
+      // stored row is authoritative for any skin the ledger says left this
+      // account, because the other side's client wrote it: a seller holding
+      // two and selling one must end up with one, not zero. So the count is
+      // trimmed to what the cloud says instead of the id being purged. Skins
+      // with no settled row against them are never touched, which is what
+      // keeps this from eating a collection when the shop is unreachable.
+      async function reconcileSoldSkins(force) {
+        const verdict = await fetchSoldSkinVerdicts(force);
+        if (!verdict.size) return false;
+
+        const parted = [];
+        verdict.forEach((v, id) => {
+          if (v === "sold") parted.push(id);
+        });
+        if (!parted.length) return false;
+
+        let authoritative = null;
+        try {
+          const { data, error } = await _supabase
+            .from("users")
+            .select("skins")
+            .eq("username", currentUser)
+            .maybeSingle();
+          if (!error && data) authoritative = skinCounts(asStoredArray(data.skins));
+        } catch (e) {
+          authoritative = null;
+        }
+        // Without the stored row there is nothing to trim against, and
+        // guessing would cost the player skins they still hold.
+        if (!authoritative) return false;
+
+        let changed = false;
+        parted.forEach((id) => {
+          const keep = authoritative.get(id) || 0;
+          while (skinCopies(currentUserSkins, id) > keep) {
+            removeOneSkin(currentUserSkins, id);
+            changed = true;
+          }
+        });
+        if (changed && !currentUserSkins.includes(gameSettings.currentSkin)) {
+          gameSettings.currentSkin = "default";
+        }
+        return changed;
+      }
+
       async function shopDelist(listingId) {
         const listing = shopState.listings.find(
           (l) => String(l.id) === String(listingId),
@@ -6544,25 +6860,107 @@
         );
       }
 
-      // Skins you are allowed to put up: yours, not a game unlock, not already
-      // listed, and not the one you are currently wearing.
+      // How many copies of each skin this account already has promised to an
+      // open listing or offer. One listing consumes one copy.
+      function shopListedCounts() {
+        const counts = new Map();
+        if (!currentUser) return counts;
+        shopState.listings.forEach((l) => {
+          if (l.seller !== currentUser) return;
+          counts.set(l.skin_id, (counts.get(l.skin_id) || 0) + 1);
+        });
+        return counts;
+      }
+
+      // Skins you are allowed to put up: yours, not a game unlock, and with a
+      // copy to spare once the one you are wearing and the ones already on the
+      // market are set aside. Holding two means the second can go up while the
+      // first stays on your block. Returns one entry per skin plus the number
+      // of spares behind it.
+      function shopTradableStacks() {
+        const listed = shopListedCounts();
+        const out = [];
+        skinStacks(currentUserSkins).forEach((st) => {
+          if (NON_TRADEABLE_SKINS.has(st.id)) return;
+          const spare = spareSkinCopies(st.id, listed);
+          if (spare > 0) out.push({ id: st.id, spare });
+        });
+        return out;
+      }
+
       function shopListableSkins() {
-        const listed = new Set(
-          shopState.listings
-            .filter((l) => l.seller === currentUser)
-            .map((l) => l.skin_id),
+        return shopTradableStacks().map((st) => st.id);
+      }
+
+      // Changing the asking price of something already on the market. The row
+      // is only touched while it is still unsold, so re-pricing cannot rewrite
+      // what someone already paid.
+      async function shopEditPrice(listingId) {
+        const listing = shopState.listings.find(
+          (l) => String(l.id) === String(listingId),
         );
-        return currentUserSkins.filter(
-          (id) =>
-            !NON_TRADEABLE_SKINS.has(id) &&
-            !listed.has(id) &&
-            id !== gameSettings.currentSkin,
-        );
+        if (!listing || listing.seller !== currentUser) return;
+
+        popupManager.show({
+          title: "EDIT PRICE",
+          html:
+            '<div style="text-align:left; font-size:0.8rem; color:#888; margin-bottom:10px; letter-spacing:1px;">' +
+            escapeHtml(skinDisplayName(listing.skin_id)) +
+            (listing.recipient
+              ? " &mdash; OFFERED TO " + escapeHtml(listing.recipient)
+              : "") +
+            "</div>" +
+            '<div style="text-align:left; font-size:0.8rem; color:#888; margin:0 0 8px; letter-spacing:1px;">NEW PRICE IN BLUE COINS</div>' +
+            '<input id="edit-price" type="number" min="0" step="1" value="' +
+            (listing.price || 0) +
+            '" style="width:100%; padding:12px; background:#111; color:#fff; border:2px solid #335699; font-family:inherit; font-size:1.1rem; outline:none; box-sizing:border-box;">' +
+            '<div style="text-align:left; font-size:0.7rem; color:#666; margin-top:10px; line-height:1.5;">Zero makes it free. The new price applies to anyone who buys from now on.</div>',
+          buttons: [
+            {
+              text: "SAVE",
+              style: "background:#335699; border-color:#2a4a7a;",
+              onClick: async () => {
+                const price = Math.max(
+                  0,
+                  Math.floor(
+                    Number(document.getElementById("edit-price").value) || 0,
+                  ),
+                );
+                const { data, error } = await _supabase
+                  .from("shop")
+                  .update({ price })
+                  .eq("id", listing.id)
+                  .eq("seller", currentUser)
+                  .eq("active", true)
+                  .select();
+                if (error || !data || !data.length) {
+                  showPopup(
+                    "ERROR",
+                    "The price could not be changed. The listing may already be sold.",
+                    () => showMenu("shop"),
+                  );
+                  return;
+                }
+                showTopNotification(
+                  skinDisplayName(listing.skin_id) +
+                    " is now " +
+                    (price ? price + " Blue Coins." : "free."),
+                );
+                showMenu("shop");
+              },
+            },
+            { text: "CANCEL", style: "background:#333; border-color:#555;" },
+          ],
+        });
       }
 
       function openNewOfferModal() {
         if (!currentUser) return openLoginModal();
-        const options = shopListableSkins();
+        // Counted, so the picker can say how many of a skin are free to list
+        // rather than showing one nameless entry for a stack of three.
+        const stacks = shopTradableStacks();
+        const spareOf = new Map(stacks.map((st) => [st.id, st.spare]));
+        const options = stacks.map((st) => st.id);
         if (!options.length) {
           showPopup(
             "NOTHING TO SELL",
@@ -6587,6 +6985,7 @@
               skinImageFile(id) +
               '\')"></div><div class="shop-pick-name">' +
               escapeHtml(skinDisplayName(id)) +
+              ((spareOf.get(id) || 1) > 1 ? " &times;" + spareOf.get(id) : "") +
               "</div></div>",
           )
           .join("");
@@ -6653,6 +7052,302 @@
         }, 0);
       }
 
+      // ---- GIFTS AND DIRECTED OFFERS ---------------------------------------
+      // Both are a skin aimed at one named person, and they differ only in
+      // price: a gift moves the copy now for nothing, an offer parks it in the
+      // shop where only that person can see it and waits for them to pay.
+      //
+      // A completed gift is written into the shop table as an already-settled
+      // row -- seller, buyer, sold_at, price 0. That is not bookkeeping for
+      // its own sake: reconcileSoldSkins() reads exactly those rows to decide
+      // which copies have left an account, so recording the gift this way is
+      // what stops the giver's next sync from handing the copy back to them.
+
+      // Exact match only. Usernames here can differ by case alone and are
+      // separate accounts, so guessing which one was meant is not safe.
+      async function lookupExactUser(name) {
+        const { data, error } = await _supabase
+          .from("users")
+          .select("username, skins")
+          .eq("username", name)
+          .maybeSingle();
+        if (error) return null;
+        return data || null;
+      }
+
+      async function sendSkinGift(skinId, recipient) {
+        const target = await lookupExactUser(recipient);
+        if (!target) {
+          showPopup(
+            "NO SUCH PLAYER",
+            'There is no account called "' +
+              recipient +
+              '". Names are case sensitive.',
+            () => {},
+          );
+          return;
+        }
+        if (!spareSkinCopies(skinId, shopListedCounts())) {
+          showPopup(
+            "NO SPARE COPY",
+            "You have no copy of that skin free to give. The one you are wearing and any you have listed are set aside.",
+            () => {},
+          );
+          return;
+        }
+
+        try {
+          // Hand it over first. If anything after this fails the copy exists
+          // twice for a moment, which the next reconcile tidies -- far better
+          // than a copy that exists nowhere.
+          const theirs = asStoredArray(target.skins).slice();
+          theirs.push(skinId);
+          const { error: giveErr } = await _supabase
+            .from("users")
+            .update({ skins: theirs })
+            .eq("username", target.username);
+          if (giveErr) throw giveErr;
+
+          // The receipt. Both clients reconcile against this.
+          await _supabase.from("shop").insert([
+            {
+              skin_id: skinId,
+              price: 0,
+              seller: currentUser,
+              recipient: target.username,
+              buyer: target.username,
+              stock: 1,
+              active: false,
+              sold_at: new Date().toISOString(),
+            },
+          ]);
+
+          removeOneSkin(currentUserSkins, skinId);
+          if (!currentUserSkins.includes(gameSettings.currentSkin))
+            gameSettings.currentSkin = "default";
+          await _supabase
+            .from("users")
+            .update({ skins: currentUserSkins })
+            .eq("username", currentUser);
+          soldSkinLedger.at = 0;
+
+          showPopup(
+            "GIFT SENT",
+            skinDisplayName(skinId) + " now belongs to " + target.username + ".",
+            () => {},
+          );
+        } catch (e) {
+          console.warn("Gift failed:", e);
+          showPopup("ERROR", "The gift could not be sent.", () => {});
+        }
+      }
+
+      async function sendSkinOffer(skinId, recipient, price) {
+        const target = await lookupExactUser(recipient);
+        if (!target) {
+          showPopup(
+            "NO SUCH PLAYER",
+            'There is no account called "' +
+              recipient +
+              '". Names are case sensitive.',
+            () => {},
+          );
+          return;
+        }
+        if (!spareSkinCopies(skinId, shopListedCounts())) {
+          showPopup(
+            "NO SPARE COPY",
+            "You have no copy of that skin free to offer. The one you are wearing and any you have listed are set aside.",
+            () => {},
+          );
+          return;
+        }
+
+        const { error } = await _supabase.from("shop").insert([
+          {
+            skin_id: skinId,
+            price,
+            seller: currentUser,
+            recipient: target.username,
+            stock: 1,
+            active: true,
+          },
+        ]);
+        if (error) {
+          showPopup("ERROR", "The offer could not be created.", () => {});
+          return;
+        }
+        showPopup(
+          "OFFER SENT",
+          skinDisplayName(skinId) +
+            " is offered to " +
+            target.username +
+            " for " +
+            (price ? price + " Blue Coins" : "free") +
+            ". It waits in their shop under Offers For You until they take it, and you can withdraw or re-price it from Your Listings.",
+          () => {},
+        );
+      }
+
+      // One dialog for both, because they are the same act with a price on it.
+      async function openGiftModal(presetRecipient) {
+        if (!currentUser) return openLoginModal();
+        await shopReady;
+        if (!shopSupported) {
+          showPopup(
+            "UNAVAILABLE",
+            "Gifting needs the shop table. Run shop_setup.sql in Supabase.",
+            () => {},
+          );
+          return;
+        }
+        // Listings decide what counts as spare, so they have to be current.
+        shopState.listings = await fetchShopListings();
+        await shopRecipientReady;
+
+        const stacks = shopTradableStacks();
+        if (!stacks.length) {
+          showPopup(
+            "NOTHING TO GIVE",
+            "You have no spare skins. Skins unlocked by playing cannot be traded, and neither can the one you are wearing or one already listed.",
+            () => {},
+          );
+          return;
+        }
+
+        let picked = stacks[0].id;
+        let mode = "gift";
+        const grid = stacks
+          .map(
+            (st, i) =>
+              '<div class="shop-pick-item' +
+              (i === 0 ? " selected" : "") +
+              '" data-pick="' +
+              st.id +
+              '"><div class="shop-pick-preview" style="background-image:url(\'' +
+              skinImageFile(st.id) +
+              '\')"></div><div class="shop-pick-name">' +
+              escapeHtml(skinDisplayName(st.id)) +
+              (st.spare > 1 ? " &times;" + st.spare : "") +
+              "</div></div>",
+          )
+          .join("");
+
+        const label =
+          'style="text-align:left; font-size:0.8rem; color:#888; margin:16px 0 8px; letter-spacing:1px;"';
+        const field =
+          'style="width:100%; padding:12px; background:#111; color:#fff; border:2px solid #335699; font-family:inherit; font-size:1.1rem; outline:none; box-sizing:border-box;"';
+
+        popupManager.show({
+          title: "GIFT A SKIN",
+          html:
+            '<div style="text-align:left; font-size:0.8rem; color:#888; margin-bottom:10px; letter-spacing:1px;">PICK A SKIN</div>' +
+            '<div class="shop-pick" id="gift-pick">' +
+            grid +
+            "</div>" +
+            "<div " +
+            label +
+            ">SEND TO</div>" +
+            '<input id="gift-user" type="text" autocomplete="off" spellcheck="false" placeholder="Exact username" value="' +
+            escapeHtml(presetRecipient || "") +
+            '" ' +
+            field +
+            ">" +
+            (shopRecipientSupported
+              ? "<div " +
+                label +
+                ">HOW</div>" +
+                '<div class="shop-pick" id="gift-mode" style="grid-template-columns:1fr 1fr;">' +
+                '<div class="shop-mode-item selected" data-mode="gift">FREE GIFT</div>' +
+                '<div class="shop-mode-item" data-mode="offer">SELL TO THEM</div>' +
+                "</div>" +
+                '<div id="gift-price-wrap" style="display:none;">' +
+                "<div " +
+                label +
+                ">PRICE IN BLUE COINS</div>" +
+                '<input id="gift-price" type="number" min="0" step="1" value="10" ' +
+                field +
+                "></div>"
+              : "") +
+            '<div id="gift-note" style="text-align:left; font-size:0.7rem; color:#666; margin-top:12px; line-height:1.5;">The copy leaves your account straight away and lands in theirs.</div>',
+          buttons: [
+            {
+              text: "SEND",
+              style: "background:#335699; border-color:#2a4a7a;",
+              onClick: async () => {
+                const name = (
+                  document.getElementById("gift-user").value || ""
+                ).trim();
+                if (!picked) return;
+                if (!name) {
+                  showPopup(
+                    "WHO?",
+                    "Type the name of the account first.",
+                    () => {},
+                  );
+                  return;
+                }
+                if (name === currentUser) {
+                  showPopup(
+                    "THAT IS YOU",
+                    "Pick someone else to send it to.",
+                    () => {},
+                  );
+                  return;
+                }
+                if (mode === "offer") {
+                  const priceEl = document.getElementById("gift-price");
+                  const price = Math.max(
+                    0,
+                    Math.floor(Number(priceEl && priceEl.value) || 0),
+                  );
+                  await sendSkinOffer(picked, name, price);
+                } else {
+                  await sendSkinGift(picked, name);
+                }
+              },
+            },
+            { text: "CANCEL", style: "background:#333; border-color:#555;" },
+          ],
+        });
+
+        // Wire the pickers once the popup is in the DOM.
+        setTimeout(() => {
+          const host = document.getElementById("gift-pick");
+          if (host) {
+            host.querySelectorAll("[data-pick]").forEach((el) => {
+              el.onclick = () => {
+                picked = el.dataset.pick;
+                host
+                  .querySelectorAll("[data-pick]")
+                  .forEach((o) => o.classList.remove("selected"));
+                el.classList.add("selected");
+              };
+            });
+          }
+          const modes = document.getElementById("gift-mode");
+          if (modes) {
+            modes.querySelectorAll("[data-mode]").forEach((el) => {
+              el.onclick = () => {
+                mode = el.dataset.mode;
+                modes
+                  .querySelectorAll("[data-mode]")
+                  .forEach((o) => o.classList.remove("selected"));
+                el.classList.add("selected");
+                const wrap = document.getElementById("gift-price-wrap");
+                if (wrap) wrap.style.display = mode === "offer" ? "" : "none";
+                const note = document.getElementById("gift-note");
+                if (note)
+                  note.textContent =
+                    mode === "offer"
+                      ? "The skin stays yours until they pay. Only they can see the offer, and you can withdraw or re-price it from Your Listings."
+                      : "The copy leaves your account straight away and lands in theirs.";
+              };
+            });
+          }
+        }, 0);
+      }
+
       // The shop screen itself.
       async function renderShop(container) {
         const isMobile = document.body.classList.contains("mobile-mode");
@@ -6667,6 +7362,8 @@
           container.style.justifyContent = "flex-start";
         }
 
+        const offerCount = currentUser ? shopOffersToMe().length : 0;
+
         const head = document.createElement("div");
         head.className = "shop-head";
         head.innerHTML =
@@ -6679,12 +7376,14 @@
           [
             ["game", "Official Store"],
             ["market", "Player Market"],
+            ["offers", "Offers For You" + (offerCount ? " (" + offerCount + ")" : "")],
             ["mine", "Your Listings"],
           ]
             .map(
               ([key, label]) =>
                 '<button class="shop-tab' +
                 (shopState.tab === key ? " active" : "") +
+                (key === "offers" && offerCount ? " has-offers" : "") +
                 '" data-shop-tab="' +
                 key +
                 '">' +
@@ -6693,6 +7392,7 @@
             )
             .join("") +
           '<button class="shop-tab" id="shop-new-offer" style="border-color:#2a4a7a; color:#cfe0ff;">+ New Offer</button>' +
+          '<button class="shop-tab" id="shop-gift" style="border-color:#2a4a7a; color:#cfe0ff;">Gift</button>' +
           "</div>";
         container.appendChild(head);
 
@@ -6703,6 +7403,7 @@
           };
         });
         head.querySelector("#shop-new-offer").onclick = openNewOfferModal;
+        head.querySelector("#shop-gift").onclick = () => openGiftModal();
 
         const grid = document.createElement("div");
         grid.className = "shop-grid";
@@ -6747,6 +7448,16 @@
         shopState.listings = await fetchShopListings();
         if (!stillHere()) return;
 
+        // The tab strip was drawn before the listings arrived, so the offer
+        // count on it was stale by definition. Patch the label rather than
+        // rebuilding the header and losing its handlers.
+        const offersTab = head.querySelector('[data-shop-tab="offers"]');
+        if (offersTab) {
+          const n = shopOffersToMe().length;
+          offersTab.textContent = "Offers For You" + (n ? " (" + n + ")" : "");
+          offersTab.classList.toggle("has-offers", n > 0);
+        }
+
         const render = () => {
           const visible = shopVisibleListings();
           if (!visible.length) {
@@ -6754,9 +7465,11 @@
               '<div class="shop-empty">' +
               (shopState.tab === "mine"
                 ? "You have nothing listed. Press + NEW OFFER to sell a skin."
-                : shopState.tab === "market"
-                  ? "No player listings right now."
-                  : "The store is empty.") +
+                : shopState.tab === "offers"
+                  ? "Nobody has offered you a skin."
+                  : shopState.tab === "market"
+                    ? "No player listings right now."
+                    : "The store is empty.") +
               "</div>";
             return;
           }
@@ -6768,6 +7481,9 @@
           });
           grid.querySelectorAll("[data-shop-delist]").forEach((b) => {
             b.onclick = () => shopDelist(b.dataset.shopDelist);
+          });
+          grid.querySelectorAll("[data-shop-price]").forEach((b) => {
+            b.onclick = () => shopEditPrice(b.dataset.shopPrice);
           });
         };
         render();
@@ -6963,6 +7679,8 @@
 
       async function syncDataToCloud() {
         if (!_supabase || !currentUser || !isCloudDataLoaded) return;
+        // Without this, saving is what undoes a sale.
+        await reconcileSoldSkins();
         const saveData = {
           gameState,
           customLevels,
@@ -7113,6 +7831,7 @@
       async function syncLocalWithCloud(cloudData, cloudSkins, cloudBeaten) {
         cloudData = asStoredObject(cloudData);
         mergeSkinsFromCloud(cloudSkins);
+        await reconcileSoldSkins(true);
         mergeBeatenFromCloud(cloudBeaten);
         if (cloudData && typeof cloudData === "object") {
           if (cloudData.gameState)
@@ -7214,10 +7933,7 @@
         const pristine =
           currentUserSkins.length === 1 && currentUserSkins[0] === "default";
         if (pristine) {
-          const ordered = [];
-          cloudSkins.forEach((s) => {
-            if (!ordered.includes(s)) ordered.push(s);
-          });
+          const ordered = regroupSkins(cloudSkins.slice());
           if (!ordered.includes("default")) ordered.unshift("default");
           const same =
             ordered.length === currentUserSkins.length &&
@@ -7228,13 +7944,21 @@
           return true;
         }
 
+        // The merge only ever adds, which is what stops a stale device from
+        // wiping a collection. With copies that becomes "keep whichever side
+        // holds more of each skin" -- the same rule, counted rather than
+        // tested. Losing a copy is never a merge; it is a settled shop row,
+        // and reconcileSoldSkins() is what applies those.
+        const mine = skinCounts(currentUserSkins);
         let changed = false;
-        cloudSkins.forEach((s) => {
-          if (!currentUserSkins.includes(s)) {
-            currentUserSkins.push(s);
+        skinCounts(cloudSkins).forEach((n, id) => {
+          const have = mine.get(id) || 0;
+          for (let i = have; i < n; i++) {
+            currentUserSkins.push(id);
             changed = true;
           }
         });
+        if (changed) regroupSkins(currentUserSkins);
         return changed;
       }
 
@@ -7280,8 +8004,9 @@
             // Both sides run, so keep them off the same line as ||.
             const skinsChanged = mergeSkinsFromCloud(data.skins);
             const beatenChanged = mergeBeatenFromCloud(data.beaten_levels);
+            const soldChanged = await reconcileSoldSkins(true);
             currentUserCollectionsFetchedAt = Date.now();
-            return skinsChanged || beatenChanged;
+            return skinsChanged || beatenChanged || soldChanged;
           } catch (e) {
             console.warn("Profile collection fetch failed:", e);
             return false;
@@ -11413,15 +12138,24 @@
         this.suppressedFor = null;
       }
       Teleporter.prototype.type = "teleporter";
+      // How far outside the pad still counts as touching it. The player is
+      // exactly one block tall, so a pad at head height -- one hanging in the
+      // ceiling of a two-high corridor, or one grazed at the very apex of a
+      // jump -- only ever overlapped by a few thousandths of a block, if at
+      // all. That is what made pads unreliable to enter from below: pressing
+      // up into one visibly touched it and nothing happened. Touching now
+      // counts, from any side.
+      var TELEPORTER_TOUCH = 0.12;
       Teleporter.prototype.act = function (step, level) {
         var p = level.player;
         if (!p || level.status !== null) return;
 
+        var pad = TELEPORTER_TOUCH;
         var overlaps =
-          p.pos.x + p.size.x > this.pos.x &&
-          p.pos.x < this.pos.x + this.size.x &&
-          p.pos.y + p.size.y > this.pos.y &&
-          p.pos.y < this.pos.y + this.size.y;
+          p.pos.x + p.size.x > this.pos.x - pad &&
+          p.pos.x < this.pos.x + this.size.x + pad &&
+          p.pos.y + p.size.y > this.pos.y - pad &&
+          p.pos.y < this.pos.y + this.size.y + pad;
 
         if (!overlaps) {
           this.suppressedFor = null;
@@ -13367,9 +14101,9 @@
       // closes. Getting going is close to normal so the controls still feel
       // connected; it is letting go and turning around that take a while,
       // which is what actually reads as slippery.
-      var ICE_ACCEL = 0.16;
-      var ICE_FRICTION = 0.035;
-      var ICE_TURN = 0.075;
+      var ICE_ACCEL = 0.1;
+      var ICE_FRICTION = 0.014;
+      var ICE_TURN = 0.034;
       var DASH_SPEED = 35;
       // Share of the boost left after one second. Applied as pow(rate, step)
       // so a dash covers the same ground at any frame rate -- the old
@@ -13407,7 +14141,7 @@
             if (keys.right) this.speed.x += playerXSpeed;
             this.dashDir = 0;
           }
-        } else if (this.onIce || this.iceGlide) {
+        } else if (this.onIce) {
           // Ice replaces the game's instant start/stop with momentum: you
           // build up to speed and keep going after you let go. Everything else
           // about the controls is unchanged, so it stays predictable.
@@ -13441,7 +14175,7 @@
           // Don't let drift build up against a wall
           this.windSpeedX = 0;
           // Nor momentum, or a slide into a wall keeps pushing after it stops
-          if (this.onIce || this.iceGlide) this.speed.x = 0;
+          if (this.onIce) this.speed.x = 0;
           level.playerTouched(obstacle);
         } else this.pos = newPos;
       };
@@ -13614,18 +14348,17 @@
           this.sliding = false;
           this.rotation = 0;
           this.applyZoneForces(step, level);
-          var wasOnIce = this.onIce;
-          this.onIce = level.onIce(
-            this.pos,
-            this.size,
-            this.gravityDirection || 1,
-          );
-          // Momentum survives leaving the ice -- sliding off the end of a sheet
-          // should launch you, not stop you dead in mid-air. It is dropped the
-          // moment you land on anything that is not ice.
-          if (this.onIce) this.iceGlide = true;
-          else if (this.iceGlide && level.onGround(this.pos, this.size, this.gravityDirection || 1))
-            this.iceGlide = false;
+          // Ice is a property of the surface you are standing on, and only
+          // that. It used to persist through the air -- jump off a sheet, or
+          // fall past one, and the sluggish steering and the carried momentum
+          // came with you, so a straight-up jump followed by a tap of right
+          // felt like the ice was shoving you sideways. Requiring footing as
+          // well as ice under the feet ends it the instant you leave the
+          // ground: in the air the controls are the game's ordinary ones.
+          var g = this.gravityDirection || 1;
+          this.onIce =
+            level.onGround(this.pos, this.size, g) &&
+            level.onIce(this.pos, this.size, g);
           this.moveX(step, level, keys);
           this.moveY(step, level, keys);
         }
@@ -14051,6 +14784,13 @@
         // be combined with slab, in which case the shaped edge sits at the
         // half-block line instead of the top of the cell.
         const isSlab = textures.includes("slab");
+        // Side Slab is Slab turned ninety degrees: half the cell across
+        // instead of half of it down. Left by default, right with Flip --
+        // which way is up has no bearing on left and right, so this one is
+        // deliberately not tied to the level's orientation the way the
+        // top-edge shapes are.
+        const isSideSlab = textures.includes("sideslab");
+        const sideRight = textures.includes("flip");
         const wantsZigzag = textures.includes("zigzag");
         const wantsWavy = textures.includes("wavy") && !wantsZigzag;
         // Textures are sculpted on the face gravity pulls away from. An
@@ -14125,6 +14865,57 @@
           }
         }
 
+        // Grass: a living cap on the face that is exposed to the air, with a
+        // few blades hanging into the block below it. The cap is a share of
+        // whatever the block still shows rather than a fixed slice of the
+        // cell, so a slab gets a proportionate fringe instead of being half
+        // buried in it. The block's own colour stays visible underneath and
+        // reads as the soil.
+        if (textures.includes("grass")) {
+          const near = flipped ? "bottom" : "top";
+          const far = flipped ? "top" : "bottom";
+          const start = isSlab ? "50%" : "0px";
+          const capPct = isSlab ? 13 : 26;
+          const GRASS = "#5fbf4a";
+          const GRASS_DARK = "#3c8f34";
+
+          const cap = document.createElement("div");
+          cap.style.position = "absolute";
+          cap.style.left = "0";
+          cap.style.right = "0";
+          cap.style[near] = start;
+          cap.style.height = capPct + "%";
+          cap.style.background = GRASS;
+          overlay.appendChild(cap);
+
+          // A lighter line right on the lip, so the edge catches the eye the
+          // way the lava rim does.
+          const lip = document.createElement("div");
+          lip.style.position = "absolute";
+          lip.style.left = "0";
+          lip.style.right = "0";
+          lip.style[near] = start;
+          lip.style.height = Math.max(1, Math.round(scale * 0.06)) + "px";
+          lip.style.background = "#7ddb63";
+          overlay.appendChild(lip);
+
+          // Blades. Fixed positions rather than random ones: a block redrawn
+          // every frame must not shimmer, and neighbouring blocks reading the
+          // same is what makes a run of grass look like ground.
+          const blades = [8, 24, 41, 58, 74, 90];
+          blades.forEach((leftPct, i) => {
+            const blade = document.createElement("div");
+            blade.style.position = "absolute";
+            blade.style.left = leftPct + "%";
+            blade.style.width = Math.max(1, Math.round(scale * 0.07)) + "px";
+            blade.style[near] = "calc(" + start + " + " + capPct + "%)";
+            blade.style.height = (i % 2 ? 9 : 15) * (isSlab ? 0.5 : 1) + "%";
+            blade.style.background = i % 2 ? GRASS_DARK : GRASS;
+            overlay.appendChild(blade);
+          });
+          void far;
+        }
+
         // Every shape overruns the box sideways and downwards (-10%/110%) so
         // only the top edge is ever cut. Clipping the vertical edges leaves a
         // half-covered antialiased column on each block, and two of those side
@@ -14152,11 +14943,22 @@
             : isSlab
               ? "url(#boi-wavy-top-slab)"
               : "url(#boi-wavy-top)";
-        } else if (isSlab) {
-          // Clip the element to the half of the cell that rests on the ground
-          el.style.clipPath = flipped
-            ? "polygon(-10% -10%, 110% -10%, 110% 50%, -10% 50%)"
-            : "polygon(-10% 50%, 110% 50%, 110% 110%, -10% 110%)";
+        } else if (isSlab || isSideSlab) {
+          // Both slabs are the same idea -- keep half the cell, throw the
+          // other half away -- so they are one rectangle with two independent
+          // constraints. On its own each gives a half; together they give a
+          // quarter. The unconstrained edges still overrun to -10/110 so a run
+          // of blocks meets with no seam, exactly as before.
+          const x1 = isSideSlab ? (sideRight ? 50 : -10) : -10;
+          const x2 = isSideSlab ? (sideRight ? 110 : 50) : 110;
+          const y1 = isSlab ? (flipped ? -10 : 50) : -10;
+          const y2 = isSlab ? (flipped ? 50 : 110) : 110;
+          el.style.clipPath =
+            "polygon(" +
+            x1 + "% " + y1 + "%, " +
+            x2 + "% " + y1 + "%, " +
+            x2 + "% " + y2 + "%, " +
+            x1 + "% " + y2 + "%)";
         }
 
         if (!textures.includes("particles")) {
@@ -14188,7 +14990,7 @@
             // Rebuild only when geometry/color actually changed — syncActors
             // runs every frame and recreating the nodes would restart the CSS
             // animation before a single particle ever became visible.
-            const sig = `${left}|${blockTop}|${width}|${height}|${isSlab}|${flipped}|${particleColor}`;
+            const sig = `${left}|${blockTop}|${width}|${height}|${isSlab}|${isSideSlab}|${sideRight}|${flipped}|${particleColor}`;
             const upToDate =
               existingParticleWrap && existingParticleWrap.dataset.sig === sig;
             if (existingParticleWrap && !upToDate) existingParticleWrap.remove();
@@ -14198,8 +15000,12 @@
               particleWrap.className = wrapKey;
               particleWrap.dataset.sig = sig;
               particleWrap.style.position = "absolute";
-              particleWrap.style.left = left + "px";
-              particleWrap.style.width = width + "px";
+              // A side slab only shows half the cell, so the particles rising
+              // off it belong over that half rather than over the gap.
+              const spanW = isSideSlab ? width / 2 : width;
+              particleWrap.style.left =
+                (isSideSlab && sideRight ? left + width / 2 : left) + "px";
+              particleWrap.style.width = spanW + "px";
               // Sit on the visible edge (the 50% line for a slab), which is
               // the bottom of the cell in an upside-down level.
               const topOffset = flipped
@@ -14215,7 +15021,7 @@
               particleWrap.style.pointerEvents = "none";
               particleWrap.style.zIndex = "20";
 
-              const count = Math.max(3, Math.min(6, Math.round(width / 10)));
+              const count = Math.max(3, Math.min(6, Math.round(spanW / 10)));
               const dotSize = Math.max(2, Math.round(cs / 12));
               for (let i = 0; i < count; i++) {
                 const p = document.createElement("div");
@@ -14224,7 +15030,7 @@
                 p.style.height = dotSize + "px";
                 p.style.background = particleColor;
                 p.style.boxShadow = `0 0 ${dotSize * 2}px ${particleColor}`;
-                p.style.left = `${Math.round(((i + 0.5) / count) * width - dotSize / 2)}px`;
+                p.style.left = `${Math.round(((i + 0.5) / count) * spanW - dotSize / 2)}px`;
                 p.style.top = "0px";
                 // Deterministic per-cell offsets so blocks don't pulse in lockstep
                 const phase = ((x * 7 + y * 13 + i * 5) % 18) / 10;
@@ -14293,9 +15099,19 @@
         if (this.waterLayer && this.waterSig === sig) return this.waterLayer;
         this.waterSig = sig;
 
-        if (this.waterLayer) this.waterLayer.remove();
+        // Rebuilding replaces the layer element, so it has to go back wherever
+        // the old one was hanging. drawFrame() calls this for its side effect
+        // and throws the return value away, so a rebuild that only detached
+        // itself -- which is what every zoom change is, the scale being part
+        // of the signature -- left the pool invisible until the level reloaded.
+        let parent = null;
+        if (this.waterLayer) {
+          parent = this.waterLayer.parentNode;
+          this.waterLayer.remove();
+        }
         this.waterLayer = element("div");
         this.waterLayer.id = "water-layer";
+        if (parent) parent.appendChild(this.waterLayer);
         if (!cells || !cells.size) return this.waterLayer;
 
         // In an upside-down level the open face of a pool is its underside.
@@ -14376,6 +15192,8 @@
 
           const textures = this.waterTexturesAt(x, y);
           const isSlab = textures.includes("slab");
+          const isSideSlab = textures.includes("sideslab");
+          const sideRight = textures.includes("flip");
           const wantsWavy = textures.includes("wavy");
           const detailed = textures.includes("detailedwater");
           const isFace = !level.isWaterAt(x, y + outward);
@@ -14401,10 +15219,17 @@
               : isSlab
                 ? "url(#boi-wavy-top-slab)"
                 : "url(#boi-wavy-top)";
-          } else if (isSlab) {
-            el.style.clipPath = flipped
-              ? "polygon(-10% -10%, 110% -10%, 110% 50%, -10% 50%)"
-              : "polygon(-10% 50%, 110% 50%, 110% 110%, -10% 110%)";
+          } else if (isSlab || isSideSlab) {
+            const x1 = isSideSlab ? (sideRight ? 50 : -10) : -10;
+            const x2 = isSideSlab ? (sideRight ? 110 : 50) : 110;
+            const y1 = isSlab ? (flipped ? -10 : 50) : -10;
+            const y2 = isSlab ? (flipped ? 50 : 110) : 110;
+            el.style.clipPath =
+              "polygon(" +
+              x1 + "% " + y1 + "%, " +
+              x2 + "% " + y1 + "%, " +
+              x2 + "% " + y2 + "%, " +
+              x1 + "% " + y2 + "%)";
           }
           this.waterLayer.appendChild(el);
 
@@ -15781,11 +16606,18 @@
       }
 
       function cycleSkin() {
-        const skins = getAvailableSkins();
-        let idx = skins.indexOf(gameSettings.currentSkin);
-        if (idx === -1) idx = 0;
-        idx = (idx + 1) % skins.length;
-        gameSettings.currentSkin = skins[idx];
+        // Steps between distinct skins, not between copies. Walking the flat
+        // list stepped onto the second copy of whatever it landed on and
+        // stayed there: indexOf finds the first copy, +1 lands on the second,
+        // and the next press starts from indexOf again. One duplicate
+        // anywhere jammed S for the whole collection, not just for the skin
+        // being worn. Stacks are also what the collection screen shows, so
+        // the key now walks the same order the player sees.
+        const stacks = skinStacks(getAvailableSkins());
+        if (!stacks.length) return;
+        const at = stacks.findIndex((st) => st.id === gameSettings.currentSkin);
+        const idx = at === -1 ? 0 : (at + 1) % stacks.length;
+        gameSettings.currentSkin = stacks[idx].id;
         saveSettings();
         if (activeLevelDisplay) activeLevelDisplay.syncActors();
         showTopNotification(
@@ -15943,7 +16775,42 @@
         );
       }
 
-      function showLevelTitle(title, author, font, colorKey) {
+      // The account behind a level's credit line.
+      //
+      // The displayed credit is free text -- a level can read "BY THE
+      // ARCHITECT" and still belong to one account -- so the profile it opens
+      // comes from what the editor stamped on the level, never from matching
+      // the credit string against usernames. published_levels.creator_user is
+      // the authority for a level that came from the browser; creatorAccount
+      // travels inside the level data itself, which is all an exported .json
+      // or an unpublished editor level carries.
+      function levelCreatorAccount(lvl) {
+        if (!lvl) return null;
+        if (lvl.creator_user) return String(lvl.creator_user);
+        const inner = lvl.data && typeof lvl.data === "object" ? lvl.data : lvl;
+        if (inner && inner.linkAccount !== false && inner.creatorAccount) {
+          return String(inner.creatorAccount);
+        }
+        return null;
+      }
+
+      // A collaborative level credits a list of players rather than one
+      // string. Each entry carries the account behind it, so every name on the
+      // author line opens its own profile.
+      function levelCredits(lvl) {
+        if (!lvl) return [];
+        const inner = lvl.data && typeof lvl.data === "object" ? lvl.data : lvl;
+        const team = inner && inner.collabTeam;
+        if (!Array.isArray(team)) return [];
+        return team
+          .map((c) => ({
+            account: c && c.account ? String(c.account) : null,
+            name: ((c && (c.name || c.account)) || "").trim(),
+          }))
+          .filter((c) => c.name);
+      }
+
+      function showLevelTitle(title, author, font, colorKey, account, credits) {
         const overlay = document.getElementById("level-title-overlay");
         if (!overlay) return;
         overlay.innerHTML = "";
@@ -15961,12 +16828,57 @@
           tEl.textContent = title;
           overlay.appendChild(tEl);
         }
-        if (author) {
+        const team = Array.isArray(credits) ? credits : [];
+
+        // The overlay itself is click-through so it never eats input; only a
+        // credit takes clicks, and only when there is a profile behind it. It
+        // is on screen for the first 2.5s of a run, so leaving for a profile
+        // costs the player nothing.
+        const openProfile = (who) => {
+          overlay.style.display = "none";
+          overlay.style.opacity = "0";
+          const back = currentMenuView || "custom";
+          exitToMenu();
+          openUserProfile(who, back);
+        };
+        const linkify = (el, who) => {
+          el.style.pointerEvents = "auto";
+          el.style.cursor = "pointer";
+          el.style.color = "#6a9bd8";
+          el.style.textDecoration = "underline";
+          el.title = "View " + who + "'s profile";
+          el.onclick = () => openProfile(who);
+        };
+
+        if (team.length) {
+          // One line, one span per player, so each name is its own link.
+          const aEl = document.createElement("div");
+          aEl.style.cssText =
+            "font-size: clamp(1rem, 3vw, 1.5rem); color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; text-align: center; max-width: 90vw;";
+          aEl.appendChild(document.createTextNode("BY "));
+          team.forEach((c, i) => {
+            if (i > 0) aEl.appendChild(document.createTextNode(", "));
+            const span = document.createElement("span");
+            span.textContent = c.name;
+            if (c.account) linkify(span, c.account);
+            aEl.appendChild(span);
+          });
+          overlay.appendChild(aEl);
+        } else if (author) {
           const aEl = document.createElement("div");
           aEl.style.cssText =
             "font-size: clamp(1rem, 3vw, 1.5rem); color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;";
           aEl.textContent = "BY " + author;
           overlay.appendChild(aEl);
+
+          if (account) {
+            linkify(aEl, account);
+            const handle = document.createElement("div");
+            handle.style.cssText =
+              "font-size: clamp(0.7rem, 1.8vw, 0.9rem); color: #777; letter-spacing: 2px; margin-top: 6px;";
+            handle.textContent = "@" + account;
+            overlay.appendChild(handle);
+          }
         }
 
         overlay.style.display = "flex";
@@ -16160,6 +17072,8 @@
               // itself, and it is the only signal an exported JSON or a local
               // test play carries.
               isLegendaryLevel(levelData) ? levelData.visualTitleColor : null,
+              levelCreatorAccount(levelData),
+              levelCredits(levelData),
             );
           }, 200);
         }
@@ -16715,7 +17629,9 @@
 
         if (
           currentMenuView === "my-levels" ||
-          currentMenuView === "saved-levels"
+          currentMenuView === "saved-levels" ||
+          currentMenuView === "editor-levels" ||
+          currentMenuView === "shared-levels"
         ) {
           showMenu("custom");
           return;
@@ -16949,7 +17865,11 @@
 
         let dragSrcEl = null;
 
-        skins.forEach((skinId, index) => {
+        // One tile per distinct skin. Holding several copies shows as a count
+        // in the corner rather than a row of identical tiles, and the index
+        // passed to onReorder is a position among stacks, not among copies.
+        skinStacks(skins).forEach((stack, index) => {
+          const skinId = stack.id;
           const meta = skin_definitions[skinId] || {
             name: skinId,
             copies: "Unknown",
@@ -17041,6 +17961,14 @@
           }
           el.appendChild(preview);
 
+          if (stack.count > 1) {
+            const badge = document.createElement("div");
+            badge.innerText = "×" + stack.count;
+            badge.style.cssText =
+              "position:absolute; top:8px; right:8px; background:#335699; color:#fff; font-size:0.75rem; font-weight:bold; padding:2px 7px; letter-spacing:0.5px; pointer-events:none;";
+            el.appendChild(badge);
+          }
+
           const infoDiv = document.createElement("div");
           infoDiv.style.textAlign = "center";
           infoDiv.style.pointerEvents = "none";
@@ -17119,8 +18047,235 @@
           shield:
             '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM12 8v4m0 4h.01"/></svg>',
           cpu: '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>',
+          share:
+            '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>',
         };
         return icons[name] || "";
+      }
+
+
+      // =================================================================
+      // LEVEL EDITOR LEVELS AND PLAYER-TO-PLAYER SHARES
+      // =================================================================
+      // Block Architect Pro mirrors every save into `editor_levels`, so a
+      // level reaches the game long before it is ever published. `level_shares`
+      // is how one player hands a level to named others: mode 'view' is a plain
+      // share, mode 'collab' also puts the level in the recipient's editor.
+
+      let editorLevelsCache = { rows: [], fetchedAt: 0, error: null };
+      let sharedLevelsCache = { rows: [], fetchedAt: 0, error: null };
+      let sharedLevelsUnseen = 0;
+
+      // These tables post-date some deployments of this database, and naming a
+      // missing table rejects the whole query, so every reader probes once and
+      // then degrades to "no levels" rather than to a broken menu.
+      let editorTablesSupported = null;
+
+      async function probeEditorTables() {
+        if (editorTablesSupported !== null) return editorTablesSupported;
+        if (!_supabase) {
+          editorTablesSupported = false;
+          return false;
+        }
+        try {
+          const { error } = await _supabase
+            .from("editor_levels")
+            .select("id")
+            .limit(1);
+          editorTablesSupported = !error;
+        } catch (e) {
+          editorTablesSupported = false;
+        }
+        return editorTablesSupported;
+      }
+
+      function resetEditorLevelCaches() {
+        editorLevelsCache = { rows: [], fetchedAt: 0, error: null };
+        sharedLevelsCache = { rows: [], fetchedAt: 0, error: null };
+        sharedLevelsUnseen = 0;
+      }
+
+      async function fetchEditorLevels(force) {
+        if (!currentUser || !(await probeEditorTables())) return [];
+        if (!force && Date.now() - editorLevelsCache.fetchedAt < 15000) {
+          return editorLevelsCache.rows;
+        }
+        try {
+          const { data, error } = await _supabase
+            .from("editor_levels")
+            .select(
+              "id, name, data, published_id, published_version, updated_at, collab_origin",
+            )
+            .eq("owner", currentUser)
+            .eq("deleted", false)
+            .order("updated_at", { ascending: false });
+          if (error) throw error;
+          editorLevelsCache = {
+            rows: data || [],
+            fetchedAt: Date.now(),
+            error: null,
+          };
+        } catch (e) {
+          console.warn("Editor level fetch failed:", e);
+          editorLevelsCache = {
+            rows: [],
+            fetchedAt: Date.now(),
+            error: e.message || String(e),
+          };
+        }
+        return editorLevelsCache.rows;
+      }
+
+      // Two round trips rather than a PostgREST embed: a share and its level
+      // are separate concerns, and an embed that stops resolving would take the
+      // whole screen with it.
+      async function fetchSharedLevels(force) {
+        if (!currentUser || !(await probeEditorTables())) return [];
+        if (!force && Date.now() - sharedLevelsCache.fetchedAt < 15000) {
+          return sharedLevelsCache.rows;
+        }
+        try {
+          const { data: shares, error } = await _supabase
+            .from("level_shares")
+            .select("id, level_id, owner, mode, seen, created_at")
+            .eq("recipient", currentUser)
+            .eq("active", true)
+            .order("created_at", { ascending: false });
+          if (error) throw error;
+
+          const ids = [...new Set((shares || []).map((r) => r.level_id))];
+          let levels = [];
+          if (ids.length) {
+            const res = await _supabase
+              .from("editor_levels")
+              .select("id, name, data, owner, published_id, updated_at")
+              .in("id", ids)
+              .eq("deleted", false);
+            if (res.error) throw res.error;
+            levels = res.data || [];
+          }
+          const byId = new Map(levels.map((l) => [l.id, l]));
+
+          sharedLevelsCache = {
+            rows: (shares || [])
+              .filter((sh) => byId.has(sh.level_id))
+              .map((sh) => ({ ...sh, level: byId.get(sh.level_id) })),
+            fetchedAt: Date.now(),
+            error: null,
+          };
+        } catch (e) {
+          console.warn("Shared level fetch failed:", e);
+          sharedLevelsCache = {
+            rows: [],
+            fetchedAt: Date.now(),
+            error: e.message || String(e),
+          };
+        }
+        sharedLevelsUnseen = sharedLevelsCache.rows.filter(
+          (r) => !r.seen,
+        ).length;
+        return sharedLevelsCache.rows;
+      }
+
+      // The dot on the Shared Levels tile. Counted without pulling the level
+      // payloads, so it stays cheap enough to run on every sign-in.
+      async function refreshSharedLevelBadge() {
+        if (!currentUser || !(await probeEditorTables())) {
+          sharedLevelsUnseen = 0;
+          return;
+        }
+        try {
+          const { count, error } = await _supabase
+            .from("level_shares")
+            .select("id", { count: "exact", head: true })
+            .eq("recipient", currentUser)
+            .eq("active", true)
+            .eq("seen", false);
+          if (error) throw error;
+          sharedLevelsUnseen = count || 0;
+        } catch (e) {
+          sharedLevelsUnseen = 0;
+        }
+        if (currentMenuView === "custom") showMenu("custom");
+      }
+
+      async function markSharedLevelsSeen() {
+        const unseen = sharedLevelsCache.rows.filter((r) => !r.seen);
+        if (!unseen.length) return;
+        unseen.forEach((r) => (r.seen = true));
+        sharedLevelsUnseen = 0;
+        try {
+          await _supabase
+            .from("level_shares")
+            .update({ seen: true })
+            .in(
+              "id",
+              unseen.map((r) => r.id),
+            );
+        } catch (e) {
+          console.warn("Could not mark shares as seen:", e);
+        }
+      }
+
+      // An editor level is not a published level: it has no id in the browser,
+      // no play count and nothing to record a clear against. It is played
+      // straight from its stored payload.
+      function playEditorLevel(row, ownerName) {
+        try {
+          const data = expandLevelData(
+            JSON.parse(JSON.stringify(row.data || {})),
+          );
+          if (!data || !Array.isArray(data.plan) || !data.plan.length) {
+            return showPopup("ERROR", "This level has no layout yet.", () => {});
+          }
+          data.name = row.name || data.name || "Untitled";
+          if (ownerName && !data.creator) data.creator = ownerName;
+          currentGameMode = "custom";
+          startGameLevel(data, -1, "custom");
+        } catch (e) {
+          console.error("Failed to start editor level:", e);
+          showPopup("ERROR", "This level could not be opened.", () => {});
+        }
+      }
+
+      function editorLevelRow(container, opts) {
+        const row = document.createElement("div");
+        row.className = "custom-level-row";
+        row.style.cursor = "pointer";
+        row.onclick = opts.onPlay;
+
+        const plan = (opts.data && opts.data.plan) || [];
+        const w = Array.isArray(plan) && plan[0] ? String(plan[0]).length : 0;
+        const h = Array.isArray(plan) ? plan.length : 0;
+
+        const info = document.createElement("div");
+        info.className = "custom-level-info";
+        info.innerHTML = `
+            <div class="custom-level-name">${escapeHtml(opts.name || "Untitled")}</div>
+            <div class="custom-level-details">
+              <div class="custom-level-detail-item">[${w}x${h}]</div>
+              ${opts.subtitle ? `<div class="custom-level-detail-item">${escapeHtml(opts.subtitle)}</div>` : ""}
+            </div>
+            <div class="custom-level-status">${(opts.badges || []).join("")}</div>
+          `;
+
+        const actions = document.createElement("div");
+        actions.className = "custom-level-actions";
+        const play = document.createElement("button");
+        play.className = "btn";
+        play.textContent = "PLAY";
+        play.style.cssText =
+          "background:#335699; border-color:#2a4a7a; font-size:0.8rem; padding:8px 14px;";
+        play.onclick = (e) => {
+          e.stopPropagation();
+          opts.onPlay();
+        };
+        actions.appendChild(play);
+
+        row.appendChild(info);
+        row.appendChild(actions);
+        container.appendChild(row);
+        return row;
       }
 
       function openDifficultySelectionPopup() {
@@ -18959,9 +20114,24 @@
               true,
               isReordering,
               (src, tgt) => {
-                const item = currentUserSkins[src];
-                currentUserSkins.splice(src, 1);
-                currentUserSkins.splice(tgt, 0, item);
+                // src and tgt index stacks, not copies, so the move is done on
+                // the stacked view and then flattened back out. Dragging a
+                // skin you own three of moves all three together.
+                const stacks = skinStacks(currentUserSkins);
+                if (
+                  src < 0 ||
+                  tgt < 0 ||
+                  src >= stacks.length ||
+                  tgt >= stacks.length
+                )
+                  return;
+                const [moved] = stacks.splice(src, 1);
+                stacks.splice(tgt, 0, moved);
+                currentUserSkins.length = 0;
+                stacks.forEach((st) => {
+                  for (let i = 0; i < st.count; i++)
+                    currentUserSkins.push(st.id);
+                });
                 syncDataToCloud();
                 refreshSkins();
               },
@@ -19220,9 +20390,20 @@
           container.appendChild(statsDiv);
 
           const skinHeader = document.createElement("div");
-          skinHeader.innerText = "SKINS COLLECTION";
           skinHeader.style.cssText =
-            "color: #ccc; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px; width: 100%;";
+            "color: #ccc; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px; width: 100%; display:flex; align-items:center; justify-content:space-between; gap:10px;";
+          const skinHeaderLabel = document.createElement("span");
+          skinHeaderLabel.innerText = "SKINS COLLECTION";
+          skinHeader.appendChild(skinHeaderLabel);
+          // Giving a skin away starts here, on the collection it comes out of.
+          if (isMyProfile) {
+            const giftBtn = document.createElement("button");
+            giftBtn.innerText = "GIFT";
+            giftBtn.style.cssText =
+              "background:#335699; border:2px solid #2a4a7a; color:#fff; font-family:inherit; font-size:0.75rem; font-weight:bold; letter-spacing:1px; padding:6px 16px; cursor:pointer;";
+            giftBtn.onclick = () => openGiftModal();
+            skinHeader.appendChild(giftBtn);
+          }
           container.appendChild(skinHeader);
 
           // On your own profile, merge the stored collection with the live
@@ -19231,9 +20412,14 @@
           // the cloud sync lands — taking either one alone hides skins.
           let profileSkins = asStoredArray(data.skins).slice();
           if (isMyProfile && Array.isArray(currentUserSkins)) {
-            currentUserSkins.forEach((id) => {
-              if (!profileSkins.includes(id)) profileSkins.push(id);
+            // Counted rather than tested, so a second copy held locally but
+            // not yet in the stored row still shows up.
+            const stored = skinCounts(profileSkins);
+            skinCounts(currentUserSkins).forEach((n, id) => {
+              for (let i = stored.get(id) || 0; i < n; i++)
+                profileSkins.push(id);
             });
+            regroupSkins(profileSkins);
             // Update context for future re-renders when cloud data syncs
             data.skins = profileSkins;
           }
@@ -20760,10 +21946,20 @@
               action: () => showMenu("saved-levels"),
             },
             {
+              name: "Shared Levels",
+              icon: "share",
+              color: "#1abc9c",
+              action: () => showMenu("shared-levels"),
+              // Something new has been handed to you since you last looked
+              dot: () => sharedLevelsUnseen > 0,
+            },
+            {
+              // The editor itself is one click further in: this opens the
+              // levels you already have there, published or not.
               name: "Level Editor",
               icon: "hammer",
               color: "#e67e22",
-              action: () => window.open("Block Architect Pro.html", "_blank"),
+              action: () => showMenu("editor-levels"),
             },
             {
               name: "Popular",
@@ -20879,7 +22075,10 @@
                 .filter(Boolean);
 
             const groups = [
-              { title: "Yours", names: ["My Levels", "Saved Levels"] },
+              {
+                title: "Yours",
+                names: ["My Levels", "Saved Levels", "Shared Levels"],
+              },
               {
                 title: "Browse",
                 names: [
@@ -20902,11 +22101,22 @@
               if (!items.length) return;
               body.appendChild(sectionEl(group.title));
               const grid = gridEl();
-              items.forEach((btn) =>
-                grid.appendChild(
-                  mobileTile(btn.name, btn.icon, btn.color, btn.action),
-                ),
-              );
+              items.forEach((btn) => {
+                const tile = mobileTile(
+                  btn.name,
+                  btn.icon,
+                  btn.color,
+                  btn.action,
+                );
+                if (btn.dot && btn.dot()) {
+                  tile.style.position = "relative";
+                  const dot = document.createElement("span");
+                  dot.style.cssText =
+                    "position:absolute; top:6px; right:6px; width:10px; height:10px; background:#e74c3c; box-shadow:0 0 6px rgba(231,76,60,0.9);";
+                  tile.appendChild(dot);
+                }
+                grid.appendChild(tile);
+              });
               body.appendChild(grid);
             });
 
@@ -20916,11 +22126,17 @@
           navButtons.forEach((btn) => {
             const b = document.createElement("button");
             b.className = "btn";
-            b.style.cssText = `background: #1a1a1a; border: 3px solid ${btn.color}; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,0.4); transition: transform 0.1s, border-color 0.2s;`;
+            b.style.cssText = `position: relative; background: #1a1a1a; border: 3px solid ${btn.color}; color: #fff; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,0.4); transition: transform 0.1s, border-color 0.2s;`;
             b.innerHTML = `
                 <div style="color: ${btn.color};">${getIconSvg(btn.icon)}</div>
                 <span style="font-size: 0.9rem; font-weight: bold;">${btn.name}</span>
               `;
+            if (btn.dot && btn.dot()) {
+              const dot = document.createElement("span");
+              dot.style.cssText =
+                "position:absolute; top:-6px; right:-6px; width:14px; height:14px; background:#e74c3c; border:2px solid #1a1a1a; box-shadow:0 0 8px rgba(231,76,60,0.9);";
+              b.appendChild(dot);
+            }
             b.onclick = btn.action;
             grid.appendChild(b);
           });
@@ -20932,6 +22148,162 @@
           btnBack.textContent = "BACK";
           btnBack.style.marginTop = "20px";
           btnBack.onclick = () => showMenu("main");
+          container.appendChild(btnBack);
+        } else if (view === "editor-levels") {
+          subtitle.textContent = "LEVEL EDITOR";
+          container.style.width = "100%";
+          container.style.maxWidth = "800px";
+
+          const openEditor = document.createElement("button");
+          openEditor.className = "btn";
+          openEditor.textContent = "OPEN EDITOR";
+          openEditor.style.cssText =
+            "background:#e67e22; border-color:#c05f14; margin-bottom:20px;";
+          openEditor.onclick = () =>
+            window.open("Block Architect Pro.html", "_blank");
+          container.appendChild(openEditor);
+
+          const listBox = document.createElement("div");
+          listBox.style.cssText =
+            "width:100%; display:flex; flex-direction:column; gap:10px;";
+          container.appendChild(listBox);
+
+          const note = (text, color) => {
+            const d = document.createElement("div");
+            d.textContent = text;
+            d.style.cssText = `color:${color || "#888"}; text-align:center; padding:20px 10px; line-height:1.6;`;
+            return d;
+          };
+
+          if (!currentUser) {
+            listBox.appendChild(
+              note(
+                "Sign in to see the levels on your account. Link the account in the editor and everything you save there shows up here.",
+              ),
+            );
+          } else {
+            listBox.appendChild(note("Loading levels..."));
+            fetchEditorLevels(true).then((rows) => {
+              if (currentMenuView !== "editor-levels") return;
+              listBox.innerHTML = "";
+              if (editorLevelsCache.error) {
+                listBox.appendChild(
+                  note("Could not reach your levels right now.", "#e74c3c"),
+                );
+                return;
+              }
+              if (!rows.length) {
+                listBox.appendChild(
+                  note(
+                    "No levels. Link your account in the editor if not already.",
+                  ),
+                );
+                return;
+              }
+              rows.forEach((r) => {
+                const data = expandLevelData(r.data || {});
+                editorLevelRow(listBox, {
+                  name: r.name,
+                  data,
+                  subtitle: r.updated_at
+                    ? "edited " + new Date(r.updated_at).toLocaleDateString()
+                    : "",
+                  badges: [
+                    r.published_id != null
+                      ? `<div class="status-badge" style="background:#335699; color:#fff;">PUBLISHED${
+                          r.published_version ? " V" + r.published_version : ""
+                        }</div>`
+                      : '<div class="status-badge" style="background:#444; color:#ddd;">DRAFT</div>',
+                    // A collaboration reaches you as two levels: your own
+                    // version lives here, the owner's under Shared Levels.
+                    r.collab_origin != null
+                      ? '<div class="status-badge" style="background:#8e44ad; color:#fff;">YOUR COLLAB VERSION</div>'
+                      : "",
+                  ],
+                  onPlay: () => playEditorLevel({ ...r, data }, currentUser),
+                });
+              });
+            });
+          }
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("custom");
+          container.appendChild(btnBack);
+        } else if (view === "shared-levels") {
+          subtitle.textContent = "SHARED LEVELS";
+          container.style.width = "100%";
+          container.style.maxWidth = "800px";
+
+          const listBox = document.createElement("div");
+          listBox.style.cssText =
+            "width:100%; display:flex; flex-direction:column; gap:10px;";
+          container.appendChild(listBox);
+
+          const note = (text, color) => {
+            const d = document.createElement("div");
+            d.textContent = text;
+            d.style.cssText = `color:${color || "#888"}; text-align:center; padding:20px 10px; line-height:1.6;`;
+            return d;
+          };
+
+          if (!currentUser) {
+            listBox.appendChild(
+              note("Sign in to see levels other players have shared with you."),
+            );
+          } else {
+            listBox.appendChild(note("Loading shared levels..."));
+            fetchSharedLevels(true).then((rows) => {
+              if (currentMenuView !== "shared-levels") return;
+              listBox.innerHTML = "";
+              if (sharedLevelsCache.error) {
+                listBox.appendChild(
+                  note("Could not reach your shared levels right now.", "#e74c3c"),
+                );
+                return;
+              }
+              if (!rows.length) {
+                listBox.appendChild(
+                  note(
+                    "Nothing shared with you.",
+                  ),
+                );
+                return;
+              }
+              rows.forEach((sh) => {
+                const data = expandLevelData(sh.level.data || {});
+                const badges = [];
+                if (!sh.seen) {
+                  badges.push(
+                    '<div class="status-badge" style="background:#e74c3c; color:#fff;">NEW</div>',
+                  );
+                }
+                if (sh.mode === "collab") {
+                  badges.push(
+                    '<div class="status-badge" style="background:#8e44ad; color:#fff;">AVAILABLE VIA COLLABORATION</div>',
+                  );
+                }
+                editorLevelRow(listBox, {
+                  name: sh.level.name,
+                  data,
+                  subtitle: "from " + sh.owner,
+                  badges,
+                  onPlay: () =>
+                    playEditorLevel({ ...sh.level, data }, sh.owner),
+                });
+              });
+              // Opening the list is what clears the dot
+              markSharedLevelsSeen();
+            });
+          }
+
+          const btnBack = document.createElement("button");
+          btnBack.className = "btn";
+          btnBack.textContent = "BACK";
+          btnBack.style.marginTop = "20px";
+          btnBack.onclick = () => showMenu("custom");
           container.appendChild(btnBack);
         } else if (view === "my-levels" || view === "saved-levels") {
           subtitle.textContent =
@@ -21459,6 +22831,8 @@
           return;
         }
 
+        resetEditorLevelCaches();
+
         try {
           if (type === "signup") {
             const { data: existingUser } = await _supabase
@@ -21504,6 +22878,7 @@
             currentUser = username;
             safeStorage.setItem("blockoverit_username", username);
             updateLoginButton();
+            refreshSharedLevelBadge();
             await fetchAdminUsers();
             await fetchAndSyncUserData();
             showPopup(
@@ -21537,6 +22912,7 @@
             currentUser = username;
             safeStorage.setItem("blockoverit_username", username);
             updateLoginButton();
+            refreshSharedLevelBadge();
             // The row that just authenticated already carries the flag
             currentUserIsAdmin = !!user.admin;
             await fetchAdminUsers();
@@ -21598,6 +22974,7 @@
         currentUser = savedUser;
         updateLoginButton();
         fetchAndSyncUserData();
+        refreshSharedLevelBadge();
       } else {
         setTimeout(() => {
           const html = `
@@ -22470,7 +23847,13 @@
                               ${currentLvl.featured ? '<span style="background:#3b82f6; color:white; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px;">FEATURED</span>' : ""}
                               ${currentLvl.awards ? '<span style="background: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); color:black; font-size:0.7rem; padding:2px 10px; border-radius:0; font-weight:900; letter-spacing:1px;">LEVEL AWARDS</span>' : ""}
                           </div>
-                          <div style="color:#888;">by ${currentLvl.creator}</div>
+                          <div style="color:#888;">by ${
+                            levelCreatorAccount(currentLvl)
+                              ? `<span id="creator-link" style="color:#6a9bd8; text-decoration:underline; cursor:pointer;">${escapeHtml(
+                                  currentLvl.creator || "Anonymous",
+                                )}</span>`
+                              : escapeHtml(currentLvl.creator || "Anonymous")
+                          }</div>
                           ${
                             currentLvl.verified
                               ? `<div style="margin-top:10px; font-size:0.8rem; color:#2ecc71; font-weight:bold; display:flex; align-items:center; gap:5px;">
@@ -22675,6 +24058,16 @@
             });
         }
 
+        const creatorLink = details.querySelector("#creator-link");
+        if (creatorLink) {
+          const account = levelCreatorAccount(currentLvl);
+          creatorLink.title = "View " + account + "'s profile";
+          creatorLink.onclick = () =>
+            openUserProfile(account, "browse-levels", {
+              viewLevel: currentLvl,
+            });
+        }
+
         const verifierLink = details.querySelector("#verifier-link");
         if (verifierLink) {
           verifierLink.onclick = () =>
@@ -22726,6 +24119,7 @@
             levelVersion(currentLvl),
             currentLvl.legendary,
             currentLvl.legendary_archive,
+            levelCreatorAccount(currentLvl),
           );
         };
 
@@ -22749,6 +24143,7 @@
                     levelVersion(currentLvl),
                     currentLvl.legendary,
                     currentLvl.legendary_archive,
+                    levelCreatorAccount(currentLvl),
                   );
                 },
               },
@@ -22763,6 +24158,7 @@
                     levelVersion(currentLvl),
                     currentLvl.legendary,
                     currentLvl.legendary_archive,
+                    levelCreatorAccount(currentLvl),
                   );
                 },
               },
@@ -22777,6 +24173,7 @@
                     levelVersion(currentLvl),
                     currentLvl.legendary,
                     currentLvl.legendary_archive,
+                    levelCreatorAccount(currentLvl),
                   );
                 },
               },
@@ -22841,6 +24238,7 @@
         version,
         legendary,
         legendaryArchive,
+        creatorAccount,
       ) => {
         try {
           const data =
@@ -22858,6 +24256,9 @@
           // The archive flag rides along too, so the in-game "Former
           // Legendary" tag and the retained title colour both know about it.
           data.legendaryArchive = !!legendaryArchive;
+          // The linked account lives on the row, not in the level payload, so
+          // it has to be carried in for the title card's author link.
+          if (creatorAccount) data.creator_user = creatorAccount;
           // Start game immediately for better UX
           if (
             currentGameMode !== "speedrun" &&
