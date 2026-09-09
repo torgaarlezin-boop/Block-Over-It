@@ -351,41 +351,108 @@
           0 50%;
         background-repeat: repeat-x, repeat-x, repeat-x, repeat-x;
       }
-      .water-crest-preview {
+      /* ---------- Water in the editor ----------
+         Water is drawn on its own layer above the cells, exactly as the game
+         draws it, so a submerged block is seen THROUGH the water rather than
+         next to it. Everything that must not tile -- the depth gradient, the
+         drifting caustics, the rim glow -- is painted once per pool by
+         .wm-body. The per-cell fill is a flat translucent pane and nothing
+         else; give it a border or an inset shadow and those repeats stack up
+         into a visible grid of lines running through every pool. */
+      #water-overlay {
         position: absolute;
-        left: 0;
-        right: 0;
         top: 0;
-        height: 14%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 6;
+      }
+      .wm-cell {
+        position: absolute;
+        background: rgba(56, 152, 255, 0.32);
+      }
+      .wm-body {
+        position: absolute;
+        overflow: hidden;
+        background: linear-gradient(
+          to bottom,
+          rgba(120, 200, 255, 0.1),
+          rgba(10, 60, 140, 0.22)
+        );
+        box-shadow: inset 0 0 18px rgba(8, 44, 104, 0.5);
+      }
+      .wm-body.flipped {
+        background: linear-gradient(
+          to top,
+          rgba(120, 200, 255, 0.1),
+          rgba(10, 60, 140, 0.22)
+        );
+      }
+      /* Slow drifting highlights, so a still pool is not a flat pane of blue */
+      .wm-body::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 60% 40% at 25% 30%,
+            rgba(190, 232, 255, 0.16),
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 50% 35% at 75% 65%,
+            rgba(190, 232, 255, 0.12),
+            transparent 70%
+          );
+        animation: wm-shimmer 7s ease-in-out infinite alternate;
+      }
+      @keyframes wm-shimmer {
+        from {
+          transform: translate3d(-2%, 0, 0) scale(1);
+          opacity: 0.75;
+        }
+        to {
+          transform: translate3d(2%, 1%, 0) scale(1.06);
+          opacity: 1;
+        }
+      }
+      /* The lit line along the open face of a pool, matching .water-crest in
+         game. Drawn as a sibling rather than a pseudo element so a clipped
+         cell cannot slice it off. */
+      .wm-crest {
+        position: absolute;
         background: linear-gradient(
           to bottom,
           rgba(214, 242, 255, 0.9),
           rgba(190, 232, 255, 0.25)
         );
-        pointer-events: none;
+        animation: wm-bob 2.6s ease-in-out infinite;
       }
-      .water-crest-preview.slab {
-        top: 50%;
-      }
-      .water-crest-preview.flipped {
-        top: auto;
-        bottom: 0;
+      .wm-crest.flipped {
         background: linear-gradient(
           to top,
           rgba(214, 242, 255, 0.9),
           rgba(190, 232, 255, 0.25)
         );
       }
-      .water-crest-preview.flipped.slab {
-        bottom: 50%;
+      @keyframes wm-bob {
+        0%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.85;
+        }
+        50% {
+          transform: translateY(20%);
+          opacity: 0.55;
+        }
       }
-      .water-mod-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(56, 152, 255, 0.34);
-        box-shadow: inset 0 0 8px rgba(10, 60, 140, 0.45);
-        pointer-events: none;
-        z-index: 3;
+      @media (prefers-reduced-motion: reduce) {
+        .wm-body::after,
+        .wm-crest {
+          animation: none;
+        }
       }
       .t-teleporter {
         --tele-color: #3498db;
@@ -1902,6 +1969,227 @@
         box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
       }
 
+      /* ---------- Collaboration ----------
+         Collaboration is the one part of the editor where another person is
+         the subject, so it keeps its purple accent, a face on every row, and a
+         status you can read at a glance. Everything else is deliberately flat:
+         no gradients, no glows, no drifting highlight. The panel is a list of
+         people and what they are waiting on, and it should read as one. */
+      .collab-sheet {
+        background: #0b0e14;
+      }
+      .collab-glyph {
+        background: #6d28d9;
+      }
+
+      /* Segmented control. The active tab is lifted rather than recoloured, so
+         the three counts stay comparable while you scan them. */
+      .collab-tab {
+        position: relative;
+        flex: 1;
+        padding: 7px 10px;
+        border-radius: 7px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease;
+      }
+      .collab-tab:hover {
+        color: #cbd5e1;
+      }
+      .collab-tab.is-active {
+        background: #1e293b;
+        color: #e9d5ff;
+      }
+      .collab-tab-count {
+        min-width: 17px;
+        height: 15px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        color: #94a3b8;
+        font-size: 9px;
+        line-height: 13px;
+        text-align: center;
+      }
+      .collab-tab.is-active .collab-tab-count {
+        background: #312e81;
+        border-color: #4c1d95;
+        color: #ddd6fe;
+      }
+      .collab-tab-count.is-alert {
+        background: #7c3aed;
+        border-color: #a78bfa;
+        color: #fff;
+      }
+
+      /* One row per request, joined level, or submission. */
+      .collab-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #0d1117;
+        border: 1px solid #1e293b;
+        transition:
+          border-color 0.15s ease,
+          transform 0.15s ease;
+      }
+      .collab-card:hover {
+        border-color: #334155;
+      }
+      .collab-card.is-waiting {
+        border-color: rgba(139, 92, 246, 0.45);
+      }
+      /* The initial stands in for an avatar the editor does not have. The hue
+         is derived from the account name, so one player is one colour
+         everywhere in the panel. */
+      .collab-avatar {
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 900;
+        color: #fff;
+        background: hsl(var(--h) 55% 45%);
+      }
+      .collab-avatar.sm {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+      }
+      .collab-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+      }
+      .collab-pill.pending {
+        background: rgba(139, 92, 246, 0.14);
+        border-color: rgba(139, 92, 246, 0.4);
+        color: #ddd6fe;
+      }
+      .collab-pill.approved {
+        background: rgba(16, 185, 129, 0.13);
+        border-color: rgba(16, 185, 129, 0.38);
+        color: #a7f3d0;
+      }
+      .collab-pill.rejected {
+        background: rgba(244, 63, 94, 0.12);
+        border-color: rgba(244, 63, 94, 0.35);
+        color: #fecdd3;
+      }
+      .collab-pill.neutral {
+        background: #0f172a;
+        border-color: #1e293b;
+        color: #94a3b8;
+      }
+      .collab-note {
+        margin-top: 7px;
+        padding: 6px 9px;
+        border-left: 2px solid #4c1d95;
+        border-radius: 0 5px 5px 0;
+        background: rgba(30, 41, 59, 0.5);
+        font-size: 10px;
+        line-height: 1.5;
+        color: #cbd5e1;
+        font-style: italic;
+      }
+      .collab-btn {
+        padding: 6px 11px;
+        border-radius: 7px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #cbd5e1;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .collab-btn:hover {
+        background: #334155;
+        color: #fff;
+      }
+      .collab-btn.primary {
+        background: #6d28d9;
+        border-color: #7c3aed;
+        color: #fff;
+      }
+      .collab-btn.primary:hover {
+        background: #7c3aed;
+      }
+      .collab-btn.go {
+        background: #047857;
+        border-color: #059669;
+        color: #fff;
+      }
+      .collab-btn.go:hover {
+        background: #059669;
+      }
+      .collab-btn.danger:hover {
+        background: rgba(190, 18, 60, 0.25);
+        border-color: #9f1239;
+        color: #fecdd3;
+      }
+
+      /* An empty pane says what is empty and nothing else. */
+      .collab-empty {
+        padding: 22px 16px;
+        text-align: center;
+        border: 1px dashed #1e293b;
+        border-radius: 10px;
+        color: #64748b;
+        font-size: 11px;
+      }
+
+      /* Top-bar entry point, and the chrome that says which version of a
+         shared level is on screen. */
+      #collab-inbox-btn.has-mail {
+        border-color: #7c3aed;
+        color: #ddd6fe;
+      }
+      .collab-role-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #94a3b8;
+      }
+      .collab-role-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #f59e0b;
+      }
+
     </style>
 
   </head>
@@ -2510,6 +2798,44 @@
           Block Architect <span class="text-blue-500">Pro</span> -
           <span style="color: #d4af37">Phanes</span>
         </h1>
+        <button
+          id="account-chip"
+          onclick="accountManager.openModal()"
+          class="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-blue-500 rounded-full text-[10px] font-bold text-slate-400 transition-colors"
+          title="Block Over It account"
+        >
+          <span
+            id="account-chip-dot"
+            class="w-1.5 h-1.5 rounded-full bg-slate-600"
+          ></span>
+          <span id="account-chip-label">Link Account</span>
+        </button>
+        <button
+          id="collab-inbox-btn"
+          onclick="collabManager.openInbox()"
+          class="hidden relative flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500 rounded-full text-[10px] font-bold text-slate-400 transition-colors"
+          title="Collaborations"
+        >
+          <svg
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Collab
+          <span
+            id="collab-inbox-count"
+            class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-purple-500 text-white text-[9px] font-bold leading-4 rounded-full text-center"
+          ></span>
+        </button>
       </div>
 
       <div class="flex items-center gap-3">
@@ -2575,6 +2901,33 @@
           class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-slate-300"
         >
           Template
+        </button>
+        <span
+          id="collab-main-banner"
+          class="hidden collab-role-chip"
+          title="You are looking at the owner's version. Edits here go nowhere."
+        >
+          <span class="dot"></span>Main version &middot; read only
+        </span>
+        <button
+          id="btn-collab-push"
+          onclick="collabManager.pushChanges()"
+          class="hidden items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-[11px] font-bold rounded text-white shadow-lg shadow-purple-600/25"
+          title="Send your changes to the level's owner"
+        >
+          <svg
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+          <span id="btn-collab-push-label">Push Changes</span>
         </button>
         <button
           onclick="shareManager.open()"
@@ -2974,6 +3327,7 @@
                 </div>
                 <input type="hidden" id="prop-diff" value="1" />
                 <input type="hidden" id="prop-copy" value="false" />
+                <input type="hidden" id="prop-link-account" value="true" />
                 <input type="hidden" id="prop-copy-password" value="" />
                 <input type="hidden" id="prop-mirror" value="false" />
                 <input type="hidden" id="prop-force-zoom" value="false" />
@@ -3576,7 +3930,9 @@
           <div class="flex justify-between items-end mb-6">
             <div>
               <h2 class="text-xl font-bold mb-1 text-white">My Projects</h2>
-              <p class="text-slate-500 text-xs">Local browser storage.</p>
+              <p id="project-list-subtitle" class="text-slate-500 text-xs">
+                Local browser storage.
+              </p>
             </div>
             <select
               id="project-sort"
@@ -4004,6 +4360,10 @@
           </button>
         </div>
         <div class="p-6 space-y-4">
+          <div
+            id="share-collab-notice"
+            class="hidden p-3 rounded border border-slate-700 bg-slate-900 text-[11px] text-slate-300 leading-relaxed"
+          ></div>
           <button
             id="btn-share-upload"
             onclick="shareManager.startUpload()"
@@ -4023,12 +4383,63 @@
             </svg>
             Upload to Block Over It
           </button>
+          <div id="share-player-options" class="grid grid-cols-1 gap-2">
+            <button
+              onclick="playerShare.open('view')"
+              class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500 rounded text-left px-3 group transition-colors"
+            >
+              <div
+                class="text-[11px] font-bold text-slate-200 group-hover:text-emerald-400 flex items-center gap-1.5"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Share with specific players
+              </div>
+
+            </button>
+            <button
+              onclick="playerShare.open('collab')"
+              class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500 rounded text-left px-3 group transition-colors"
+            >
+              <div
+                class="text-[11px] font-bold text-slate-200 group-hover:text-purple-400 flex items-center gap-1.5"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Collaborate
+              </div>
+            </button>
+          </div>
           <div class="flex items-center gap-2">
             <div class="h-px bg-slate-800 flex-1"></div>
             <span class="text-[10px] text-slate-600 uppercase">OR</span>
             <div class="h-px bg-slate-800 flex-1"></div>
           </div>
           <button
+            id="btn-share-download"
             onclick="io.downloadJson()"
             class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded border border-slate-700"
           >
@@ -4080,6 +4491,291 @@
               <path d="M10 12h4" />
             </svg>
             <span id="share-size-text">&nbsp;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT LINK MODAL -->
+    <div
+      id="account-modal"
+      class="fixed inset-0 z-[320] hidden flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm"
+      onclick="if (event.target === this) closeModal('account-modal');"
+    >
+      <div
+        class="bg-[#0f121a] border border-slate-800 w-full max-w-[340px] rounded-xl shadow-2xl overflow-hidden"
+      >
+        <!-- Signed out -->
+        <div id="account-signin-view" class="p-6">
+          <div class="text-center mb-5">
+            <div
+              class="w-11 h-11 mx-auto mb-3 rounded-full bg-blue-500/10 border border-blue-500/40 flex items-center justify-center text-blue-400"
+            >
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+                />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h3 class="text-sm font-bold text-white">Link your account</h3>
+            <p class="text-[11px] text-slate-500 mt-1">
+              Use your Block Over It login.
+            </p>
+          </div>
+          <div class="space-y-2">
+            <input
+              id="account-username"
+              type="text"
+              placeholder="Username"
+              autocomplete="username"
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+              onkeydown="if (event.key === 'Enter') document.getElementById('account-password').focus();"
+            />
+            <input
+              id="account-password"
+              type="password"
+              placeholder="Password"
+              autocomplete="current-password"
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+              onkeydown="if (event.key === 'Enter') accountManager.submit();"
+            />
+          </div>
+          <div
+            id="account-error"
+            class="text-[11px] text-red-400 mt-2 hidden leading-snug"
+          ></div>
+          <button
+            id="account-submit"
+            onclick="accountManager.submit()"
+            class="w-full mt-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg shadow-blue-600/20"
+          >
+            Link
+          </button>
+          <button
+            onclick="closeModal('account-modal')"
+            class="w-full mt-2 py-2 text-slate-500 hover:text-slate-300 text-[11px] font-bold"
+          >
+            Not now
+          </button>
+        </div>
+
+        <!-- Signed in -->
+        <div id="account-linked-view" class="p-6 hidden">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-11 h-11 rounded-full bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-black"
+              id="account-avatar"
+            >
+              ?
+            </div>
+            <div class="min-w-0 flex-1">
+              <div
+                class="text-sm font-bold text-white truncate"
+                id="account-linked-name"
+              ></div>
+              <div class="text-[10px] text-emerald-400">
+                <span id="account-cloud-count">0</span> levels synced
+              </div>
+            </div>
+          </div>
+          <button
+            onclick="closeModal('account-modal')"
+            class="w-full mt-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded"
+          >
+            Done
+          </button>
+          <div class="flex gap-2 mt-2">
+            <button
+              onclick="cloudLevels.sync(true)"
+              class="flex-1 py-2 text-slate-400 hover:text-slate-200 text-[11px] font-bold"
+            >
+              Sync now
+            </button>
+            <button
+              onclick="accountManager.signOut()"
+              class="flex-1 py-2 text-slate-500 hover:text-red-400 text-[11px] font-bold"
+            >
+              Unlink
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYER SHARE MODAL -->
+    <div
+      id="player-share-modal"
+      class="fixed inset-0 z-[320] hidden flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm"
+      onclick="if (event.target === this) closeModal('player-share-modal');"
+    >
+      <div
+        class="bg-[#0f121a] border border-slate-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+      >
+        <div class="p-5 pb-4 border-b border-slate-800">
+          <h3 id="player-share-title" class="text-sm font-bold text-white">
+            Share with players
+          </h3>
+          <p
+            id="player-share-blurb"
+            class="text-[11px] text-slate-500 leading-snug mt-1"
+          ></p>
+        </div>
+        <div class="p-5 space-y-4 overflow-y-auto">
+          <div>
+            <div class="flex gap-2">
+              <input
+                id="player-share-input"
+                type="text"
+                placeholder="Add a username"
+                class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
+                onkeydown="if (event.key === 'Enter') { event.preventDefault(); playerShare.addTyped(); }"
+              />
+              <button
+                onclick="playerShare.addTyped()"
+                class="px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded border border-slate-700"
+              >
+                Add
+              </button>
+            </div>
+            <div id="player-share-feedback" class="text-[10px] mt-2 hidden"></div>
+          </div>
+          <div id="player-share-chips" class="flex flex-wrap gap-2"></div>
+          <div id="player-share-existing-wrap">
+            <div class="text-[10px] text-slate-600 font-bold uppercase mb-2">
+              Has access
+              <span id="player-share-existing-count" class="ml-1">0</span>
+            </div>
+            <div id="player-share-existing" class="space-y-1.5"></div>
+          </div>
+        </div>
+        <div class="p-4 border-t border-slate-800 flex gap-2">
+          <button
+            onclick="closeModal('player-share-modal')"
+            class="flex-1 py-2.5 text-slate-400 hover:text-slate-200 text-xs font-bold"
+          >
+            Done
+          </button>
+          <button
+            id="player-share-confirm"
+            onclick="playerShare.submit()"
+            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-lg shadow-blue-600/20"
+          >
+            Share
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLLABORATION INBOX MODAL
+         Three views of the same relationship: work sent TO you, levels you
+         have been let INTO, and versions you have sent OUT. They used to be
+         two undifferentiated lists with the third missing entirely, which is
+         why nobody could tell whether a push had landed. -->
+    <div
+      id="collab-inbox-modal"
+      class="fixed inset-0 z-[320] hidden flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm"
+      onclick="if (event.target === this) closeModal('collab-inbox-modal');"
+    >
+      <div
+        class="collab-sheet border border-slate-800 w-full max-w-xl rounded-xl overflow-hidden flex flex-col max-h-[86vh]"
+      >
+        <div class="p-5 pb-4 flex items-start justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div
+              class="collab-glyph w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                width="18"
+                height="18"
+                fill="none"
+                stroke="#fff"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-bold text-white leading-tight">
+                Collaborations
+              </h3>
+            </div>
+          </div>
+          <button
+            onclick="closeModal('collab-inbox-modal')"
+            class="text-slate-500 hover:text-white flex-shrink-0 mt-0.5"
+          >
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-5">
+          <div
+            class="flex gap-1 p-1 bg-slate-950 border border-slate-800 rounded-lg"
+          >
+            <button
+              id="collab-tab-pending"
+              class="collab-tab is-active"
+              onclick="collabManager.switchTab('pending')"
+            >
+              Requests
+              <span id="collab-tab-count-pending" class="collab-tab-count"
+                >0</span
+              >
+            </button>
+            <button
+              id="collab-tab-joined"
+              class="collab-tab"
+              onclick="collabManager.switchTab('joined')"
+            >
+              Joined
+              <span id="collab-tab-count-joined" class="collab-tab-count"
+                >0</span
+              >
+            </button>
+            <button
+              id="collab-tab-sent"
+              class="collab-tab"
+              onclick="collabManager.switchTab('sent')"
+            >
+              Sent
+              <span id="collab-tab-count-sent" class="collab-tab-count">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Each pane used to open with a paragraph explaining what it was
+             for. The rows say it better: a name, a face, and two buttons. -->
+        <div class="p-5 overflow-y-auto">
+          <div id="collab-pane-pending">
+            <div id="collab-pending-list" class="space-y-2"></div>
+          </div>
+          <div id="collab-pane-joined" class="hidden">
+            <div id="collab-joined-list" class="space-y-2"></div>
+          </div>
+          <div id="collab-pane-sent" class="hidden">
+            <div id="collab-sent-list" class="space-y-2"></div>
           </div>
         </div>
       </div>
@@ -5566,6 +6262,13 @@
             >
               Visuals
             </button>
+            <button
+              onclick="settingsManager.switchTab('collab')"
+              id="tab-collab"
+              class="settings-tab w-full hidden"
+            >
+              Team
+            </button>
           </div>
         </div>
         <!-- Content -->
@@ -5678,6 +6381,47 @@
                       placeholder="Leave empty for no password"
                       oninput="settingsManager.syncFromModal()"
                     />
+                  </div>
+                </div>
+                <div
+                  class="col-span-2 setting-item pt-2 border-t border-slate-800"
+                >
+                  <label
+                    class="flex items-center justify-between cursor-pointer group gap-4"
+                  >
+                    <span class="min-w-0">
+                      <span class="text-xs font-bold text-slate-300 block"
+                        >Link this level to my account</span
+                      >
+                      <span
+                        class="text-[10px] text-slate-500 block leading-snug mt-1"
+                        >In game the author line under the title links to
+                        <span
+                          id="set-link-account-name"
+                          class="text-slate-400 font-bold"
+                          >your profile</span
+                        >, whatever the credit text reads. Turn this off to
+                        publish this one level unlinked.</span
+                      >
+                    </span>
+                    <div class="relative flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        id="set-prop-link-account"
+                        class="sr-only peer"
+                        onchange="settingsManager.syncFromModal()"
+                      />
+                      <div
+                        class="w-11 h-6 bg-slate-900 border border-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:after:bg-white"
+                      ></div>
+                    </div>
+                  </label>
+                  <div
+                    id="set-link-account-note"
+                    class="text-[10px] text-amber-500/80 mt-2 hidden"
+                  >
+                    No account is linked yet &mdash; link one from the header to
+                    use this.
                   </div>
                 </div>
               </div>
@@ -6194,7 +6938,7 @@
                       class="text-[10px] text-slate-500 mb-2 leading-snug"
                     >
                       Once a published version of this level is rated Legendary
-                      in game, you can colour its title card.
+                      in game, you can color its title card.
                     </p>
                     <div
                       id="title-color-swatches"
@@ -6270,6 +7014,22 @@
                           onchange="settingsManager.syncFromModal()"
                         />
                       </div>
+                      <div id="vis-author-team-note" class="hidden mt-2">
+                        <div
+                          class="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 rounded px-2 py-1.5"
+                        >
+                          <span
+                            id="vis-author-team-preview"
+                            class="font-bold text-slate-300"
+                          ></span>
+                        </div>
+                        <button
+                          onclick="settingsManager.switchTab('collab')"
+                          class="text-[10px] font-bold text-purple-300 hover:text-purple-200 mt-1.5"
+                        >
+                          Edit the team credits &rarr;
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Visual Win -->
@@ -6334,6 +7094,97 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Collaboration Section -->
+            <div id="sec-collab" class="space-y-6 hidden" style="display: none">
+              <div
+                class="flex items-center justify-between gap-3 border-b border-slate-800 pb-2 mb-4"
+              >
+                <h3
+                  class="text-sm font-bold text-purple-400 uppercase tracking-widest"
+                >
+                  Team
+                </h3>
+                <button
+                  onclick="collabManager.openInbox()"
+                  class="collab-btn"
+                  title="Open the collaboration inbox"
+                >
+                  Manage collaborations
+                </button>
+              </div>
+              <div
+                id="collab-role-banner"
+                class="p-3 rounded border text-[11px] leading-relaxed"
+              ></div>
+
+              <div>
+                <div
+                  class="text-[10px] text-slate-500 font-bold uppercase mb-2 flex items-center justify-between"
+                >
+                  <span>Credited players</span>
+                  <button
+                    id="collab-team-add"
+                    onclick="collabTeam.addPrompt()"
+                    class="text-[9px] font-bold text-purple-200 bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/40 px-2.5 py-1 rounded-full transition-colors hidden"
+                  >
+                    + Add player
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-relaxed mb-3">
+                  This list is the author line in game. Each name links to that
+                  player's profile, so the name can read however they like.
+                </p>
+                <div id="collab-team-list" class="space-y-2"></div>
+                <div
+                  class="mt-3 p-2.5 bg-slate-950 border border-slate-800 rounded"
+                >
+                  <div
+                    class="text-[9px] text-slate-600 font-bold uppercase mb-1"
+                  >
+                    In game this reads
+                  </div>
+                  <div
+                    id="collab-team-preview"
+                    class="text-xs font-bold text-slate-300"
+                  ></div>
+                </div>
+              </div>
+
+              <div id="collab-perms-block" class="hidden">
+                <div class="text-[10px] text-slate-500 font-bold uppercase mb-2">
+                  What collaborators may do
+                </div>
+                <label
+                  class="flex items-center justify-between gap-4 p-3 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                >
+                  <span class="min-w-0">
+                    <span class="text-xs font-bold text-slate-300 block"
+                      >Allow downloading</span
+                    >
+                    <span
+                      class="text-[10px] text-slate-500 block leading-snug mt-0.5"
+                      >Lets collaborators export the JSON and the image.
+                      Publishing and sharing stay yours alone.</span
+                    >
+                  </span>
+                  <span class="relative flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      id="set-collab-perm-download"
+                      class="sr-only peer"
+                      onchange="collabTeam.savePerms()"
+                    />
+                    <span
+                      class="w-11 h-6 bg-slate-900 border border-slate-700 rounded-full block peer-checked:bg-purple-600 peer-checked:border-purple-500 transition-colors"
+                    ></span>
+                    <span
+                      class="absolute top-[3px] left-[3px] w-[18px] h-[18px] bg-slate-500 rounded-full transition-transform peer-checked:translate-x-5 peer-checked:bg-white"
+                    ></span>
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -6447,7 +7298,7 @@
 
     <input type="file" id="import-file" class="hidden" accept=".json" />
     <script>
-      const GRID_LAYER_COUNT = 6;
+      const GRID_LAYER_COUNT = 7;
 
       const LEVEL_FORMAT_TAG = "boi1";
 
@@ -7054,12 +7905,13 @@
           const modal = document.getElementById("settings-modal");
           modal.classList.remove("hidden");
           this.syncToModal();
+          collabTeam.render();
         },
         close() {
           document.getElementById("settings-modal").classList.add("hidden");
         },
         switchTab(tabId) {
-          ["metadata", "physics", "grid", "visuals"].forEach((id) => {
+          ["metadata", "physics", "grid", "visuals", "collab"].forEach((id) => {
             document.getElementById(`sec-${id}`).classList.add("hidden");
             document.getElementById(`sec-${id}`).style.display = "none";
             document.getElementById(`tab-${id}`).classList.remove("active");
@@ -7108,6 +7960,19 @@
             document.getElementById("prop-name").value;
           document.getElementById("set-prop-creator").value =
             document.getElementById("prop-creator").value;
+          document.getElementById("set-prop-link-account").checked =
+            document.getElementById("prop-link-account").value !== "false";
+          accountManager.refreshChip();
+          // A collaboration credits a list of players, so the single author
+          // box is replaced by a read-only summary of that list.
+          const teamMode = collabTeam.active();
+          const authorInput = document.getElementById("set-vis-author");
+          const teamNote = document.getElementById("vis-author-team-note");
+          if (authorInput && teamNote) {
+            authorInput.classList.toggle("hidden", teamMode);
+            teamNote.classList.toggle("hidden", !teamMode);
+            if (teamMode) collabTeam.refreshPreview();
+          }
           document.getElementById("set-prop-desc").value =
             document.getElementById("prop-desc").value;
           document.getElementById("set-prop-gravity").value =
@@ -7202,6 +8067,8 @@
             document.getElementById("set-prop-name").value;
           document.getElementById("prop-creator").value =
             document.getElementById("set-prop-creator").value;
+          document.getElementById("prop-link-account").value =
+            document.getElementById("set-prop-link-account").checked;
           document.getElementById("prop-desc").value =
             document.getElementById("set-prop-desc").value;
           document.getElementById("prop-gravity").value =
@@ -7255,10 +8122,17 @@
             document.getElementById("set-vis-title-toggle").checked
               ? document.getElementById("set-vis-title").value
               : "";
-          document.getElementById("prop-vis-author").value =
-            document.getElementById("set-vis-author-toggle").checked
-              ? document.getElementById("set-vis-author").value
-              : "";
+          if (collabTeam.active()) {
+            document.getElementById("prop-vis-author").value =
+              document.getElementById("set-vis-author-toggle").checked
+                ? collabTeam.displayString()
+                : "";
+          } else {
+            document.getElementById("prop-vis-author").value =
+              document.getElementById("set-vis-author-toggle").checked
+                ? document.getElementById("set-vis-author").value
+                : "";
+          }
           document.getElementById("prop-vis-win").value =
             document.getElementById("set-vis-win-toggle").checked
               ? document.getElementById("set-vis-win").value
@@ -7754,6 +8628,16 @@
         notes: [],
         publishedLegendary: false,
         visualTitleColor: "white",
+        // editor_levels row id for the open project, once it has been mirrored
+        cloudId: null,
+        // Set while the open project is somebody else's level you joined.
+        // { levelId, owner, shareId, main } -- main:true is their version,
+        // held read-only for reference beside your own.
+        collab: null,
+        // Author credits on a collaborative level: [{account, name}]
+        collabTeam: [],
+        // What the owner lets collaborators do: { download: bool }
+        collabPerms: {},
         areaBg: {
           picking: false,
           kind: "background",
@@ -7887,6 +8771,7 @@
         renderRecentTemplates();
         minimap.render();
         renderMusic();
+        accountManager.init();
         projectManager.renderList();
         autoAdjust();
         document.addEventListener("click", function () {
@@ -8097,6 +8982,51 @@
         open() {
           document.getElementById("share-modal").classList.remove("hidden");
           this.refreshSizeNote();
+          this.refreshCollabGate();
+        },
+
+        // A collaborator holds a copy, not the level. Publishing and sharing
+        // stay with the owner; downloading is theirs to grant.
+        refreshCollabGate() {
+          const notice = document.getElementById("share-collab-notice");
+          const upload = document.getElementById("btn-share-upload");
+          const options = document.getElementById("share-player-options");
+          const download = document.getElementById("btn-share-download");
+          if (!notice || !upload || !options || !download) return;
+
+          const restricted = collabManager.isRestricted();
+          notice.classList.toggle("hidden", !restricted);
+          options.classList.toggle("hidden", restricted);
+
+          const setBlocked = (el, blocked) => {
+            el.disabled = blocked;
+            el.classList.toggle("opacity-40", blocked);
+            el.classList.toggle("cursor-not-allowed", blocked);
+            el.classList.toggle("pointer-events-none", blocked);
+          };
+
+          setBlocked(upload, restricted);
+          if (!restricted) {
+            setBlocked(download, false);
+            return;
+          }
+
+          const owner = (state.collab && state.collab.owner) || "the owner";
+          const canDownload = collabManager.canDownload();
+          setBlocked(download, !canDownload);
+          notice.className =
+            "p-3 rounded-lg border border-purple-500/30 bg-purple-500/10 " +
+            "text-[11px] text-slate-300 leading-relaxed flex items-start gap-2.5";
+          notice.innerHTML =
+            collabAvatar(owner, true) +
+            "<span>Only <b class=\"text-purple-200\">" +
+            escAttr(owner) +
+            "</b> can publish or share this level. Push your changes and they " +
+            "can take them.<br><span class=\"collab-pill " +
+            (canDownload ? "approved" : "neutral") +
+            '" style="margin-top:5px">' +
+            (canDownload ? "Downloading allowed" : "Downloading blocked") +
+            "</span></span>";
         },
         refreshSizeNote() {
           const el = document.getElementById("share-size-text");
@@ -8112,6 +9042,9 @@
           }
         },
         startUpload() {
+          if (collabManager.isRestricted()) {
+            return collabManager.blockedNotice("publish");
+          }
           if (!_supabase) {
             dialog.alert("Error", "Database connection not available.");
             return;
@@ -8152,6 +9085,7 @@
           const data = io.buildLevelObject();
           const defaultName =
             data.creator ||
+            accountManager.username ||
             localStorage.getItem("blockoverit_username") ||
             "Anonymous";
 
@@ -8190,6 +9124,9 @@
               data: compactLevelData(data),
               copy: allowCopy,
               copy_password: copyPassword,
+              // The profile the in-game author line opens. Null when this
+              // level's account link was switched off in Metadata.
+              creator_user: data.creatorAccount || null,
             };
 
             let version = 1;
@@ -8290,6 +9227,7 @@
                 ? document.getElementById("prop-copy-password").value
                 : "",
               version: nextVersion,
+              creator_user: data.creatorAccount || null,
             };
 
             let res = await _supabase
@@ -8299,6 +9237,15 @@
               .select()
               .maybeSingle();
 
+            if (res.error && /creator_user/i.test(res.error.message || "")) {
+              delete patch.creator_user;
+              res = await _supabase
+                .from("published_levels")
+                .update(patch)
+                .eq("id", state.publishedId)
+                .select()
+                .maybeSingle();
+            }
             if (res.error && /version/i.test(res.error.message || "")) {
               delete patch.version;
               res = await _supabase
@@ -8369,6 +9316,21 @@
             .select()
             .maybeSingle();
 
+          // creator_user is newer than some deployments of this database, and
+          // naming a column that is not there rejects the whole insert.
+          if (res.error && /creator_user/i.test(res.error.message || "")) {
+            const withoutAccount = Object.assign({}, payload);
+            delete withoutAccount.creator_user;
+            res = await _supabase
+              .from("published_levels")
+              .insert([withoutAccount])
+              .select()
+              .maybeSingle();
+            if (!res.error) {
+              updateStatus("Published without the account link (column missing)");
+            }
+          }
+
           if (res.error && /version/i.test(res.error.message || "")) {
             const withoutVersion = Object.assign({}, payload);
             delete withoutVersion.version;
@@ -8410,6 +9372,1729 @@
               "Web Share API is not supported on this browser.",
             );
           }
+        },
+      };
+
+
+      // =================================================================
+      // BLOCK OVER IT ACCOUNT LINK, CLOUD LEVELS AND PLAYER SHARING
+      // =================================================================
+      // The editor has no session of its own. It authenticates against the
+      // same `users` table the game does and remembers the username locally.
+      // A row in `editor_links` is what makes an account offerable as a
+      // collaborator, so it is (re)written on every successful sign-in.
+
+      const ACCOUNT_KEY = "boi_editor_account";
+
+      // Usernames in this game are case sensitive -- `torgaar` and `Torgaar`
+      // are different accounts -- so every lookup here is an exact match and
+      // nothing is ever folded to lower case to "help".
+      function escAttr(v) {
+        return String(v === null || v === undefined ? "" : v).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      const accountManager = {
+        username: null,
+
+        init() {
+          try {
+            const raw = localStorage.getItem(ACCOUNT_KEY);
+            if (raw) this.username = JSON.parse(raw).username || null;
+          } catch (e) {
+            this.username = null;
+          }
+          this.refreshChip();
+          if (this.username) {
+            // The blank page still reads "Anonymous" until a project is
+            // opened, and that is a default rather than a decision.
+            const creator = document.getElementById("prop-creator");
+            if (creator && (!creator.value.trim() || creator.value === "Anonymous")) {
+              creator.value = this.username;
+              settingsManager.syncToModal();
+            }
+            cloudLevels.sync();
+            collabManager.refreshInbox();
+            collabManager.startPolling();
+          }
+        },
+
+        isLinked() {
+          return !!this.username;
+        },
+
+        refreshChip() {
+          const label = document.getElementById("account-chip-label");
+          const dot = document.getElementById("account-chip-dot");
+          if (label && dot) {
+            label.innerText = this.username || "Link Account";
+            dot.className =
+              "w-1.5 h-1.5 rounded-full " +
+              (this.username ? "bg-emerald-500" : "bg-slate-600");
+          }
+          const nameEl = document.getElementById("set-link-account-name");
+          if (nameEl) {
+            nameEl.innerText = this.username
+              ? "@" + this.username
+              : "your profile";
+          }
+          const note = document.getElementById("set-link-account-note");
+          if (note) note.classList.toggle("hidden", !!this.username);
+          const inbox = document.getElementById("collab-inbox-btn");
+          if (inbox) inbox.classList.toggle("hidden", !this.username);
+        },
+
+        openModal() {
+          const signIn = document.getElementById("account-signin-view");
+          const linked = document.getElementById("account-linked-view");
+          const err = document.getElementById("account-error");
+          if (err) err.classList.add("hidden");
+
+          if (this.username) {
+            signIn.classList.add("hidden");
+            linked.classList.remove("hidden");
+            document.getElementById("account-linked-name").innerText =
+              this.username;
+            document.getElementById("account-avatar").innerText = this.username
+              .charAt(0)
+              .toUpperCase();
+            document.getElementById("account-cloud-count").innerText =
+              cloudLevels.rows.length;
+          } else {
+            signIn.classList.remove("hidden");
+            linked.classList.add("hidden");
+            const u = document.getElementById("account-username");
+            u.value = localStorage.getItem("blockoverit_username") || "";
+            document.getElementById("account-password").value = "";
+            setTimeout(() => u.focus(), 50);
+          }
+          document.getElementById("account-modal").classList.remove("hidden");
+        },
+
+        showError(msg) {
+          const el = document.getElementById("account-error");
+          el.innerText = msg;
+          el.classList.remove("hidden");
+        },
+
+        async submit() {
+          const username = document
+            .getElementById("account-username")
+            .value.trim();
+          const password = document.getElementById("account-password").value;
+          const btn = document.getElementById("account-submit");
+
+          if (!username || !password) {
+            return this.showError("Enter your username and password.");
+          }
+          if (!_supabase) {
+            return this.showError(
+              "No database connection, so an account cannot be verified.",
+            );
+          }
+
+          btn.disabled = true;
+          btn.innerText = "Checking...";
+          try {
+            const { data, error } = await _supabase
+              .from("users")
+              .select("username, password")
+              .eq("username", username)
+              .maybeSingle();
+
+            if (error) throw error;
+            if (!data) {
+              return this.showError(
+                "No account with that exact username. Usernames are case sensitive.",
+              );
+            }
+            if (data.password !== password) {
+              return this.showError("Incorrect password.");
+            }
+
+            this.username = data.username;
+            localStorage.setItem(
+              ACCOUNT_KEY,
+              JSON.stringify({ username: this.username }),
+            );
+            // The game reads this too, and the two have always been the same
+            // account, so keep them in step.
+            localStorage.setItem("blockoverit_username", this.username);
+
+            // Announce the link so other players can invite this account to
+            // collaborate. A failure here only costs collaboration invites.
+            await _supabase
+              .from("editor_links")
+              .upsert(
+                [{ username: this.username, linked_at: new Date().toISOString() }],
+                { onConflict: "username" },
+              );
+
+            this.refreshChip();
+            settingsManager.syncToModal();
+            closeModal("account-modal");
+            updateStatus("Linked to " + this.username);
+
+            // An empty creator field is the default, not a choice -- fill it
+            // in rather than publishing yet another "Anonymous".
+            const creator = document.getElementById("prop-creator");
+            if (!creator.value.trim() || creator.value === "Anonymous") {
+              creator.value = this.username;
+              settingsManager.syncToModal();
+            }
+
+            await cloudLevels.sync(true);
+            await cloudLevels.pushAllLocal();
+            await collabManager.refreshInbox();
+            collabManager.startPolling();
+            projectManager.renderList();
+          } catch (e) {
+            this.showError(
+              "Sign-in failed: " + ((e && e.message) || String(e)),
+            );
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Link Account";
+          }
+        },
+
+        signOut() {
+          dialog.confirm(
+            "UNLINK ACCOUNT",
+            "Unlink this browser from " +
+              this.username +
+              "? Your local projects stay; the cloud copies are left untouched.",
+            () => {
+              this.username = null;
+              localStorage.removeItem(ACCOUNT_KEY);
+              cloudLevels.rows = [];
+              cloudLevels.loaded = false;
+              collabManager.pending = [];
+              collabManager.joined = [];
+              collabManager.mySubmissions = [];
+              collabManager.stopPolling();
+              this.refreshChip();
+              collabManager.refreshBadge();
+              closeModal("account-modal");
+              projectManager.renderList();
+              updateStatus("Account unlinked");
+            },
+          );
+        },
+      };
+
+      // -----------------------------------------------------------------
+      // Cloud mirror of the local project list.
+      // -----------------------------------------------------------------
+      // localStorage stays the editor's source of truth; every save is
+      // mirrored to `editor_levels` so the game can list levels that were
+      // never published, and so a share has something to point at.
+      const cloudLevels = {
+        rows: [],
+        loaded: false,
+        syncing: false,
+
+        available() {
+          return !!_supabase && accountManager.isLinked();
+        },
+
+        async sync(force) {
+          if (!this.available()) return;
+          if (this.syncing) return;
+          if (this.loaded && !force) return;
+          this.syncing = true;
+          try {
+            const { data, error } = await _supabase
+              .from("editor_levels")
+              .select(
+                "id, name, local_id, published_id, published_version, updated_at, collab_origin",
+              )
+              .eq("owner", accountManager.username)
+              .eq("deleted", false)
+              .order("updated_at", { ascending: false });
+            if (error) throw error;
+            this.rows = data || [];
+            this.loaded = true;
+          } catch (e) {
+            console.warn("Cloud level sync failed:", e);
+          } finally {
+            this.syncing = false;
+          }
+        },
+
+        rowForLocal(localId) {
+          return this.rows.find((r) => String(r.local_id) === String(localId));
+        },
+
+        pushTimers: {},
+
+        // Collapses a burst of saves into one upsert per project. Always sends
+        // the newest payload; the timer is keyed by project so two projects
+        // never wait on each other.
+        pushDebounced(localId, levelObject, opts) {
+          if (!this.available()) return;
+          const key = String(localId);
+          this.pushTimers[key] = this.pushTimers[key] || {};
+          const slot = this.pushTimers[key];
+          slot.level = levelObject;
+          slot.opts = opts;
+          if (slot.timer) clearTimeout(slot.timer);
+          slot.timer = setTimeout(() => {
+            slot.timer = null;
+            this.push(localId, slot.level, slot.opts).then((id) => {
+              if (id && id !== state.cloudId && projectManager.currentId === localId) {
+                state.cloudId = id;
+                projectManager.renderList();
+              }
+            });
+          }, 700);
+        },
+
+        // Mirrors one project up and returns the stored row id, or null.
+        async push(localId, levelObject, opts) {
+          if (!this.available()) return null;
+          try {
+            const payload = {
+              owner: accountManager.username,
+              local_id: String(localId),
+              name: levelObject.name || "Untitled",
+              data: compactLevelData(levelObject),
+              published_id:
+                levelObject.publishedId === undefined
+                  ? null
+                  : levelObject.publishedId,
+              published_version: levelObject.publishedVersion || null,
+              updated_at: new Date().toISOString(),
+              deleted: false,
+            };
+            // Marks this row as one collaborator's version of another level,
+            // which is how the game tells the two apart in a listing.
+            if (opts && opts.collabOrigin) {
+              payload.collab_origin = opts.collabOrigin;
+            }
+            const { data, error } = await _supabase
+              .from("editor_levels")
+              .upsert([payload], { onConflict: "owner,local_id" })
+              .select("id, name, local_id, published_id, published_version, updated_at, collab_origin")
+              .maybeSingle();
+            if (error) throw error;
+            if (data) {
+              const i = this.rows.findIndex((r) => r.id === data.id);
+              if (i === -1) this.rows.unshift(data);
+              else this.rows[i] = data;
+              return data.id;
+            }
+          } catch (e) {
+            console.warn("Cloud push failed:", e);
+          }
+          return null;
+        },
+
+        // Sends every local project up at once, used right after linking.
+        async pushAllLocal() {
+          if (!this.available()) return;
+          const ids = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("boi_project_")) {
+              ids.push(key.substring("boi_project_".length));
+            }
+          }
+          for (const id of ids) {
+            try {
+              const raw = localStorage.getItem("boi_project_" + id);
+              if (!raw) continue;
+              const data = expandLevelData(JSON.parse(raw));
+              // A collaboration copy belongs to its owner, not to you
+              if (data.collabLevelId) continue;
+              await this.push(id, data);
+            } catch (e) {
+              console.warn("Skipping project during cloud push", id, e);
+            }
+          }
+          updateStatus("Levels synced to " + accountManager.username);
+        },
+
+        async remove(localId) {
+          if (!this.available()) return;
+          try {
+            await _supabase
+              .from("editor_levels")
+              .update({ deleted: true, updated_at: new Date().toISOString() })
+              .eq("owner", accountManager.username)
+              .eq("local_id", String(localId));
+            this.rows = this.rows.filter(
+              (r) => String(r.local_id) !== String(localId),
+            );
+          } catch (e) {
+            console.warn("Cloud delete failed:", e);
+          }
+        },
+
+        // Makes sure the open project exists in the cloud and returns its id.
+        async ensureCurrent() {
+          if (!this.available()) return null;
+          if (state.collab) return state.collab.levelId;
+          if (!projectManager.currentId) projectManager.save();
+          const level = io.buildLevelObject();
+          const id = await this.push(projectManager.currentId, level);
+          if (id) {
+            state.cloudId = id;
+            projectManager.save();
+          }
+          return id;
+        },
+      };
+
+      // -----------------------------------------------------------------
+      // Share with named players / invite collaborators
+      // -----------------------------------------------------------------
+      const playerShare = {
+        mode: "view",
+        levelId: null,
+        pendingNames: [],
+        existing: [],
+
+        async open(mode) {
+          this.mode = mode === "collab" ? "collab" : "view";
+          this.pendingNames = [];
+          this.existing = [];
+
+          if (collabManager.isRestricted()) {
+            closeModal("share-modal");
+            return collabManager.blockedNotice("share");
+          }
+          if (!accountManager.isLinked()) {
+            closeModal("share-modal");
+            dialog.confirm(
+              "LINK AN ACCOUNT FIRST",
+              "Sharing a level with named players needs your Block Over It account, so the other player knows who it came from. Link it now?",
+              () => accountManager.openModal(),
+            );
+            return;
+          }
+          if (state.collab) {
+            dialog.alert(
+              "NOT YOURS TO SHARE",
+              "This level belongs to " +
+                state.collab.owner +
+                ". Only its owner can invite other players.",
+            );
+            return;
+          }
+
+          document.getElementById("player-share-title").innerText =
+            this.mode === "collab" ? "Collaborate" : "Share With Players";
+          document.getElementById("player-share-blurb").innerText =
+            this.mode === "collab"
+              ? ""
+              : "";
+          document.getElementById("player-share-confirm").innerText =
+            this.mode === "collab" ? "Invite" : "Share";
+          document.getElementById("player-share-input").value = "";
+          this.renderChips();
+          this.renderExisting();
+          this.setFeedback("", null);
+
+          document
+            .getElementById("player-share-modal")
+            .classList.remove("hidden");
+
+          const id = await cloudLevels.ensureCurrent();
+          if (!id) {
+            this.setFeedback(
+              "This level could not be saved to your account, so it cannot be shared yet.",
+              "red",
+            );
+            return;
+          }
+          this.levelId = id;
+          await this.loadExisting();
+        },
+
+        setFeedback(msg, tone) {
+          const el = document.getElementById("player-share-feedback");
+          if (!el) return;
+          el.innerText = msg || "";
+          el.className =
+            "text-[10px] mt-2 " +
+            (msg ? "" : "hidden ") +
+            (tone === "red"
+              ? "text-red-400"
+              : tone === "green"
+                ? "text-emerald-400"
+                : "text-slate-500");
+        },
+
+        async loadExisting() {
+          if (!this.levelId) return;
+          try {
+            const { data, error } = await _supabase
+              .from("level_shares")
+              .select("id, recipient, mode, active, seen")
+              .eq("level_id", this.levelId)
+              .order("created_at", { ascending: true });
+            if (error) throw error;
+            this.existing = data || [];
+          } catch (e) {
+            this.existing = [];
+          }
+          this.renderExisting();
+        },
+
+        renderExisting() {
+          const box = document.getElementById("player-share-existing");
+          const count = document.getElementById("player-share-existing-count");
+          if (!box) return;
+          const live = this.existing.filter((r) => r.active);
+          count.innerText = live.length;
+          if (!live.length) {
+            box.innerHTML =
+              '<div class="text-[10px] text-slate-600">Nobody yet.</div>';
+            return;
+          }
+          box.innerHTML = live
+            .map(
+              (r) => `
+              <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded">
+                <div class="min-w-0 flex items-center gap-2">
+                  <span class="text-[11px] font-bold text-slate-200 truncate">${escAttr(
+                    r.recipient,
+                  )}</span>
+                  <span class="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                    r.mode === "collab"
+                      ? "bg-purple-500/15 text-purple-300"
+                      : "bg-emerald-500/15 text-emerald-300"
+                  }">${r.mode === "collab" ? "Collab" : "View"}</span>
+                </div>
+                <button onclick="playerShare.revoke(${r.id})" class="text-[10px] font-bold text-slate-500 hover:text-red-400">Remove</button>
+              </div>`,
+            )
+            .join("");
+        },
+
+        renderChips() {
+          const box = document.getElementById("player-share-chips");
+          if (!box) return;
+          box.innerHTML = this.pendingNames
+            .map(
+              (n, i) => `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/40 rounded-full text-[11px] font-bold text-blue-200">
+                ${escAttr(n)}
+                <button onclick="playerShare.removeChip(${i})" class="text-blue-400/70 hover:text-white">&times;</button>
+              </span>`,
+            )
+            .join("");
+        },
+
+        removeChip(i) {
+          this.pendingNames.splice(i, 1);
+          this.renderChips();
+        },
+
+        async addTyped() {
+          const input = document.getElementById("player-share-input");
+          const name = input.value.trim();
+          if (!name) return;
+
+          if (name === accountManager.username) {
+            return this.setFeedback("That is you.", "red");
+          }
+          if (this.pendingNames.includes(name)) {
+            input.value = "";
+            return this.setFeedback("Already on the list.", null);
+          }
+          if (
+            this.existing.some((r) => r.active && r.recipient === name)
+          ) {
+            input.value = "";
+            return this.setFeedback(
+              name + " already has this level.",
+              null,
+            );
+          }
+
+          this.setFeedback("Checking " + name + "\u2026", null);
+          const check = await this.verify(name);
+          if (!check.ok) return this.setFeedback(check.reason, "red");
+
+          this.pendingNames.push(name);
+          input.value = "";
+          input.focus();
+          this.renderChips();
+          this.setFeedback("", null);
+        },
+
+        // Exact match only: usernames differing by case are separate
+        // accounts, so guessing would credit the wrong person.
+        async verifyAccountExists(name) {
+          if (!_supabase)
+            return { ok: false, reason: "No database connection." };
+          try {
+            const { data, error } = await _supabase
+              .from("users")
+              .select("username")
+              .eq("username", name)
+              .maybeSingle();
+            if (error) throw error;
+            if (!data) {
+              return {
+                ok: false,
+                reason:
+                  "No player called " +
+                  name +
+                  ". Usernames are case sensitive.",
+              };
+            }
+            return { ok: true };
+          } catch (e) {
+            return {
+              ok: false,
+              reason: "Could not check that name: " + ((e && e.message) || e),
+            };
+          }
+        },
+
+        // An invite is only worth sending to an account that exists, and a
+        // collaboration only to one that can actually open the editor.
+        async verify(name) {
+          const exists = await this.verifyAccountExists(name);
+          if (!exists.ok) return exists;
+          try {
+            if (this.mode === "collab") {
+              const link = await _supabase
+                .from("editor_links")
+                .select("username")
+                .eq("username", name)
+                .maybeSingle();
+              if (link.error) throw link.error;
+              if (!link.data) {
+                return {
+                  ok: false,
+                  reason:
+                    name +
+                    " has not linked their account to the level editor, so they cannot collaborate yet.",
+                };
+              }
+            }
+            return { ok: true };
+          } catch (e) {
+            return {
+              ok: false,
+              reason: "Could not check that name: " + ((e && e.message) || e),
+            };
+          }
+        },
+
+        async submit() {
+          const input = document.getElementById("player-share-input");
+          if (input.value.trim()) await this.addTyped();
+          if (!this.pendingNames.length) {
+            return this.setFeedback("Add at least one player.", "red");
+          }
+          if (!this.levelId) {
+            return this.setFeedback(
+              "This level is not in your account yet.",
+              "red",
+            );
+          }
+
+          const btn = document.getElementById("player-share-confirm");
+          btn.disabled = true;
+          const label = btn.innerText;
+          btn.innerText = "Sharing...";
+          try {
+            // Keep the shared copy current with what is on screen
+            await cloudLevels.push(
+              projectManager.currentId,
+              io.buildLevelObject(),
+            );
+
+            const rows = this.pendingNames.map((recipient) => ({
+              level_id: this.levelId,
+              owner: accountManager.username,
+              recipient,
+              mode: this.mode,
+              seen: false,
+              active: true,
+            }));
+            const { error } = await _supabase
+              .from("level_shares")
+              .upsert(rows, { onConflict: "level_id,recipient" });
+            if (error) throw error;
+
+            const names = this.pendingNames.join(", ");
+            if (this.mode === "collab") {
+              // The credit list and the access list are the same people until
+              // the owner says otherwise, so a new collaborator starts on both.
+              collabTeam.addAccounts(this.pendingNames);
+              collabTeam.commit();
+            }
+            this.pendingNames = [];
+            this.renderChips();
+            await this.loadExisting();
+            this.setFeedback("Shared with " + names + ".", "green");
+            updateStatus(
+              (this.mode === "collab" ? "Invited " : "Shared with ") + names,
+            );
+          } catch (e) {
+            this.setFeedback(
+              "Share failed: " + ((e && e.message) || String(e)),
+              "red",
+            );
+          } finally {
+            btn.disabled = false;
+            btn.innerText = label;
+          }
+        },
+
+        async revoke(shareId) {
+          try {
+            await _supabase
+              .from("level_shares")
+              .update({ active: false })
+              .eq("id", shareId);
+            await this.loadExisting();
+            updateStatus("Access removed");
+          } catch (e) {
+            this.setFeedback("Could not remove that player.", "red");
+          }
+        },
+      };
+
+      // -----------------------------------------------------------------
+      // Collaboration: joining, pushing changes, approving them
+      // -----------------------------------------------------------------
+      // -----------------------------------------------------------------
+      // Collaboration
+      // -----------------------------------------------------------------
+      // A collaboration is two levels, not one. The owner keeps the MAIN
+      // version; every collaborator gets their OWN version beside it. Nothing
+      // a collaborator does touches the main version until the owner approves
+      // a push, and approving still does not overwrite it -- it lands as
+      // another level of its own.
+      //
+      // Locally that is two projects per collaboration:
+      //   boi_project_collab_<id>      your version, editable, pushable
+      //   boi_project_collabmain_<id>  the main version, refreshed from cloud
+      // The project list folds the pair into one expandable row.
+
+      const COLLAB_LOCAL_PREFIX = "boi_project_collab_";
+      const COLLAB_MAIN_PREFIX = "boi_project_collabmain_";
+
+      function collabLocalId(levelId) {
+        return "collab_" + levelId;
+      }
+      function collabMainLocalId(levelId) {
+        return "collabmain_" + levelId;
+      }
+
+      // A player has no picture in the editor, so the initial is the face and
+      // the hue is derived from the name -- stable, so the same person is the
+      // same colour in every list they appear in.
+      function collabAvatar(account, small) {
+        const name = String(account || "?");
+        let h = 0;
+        for (let i = 0; i < name.length; i++) {
+          h = (h * 31 + name.charCodeAt(i)) % 360;
+        }
+        return (
+          '<div class="collab-avatar' +
+          (small ? " sm" : "") +
+          '" style="--h:' +
+          h +
+          '">' +
+          escAttr(name.charAt(0).toUpperCase() || "?") +
+          "</div>"
+        );
+      }
+
+      // "3d ago" reads faster than a date when the whole point of the row is
+      // how long somebody has been waiting on you.
+      function collabAgo(iso) {
+        const t = Date.parse(iso);
+        if (isNaN(t)) return "";
+        const secs = Math.max(0, (Date.now() - t) / 1000);
+        if (secs < 90) return "just now";
+        const mins = secs / 60;
+        if (mins < 60) return Math.round(mins) + "m ago";
+        const hrs = mins / 60;
+        if (hrs < 24) return Math.round(hrs) + "h ago";
+        const days = hrs / 24;
+        if (days < 7) return Math.round(days) + "d ago";
+        return new Date(t).toLocaleDateString();
+      }
+
+      // Just the fact. The panel used to explain what each pane was for even
+      // when it had nothing in it, which is the longest text on screen at
+      // exactly the moment there is least to read.
+      function collabEmpty(title) {
+        return '<div class="collab-empty">' + escAttr(title) + "</div>";
+      }
+
+      const collabManager = {
+        pending: [],
+        joined: [],
+        mySubmissions: [],
+        pollTimer: null,
+        lastApprovedSeen: null,
+        tab: "pending",
+
+        refreshBadge() {
+          const el = document.getElementById("collab-inbox-count");
+          const btn = document.getElementById("collab-inbox-btn");
+          const n = this.pending.length;
+          // The count alone was easy to miss against the dark bar, so the
+          // whole button takes on the accent while anything is waiting.
+          if (btn) {
+            btn.classList.toggle("has-mail", n > 0);
+            btn.title = n
+              ? n + (n === 1 ? " version is" : " versions are") + " waiting on you"
+              : "Collaborations";
+          }
+          if (!el) return;
+          el.innerText = n > 9 ? "9+" : String(n);
+          el.classList.toggle("hidden", n === 0);
+        },
+
+        // Both sides of a collaboration change under you while the editor is
+        // open -- an owner approves, a collaborator pushes -- so the inbox
+        // keeps itself current instead of waiting for a reload.
+        startPolling() {
+          if (this.pollTimer) return;
+          this.pollTimer = setInterval(() => {
+            if (!accountManager.isLinked()) return;
+            // Nothing to update while nobody is looking
+            if (document.hidden) return;
+            this.refreshInbox({ quiet: true });
+          }, 25000);
+
+          // Coming back to the tab is exactly when the screen is most likely
+          // to be stale, and the interval above skipped every tick while it
+          // was hidden.
+          if (!this.visibilityHooked) {
+            this.visibilityHooked = true;
+            document.addEventListener("visibilitychange", () => {
+              if (document.hidden) return;
+              if (!accountManager.isLinked()) return;
+              this.refreshInbox({ quiet: true });
+              cloudLevels.sync(true);
+            });
+          }
+        },
+
+        stopPolling() {
+          if (this.pollTimer) clearInterval(this.pollTimer);
+          this.pollTimer = null;
+        },
+
+        async refreshInbox(opts) {
+          const quiet = opts && opts.quiet;
+          if (!_supabase || !accountManager.isLinked()) return;
+          const me = accountManager.username;
+          try {
+            const subs = await _supabase
+              .from("collab_submissions")
+              .select("id, level_id, collaborator, name, created_at, message")
+              .eq("owner", me)
+              .eq("status", "pending")
+              .order("created_at", { ascending: false });
+            this.pending = subs.error ? [] : subs.data || [];
+
+            const mine = await _supabase
+              .from("level_shares")
+              .select("id, level_id, owner, mode, active")
+              .eq("recipient", me)
+              .eq("mode", "collab")
+              .eq("active", true);
+            this.joined = mine.error ? [] : mine.data || [];
+
+            if (this.joined.length) {
+              const names = await _supabase
+                .from("editor_levels")
+                .select("id, name")
+                .in(
+                  "id",
+                  this.joined.map((j) => j.level_id),
+                );
+              if (!names.error) {
+                const byId = new Map(
+                  (names.data || []).map((r) => [r.id, r.name]),
+                );
+                this.joined.forEach((j) => {
+                  j.name = byId.get(j.level_id) || "Level #" + j.level_id;
+                });
+              }
+            }
+
+            // What happened to the versions you sent -- so an approval shows
+            // up on the collaborator's screen too, not just the owner's.
+            const sent = await _supabase
+              .from("collab_submissions")
+              .select("id, level_id, status, name, owner")
+              .eq("collaborator", me)
+              .order("id", { ascending: false })
+              .limit(20);
+            const previous = this.mySubmissions;
+            this.mySubmissions = sent.error ? [] : sent.data || [];
+            if (previous.length) {
+              const wasPending = new Set(
+                previous.filter((x) => x.status === "pending").map((x) => x.id),
+              );
+              const settled = this.mySubmissions.filter(
+                (x) => wasPending.has(x.id) && x.status !== "pending",
+              );
+              settled.forEach((x) => {
+                updateStatus(
+                  x.status === "approved"
+                    ? `${x.owner} approved "${x.name}"`
+                    : `${x.owner} declined "${x.name}"`,
+                );
+              });
+            }
+          } catch (e) {
+            console.warn("Collab inbox failed:", e);
+          }
+          this.refreshBadge();
+          await this.syncCollaborations();
+          if (!quiet || document.getElementById("collab-inbox-modal") &&
+            !document
+              .getElementById("collab-inbox-modal")
+              .classList.contains("hidden")) {
+            this.renderInbox();
+          }
+        },
+
+        // Brings both halves of every joined collaboration down: your own
+        // version if you have not been handed one yet, and a fresh copy of the
+        // main version every time, because the owner keeps changing it.
+        async syncCollaborations() {
+          if (!this.joined.length) return;
+          let added = 0;
+
+          for (const sh of this.joined) {
+            try {
+              const { data, error } = await _supabase
+                .from("editor_levels")
+                .select("id, name, data, owner")
+                .eq("id", sh.level_id)
+                .maybeSingle();
+              if (error || !data) continue;
+
+              const main = expandLevelData(data.data || {});
+              const mainId = collabMainLocalId(sh.level_id);
+              main.id = mainId;
+              main.name = data.name || main.name || "Shared Level";
+              main.collabLevelId = sh.level_id;
+              main.collabOwner = data.owner;
+              main.collabShareId = sh.id;
+              main.collabMain = true;
+              main.lastModified = Date.now();
+              try {
+                localStorage.setItem(
+                  COLLAB_MAIN_PREFIX + sh.level_id,
+                  JSON.stringify(compactLevelData(main)),
+                );
+              } catch (e) {
+                console.warn("No room for the main version", sh.level_id);
+              }
+
+              // The owner owns the credit list and the permissions, so those
+              // two travel down to your version on every sync -- with your own
+              // credit left alone, because renaming that is yours to do.
+              const ownKey = COLLAB_LOCAL_PREFIX + sh.level_id;
+              const existingOwn = localStorage.getItem(ownKey);
+              if (existingOwn) {
+                try {
+                  const own = expandLevelData(JSON.parse(existingOwn));
+                  const mine = (own.collabTeam || []).find(
+                    (c) => c.account === accountManager.username,
+                  );
+                  own.collabTeam = (main.collabTeam || []).map((c) =>
+                    mine && c.account === mine.account
+                      ? { account: c.account, name: mine.name }
+                      : { account: c.account, name: c.name },
+                  );
+                  own.collabPerms = main.collabPerms || {};
+                  localStorage.setItem(
+                    ownKey,
+                    JSON.stringify(compactLevelData(own)),
+                  );
+                  // Whatever is open on screen has to move with it
+                  if (
+                    state.collab &&
+                    state.collab.levelId === sh.level_id &&
+                    !state.collab.main
+                  ) {
+                    state.collabTeam = own.collabTeam;
+                    state.collabPerms = own.collabPerms;
+                    collabTeam.render();
+                    shareManager.refreshCollabGate();
+                  }
+                } catch (e) {
+                  console.warn("Could not refresh collab credits", e);
+                }
+              }
+              if (!existingOwn) {
+                const own = expandLevelData(data.data || {});
+                own.id = collabLocalId(sh.level_id);
+                own.name = data.name || own.name || "Shared Level";
+                own.collabLevelId = sh.level_id;
+                own.collabOwner = data.owner;
+                own.collabShareId = sh.id;
+                own.collabMain = false;
+                own.lastModified = Date.now();
+                localStorage.setItem(
+                  ownKey,
+                  JSON.stringify(compactLevelData(own)),
+                );
+                added++;
+                // A collaborator's version is a level in its own right, so it
+                // reaches the game like any other -- tagged back to the level
+                // it came from.
+                await cloudLevels.push(collabLocalId(sh.level_id), own, {
+                  collabOrigin: sh.level_id,
+                });
+              }
+            } catch (e) {
+              console.warn("Could not sync collaboration", sh.level_id, e);
+            }
+          }
+
+          if (added) {
+            projectManager.renderList();
+            updateStatus(
+              added +
+                " collaboration" +
+                (added === 1 ? "" : "s") +
+                " added to your levels",
+            );
+          }
+        },
+
+        // What the open project lets you do. A collaborator holds a copy, not
+        // the level: publishing and sharing stay with the owner.
+        isMember() {
+          return !!(state.collab && !state.collab.main);
+        },
+        isViewingMain() {
+          return !!(state.collab && state.collab.main);
+        },
+        isRestricted() {
+          return !!state.collab;
+        },
+        canDownload() {
+          if (!this.isRestricted()) return true;
+          return !!(state.collabPerms && state.collabPerms.download);
+        },
+        blockedNotice(what) {
+          const owner = (state.collab && state.collab.owner) || "the owner";
+          dialog.alert(
+            "OWNER ONLY",
+            "Only " +
+              owner +
+              " can " +
+              what +
+              " this level. Push your changes instead and they can take them.",
+          );
+        },
+
+        // Push / read-only chrome for whichever version is open.
+        refreshPushButton() {
+          const btn = document.getElementById("btn-collab-push");
+          if (btn) {
+            const member = this.isMember();
+            btn.classList.toggle("hidden", !member);
+            btn.classList.toggle("flex", member);
+            if (member) {
+              btn.title = "Send your changes to " + state.collab.owner;
+              const label = document.getElementById("btn-collab-push-label");
+              if (label) label.innerText = "Push to " + state.collab.owner;
+            }
+          }
+          const banner = document.getElementById("collab-main-banner");
+          if (banner) {
+            banner.classList.toggle("hidden", !this.isViewingMain());
+          }
+          const tab = document.getElementById("tab-collab");
+          if (tab) {
+            tab.classList.toggle(
+              "hidden",
+              !(state.collab || (state.collabTeam || []).length),
+            );
+          }
+        },
+
+        pushChanges() {
+          if (!this.isMember()) return;
+          if (!accountManager.isLinked()) return accountManager.openModal();
+          dialog.prompt(
+            "PUSH CHANGES",
+            "Send this version to " +
+              state.collab.owner +
+              " for approval. Add a note (optional):",
+            "",
+            (message) => this.doPush(message),
+          );
+        },
+
+        async doPush(message) {
+          const btn = document.getElementById("btn-collab-push");
+          const label = document.getElementById("btn-collab-push-label");
+          btn.disabled = true;
+          btn.classList.add("opacity-60");
+          if (label) label.innerText = "Pushing\u2026";
+          try {
+            projectManager.save();
+            const level = io.buildLevelObject();
+            const { error } = await _supabase
+              .from("collab_submissions")
+              .insert([
+                {
+                  level_id: state.collab.levelId,
+                  owner: state.collab.owner,
+                  collaborator: accountManager.username,
+                  name: level.name || "Untitled",
+                  data: compactLevelData(level),
+                  status: "pending",
+                  message: (message || "").trim() || null,
+                },
+              ]);
+            if (error) throw error;
+            dialog.alert(
+              "SENT",
+              "Your version is waiting for " +
+                state.collab.owner +
+                " to approve it. If they do, it becomes the main version and " +
+                "the one it replaced is kept as a separate level.",
+            );
+            updateStatus("Changes pushed to " + state.collab.owner);
+            this.refreshInbox({ quiet: true });
+          } catch (e) {
+            dialog.alert("PUSH FAILED", (e && e.message) || String(e));
+          } finally {
+            btn.disabled = false;
+            btn.classList.remove("opacity-60");
+            if (label) {
+              label.innerText =
+                "Push to " + ((state.collab && state.collab.owner) || "owner");
+            }
+          }
+        },
+
+        async openInbox() {
+          if (!accountManager.isLinked()) return accountManager.openModal();
+          document
+            .getElementById("collab-inbox-modal")
+            .classList.remove("hidden");
+          document.getElementById("collab-pending-list").innerHTML =
+            '<div class="collab-empty">Checking…</div>';
+          document.getElementById("collab-joined-list").innerHTML = "";
+          document.getElementById("collab-sent-list").innerHTML = "";
+          this.renderInbox();
+          await this.refreshInbox();
+          // Open on whichever list has something to act on, so the common case
+          // -- an empty Requests tab -- does not look like a broken panel.
+          if (!this.pending.length) {
+            this.tab = this.joined.length
+              ? "joined"
+              : this.mySubmissions.length
+                ? "sent"
+                : "pending";
+          } else {
+            this.tab = "pending";
+          }
+          this.renderInbox();
+        },
+
+        // Which of the three lists is on screen. Kept on the manager so a
+        // background poll re-renders into the same view you were reading.
+        switchTab(tab) {
+          this.tab = tab;
+          this.renderInbox();
+        },
+
+        renderInbox() {
+          const pend = document.getElementById("collab-pending-list");
+          const join = document.getElementById("collab-joined-list");
+          const sent = document.getElementById("collab-sent-list");
+          if (!pend || !join || !sent) return;
+
+          // Tab chrome: counts first, then which pane is showing.
+          const counts = {
+            pending: this.pending.length,
+            joined: this.joined.length,
+            sent: this.mySubmissions.length,
+          };
+          ["pending", "joined", "sent"].forEach((name) => {
+            const btn = document.getElementById("collab-tab-" + name);
+            const badge = document.getElementById("collab-tab-count-" + name);
+            const pane = document.getElementById("collab-pane-" + name);
+            if (btn) btn.classList.toggle("is-active", this.tab === name);
+            if (pane) pane.classList.toggle("hidden", this.tab !== name);
+            if (badge) {
+              badge.innerText = counts[name] > 99 ? "99+" : String(counts[name]);
+              badge.classList.toggle(
+                "is-alert",
+                name === "pending" && counts.pending > 0,
+              );
+            }
+          });
+
+          pend.innerHTML = this.pending.length
+            ? this.pending
+                .map(
+                  (p) => `
+                <div class="collab-card is-waiting">
+                  ${collabAvatar(p.collaborator)}
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xs font-bold text-slate-100 truncate">${escAttr(
+                        p.name || "Untitled",
+                      )}</span>
+                      <span class="collab-pill pending">Waiting</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-1">
+                      from <span class="text-purple-300 font-bold">${escAttr(
+                        p.collaborator,
+                      )}</span>
+                      <span class="text-slate-700 mx-1">&middot;</span>${escAttr(
+                        collabAgo(p.created_at),
+                      )}
+                    </div>
+                    ${
+                      p.message
+                        ? `<div class="collab-note">&ldquo;${escAttr(
+                            p.message,
+                          )}&rdquo;</div>`
+                        : ""
+                    }
+                    <div class="flex gap-1.5 mt-2.5">
+                      <button onclick="collabManager.approve(${p.id})" class="collab-btn primary">Approve</button>
+                      <button onclick="collabManager.reject(${p.id})" class="collab-btn danger">Decline</button>
+                    </div>
+                  </div>
+                </div>`,
+                )
+                .join("")
+            : collabEmpty("Nothing waiting");
+
+          join.innerHTML = this.joined.length
+            ? this.joined
+                .map(
+                  (j) => `
+                <div class="collab-card">
+                  ${collabAvatar(j.owner)}
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-bold text-slate-100 truncate">${escAttr(
+                      j.name || "Level #" + j.level_id,
+                    )}</div>
+                    <div class="text-[10px] text-slate-500 mt-1">
+                      owned by <span class="text-slate-300 font-bold">${escAttr(
+                        j.owner,
+                      )}</span>
+                    </div>
+                    <div class="flex gap-1.5 mt-2.5">
+                      <button onclick="projectManager.load('${collabLocalId(
+                        j.level_id,
+                      )}'); closeModal('collab-inbox-modal');" class="collab-btn go">Open my version</button>
+                      <button onclick="projectManager.load('${collabMainLocalId(
+                        j.level_id,
+                      )}'); closeModal('collab-inbox-modal');" class="collab-btn">View main</button>
+                      <button onclick="collabManager.leave(${j.id}, ${
+                        j.level_id
+                      })" class="collab-btn danger">Leave</button>
+                    </div>
+                  </div>
+                </div>`,
+                )
+                .join("")
+            : collabEmpty("No collaborations yet");
+
+          // The outbox. It was already being fetched to raise notifications;
+          // showing it is what makes a push feel like it went somewhere.
+          const STATUS = {
+            approved: { cls: "approved", label: "Approved" },
+            rejected: { cls: "rejected", label: "Declined" },
+            pending: { cls: "pending", label: "Awaiting review" },
+          };
+          sent.innerHTML = this.mySubmissions.length
+            ? this.mySubmissions
+                .map((m) => {
+                  const st = STATUS[m.status] || {
+                    cls: "neutral",
+                    label: m.status || "Unknown",
+                  };
+                  return `
+                <div class="collab-card">
+                  ${collabAvatar(m.owner, true)}
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xs font-bold text-slate-100 truncate">${escAttr(
+                        m.name || "Untitled",
+                      )}</span>
+                      <span class="collab-pill ${st.cls}">${escAttr(
+                        st.label,
+                      )}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-1">
+                      sent to <span class="text-slate-300 font-bold">${escAttr(
+                        m.owner,
+                      )}</span>
+                    </div>
+                  </div>
+                </div>`;
+                })
+                .join("")
+            : collabEmpty("Nothing sent");
+        },
+
+        // Approving keeps both versions: the main level is left exactly as it
+        // was and the collaborator's becomes a separate level beside it.
+        async approve(submissionId) {
+          const sub = this.pending.find((p) => p.id === submissionId);
+          if (!sub) return;
+          try {
+            const { data, error } = await _supabase
+              .from("collab_submissions")
+              .select("*")
+              .eq("id", submissionId)
+              .maybeSingle();
+            if (error || !data) throw error || new Error("Submission is gone.");
+
+            // The main row as it stands right now. Approving replaces it, so
+            // it has to be read before anything is written.
+            const mainRes = await _supabase
+              .from("editor_levels")
+              .select("*")
+              .eq("id", data.level_id)
+              .maybeSingle();
+            if (mainRes.error || !mainRes.data) {
+              throw mainRes.error || new Error("That level no longer exists.");
+            }
+            const mainRow = mainRes.data;
+            const previous = expandLevelData(mainRow.data || {});
+
+            // 1. Keep what is being replaced. The version that was live before
+            // this approval becomes a level of its own, so nothing is lost.
+            const keepId = "collab_prev_" + submissionId;
+            const keepName =
+              (mainRow.name || "Untitled") +
+              " \u2014 before " +
+              data.collaborator;
+            previous.id = keepId;
+            previous.name = keepName;
+            previous.lastModified = Date.now();
+            // The archived copy is not the published level any more, and it is
+            // not the collaboration either.
+            previous.publishedId = null;
+            previous.publishedVersion = null;
+            previous.publishedName = null;
+            delete previous.collabLevelId;
+            delete previous.collabOwner;
+            delete previous.collabShareId;
+            delete previous.collabMain;
+            try {
+              localStorage.setItem(
+                "boi_project_" + keepId,
+                JSON.stringify(compactLevelData(previous)),
+              );
+            } catch (e) {
+              console.warn("No room to archive the previous version", e);
+            }
+            await cloudLevels.push(keepId, previous);
+
+            // 2. The main level becomes the approved version. It keeps its own
+            // identity throughout -- name, published link, the team list and
+            // the permissions are the owner's and do not travel in from a
+            // collaborator's copy.
+            const merged = expandLevelData(data.data || {});
+            merged.id = mainRow.local_id || String(data.level_id);
+            merged.name = mainRow.name || merged.name;
+            merged.publishedId =
+              previous.publishedId !== undefined ? previous.publishedId : null;
+            merged.publishedVersion = previous.publishedVersion || null;
+            merged.publishedName = previous.publishedName || null;
+            merged.collabTeam = previous.collabTeam || [];
+            merged.collabPerms = previous.collabPerms || {};
+            merged.lastModified = Date.now();
+            delete merged.collabLevelId;
+            delete merged.collabOwner;
+            delete merged.collabShareId;
+            delete merged.collabMain;
+
+            const upd = await _supabase
+              .from("editor_levels")
+              .update({
+                data: compactLevelData(merged),
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", data.level_id);
+            if (upd.error) throw upd.error;
+
+            // 3. The owner's own copy on this machine has to move with it, and
+            // so does the editor if that level is the one on screen.
+            if (mainRow.local_id) {
+              try {
+                localStorage.setItem(
+                  "boi_project_" + mainRow.local_id,
+                  JSON.stringify(compactLevelData(merged)),
+                );
+              } catch (e) {
+                console.warn("Could not update the local main copy", e);
+              }
+              if (projectManager.currentId === mainRow.local_id) {
+                projectManager.load(mainRow.local_id);
+              }
+            }
+
+            await _supabase
+              .from("collab_submissions")
+              .update({ status: "approved" })
+              .eq("id", submissionId);
+
+            this.pending = this.pending.filter((p) => p.id !== submissionId);
+            this.refreshBadge();
+            // Everything the approval touched, refreshed in place: the cloud
+            // list, the inbox and the project list all showed stale state
+            // until the page was reloaded.
+            await cloudLevels.sync(true);
+            this.renderInbox();
+            projectManager.renderList();
+            updateStatus(
+              '"' +
+                (mainRow.name || "Level") +
+                '" updated \u00b7 previous version kept as "' +
+                keepName +
+                '"',
+            );
+          } catch (e) {
+            dialog.alert("APPROVE FAILED", (e && e.message) || String(e));
+          }
+        },
+
+        reject(submissionId) {
+          const sub = this.pending.find((p) => p.id === submissionId);
+          dialog.confirm(
+            "DELETE SUBMISSION",
+            "Discard " +
+              ((sub && sub.collaborator) || "this collaborator") +
+              "'s pushed version? The main level stays exactly as it is.",
+            async () => {
+              try {
+                await _supabase
+                  .from("collab_submissions")
+                  .update({ status: "rejected" })
+                  .eq("id", submissionId);
+                this.pending = this.pending.filter(
+                  (p) => p.id !== submissionId,
+                );
+                this.refreshBadge();
+                this.renderInbox();
+                projectManager.renderList();
+                updateStatus("Submission deleted");
+              } catch (e) {
+                dialog.alert("DELETE FAILED", (e && e.message) || String(e));
+              }
+            },
+          );
+        },
+
+        leave(shareId, levelId) {
+          dialog.confirm(
+            "LEAVE COLLABORATION",
+            "Leave this collaboration? Both versions are removed from your projects and you stop being able to push changes.",
+            async () => {
+              try {
+                if (shareId !== null && shareId !== undefined) {
+                  await _supabase
+                    .from("level_shares")
+                    .update({ active: false })
+                    .eq("id", shareId);
+                }
+              } catch (e) {
+                console.warn("Could not deactivate share:", e);
+              }
+              localStorage.removeItem(COLLAB_LOCAL_PREFIX + levelId);
+              localStorage.removeItem(COLLAB_MAIN_PREFIX + levelId);
+              await cloudLevels.remove(collabLocalId(levelId));
+              if (state.collab && state.collab.levelId === levelId) {
+                state.collab = null;
+                state.collabTeam = [];
+                state.collabPerms = {};
+                this.refreshPushButton();
+                projectManager.currentId = null;
+              }
+              this.joined = this.joined.filter((j) => j.id !== shareId);
+              this.renderInbox();
+              projectManager.renderList();
+              updateStatus("Left the collaboration");
+            },
+          );
+        },
+      };
+
+      // -----------------------------------------------------------------
+      // The author credit list on a collaborative level
+      // -----------------------------------------------------------------
+      // On a collaboration the in-game author line is not one string but one
+      // entry per player, each linking to that player's profile. The owner
+      // decides who is on the list; every collaborator may rename only their
+      // own entry.
+      const collabTeam = {
+        active() {
+          return Array.isArray(state.collabTeam) && state.collabTeam.length > 0;
+        },
+
+        // The owner is whoever is not a member of somebody else's level.
+        isHost() {
+          return this.active() && !state.collab;
+        },
+
+        displayString() {
+          return (state.collabTeam || [])
+            .map((c) => (c.name || c.account || "").trim())
+            .filter(Boolean)
+            .join(", ");
+        },
+
+        ensureSelf() {
+          if (!accountManager.isLinked()) return;
+          if (!Array.isArray(state.collabTeam)) state.collabTeam = [];
+          if (
+            !state.collabTeam.some(
+              (c) => c.account === accountManager.username,
+            )
+          ) {
+            state.collabTeam.push({
+              account: accountManager.username,
+              name: accountManager.username,
+            });
+          }
+        },
+
+        // Called when the owner invites players, so the credit list and the
+        // access list do not drift apart.
+        addAccounts(accounts) {
+          if (!Array.isArray(state.collabTeam)) state.collabTeam = [];
+          this.ensureSelf();
+          accounts.forEach((account) => {
+            if (!state.collabTeam.some((c) => c.account === account)) {
+              state.collabTeam.push({ account, name: account });
+            }
+          });
+          this.render();
+        },
+
+        addPrompt() {
+          dialog.prompt(
+            "ADD PLAYER",
+            "Credit another player. They need an account for the name to link anywhere:",
+            "",
+            async (raw) => {
+              const account = (raw || "").trim();
+              if (!account) return;
+              if (state.collabTeam.some((c) => c.account === account)) return;
+              const check = await playerShare.verifyAccountExists(account);
+              if (!check.ok) return dialog.alert("NO SUCH PLAYER", check.reason);
+              state.collabTeam.push({ account, name: account });
+              this.render();
+              this.commit();
+            },
+          );
+        },
+
+        remove(account) {
+          state.collabTeam = (state.collabTeam || []).filter(
+            (c) => c.account !== account,
+          );
+          this.render();
+          this.commit();
+        },
+
+        setName(account, name) {
+          const entry = (state.collabTeam || []).find(
+            (c) => c.account === account,
+          );
+          if (!entry) return;
+          entry.name = name;
+          this.refreshPreview();
+          // Typing is a burst; one commit at the end of it is enough.
+          if (this.nameTimer) clearTimeout(this.nameTimer);
+          this.nameTimer = setTimeout(() => this.commit(), 400);
+        },
+
+        savePerms() {
+          const el = document.getElementById("set-collab-perm-download");
+          state.collabPerms = Object.assign({}, state.collabPerms, {
+            download: !!(el && el.checked),
+          });
+          this.commit();
+        },
+
+        // A credit change is a change to the level, so it saves like one.
+        commit() {
+          // Crediting a team is the whole point of the list, so the author
+          // line switches itself on rather than leaving the names invisible.
+          const toggle = document.getElementById("set-vis-author-toggle");
+          if (this.active() && toggle && !toggle.checked) {
+            const titleToggle = document.getElementById("set-vis-title-toggle");
+            if (titleToggle && titleToggle.checked) {
+              toggle.checked = true;
+              settingsManager.toggleVisAuthor();
+            }
+          }
+          document.getElementById("prop-vis-author").value =
+            this.displayString();
+          updateVisualTextPreview();
+          if (projectManager.currentId) projectManager.save();
+        },
+
+        canEdit(account) {
+          if (!accountManager.isLinked()) return false;
+          // The main version is the owner's copy shown for reference; nothing
+          // typed into it would go anywhere.
+          if (collabManager.isViewingMain()) return false;
+          if (this.isHost()) return true;
+          return account === accountManager.username;
+        },
+
+        refreshPreview() {
+          const text = this.displayString();
+          ["collab-team-preview", "vis-author-team-preview"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text ? "BY " + text.toUpperCase() : "\u2014";
+          });
+        },
+
+        render() {
+          const list = document.getElementById("collab-team-list");
+          const tab = document.getElementById("tab-collab");
+          const addBtn = document.getElementById("collab-team-add");
+          const permsBlock = document.getElementById("collab-perms-block");
+          const banner = document.getElementById("collab-role-banner");
+          if (!list) return;
+
+          const isCollab = this.active() || !!state.collab;
+          if (tab) tab.classList.toggle("hidden", !isCollab);
+          if (!isCollab) {
+            list.innerHTML = "";
+            return;
+          }
+
+          const host = this.isHost();
+          if (addBtn) addBtn.classList.toggle("hidden", !host);
+          if (permsBlock) permsBlock.classList.toggle("hidden", !host);
+
+          const dl = document.getElementById("set-collab-perm-download");
+          if (dl) dl.checked = !!(state.collabPerms && state.collabPerms.download);
+
+          if (banner) {
+            // Your role decides what every control on this panel does, so it
+            // is stated as a role first and explained second, rather than left
+            // as a paragraph you have to read to work out which one you are.
+            const role = host
+              ? {
+                  cls: "bg-purple-500/10 border-purple-500/30",
+                  dot: "#a78bfa",
+                  title: "Owner",
+                  text:
+                    "You decide who is credited, how their names read, and what collaborators are allowed to do.",
+                }
+              : collabManager.isViewingMain()
+                ? {
+                    cls: "bg-amber-500/10 border-amber-500/30",
+                    dot: "#f59e0b",
+                    title: "Read only \u00b7 main version",
+                    text:
+                      "This is " +
+                      escAttr(state.collab.owner) +
+                      "'s copy, shown for reference. Edits here go nowhere \u2014 work in your own version and push it.",
+                  }
+                : {
+                    cls: "bg-blue-500/10 border-blue-500/30",
+                    dot: "#60a5fa",
+                    title: "Collaborator",
+                    text:
+                      "Your version of " +
+                      escAttr(state.collab ? state.collab.owner : "") +
+                      "'s level. Edit it and push changes back; publishing and sharing stay with the owner, and you may rename your own credit only.",
+                  };
+            banner.className =
+              "p-3 rounded-lg border text-[11px] leading-relaxed text-slate-300 " +
+              role.cls;
+            banner.innerHTML =
+              '<div class="flex items-center gap-2 mb-1">' +
+              '<span style="width:7px;height:7px;border-radius:999px;background:' +
+              role.dot +
+              ";box-shadow:0 0 7px " +
+              role.dot +
+              '"></span>' +
+              '<span class="text-[10px] font-bold uppercase tracking-widest text-white">' +
+              role.title +
+              "</span></div>" +
+              role.text;
+          }
+
+          list.innerHTML = "";
+          (state.collabTeam || []).forEach((c) => {
+            const editable = this.canEdit(c.account);
+            const isMe = c.account === accountManager.username;
+            const row = document.createElement("div");
+            row.className =
+              "flex items-center gap-2.5 p-2.5 bg-slate-950 border rounded-lg " +
+              (isMe ? "border-purple-500/40" : "border-slate-800");
+            row.innerHTML = `
+              ${collabAvatar(c.account, true)}
+              <div class="min-w-0 flex-1">
+                <input
+                  type="text"
+                  value="${escAttr(c.name || "")}"
+                  ${editable ? "" : "disabled"}
+                  placeholder="Display name"
+                  class="w-full bg-transparent border-0 border-b ${
+                    editable
+                      ? "border-slate-700 focus:border-purple-500 text-white"
+                      : "border-transparent text-slate-400"
+                  } px-0 py-0.5 text-xs outline-none"
+                />
+                <div class="text-[9px] text-slate-600 mt-0.5">@${escAttr(
+                  c.account,
+                )}${
+                  isMe
+                    ? ' <span class="text-purple-400 font-bold">\u00b7 you</span>'
+                    : ""
+                }${
+                  !editable
+                    ? ' <span class="text-slate-700">\u00b7 theirs to rename</span>'
+                    : ""
+                }</div>
+              </div>
+              ${
+                host && !isMe
+                  ? '<button class="collab-btn danger flex-shrink-0" data-remove="1">Remove</button>'
+                  : ""
+              }`;
+
+            const input = row.querySelector("input");
+            if (editable) {
+              input.oninput = () => this.setName(c.account, input.value);
+            }
+            const rm = row.querySelector("[data-remove]");
+            if (rm) rm.onclick = () => this.remove(c.account);
+            list.appendChild(row);
+          });
+
+          this.refreshPreview();
         },
       };
 
@@ -8463,7 +11148,13 @@
       // Lava-family blocks fill their cell too, and additionally take the
       // Detailed Lava surface.
       const LAVA_CHARS = ["!", "=", "|", "v", "^"];
-      const SHAPING_TEXTURES = ["brick", "zigzag", "wavy", "slab"];
+      const SHAPING_TEXTURES = [
+        "brick",
+        "zigzag",
+        "wavy",
+        "slab",
+        "sideslab",
+      ];
       // Anything visible can be submerged or turned upside down.
       const UNIVERSAL_TEXTURES = ["flip", "underwater"];
 
@@ -8481,7 +11172,7 @@
         // Water is shaped, but it is already water and it has no body to fill
         // with particles.
         if (visualChar === "w")
-          return ["wavy", "slab", "detailedwater", "flip"];
+          return ["wavy", "slab", "sideslab", "detailedwater", "flip"];
 
         // A decoration is a picture: no edge, but worth being able to flip.
         if (visualChar === "Z") return ["flip"];
@@ -8497,9 +11188,13 @@
             ...UNIVERSAL_TEXTURES,
           ];
 
+        // Grass is the one texture that says what a block is made of rather
+        // than what shape it is, so it belongs to ordinary blocks only --
+        // grass growing on a moving lava tile is not a look anyone is after.
         if (FULL_CELL_CHARS.includes(visualChar))
           return [
             ...SHAPING_TEXTURES,
+            "grass",
             "particles",
             "decoration",
             ...UNIVERSAL_TEXTURES,
@@ -8528,6 +11223,12 @@
         // and wavy are mutually exclusive; either can be combined with slab, in
         // which case the shaped edge sits on the half-block line.
         const isSlab = textures.includes("slab");
+        // Side Slab is Slab turned ninety degrees: half the cell across
+        // rather than half of it down. Left by default, right with Flip.
+        // Which way is up does not change which way is left, so this one is
+        // deliberately not tied to the level's orientation.
+        const isSideSlab = textures.includes("sideslab");
+        const sideRight = textures.includes("flip");
         const wantsZigzag = textures.includes("zigzag");
         const wantsWavy = textures.includes("wavy") && !wantsZigzag;
         // The exposed face flips with the level's orientation, and the Flip
@@ -8593,10 +11294,15 @@
             : isSlab
               ? "url(#boi-wavy-top-slab)"
               : "url(#boi-wavy-top)";
-        } else if (isSlab) {
-          cell.style.clipPath = flipped
-            ? "polygon(-10% -10%, 110% -10%, 110% 50%, -10% 50%)"
-            : "polygon(-10% 50%, 110% 50%, 110% 110%, -10% 110%)";
+        } else if (isSlab || isSideSlab) {
+          // One rectangle, two independent constraints: each slab keeps half
+          // the cell, and together they keep a quarter.
+          const x1 = isSideSlab ? (sideRight ? 50 : -10) : -10;
+          const x2 = isSideSlab ? (sideRight ? 110 : 50) : 110;
+          const y1 = isSlab ? (flipped ? -10 : 50) : -10;
+          const y2 = isSlab ? (flipped ? 50 : 110) : 110;
+          cell.style.clipPath =
+            `polygon(${x1}% ${y1}%, ${x2}% ${y1}%, ${x2}% ${y2}%, ${x1}% ${y2}%)`;
         }
 
         // Particles: rendered on the grid, not the cell, so they escape clipPath
@@ -8604,7 +11310,7 @@
           const parentGrid = particleLayer();
           if (parentGrid) {
             const prevP = parentGrid.querySelector(`.pcl-${x}-${y}`);
-            const sig = `${isSlab}|${flipped}|${particleColor}`;
+            const sig = `${isSlab}|${isSideSlab}|${sideRight}|${flipped}|${particleColor}`;
             const upToDate = prevP && prevP.dataset.sig === sig;
             if (prevP && !upToDate) prevP.remove();
 
@@ -8613,8 +11319,12 @@
               const pWrap = document.createElement("div");
               pWrap.className = `pcl-${x}-${y} absolute pointer-events-none`;
               pWrap.dataset.sig = sig;
-              pWrap.style.left = x * cs + "px";
-              pWrap.style.width = cs + "px";
+              // A side slab only shows half the cell, so its particles rise
+              // off that half rather than off the gap.
+              const spanW = isSideSlab ? cs / 2 : cs;
+              pWrap.style.left =
+                (isSideSlab && sideRight ? x * cs + cs / 2 : x * cs) + "px";
+              pWrap.style.width = spanW + "px";
               pWrap.style.top =
                 (isSlab
                   ? y * cs + cs / 2
@@ -8633,7 +11343,7 @@
                 p.style.height = dotSize + "px";
                 p.style.background = particleColor;
                 p.style.boxShadow = `0 0 ${dotSize * 2}px ${particleColor}`;
-                p.style.left = `${Math.round(((i + 0.5) / count) * cs - dotSize / 2)}px`;
+                p.style.left = `${Math.round(((i + 0.5) / count) * spanW - dotSize / 2)}px`;
                 p.style.top = "0px";
                 const phase = ((x * 7 + y * 13 + i * 5) % 18) / 10;
                 p.style.animationDelay = `-${phase.toFixed(2)}s`;
@@ -8645,6 +11355,41 @@
           }
         }
 
+        // Grass: a cap on the exposed face with blades hanging into the block.
+        // Mirrors the game's applyBlockTextures() -- the cap is a share of
+        // what the block still shows, so a slab gets a proportionate fringe
+        // rather than being half buried in it.
+        if (textures.includes("grass")) {
+          const gNear = flipped ? "bottom" : "top";
+          const gStart = isSlab ? "50%" : "0px";
+          const capPct = isSlab ? 13 : 26;
+
+          const cap = document.createElement("div");
+          cap.className = "absolute left-0 right-0";
+          cap.style[gNear] = gStart;
+          cap.style.height = capPct + "%";
+          cap.style.background = "#5fbf4a";
+          overlay.appendChild(cap);
+
+          const lip = document.createElement("div");
+          lip.className = "absolute left-0 right-0";
+          lip.style[gNear] = gStart;
+          lip.style.height = "2px";
+          lip.style.background = "#7ddb63";
+          overlay.appendChild(lip);
+
+          [8, 24, 41, 58, 74, 90].forEach((leftPct, i) => {
+            const blade = document.createElement("div");
+            blade.className = "absolute";
+            blade.style.left = leftPct + "%";
+            blade.style.width = "2px";
+            blade.style[gNear] = `calc(${gStart} + ${capPct}%)`;
+            blade.style.height = (i % 2 ? 9 : 15) * (isSlab ? 0.5 : 1) + "%";
+            blade.style.background = i % 2 ? "#3c8f34" : "#5fbf4a";
+            overlay.appendChild(blade);
+          });
+        }
+
         // Brick courses, drawn as two repeating gradients so the pattern
         // scales with the cell instead of being a fixed-size image.
         if (textures.includes("brick")) {
@@ -8653,13 +11398,10 @@
           overlay.appendChild(brick);
         }
 
-        // Drawn last and above everything else in the cell, because in game
-        // the water layer genuinely sits in front of the submerged object.
-        if (textures.includes("underwater")) {
-          const wash = document.createElement("div");
-          wash.className = "water-mod-overlay";
-          cell.appendChild(wash);
-        }
+        // The submerging tint is NOT drawn here. It belongs to #water-overlay,
+        // which sits in front of every cell -- the same arrangement the game
+        // uses, and the only one where a submerged coin is seen through the
+        // water instead of beside it. See renderWaterOverlay().
 
         if (textures.includes("decoration")) {
           const cfg = state.blockConfigs[`${x},${y}`] || {};
@@ -8774,13 +11516,6 @@
 
       // Whether a lava cell's exposed face is clear. Which face that is depends
       // on the level's orientation and on the cell's own Flip texture.
-      // Whether this water cell forms the open face of its pool.
-      function isWaterFace(x, y, flipped) {
-        const ny = y + (flipped ? 1 : -1);
-        if (ny < 0 || ny >= state.height) return true;
-        return (state.grid[ny] ? state.grid[ny][x] : undefined) !== "w";
-      }
-
       function isLavaSurface(x, y, flipped) {
         const ny = y + (flipped ? 1 : -1);
         if (ny < 0 || ny >= state.height) return true;
@@ -8837,6 +11572,191 @@
       var renderStyleEpoch = 0;
       function invalidateAllCells() {
         renderStyleEpoch++;
+      }
+
+      // ---------- Water layer ----------
+      // The game treats water as a filter drawn in front of the level rather
+      // than as a tile, and the Underwater texture only reads as "submerged"
+      // if the editor does the same. Cells are merged into pools first: a
+      // border or a gradient painted per cell repeats at every cell edge, and
+      // translucent repeats stack into a grid of lines running through the
+      // pool. So each pool gets ONE box carrying the depth gradient, the
+      // drifting caustics and the rim glow, and each cell gets nothing but a
+      // flat pane of blue.
+      var currentWaterLayer = null;
+      function waterLayerEl() {
+        return currentWaterLayer || document.getElementById("water-overlay");
+      }
+
+      // Every cell the water covers: real water tiles plus anything carrying
+      // the Underwater texture.
+      function waterCellKeys() {
+        const keys = [];
+        for (let y = 0; y < state.height; y++) {
+          for (let x = 0; x < state.width; x++) {
+            if (state.grid[y][x] === "w") {
+              keys.push(x + "," + y);
+              continue;
+            }
+            if (!canApplyTexturesToCell(x, y)) continue;
+            if (getTextureConfigForCell(x, y).includes("underwater"))
+              keys.push(x + "," + y);
+          }
+        }
+        return keys;
+      }
+
+      function isWaterCellAt(x, y, keySet) {
+        if (x < 0 || y < 0 || x >= state.width || y >= state.height)
+          return false;
+        return keySet.has(x + "," + y);
+      }
+
+      // Rebuilding the whole layer on every render would throw away the
+      // shimmer animation mid-cycle, so it is only redone when something it
+      // actually depends on moves.
+      var waterLayerSig = null;
+      function renderWaterOverlay(force) {
+        const layer = waterLayerEl();
+        if (!layer) return;
+
+        const keys = waterCellKeys();
+        const flippedLevel = levelStartsUpsideDown();
+        const sig =
+          keys
+            .map((k) => {
+              const p = k.split(",");
+              return k + ":" + getTextureConfigForCell(+p[0], +p[1]).join(".");
+            })
+            .join("|") +
+          "#" +
+          (flippedLevel ? "^" : "v");
+        if (!force && sig === waterLayerSig) return;
+        waterLayerSig = sig;
+
+        layer.innerHTML = "";
+        if (!keys.length) return;
+
+        const keySet = new Set(keys);
+        const cs = 24;
+        const frag = document.createDocumentFragment();
+
+        // Merge each row into horizontal runs, then stack runs of identical
+        // extent that sit directly on top of one another, so a rectangular
+        // pool becomes a single body.
+        const byRow = new Map();
+        keys.forEach((k) => {
+          const p = k.split(",");
+          const x = parseInt(p[0], 10);
+          const y = parseInt(p[1], 10);
+          if (!byRow.has(y)) byRow.set(y, []);
+          byRow.get(y).push(x);
+        });
+
+        const runs = [];
+        byRow.forEach((xs, y) => {
+          xs.sort((a, b) => a - b);
+          let start = xs[0];
+          let prev = xs[0];
+          for (let i = 1; i <= xs.length; i++) {
+            if (i < xs.length && xs[i] === prev + 1) {
+              prev = xs[i];
+              continue;
+            }
+            runs.push({ y, x1: start, x2: prev });
+            if (i < xs.length) {
+              start = xs[i];
+              prev = xs[i];
+            }
+          }
+        });
+
+        const bodies = [];
+        const open = new Map();
+        runs
+          .slice()
+          .sort((a, b) => a.y - b.y || a.x1 - b.x1)
+          .forEach((r) => {
+            const k = r.x1 + ":" + r.x2;
+            const prev = open.get(k);
+            if (prev && prev.y2 === r.y - 1) {
+              prev.y2 = r.y;
+            } else {
+              const body = { x1: r.x1, x2: r.x2, y1: r.y, y2: r.y };
+              bodies.push(body);
+              open.set(k, body);
+            }
+          });
+
+        bodies.forEach((b) => {
+          const el = document.createElement("div");
+          el.className = "wm-body" + (flippedLevel ? " flipped" : "");
+          el.style.left = b.x1 * cs + "px";
+          el.style.top = b.y1 * cs + "px";
+          el.style.width = (b.x2 - b.x1 + 1) * cs + "px";
+          el.style.height = (b.y2 - b.y1 + 1) * cs + "px";
+          frag.appendChild(el);
+        });
+
+        keys.forEach((k) => {
+          const p = k.split(",");
+          const x = parseInt(p[0], 10);
+          const y = parseInt(p[1], 10);
+          const tex = getTextureConfigForCell(x, y);
+          const flipped = flippedLevel !== tex.includes("flip");
+          const isSlab = tex.includes("slab");
+          const wavy = tex.includes("wavy");
+          const left = x * cs;
+          const top = y * cs;
+
+          // A water tile paints its own fill as the cell background, so
+          // covering it again would double the tint. Everything else is a
+          // block sitting under the surface and needs the pane.
+          if (state.grid[y][x] !== "w") {
+            const el = document.createElement("div");
+            el.className = "wm-cell";
+            el.style.left = left + "px";
+            el.style.top = top + "px";
+            el.style.width = cs + "px";
+            el.style.height = cs + "px";
+            // Wavy and Slab shape the open face here the same way they shape
+            // a solid block, and mirror with the level like everything else.
+            if (wavy) {
+              el.style.clipPath = flipped
+                ? isSlab
+                  ? "url(#boi-wavy-bottom-slab)"
+                  : "url(#boi-wavy-bottom)"
+                : isSlab
+                  ? "url(#boi-wavy-top-slab)"
+                  : "url(#boi-wavy-top)";
+            } else if (isSlab) {
+              el.style.clipPath = flipped
+                ? "polygon(-10% -10%, 110% -10%, 110% 50%, -10% 50%)"
+                : "polygon(-10% 50%, 110% 50%, 110% 110%, -10% 110%)";
+            }
+            frag.appendChild(el);
+          }
+
+          // The crest marks the open face of a pool, and is opt-in via
+          // Detailed Water — same rule as in game.
+          const outward = flipped ? 1 : -1;
+          const isFace = !isWaterCellAt(x, y + outward, keySet);
+          if (isFace && tex.includes("detailedwater")) {
+            const crest = document.createElement("div");
+            crest.className = "wm-crest" + (flipped ? " flipped" : "");
+            const inset = isSlab ? cs * 0.5 : 0;
+            const h = cs * 0.14;
+            crest.style.left = left + "px";
+            crest.style.width = cs + "px";
+            crest.style.height = h + "px";
+            crest.style.top = flipped
+              ? top + cs - inset - h + "px"
+              : top + inset + "px";
+            frag.appendChild(crest);
+          }
+        });
+
+        layer.appendChild(frag);
       }
 
       // During a full rebuild the layers live in a DocumentFragment, so
@@ -8905,13 +11825,9 @@
               ? "polygon(-10% -10%, 110% -10%, 110% 50%, -10% 50%)"
               : "polygon(-10% 50%, 110% 50%, 110% 110%, -10% 110%)";
           }
-          if (wTex.includes("detailedwater") && isWaterFace(x, y, wFlip)) {
-            const crest = document.createElement("div");
-            crest.className = "water-crest-preview";
-            if (wFlip) crest.classList.add("flipped");
-            if (wSlab) crest.classList.add("slab");
-            cell.appendChild(crest);
-          }
+          // The crest is drawn on #water-overlay with every other pool's, so
+          // that a pool of water tiles and a run of submerged blocks share
+          // one surface line instead of each growing its own.
         }
 
         if (visualChar === "T") {
@@ -9197,6 +12113,8 @@
         const gridEl = document.getElementById("level-grid");
         const totalCells = state.width * state.height;
         currentParticleLayer = document.getElementById("particle-overlay");
+        currentWaterLayer = document.getElementById("water-overlay");
+        let rebuilt = false;
 
         // Only rebuild if dimensions changed or grid is empty
         if (gridEl.children.length !== totalCells + GRID_LAYER_COUNT) {
@@ -9214,6 +12132,12 @@
           particles.id = "particle-overlay";
           frag.appendChild(particles);
           currentParticleLayer = particles;
+
+          const water = document.createElement("div");
+          water.id = "water-overlay";
+          frag.appendChild(water);
+          currentWaterLayer = water;
+          rebuilt = true;
 
           const overlay = document.createElement("div");
           overlay.id = "selection-overlay";
@@ -9252,6 +12176,7 @@
           }
         }
         renderAreaBackgrounds();
+        renderWaterOverlay(rebuilt);
         renderNoteRibbons();
         // Placing or erasing a pad changes the group counts the panel shows
         renderTeleporterPanel();
@@ -11750,6 +14675,7 @@
 
             <!-- Mutual exclusion note -->
             <div id="zigzag-wavy-note" class="hidden text-[9px] text-amber-400/80 px-1">⚠ Zigzag and Wavy are mutually exclusive — only one will apply.</div>
+            <div id="sideslab-shape-note" class="hidden text-[9px] text-amber-400/80 px-1">⚠ Side Slab does not combine with a shaped top edge — Zigzag or Wavy will win.</div>
           </div>
 
           <!-- Actions Footer -->
@@ -11768,6 +14694,7 @@
         // Render Texture Mods Grid
         const grid = panel.querySelector("#textures-grid");
         const zigzagWavyNote = panel.querySelector("#zigzag-wavy-note");
+        const sideSlabNote = panel.querySelector("#sideslab-shape-note");
 
         // Icons are miniature previews of what each texture actually does to a
         // block, rather than loosely-related emoji.
@@ -11780,6 +14707,15 @@
                    <rect x="3" y="4" width="18" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.5"/>
                    <rect x="3" y="12" width="18" height="8" rx="1" fill="currentColor"/>
                  </svg>`,
+          sideslab: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                       <rect x="3" y="4" width="18" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.5"/>
+                       <rect x="3" y="4" width="9" height="16" rx="1" fill="currentColor"/>
+                     </svg>`,
+          grass: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                    <rect x="3" y="9" width="18" height="11" rx="1" fill="currentColor" opacity="0.35"/>
+                    <rect x="3" y="6" width="18" height="4" rx="1" fill="currentColor"/>
+                    <path d="M6 10v3M10 10v4M14 10v3M18 10v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  </svg>`,
           zigzag: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
                      <path d="M3 9 L6 5 L9 9 L12 5 L15 9 L18 5 L21 9 L21 20 L3 20 Z" fill="currentColor"/>
                    </svg>`,
@@ -11837,6 +14773,18 @@
             desc: "Half-block shape",
           },
           {
+            id: "sideslab",
+            name: "Side Slab",
+            icon: TEX_ICONS.sideslab,
+            desc: "Half-block, sideways",
+          },
+          {
+            id: "grass",
+            name: "Grass",
+            icon: TEX_ICONS.grass,
+            desc: "Grassy cap and blades",
+          },
+          {
             id: "zigzag",
             name: "Zigzag Top",
             icon: TEX_ICONS.zigzag,
@@ -11885,6 +14833,12 @@
           const hasZig = selectedTextures.has("zigzag");
           const hasWav = selectedTextures.has("wavy");
           zigzagWavyNote.classList.toggle("hidden", !(hasZig && hasWav));
+          // Side Slab is a clip rectangle; Zigzag and Wavy replace the clip
+          // outright, so the two cannot both shape the same cell.
+          sideSlabNote.classList.toggle(
+            "hidden",
+            !(selectedTextures.has("sideslab") && (hasZig || hasWav)),
+          );
 
           texItems.forEach((item) => {
             const isAvailable = options.includes(item.id);
@@ -15102,6 +18056,20 @@
             // however the level reaches it -- exported JSON and local test
             // plays never carry the database's legendary column.
             publishedLegendary: state.publishedLegendary,
+            // Whether the in-game author line points at an account, and which
+            // one. The credit text and the account are deliberately separate:
+            // a level can read "BY THE ARCHITECT" and still open your profile.
+            linkAccount:
+              document.getElementById("prop-link-account").value !== "false",
+            creatorAccount:
+              document.getElementById("prop-link-account").value !== "false" &&
+              accountManager.username
+                ? accountManager.username
+                : null,
+            // On a collaboration the author line is a list of accounts rather
+            // than one string, so the game can link each name separately.
+            collabTeam: state.collabTeam || [],
+            collabPerms: state.collabPerms || {},
             plan: state.grid.map((r) => r.join("")),
           };
         },
@@ -15127,6 +18095,9 @@
           return el ? el.checked : true;
         },
         downloadJson() {
+          if (!collabManager.canDownload()) {
+            return collabManager.blockedNotice("download");
+          }
           const compress = this.shouldCompressDownload();
           const text = compress ? this.exportCompact() : this.export();
           const blob = new Blob([text], { type: "application/json" });
@@ -15696,11 +18667,24 @@
       const projectManager = {
         currentId: null,
         contextId: null,
+        // Which collaborations are showing their two versions
+        expandedCollabs: new Set(),
         newProject(type) {
           try {
             this.currentId = null;
             document.getElementById("prop-name").value = "New Level";
-            document.getElementById("prop-creator").value = "Anonymous";
+            // A linked account is the answer to "who made this", so it is the
+            // default credit rather than one more "Anonymous".
+            document.getElementById("prop-creator").value =
+              accountManager.username || "Anonymous";
+            document.getElementById("prop-link-account").value = "true";
+            state.cloudId = null;
+            state.collab = null;
+            state.collabTeam = [];
+            state.collabPerms = {};
+            collabManager.refreshPushButton();
+            collabTeam.render();
+            shareManager.refreshCollabGate();
             document.getElementById("prop-desc").value = "";
             setDifficulty(1);
 
@@ -15974,6 +18958,20 @@
             notes: state.notes,
             visualTitleColor: state.visualTitleColor,
             publishedLegendary: state.publishedLegendary,
+            linkAccount:
+              document.getElementById("prop-link-account").value !== "false",
+            creatorAccount:
+              document.getElementById("prop-link-account").value !== "false" &&
+              accountManager.username
+                ? accountManager.username
+                : null,
+            cloudId: state.cloudId,
+            collabLevelId: state.collab ? state.collab.levelId : null,
+            collabOwner: state.collab ? state.collab.owner : null,
+            collabShareId: state.collab ? state.collab.shareId : null,
+            collabMain: state.collab ? !!state.collab.main : false,
+            collabTeam: state.collabTeam || [],
+            collabPerms: state.collabPerms || {},
             width: state.width,
             height: state.height,
             // Stored as a packed plan rather than a nested char array —
@@ -15993,6 +18991,16 @@
           }
           updateStatus(`Project Saved (${formatBytes(json.length)})`);
           this.renderList();
+          // The main version is the owner's and is only held for reference,
+          // so it is never mirrored. Your own version of a collaboration is a
+          // level like any other and does go up, tagged to its origin.
+          const isMainCopy = state.collab && state.collab.main;
+          if (!isMainCopy && cloudLevels.available()) {
+            const opts = state.collab
+              ? { collabOrigin: state.collab.levelId }
+              : undefined;
+            cloudLevels.pushDebounced(this.currentId, data, opts);
+          }
         },
         saveAsTemplate() {
           templateSaver.open();
@@ -16006,6 +19014,24 @@
             document.getElementById("prop-name").value = data.name;
             document.getElementById("prop-creator").value =
               data.creator || "Anonymous";
+            document.getElementById("prop-link-account").value =
+              data.linkAccount === false ? "false" : "true";
+            state.cloudId = data.cloudId || null;
+            state.collab = data.collabLevelId
+              ? {
+                  levelId: data.collabLevelId,
+                  owner: data.collabOwner,
+                  shareId: data.collabShareId,
+                  main: !!data.collabMain,
+                }
+              : null;
+            state.collabTeam = Array.isArray(data.collabTeam)
+              ? data.collabTeam
+              : [];
+            state.collabPerms = data.collabPerms || {};
+            collabManager.refreshPushButton();
+            collabTeam.render();
+            shareManager.refreshCollabGate();
             document.getElementById("prop-desc").value = data.description || "";
             setDifficulty(data.difficulty || 1);
             document.getElementById("prop-gravity").value = Math.max(
@@ -16113,6 +19139,7 @@
             "Are you sure you want to delete this project?",
             () => {
               localStorage.removeItem("boi_project_" + id);
+              cloudLevels.remove(id);
               this.renderList();
             },
           );
@@ -16141,6 +19168,15 @@
             });
           }
 
+          const subtitle = document.getElementById("project-list-subtitle");
+          if (subtitle) {
+            subtitle.innerHTML = accountManager.isLinked()
+              ? `Saved here and in <span class="text-blue-400 font-bold">${escAttr(
+                  accountManager.username,
+                )}</span>'s account.`
+              : `Local browser storage. <button onclick="accountManager.openModal()" class="text-blue-400 hover:text-blue-300 font-bold">Link an account</button> to reach them in game.`;
+          }
+
           const list = document.getElementById("project-list");
           if (!list) return;
           list.innerHTML = "";
@@ -16163,6 +19199,11 @@
           } else {
             projects.sort((a, b) => a.name.localeCompare(b.name));
           }
+          // Levels you joined sit above your own -- somebody is waiting on them
+          // Levels you joined sit above your own -- somebody is waiting on them
+          projects.sort(
+            (a, b) => (b.collabLevelId ? 1 : 0) - (a.collabLevelId ? 1 : 0),
+          );
 
           if (projects.length === 0) {
             list.innerHTML =
@@ -16170,44 +19211,171 @@
             return;
           }
 
+          // A collaboration is two projects -- your version and the owner's
+          // main version -- but it is one level, so the list shows one row
+          // that opens to reveal the pair.
+          const groups = [];
+          const byLevel = new Map();
           projects.forEach((p) => {
-            const el = document.createElement("div");
-            el.className =
-              "flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded hover:border-blue-500 group transition-all select-none";
-            el.oncontextmenu = (e) => {
-              e.preventDefault();
-              projectManager.contextId = p.id;
-              const menu = document.getElementById("context-menu");
-              menu.classList.remove("hidden");
-              menu.style.left = `${e.clientX}px`;
-              menu.style.top = `${e.clientY}px`;
+            if (!p.collabLevelId) {
+              groups.push({ kind: "single", project: p });
+              return;
+            }
+            let g = byLevel.get(p.collabLevelId);
+            if (!g) {
+              g = {
+                kind: "collab",
+                levelId: p.collabLevelId,
+                owner: p.collabOwner,
+                shareId: p.collabShareId,
+                name: p.name,
+                lastModified: p.lastModified,
+              };
+              byLevel.set(p.collabLevelId, g);
+              groups.push(g);
+            }
+            if (p.collabMain) g.main = p;
+            else g.own = p;
+            if (!p.collabMain) {
+              g.name = p.name;
+              g.lastModified = p.lastModified;
+            }
+          });
+
+          const rowIcons = (p) => `
+            <button onclick="event.stopPropagation(); projectManager.rename('${
+              p.id
+            }')" class="text-slate-600 hover:text-blue-400 p-1" title="Rename"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+            <button onclick="event.stopPropagation(); projectManager.duplicate('${
+              p.id
+            }')" class="text-slate-600 hover:text-green-400 p-1" title="Duplicate"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg></button>
+            <button onclick="event.stopPropagation(); projectManager.delete('${
+              p.id
+            }')" class="text-slate-600 hover:text-red-500 p-1" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`;
+
+          groups.forEach((g) => {
+            if (g.kind === "single") {
+              const p = g.project;
+              const el = document.createElement("div");
+              el.className =
+                "flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded hover:border-blue-500 group transition-all select-none";
+              el.oncontextmenu = (e) => {
+                e.preventDefault();
+                projectManager.contextId = p.id;
+                const menu = document.getElementById("context-menu");
+                menu.classList.remove("hidden");
+                menu.style.left = `${e.clientX}px`;
+                menu.style.top = `${e.clientY}px`;
+              };
+              el.innerHTML = `
+                <div class="cursor-pointer flex-1 min-w-0" onclick="projectManager.load('${
+                  p.id
+                }')">
+                  <div class="font-bold text-slate-200 text-xs group-hover:text-blue-400 truncate">${escAttr(
+                    p.name,
+                  )}</div>
+                  <div class="text-[10px] text-slate-500">${new Date(
+                    p.lastModified,
+                  ).toLocaleDateString()} ${new Date(
+                    p.lastModified,
+                  ).toLocaleTimeString()}</div>
+                </div>
+                <div class="flex gap-1 flex-shrink-0">${rowIcons(p)}</div>`;
+              list.appendChild(el);
+              return;
+            }
+
+            const open = projectManager.expandedCollabs.has(
+              String(g.levelId),
+            );
+            const wrap = document.createElement("div");
+            wrap.className =
+              "bg-slate-900 border border-slate-800 rounded overflow-hidden hover:border-purple-500/60 transition-all select-none";
+
+            const head = document.createElement("div");
+            head.className =
+              "flex items-center justify-between p-3 cursor-pointer group";
+            head.innerHTML = `
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <svg class="flex-shrink-0 text-slate-600 transition-transform ${
+                  open ? "rotate-90" : ""
+                }" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-200 text-xs group-hover:text-purple-300 flex items-center gap-2">
+                    <span class="truncate">${escAttr(g.name || "Shared Level")}</span>
+                    <span class="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 flex-shrink-0">Collab</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500">owned by ${escAttr(
+                    g.owner || "?",
+                  )} &middot; 2 versions</div>
+                </div>
+              </div>
+              <button class="text-slate-600 hover:text-red-500 p-1 flex-shrink-0" title="Leave collaboration" data-leave="1"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1"/></svg></button>`;
+            head.onclick = () => {
+              const key = String(g.levelId);
+              if (projectManager.expandedCollabs.has(key)) {
+                projectManager.expandedCollabs.delete(key);
+              } else {
+                projectManager.expandedCollabs.add(key);
+              }
+              projectManager.renderList();
             };
-            el.innerHTML = `
-                        <div class="cursor-pointer flex-1" onclick="projectManager.load('${
-                          p.id
-                        }')">
-                            <div class="font-bold text-slate-200 text-xs group-hover:text-blue-400">${
-                              p.name
-                            }</div>
-                            <div class="text-[10px] text-slate-500">${new Date(
-                              p.lastModified,
-                            ).toLocaleDateString()} ${new Date(
-                              p.lastModified,
-                            ).toLocaleTimeString()}</div>
-                        </div>
-                        <div class="flex gap-1">
-                            <button onclick="projectManager.rename('${
-                              p.id
-                            }')" class="text-slate-600 hover:text-blue-400 p-1" title="Rename"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                            <button onclick="projectManager.duplicate('${
-                              p.id
-                            }')" class="text-slate-600 hover:text-green-400 p-1" title="Duplicate"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg></button>
-                            <button onclick="projectManager.delete('${
-                              p.id
-                            }')" class="text-slate-600 hover:text-red-500 p-1" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                        </div>
-                    `;
-            list.appendChild(el);
+            head.querySelector("[data-leave]").onclick = (e) => {
+              e.stopPropagation();
+              collabManager.leave(
+                g.shareId === undefined ? null : g.shareId,
+                g.levelId,
+              );
+            };
+            wrap.appendChild(head);
+
+            if (open) {
+              const body = document.createElement("div");
+              body.className =
+                "border-t border-slate-800 bg-[#0a0c12] p-2 space-y-1.5";
+
+              const version = (project, label, sub, accent) => {
+                const el = document.createElement("div");
+                el.className =
+                  "flex items-center justify-between gap-2 px-3 py-2 bg-slate-900 border border-slate-800 rounded hover:border-blue-500 cursor-pointer transition-colors";
+                el.innerHTML = `
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-bold ${accent} truncate">${label}</div>
+                    <div class="text-[9px] text-slate-600">${sub}</div>
+                  </div>`;
+                if (project) {
+                  el.onclick = () => projectManager.load(project.id);
+                } else {
+                  el.className += " opacity-40 cursor-not-allowed";
+                }
+                return el;
+              };
+
+              body.appendChild(
+                version(
+                  g.own,
+                  "Your version",
+                  g.own
+                    ? "Editable \u00b7 push changes to " +
+                        escAttr(g.owner || "the owner")
+                    : "Not downloaded yet",
+                  "text-blue-300",
+                ),
+              );
+              body.appendChild(
+                version(
+                  g.main,
+                  "Main version",
+                  g.main
+                    ? escAttr(g.owner || "the owner") + "'s copy \u00b7 read only"
+                    : "Not downloaded yet",
+                  "text-slate-300",
+                ),
+              );
+              wrap.appendChild(body);
+            }
+
+            list.appendChild(wrap);
           });
         },
       };
@@ -16232,6 +19400,9 @@
         isOpen: false,
 
         open() {
+          if (!collabManager.canDownload()) {
+            return collabManager.blockedNotice("export an image of");
+          }
           this.isOpen = true;
           document.getElementById("export-modal").classList.remove("hidden");
 
