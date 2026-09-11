@@ -11786,7 +11786,18 @@
             p.pos.y + p.size.y > this.pos.y &&
             p.pos.y < this.pos.y + this.size.y
           ) {
-            p.speed.y = this.ceilingMounted ? 35 : -35;
+            // A jump pad throws you the way you jump: against your own
+            // gravity, always. Under reversed gravity that is down the screen,
+            // which is up as far as the player is concerned.
+            //
+            // This used to be decided by which surface the pad was fixed to,
+            // on the reasoning that a pad hanging from a ceiling should throw
+            // downwards. That is the same direction for a right-way-up player,
+            // so it looked correct, but it meant the pad ignored gravity
+            // entirely: flip the player and every pad fired them the way they
+            // were already falling. Where a pad is mounted decides where it is
+            // drawn, and nothing else.
+            p.speed.y = -35 * (p.gravityDirection || 1);
           }
         }
       };
@@ -11996,8 +12007,13 @@
 
         var overlapsX = pr > bl && pl < br;
 
-        // Riding the plate, or inside it (reachable when the plate moves)
+        // Riding the plate, or inside it (reachable when the plate moves).
+        // Standing on it and hanging under it are the same contact seen from
+        // opposite gravities, so both faces count -- only the first was
+        // checked, which is why a plate did nothing for a player walking
+        // along a ceiling upside down.
         if (overlapsX && Math.abs(pb - bt) <= DASH_TOP_EPS) return "fire";
+        if (overlapsX && Math.abs(pt - bb) <= DASH_TOP_EPS) return "fire";
         if (overlapsX && pb > bt && pt < bb) return "fire";
 
         // Pressed against a side face. Only the face the plate throws towards
