@@ -285,27 +285,6 @@
         pointer-events: none;
       }
 
-      .t-orb {
-        color: #7dd3fc;
-        border: none;
-        box-shadow: none;
-        background:
-          radial-gradient(
-            circle at 34% 28%,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(255, 255, 255, 0.3) 11%,
-            transparent 30%
-          ),
-          radial-gradient(
-            circle at 50% 50%,
-            currentColor 0%,
-            currentColor 26%,
-            color-mix(in srgb, currentColor 58%, #000) 40%,
-            color-mix(in srgb, currentColor 34%, #000) 45.5%,
-            transparent 47%
-          );
-        filter: drop-shadow(0 0 5px currentColor);
-      }
       .t-ice {
         background:
           linear-gradient(
@@ -1008,9 +987,6 @@
       }
       .style-modern .t-water {
         background: rgba(56, 189, 248, 0.3);
-      }
-      .style-modern .t-orb {
-        color: #38bdf8;
       }
       .style-modern .t-teleporter {
         border-width: 2px;
@@ -2928,6 +2904,26 @@
             <path d="M12 19V5M5 12l7-7 7 7" />
           </svg>
           <span id="btn-collab-push-label">Push Changes</span>
+        </button>
+        <button
+          id="btn-collab-pull"
+          onclick="collabManager.pullMain(state.collab && state.collab.levelId)"
+          class="hidden items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[11px] font-bold rounded border border-slate-700 text-slate-300"
+          title="Replace your version with the main version"
+        >
+          <svg
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+          <span id="btn-collab-pull-label">Copy Main</span>
         </button>
         <button
           onclick="shareManager.open()"
@@ -7510,7 +7506,6 @@
         T: "t-teleporter",
         w: "t-water",
         I: "t-ice",
-        O: "t-orb",
         C: "t-grinder",
         D: "t-dash-right",
         d: "t-dash-left",
@@ -7520,8 +7515,7 @@
         " ": "",
       };
       // The order blocks appear in the sidebar palette. Kept separate from
-      // TILE_MAP so the rendering lookup stays untouched by reordering. The
-      // orb lives in the decoration picker now, so it is deliberately absent.
+      // TILE_MAP so the rendering lookup stays untouched by reordering.
       const PALETTE_ORDER = [
         "@",
         "o",
@@ -7609,7 +7603,6 @@
         T: "Teleporter",
         w: "Water",
         I: "Ice Block",
-        O: "Orb",
         C: "The Grinder",
         D: "Dash Right",
         d: "Dash Left",
@@ -8679,7 +8672,6 @@
         T: "teleporter",
         w: "water",
         I: "ice-block",
-        O: "orb",
         C: "grinder",
         ">": "slide-right",
         "<": "slide-left",
@@ -9552,8 +9544,10 @@
               settingsManager.syncToModal();
             }
 
+            // sync() reconciles both directions now, so signing in on a new
+            // machine brings the whole account down rather than only
+            // sending this machine's levels up.
             await cloudLevels.sync(true);
-            await cloudLevels.pushAllLocal();
             await collabManager.refreshInbox();
             collabManager.startPolling();
             projectManager.renderList();
@@ -9629,6 +9623,151 @@
           } finally {
             this.syncing = false;
           }
+          // Listing what is up there is not syncing. Collaborations were the
+          // only thing that ever came back down, so signing in on a second
+          // machine showed a list of level names with nothing behind them
+          // and an empty editor. The rest of the account travels both ways
+          // now: anything newer in the cloud is brought down, anything only
+          // on this machine goes up.
+          await this.reconcile();
+        },
+
+        // How much newer the cloud copy has to be before it is treated as a
+        // change from somewhere else rather than the echo of this machine's
+        // own upload, which lands a moment after the local save.
+        CLOUD_NEWER_MS: 5000,
+
+        localTimeOf(localId) {
+          try {
+            const raw = localStorage.getItem("boi_project_" + localId);
+            if (!raw) return null;
+            const d = expandLevelData(JSON.parse(raw));
+            return Number(d.lastModified) || 0;
+          } catch (e) {
+            return 0;
+          }
+        },
+
+        // Brings down every level of yours this machine is missing or behind
+        // on, then sends up every one the cloud has never seen.
+        async reconcile() {
+          if (!this.available()) return;
+          if (this.reconciling) return;
+          this.reconciling = true;
+          try {
+            const pulled = await this.pullMissing();
+            const pushed = await this.pushMissing();
+            if (pulled || pushed) {
+              projectManager.renderList();
+              const bits = [];
+              if (pulled) bits.push(pulled + " brought down");
+              if (pushed) bits.push(pushed + " sent up");
+              updateStatus("Levels synced · " + bits.join(", "));
+            }
+          } catch (e) {
+            console.warn("Cloud reconcile failed:", e);
+          } finally {
+            this.reconciling = false;
+          }
+        },
+
+        async pullMissing() {
+          const need = this.rows.filter((r) => {
+            if (!r.local_id) return false;
+            // The open project is left alone. Its localStorage copy is
+            // rewritten by the next save anyway, and swapping it underneath
+            // somebody mid-edit is the one thing a sync must not do.
+            if (String(projectManager.currentId) === String(r.local_id)) {
+              return false;
+            }
+            const local = this.localTimeOf(r.local_id);
+            if (local === null) return true;
+            const cloud = Date.parse(r.updated_at) || 0;
+            return cloud > local + this.CLOUD_NEWER_MS;
+          });
+          if (!need.length) return 0;
+
+          let written = 0;
+          // The payloads are the largest thing the editor moves, so they come
+          // down a page at a time rather than as one request per level.
+          for (let i = 0; i < need.length; i += 20) {
+            const batch = need.slice(i, i + 20);
+            const { data, error } = await _supabase
+              .from("editor_levels")
+              .select("id, local_id, name, data, updated_at")
+              .in(
+                "id",
+                batch.map((r) => r.id),
+              );
+            if (error) {
+              console.warn("Could not fetch levels:", error);
+              break;
+            }
+            (data || []).forEach((row) => {
+              if (!row.local_id || !row.data) return;
+              try {
+                const level = expandLevelData(row.data);
+                level.id = row.local_id;
+                level.name = row.name || level.name || "Untitled";
+                level.cloudId = row.id;
+                level.lastModified =
+                  Date.parse(row.updated_at) || Date.now();
+                localStorage.setItem(
+                  "boi_project_" + row.local_id,
+                  JSON.stringify(compactLevelData(level)),
+                );
+                written++;
+              } catch (e) {
+                console.warn("Could not store level " + row.local_id, e);
+              }
+            });
+          }
+          return written;
+        },
+
+        async pushMissing() {
+          const cloudTime = new Map();
+          this.rows.forEach((r) => {
+            if (r.local_id) {
+              cloudTime.set(String(r.local_id), Date.parse(r.updated_at) || 0);
+            }
+          });
+          let sent = 0;
+          // The keys are taken first: the loop below awaits, and indexing
+          // localStorage while it can be written to underneath skips entries.
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("boi_project_")) keys.push(key);
+          }
+          for (const key of keys) {
+            const id = key.substring("boi_project_".length);
+            // The owner's copy of a collaboration is held for reference and
+            // is not a level of yours, so it never goes up.
+            if (id.startsWith("collabmain_")) continue;
+            // Already up there, and not changed here since.
+            if (
+              cloudTime.has(id) &&
+              (this.localTimeOf(id) || 0) <=
+                cloudTime.get(id) + this.CLOUD_NEWER_MS
+            ) {
+              continue;
+            }
+            try {
+              const raw = localStorage.getItem(key);
+              if (!raw) continue;
+              const data = expandLevelData(JSON.parse(raw));
+              if (data.collabMain) continue;
+              const opts = data.collabLevelId
+                ? { collabOrigin: data.collabLevelId }
+                : undefined;
+              const cloudId = await this.push(id, data, opts);
+              if (cloudId) sent++;
+            } catch (e) {
+              console.warn("Skipping project during cloud push", id, e);
+            }
+          }
+          return sent;
         },
 
         rowForLocal(localId) {
@@ -10141,6 +10280,260 @@
         return '<div class="collab-empty">' + escAttr(title) + "</div>";
       }
 
+      // -----------------------------------------------------------------
+      // Merging a pushed version into the main one
+      // -----------------------------------------------------------------
+      // Approving used to hand the main level over wholesale to whoever
+      // pushed last, so two collaborators working on opposite corners of the
+      // same room could only ever take turns losing each other's work. A push
+      // now carries the copy of the main version it was started from, which
+      // is enough to tell what the collaborator actually changed, and only
+      // that is applied on top of whatever the main version has become.
+      //
+      // Without a base -- an older submission, or one pushed before the
+      // collaborator ever synced -- the merge falls back to a union: the
+      // collaborator's cells land in the gaps of the main level and win
+      // wherever both sides put something.
+
+      // Where the collaborator's copy of the main version rides along inside
+      // a submission's level payload.
+      const COLLAB_BASE_KEY = "__base";
+
+      // Cell-keyed maps, merged one cell at a time.
+      const COLLAB_CELL_MAPS = ["colors", "risingSpeeds", "blockConfigs"];
+      // Lists of "x,y" cells, merged as sets.
+      const COLLAB_CELL_SETS = LEVEL_COORD_SET_FIELDS;
+      // Lists of independent objects, merged by identity of their contents.
+      const COLLAB_OBJECT_LISTS = [
+        "areaBackgrounds",
+        "gravityZones",
+        "windZones",
+        "notes",
+      ];
+      // The owner's, always. A collaborator holds a copy of the level, so its
+      // name, where it is published and who is credited are not theirs to
+      // move, and neither is the bookkeeping that says which copy this is.
+      const COLLAB_OWNER_FIELDS = [
+        "id",
+        "name",
+        "creator",
+        "creatorAccount",
+        "linkAccount",
+        "publishedId",
+        "publishedVersion",
+        "publishedName",
+        "publishedLegendary",
+        "collabTeam",
+        "collabPerms",
+        "collabLevelId",
+        "collabOwner",
+        "collabShareId",
+        "collabMain",
+        "cloudId",
+        "lastModified",
+        "width",
+        "height",
+        "plan",
+      ];
+
+      function sameValue(a, b) {
+        return JSON.stringify(a === undefined ? null : a) ===
+          JSON.stringify(b === undefined ? null : b);
+      }
+
+      // Rows are ragged once two people have resized the grid differently, so
+      // everything is squared off to the largest of the three before any cell
+      // is compared -- a missing cell is empty space, not a change.
+      function padPlan(plan, h, w) {
+        const rows = [];
+        for (let y = 0; y < h; y++) {
+          rows.push(String((plan && plan[y]) || "").padEnd(w, " "));
+        }
+        return rows;
+      }
+
+      function collabMergePlans(mainPlan, theirPlan, basePlan) {
+        const plans = [mainPlan, theirPlan, basePlan].filter(Array.isArray);
+        const h = plans.reduce((m, p) => Math.max(m, p.length), 0);
+        const w = plans.reduce(
+          (m, p) => p.reduce((n, r) => Math.max(n, String(r).length), m),
+          0,
+        );
+        if (!h || !w) return Array.isArray(mainPlan) ? mainPlan.slice() : [];
+
+        const mine = padPlan(mainPlan, h, w);
+        const theirs = padPlan(theirPlan, h, w);
+        const base = basePlan ? padPlan(basePlan, h, w) : null;
+
+        const out = [];
+        for (let y = 0; y < h; y++) {
+          let row = "";
+          for (let x = 0; x < w; x++) {
+            const m = mine[y][x];
+            const t = theirs[y][x];
+            if (base) row += t !== base[y][x] ? t : m;
+            else row += t !== " " ? t : m;
+          }
+          out.push(row);
+        }
+
+        // A level has exactly one start, and a cell-by-cell merge does not
+        // know that. Two people can each leave one behind -- the owner moved
+        // the spawn, the collaborator did not -- and they can between them
+        // lose the only one, when the cell the owner moved it to is a cell
+        // the collaborator also changed. Neither result is a playable level,
+        // so the spawn is settled once at the end.
+        const put = (rows, y, x, ch) => {
+          rows[y] = rows[y].substring(0, x) + ch + rows[y].substring(x + 1);
+        };
+        const findSpawn = (rows) => {
+          if (!rows) return null;
+          for (let y = 0; y < h; y++) {
+            const x = rows[y].indexOf("@");
+            if (x !== -1) return [y, x];
+          }
+          return null;
+        };
+
+        const spawns = [];
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (out[y][x] === "@") spawns.push([y, x]);
+          }
+        }
+        if (spawns.length > 1) {
+          // Whoever pushed is the one who looked at this most recently.
+          const keep = spawns.find(([y, x]) => theirs[y][x] === "@") || spawns[0];
+          spawns.forEach(([y, x]) => {
+            if (y === keep[0] && x === keep[1]) return;
+            put(out, y, x, " ");
+          });
+        } else if (!spawns.length) {
+          // Put it back where the main version had it -- the owner's placing
+          // is the one the level was last known to work with.
+          const at = findSpawn(mine) || findSpawn(theirs) || findSpawn(base);
+          if (at) put(out, at[0], at[1], "@");
+        }
+        return out;
+      }
+
+      function collabMergeCellSet(mainList, theirList, baseList) {
+        const result = new Set(Array.isArray(mainList) ? mainList : []);
+        const theirs = new Set(Array.isArray(theirList) ? theirList : []);
+        if (!baseList) {
+          theirs.forEach((c) => result.add(c));
+          return Array.from(result);
+        }
+        const base = new Set(baseList);
+        theirs.forEach((c) => {
+          if (!base.has(c)) result.add(c);
+        });
+        base.forEach((c) => {
+          if (!theirs.has(c)) result.delete(c);
+        });
+        return Array.from(result);
+      }
+
+      function collabMergeCellMap(mainMap, theirMap, baseMap) {
+        const result = Object.assign({}, mainMap || {});
+        const theirs = theirMap || {};
+        if (!baseMap) return Object.assign(result, theirs);
+        const base = baseMap;
+        Object.keys(theirs).forEach((k) => {
+          if (!sameValue(theirs[k], base[k])) result[k] = theirs[k];
+        });
+        Object.keys(base).forEach((k) => {
+          if (!(k in theirs)) delete result[k];
+        });
+        return result;
+      }
+
+      // Zones, notes and area backgrounds have no ids, so two of them are the
+      // same one exactly when they say the same thing.
+      function collabMergeObjectList(mainList, theirList, baseList) {
+        const sig = (o) => JSON.stringify(o);
+        const result = Array.isArray(mainList) ? mainList.slice() : [];
+        const theirs = Array.isArray(theirList) ? theirList : [];
+        const have = new Set(result.map(sig));
+        if (!baseList) {
+          theirs.forEach((o) => {
+            if (!have.has(sig(o))) {
+              result.push(o);
+              have.add(sig(o));
+            }
+          });
+          return result;
+        }
+        const base = new Set(baseList.map(sig));
+        const theirSigs = new Set(theirs.map(sig));
+        theirs.forEach((o) => {
+          const s = sig(o);
+          if (!base.has(s) && !have.has(s)) {
+            result.push(o);
+            have.add(s);
+          }
+        });
+        return result.filter((o) => {
+          const s = sig(o);
+          // Dropped by the collaborator, and nobody has re-added it since.
+          return !(base.has(s) && !theirSigs.has(s));
+        });
+      }
+
+      // main: the level as it stands now. theirs: the pushed version.
+      // base: the main version the push was started from, when it was sent.
+      function collabMergeLevels(main, theirs, base) {
+        const out = Object.assign({}, main);
+        theirs = theirs || {};
+
+        out.plan = collabMergePlans(main.plan, theirs.plan, base && base.plan);
+        out.height = out.plan.length;
+        out.width = out.plan.reduce((m, r) => Math.max(m, r.length), 0);
+
+        COLLAB_CELL_SETS.forEach((f) => {
+          if (theirs[f] === undefined && !(base && base[f] !== undefined)) return;
+          out[f] = collabMergeCellSet(main[f], theirs[f], base && base[f]);
+        });
+        COLLAB_CELL_MAPS.forEach((f) => {
+          if (theirs[f] === undefined && !(base && base[f] !== undefined)) return;
+          out[f] = collabMergeCellMap(main[f], theirs[f], base && base[f]);
+        });
+        COLLAB_OBJECT_LISTS.forEach((f) => {
+          if (theirs[f] === undefined && !(base && base[f] !== undefined)) return;
+          out[f] = collabMergeObjectList(main[f], theirs[f], base && base[f]);
+        });
+
+        // Everything left is a single setting -- gravity, the background, the
+        // music. There is nothing to merge inside one, so it changes only if
+        // the collaborator actually changed it.
+        const handled = new Set(
+          COLLAB_OWNER_FIELDS.concat(
+            COLLAB_CELL_SETS,
+            COLLAB_CELL_MAPS,
+            COLLAB_OBJECT_LISTS,
+            [COLLAB_BASE_KEY, "fmt"],
+          ),
+        );
+        Object.keys(theirs).forEach((k) => {
+          if (handled.has(k)) return;
+          if (base) {
+            if (!sameValue(theirs[k], base[k])) out[k] = theirs[k];
+          } else {
+            out[k] = theirs[k];
+          }
+        });
+        if (base) {
+          // A setting the collaborator cleared away entirely.
+          Object.keys(base).forEach((k) => {
+            if (handled.has(k)) return;
+            if (!(k in theirs)) delete out[k];
+          });
+        }
+
+        delete out[COLLAB_BASE_KEY];
+        return out;
+      }
+
       const collabManager = {
         pending: [],
         joined: [],
@@ -10381,6 +10774,125 @@
           }
         },
 
+        // The copy of the main version held on this machine, which is both
+        // what "View main" opens and what a push measures its changes
+        // against. Null when this collaboration has never been synced.
+        storedMain(levelId) {
+          try {
+            const raw = localStorage.getItem(COLLAB_MAIN_PREFIX + levelId);
+            if (!raw) return null;
+            return expandLevelData(JSON.parse(raw));
+          } catch (e) {
+            return null;
+          }
+        },
+
+        // Take the main version as your own. The other direction of a push:
+        // the owner has moved on, or approved somebody else, and you would
+        // rather start again from where the level actually is than reconcile
+        // it by hand. It overwrites your version, so it asks first.
+        pullMain(levelId, silent) {
+          const run = async () => {
+            if (!accountManager.isLinked()) return accountManager.openModal();
+            const share = this.joined.find((j) => j.level_id === levelId);
+            try {
+              const { data, error } = await _supabase
+                .from("editor_levels")
+                .select("id, name, data, owner")
+                .eq("id", levelId)
+                .maybeSingle();
+              if (error || !data) {
+                throw error || new Error("That level no longer exists.");
+              }
+
+              const main = expandLevelData(data.data || {});
+              const ownKey = COLLAB_LOCAL_PREFIX + levelId;
+
+              // Your own credit is the one thing that does not come down with
+              // it -- renaming that entry is yours to do, and the owner's list
+              // has it under whatever they typed.
+              let myName = null;
+              const before = this.storedOwn(levelId);
+              if (before) {
+                const mine = (before.collabTeam || []).find(
+                  (c) => c.account === accountManager.username,
+                );
+                if (mine) myName = mine.name;
+              }
+
+              const own = main;
+              own.id = collabLocalId(levelId);
+              own.name = data.name || own.name || "Shared Level";
+              own.collabLevelId = levelId;
+              own.collabOwner = data.owner;
+              own.collabShareId = share
+                ? share.id
+                : before
+                  ? before.collabShareId
+                  : undefined;
+              own.collabMain = false;
+              own.publishedId = null;
+              own.publishedVersion = null;
+              own.publishedName = null;
+              own.cloudId = null;
+              own.lastModified = Date.now();
+              own.collabTeam = (main.collabTeam || []).map((c) =>
+                myName && c.account === accountManager.username
+                  ? { account: c.account, name: myName }
+                  : { account: c.account, name: c.name },
+              );
+
+              localStorage.setItem(
+                ownKey,
+                JSON.stringify(compactLevelData(own)),
+              );
+              // The main copy is refreshed at the same time, so the next push
+              // measures its changes against what was just taken.
+              const mainCopy = JSON.parse(JSON.stringify(main));
+              mainCopy.id = collabMainLocalId(levelId);
+              mainCopy.collabMain = true;
+              localStorage.setItem(
+                COLLAB_MAIN_PREFIX + levelId,
+                JSON.stringify(compactLevelData(mainCopy)),
+              );
+
+              await cloudLevels.push(collabLocalId(levelId), own, {
+                collabOrigin: levelId,
+              });
+
+              projectManager.renderList();
+              // Whatever is open has to move with it.
+              if (projectManager.currentId === collabLocalId(levelId)) {
+                projectManager.load(collabLocalId(levelId));
+              } else if (projectManager.currentId === collabMainLocalId(levelId)) {
+                projectManager.load(collabMainLocalId(levelId));
+              }
+              updateStatus("Your version now matches the main version");
+            } catch (e) {
+              dialog.alert("UPDATE FAILED", (e && e.message) || String(e));
+            }
+          };
+
+          if (silent) return run();
+          dialog.confirm(
+            "COPY THE MAIN VERSION",
+            "Replace your version with the main version as it is now? " +
+              "Anything you have changed and not pushed is lost.",
+            run,
+          );
+        },
+
+        // Your own version of a collaboration, as stored on this machine.
+        storedOwn(levelId) {
+          try {
+            const raw = localStorage.getItem(COLLAB_LOCAL_PREFIX + levelId);
+            if (!raw) return null;
+            return expandLevelData(JSON.parse(raw));
+          } catch (e) {
+            return null;
+          }
+        },
+
         // What the open project lets you do. A collaborator holds a copy, not
         // the level: publishing and sharing stay with the owner.
         isMember() {
@@ -10421,6 +10933,20 @@
               if (label) label.innerText = "Push to " + state.collab.owner;
             }
           }
+          // Taking the main version is the other half of pushing, so it sits
+          // beside it and appears under exactly the same conditions.
+          const pull = document.getElementById("btn-collab-pull");
+          if (pull) {
+            const member = this.isMember();
+            pull.classList.toggle("hidden", !member);
+            pull.classList.toggle("flex", member);
+            if (member) {
+              pull.title =
+                "Replace your version with " +
+                state.collab.owner +
+                "'s main version";
+            }
+          }
           const banner = document.getElementById("collab-main-banner");
           if (banner) {
             banner.classList.toggle("hidden", !this.isViewingMain());
@@ -10456,6 +10982,12 @@
           try {
             projectManager.save();
             const level = io.buildLevelObject();
+            // The main version this one was started from travels with the
+            // push. It is what lets the owner take the changes rather than
+            // the whole level, so two people can work at once.
+            const payload = compactLevelData(level);
+            const base = this.storedMain(state.collab.levelId);
+            if (base) payload[COLLAB_BASE_KEY] = compactLevelData(base);
             const { error } = await _supabase
               .from("collab_submissions")
               .insert([
@@ -10464,7 +10996,7 @@
                   owner: state.collab.owner,
                   collaborator: accountManager.username,
                   name: level.name || "Untitled",
-                  data: compactLevelData(level),
+                  data: payload,
                   status: "pending",
                   message: (message || "").trim() || null,
                 },
@@ -10474,8 +11006,9 @@
               "SENT",
               "Your version is waiting for " +
                 state.collab.owner +
-                " to approve it. If they do, it becomes the main version and " +
-                "the one it replaced is kept as a separate level.",
+                " to approve it. If they do, your changes are merged into " +
+                "the main version rather than replacing it, and the main " +
+                "version as it stood is kept as a separate level.",
             );
             updateStatus("Changes pushed to " + state.collab.owner);
             this.refreshInbox({ quiet: true });
@@ -10610,6 +11143,9 @@
                       <button onclick="projectManager.load('${collabMainLocalId(
                         j.level_id,
                       )}'); closeModal('collab-inbox-modal');" class="collab-btn">View main</button>
+                      <button onclick="collabManager.pullMain(${
+                        j.level_id
+                      })" class="collab-btn" title="Replace your version with the main version">Copy main into mine</button>
                       <button onclick="collabManager.leave(${j.id}, ${
                         j.level_id
                       })" class="collab-btn danger">Leave</button>
@@ -10658,8 +11194,10 @@
             : collabEmpty("Nothing sent");
         },
 
-        // Approving keeps both versions: the main level is left exactly as it
-        // was and the collaborator's becomes a separate level beside it.
+        // Approving merges: only what the collaborator actually changed is
+        // applied to the main version, so a second collaborator's work is not
+        // undone by the first one's push. The main version as it stood is
+        // still archived beside it, so an unwanted merge is recoverable.
         async approve(submissionId) {
           const sub = this.pending.find((p) => p.id === submissionId);
           if (!sub) return;
@@ -10682,10 +11220,14 @@
               throw mainRes.error || new Error("That level no longer exists.");
             }
             const mainRow = mainRes.data;
-            const previous = expandLevelData(mainRow.data || {});
+            // The main level as it stands. The archive below rewrites the
+            // copy it is given, so the merge works from its own.
+            const current = expandLevelData(mainRow.data || {});
+            const previous = JSON.parse(JSON.stringify(current));
 
-            // 1. Keep what is being replaced. The version that was live before
-            // this approval becomes a level of its own, so nothing is lost.
+            // 1. Keep what is being merged into. The version that was live
+            // before this approval becomes a level of its own, so nothing is
+            // lost even if the merge takes a turn the owner did not want.
             const keepId = "collab_prev_" + submissionId;
             const keepName =
               (mainRow.name || "Untitled") +
@@ -10713,19 +11255,26 @@
             }
             await cloudLevels.push(keepId, previous);
 
-            // 2. The main level becomes the approved version. It keeps its own
-            // identity throughout -- name, published link, the team list and
-            // the permissions are the owner's and do not travel in from a
+            // 2. The collaborator's changes are merged into the main level
+            // rather than handed the whole of it. It keeps its own identity
+            // throughout -- name, published link, the team list and the
+            // permissions are the owner's and do not travel in from a
             // collaborator's copy.
-            const merged = expandLevelData(data.data || {});
+            const submitted = expandLevelData(data.data || {});
+            const submittedBase = (data.data || {})[COLLAB_BASE_KEY];
+            const merged = collabMergeLevels(
+              current,
+              submitted,
+              submittedBase ? expandLevelData(submittedBase) : null,
+            );
             merged.id = mainRow.local_id || String(data.level_id);
             merged.name = mainRow.name || merged.name;
             merged.publishedId =
-              previous.publishedId !== undefined ? previous.publishedId : null;
-            merged.publishedVersion = previous.publishedVersion || null;
-            merged.publishedName = previous.publishedName || null;
-            merged.collabTeam = previous.collabTeam || [];
-            merged.collabPerms = previous.collabPerms || {};
+              current.publishedId !== undefined ? current.publishedId : null;
+            merged.publishedVersion = current.publishedVersion || null;
+            merged.publishedName = current.publishedName || null;
+            merged.collabTeam = current.collabTeam || [];
+            merged.collabPerms = current.collabPerms || {};
             merged.lastModified = Date.now();
             delete merged.collabLevelId;
             delete merged.collabOwner;
@@ -10771,9 +11320,10 @@
             this.renderInbox();
             projectManager.renderList();
             updateStatus(
-              '"' +
+              (data.collaborator || "Collaborator") +
+                "'s changes merged into \"" +
                 (mainRow.name || "Level") +
-                '" updated \u00b7 previous version kept as "' +
+                '" \u00b7 previous version kept as "' +
                 keepName +
                 '"',
             );
@@ -11200,8 +11750,8 @@
             ...UNIVERSAL_TEXTURES,
           ];
 
-        // Everything else -- spikes, pads, dashes, slides, coins, the grinder,
-        // the orb -- is an object rather than a wall. It can be submerged,
+        // Everything else -- spikes, pads, dashes, slides, coins, the
+        // grinder -- is an object rather than a wall. It can be submerged,
         // flipped and given a symbol, but not carved.
         return ["decoration", ...UNIVERSAL_TEXTURES];
       }
@@ -11776,7 +12326,10 @@
           visualChar = state.blockConfigs[`${x},${y}`].illusion;
         }
 
-        cell.className = `cell ${TILE_MAP[visualChar]}`;
+        // A character the palette no longer has -- the orb, in a level saved
+        // while it still existed -- draws as empty rather than as a cell
+        // classed "undefined". The game ignores it for the same reason.
+        cell.className = `cell ${TILE_MAP[visualChar] || ""}`;
         cell.innerHTML = "";
         const isModern = document.body.classList.contains("style-modern");
 
@@ -11902,13 +12455,6 @@
               const light = adjustColor(c, 20);
               cell.style.backgroundImage = `linear-gradient(90deg, transparent 30%, ${c} 30%, ${c} 70%, transparent 70%), repeating-linear-gradient(0deg, ${dark} 0px, ${dark} 4px, ${light} 4px, ${light} 8px)`;
               cell.style.backgroundColor = "transparent";
-            }
-            if (visualChar === "O") {
-              // The disc is painted from currentColor, so recolouring an orb
-              // is just setting the ink -- the shape and the glow follow.
-              cell.style.color = color;
-              cell.style.backgroundColor = "transparent";
-              cell.style.borderColor = "transparent";
             }
             if (visualChar === "J" || visualChar === "R" || visualChar === "P") {
               cell.classList.add("colored");
@@ -16254,8 +16800,8 @@
         // One flat row of categories. This used to be a group row with a
         // second row of sets nested under it, which made picking a letter a
         // two-click hunt through a menu that changed shape as you clicked.
-        // Orbs lead, since an orb is placed from here rather than from the
-        // block palette.
+        // Orbs lead, since a glowing disc is the decoration reached for most
+        // often and there is nowhere else to place one.
         groups: {
           Orbs: ["●", "◍", "◉", "○"],
           "A-Z": "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
