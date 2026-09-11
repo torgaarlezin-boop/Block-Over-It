@@ -13116,27 +13116,47 @@
 
       // True when there is any solid footing just beyond the player's feet.
       // Used to decide when a slide carried off a sheet of ice should end.
-      Level.prototype.onGround = function (pos, size, g) {
-        var probe = new Vector(pos.x, pos.y + (g < 0 ? -0.06 : 0.06));
+      //
+      // How far past the feet to look is `reach`, and it cannot be a fixed
+      // hair's breadth. A player at rest is not flush against what they
+      // landed on: the step that would have closed the last of the gap is
+      // the one the collision check refuses, so a whole frame's worth of
+      // falling is left behind. That leftover grows with the level's gravity
+      // and with the length of a frame, and it is reliably the larger of the
+      // two upside down -- which is how a level could keep its ice slippery
+      // on top and lose it underneath.
+      Level.prototype.onGround = function (pos, size, g, reach) {
+        var d = reach || 0.06;
+        var probe = new Vector(pos.x, pos.y + (g < 0 ? -d : d));
         return !!this.obstacleAt(probe, size, null);
       };
 
       // True when the surface the player is resting on is ice. Checked just
-      // beyond their feet, in whichever direction gravity is pulling, so it
-      // works the same way up or down.
-      Level.prototype.onIce = function (pos, size, g) {
-        var dir = g < 0 ? -1 : 1;
-        var footY = g < 0 ? pos.y - 0.08 : pos.y + size.y + 0.08;
+      // beyond their feet, in whichever direction gravity is pulling, so the
+      // top face of a block and the underside of one read the same. `reach`
+      // matches the footing probe above, so the two can never disagree about
+      // the surface the player is standing on.
+      Level.prototype.onIce = function (pos, size, g, reach) {
+        // A block is one cell tall, so a probe longer than that would shoot
+        // clean through the thing it is looking for.
+        var d = Math.min(reach || 0.08, 0.9);
+        var footY = g < 0 ? pos.y - d : pos.y + size.y + d;
         for (var i = 0; i < this.actors.length; i++) {
           var a = this.actors[i];
-          if (a.type !== "ice-block" || a.fake) continue;
-          if (
-            pos.x + size.x > a.pos.x &&
-            pos.x < a.pos.x + a.size.x &&
-            footY > a.pos.y &&
-            footY < a.pos.y + a.size.y
-          )
-            return true;
+          if (a.fake) continue;
+          // An ice block grouped in with others is still ice underfoot.
+          var members = a.members || [a];
+          for (var j = 0; j < members.length; j++) {
+            var m = members[j];
+            if (m.fake || m.type !== "ice-block") continue;
+            if (
+              pos.x + size.x > m.pos.x &&
+              pos.x < m.pos.x + m.size.x &&
+              footY > m.pos.y &&
+              footY < m.pos.y + m.size.y
+            )
+              return true;
+          }
         }
         return false;
       };
@@ -14371,10 +14391,18 @@
           // felt like the ice was shoving you sideways. Requiring footing as
           // well as ice under the feet ends it the instant you leave the
           // ground: in the air the controls are the game's ordinary ones.
+          //
+          // Both probes reach as far as the settling can actually leave the
+          // player short of the surface, rather than a fixed distance that
+          // heavier gravity or a longer frame quietly outgrows.
           var g = this.gravityDirection || 1;
+          var reach = Math.max(
+            0.08,
+            level.gravityAt(this.pos, this.size) * step * step + 0.02,
+          );
           this.onIce =
-            level.onGround(this.pos, this.size, g) &&
-            level.onIce(this.pos, this.size, g);
+            level.onGround(this.pos, this.size, g, reach) &&
+            level.onIce(this.pos, this.size, g, reach);
           this.moveX(step, level, keys);
           this.moveY(step, level, keys);
         }
@@ -15847,7 +15875,12 @@
             el.style.whiteSpace = "nowrap";
           }
 
-          if (["wall", "lava", "breakable-block", "moving-block", "falling-block", "spike-block", "wall-block", "visual-wall"].includes(visualType)) {
+          // Ice fills its cell like any other block and the editor offers it
+          // the whole texture set, Flip included. It was missing from this
+          // list, so none of it ever arrived -- and because an upside-down
+          // level flips a block's sculpted face through exactly this path,
+          // ice was the one full block that ignored which way up it was.
+          if (["wall", "lava", "breakable-block", "moving-block", "falling-block", "spike-block", "wall-block", "visual-wall", "ice-block"].includes(visualType)) {
             applyBlockTextures(
               el,
               Math.floor(actor.pos.x),
