@@ -5256,141 +5256,384 @@
       let currentUserSkins = ["default"];
       let currentUserBeatenLevels = [];
       let currentUserStreak = 0;
-
-      const skin_definitions = {
-        default: { name: "Default", copies: "N/A" },
-        chairlord: { name: "Chairlord", copies: "1/1" },
-        sunset: { name: "Sunset", copies: "1/2" },
-        rainbowmonster: { name: "Rainbow Monster", copies: "1/10" },
-        burningheart: { name: "Burning Heart", copies: "1/3" },
-        tv: { name: "TV", copies: "1/2" },
-        cubemouth: { name: "Cube Mouth", copies: "1/6" },
-        firstplacedaddy: { name: "First Place Daddy", copies: "1/1" },
-        dino: { name: "Dino", copies: "1/20" },
-        emo: { name: "Emotions", copies: "1/3" },
-        emo2: { name: "Emotions 2", copies: "1/5" },
-        emo3: { name: "Emotions 3", copies: "1/5" },
-        kingbanana: { name: "King Banana", copies: "1/13" },
-        j_imbo: { name: "J_imbo", copies: "1/1" },
-        bluecoin: { name: "Blue Gem", copies: "N/A" },
-        coolguy: { name: "Cool Guy", copies: "1/5" },
-        goldcoolguy: { name: "Golden Cool Guy", copies: "1/1" },
-        rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
-        rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
-        vintageemo: { name: "Emotions (Vintage)", copies: "1/3" },
-        coolguyglassesdown: { name: "Cool Guy (Glasses Down)", copies: "1/1" },
-        dasher: { name: "Dasher", copies: "1/1" },
-        dasher2: { name: "Dasher 2", copies: "1/1" },
+      const skin_ = {
+        default: { name: "Default", copies: "N/A", gameUnlock: true },
+        chairlord: {
+          name: "Chairlord",
+          copies: "1/1",
+          firstPlace: true,
+          artist: "Chairlord",
+        },
+        sunset: { name: "Sunset", copies: "1/2", artist: "chairlord" },
+        rainbowmonster: {
+          name: "Rainbow Monster",
+          copies: "1/8",
+          artist: "chairlord",
+        },
+        burningheart: { name: "Burning Heart", copies: "1/3", artist: "Seppe" },
+        tv: { name: "TV", copies: "1/2", artist: "Seppe" },
+        cubemouth: { name: "Cube Mouth", copies: "1/5", artist: "chairlord" },
+        firstplacedaddy: {
+          name: "First Place Daddy",
+          copies: "1/1",
+          artist: "Ligmadaddy69 & Torgaar",
+          firstPlace: true,
+        },
+        dino: {
+          name: "Dino",
+          copies: "1/4",
+          artist: "Mcdongos",
+        },
+        emo: { name: "Emotions", copies: "1/3", artist: "ejohnson" },
+        emo2: { name: "Emotions 2", copies: "1/3", artist: "ejohnson" },
+        emo3: { name: "Emotions 3", copies: "1/3", artist: "ejohnson" },
+        kingbanana: {
+          name: "King Banana",
+          copies: "1/5",
+          artist: "Torgaar",
+          unlockCode: true,
+        },
+        j_imbo: {
+          name: "J_imbo",
+          copies: "1/1",
+          artist: "Torgaar",
+          firstPlace: true,
+        },
+        bluecoin: {
+          name: "Blue Gem",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+        },
+        coolguy: {
+          name: "Cool Guy",
+          copies: "1/5",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        goldcoolguy: {
+          name: "Cool Guy (Golden)",
+          copies: "1/1",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        inkcoolguy: {
+          name: "Cool Guy (Ink)",
+          copies: "1/3",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        rainbownoir: {
+          name: "Rainbow Monster (Noir)",
+          copies: "1/3",
+          artist: "Chairlord & Torgaar",
+        },
+        rainbowretro: {
+          name: "Rainbow Monster (Retro)",
+          copies: "1/3",
+          artist: "Chairlord & Torgaar",
+        },
+        vintageemo: {
+          name: "Emotions (Vintage)",
+          copies: "1/3",
+          artist: "ejohnson & Torgaar",
+        },
+        voodoocoolguy: {
+          name: "Cool Guy (Voodoo)",
+          copies: "1/1",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        coolguyglassesdown: {
+          name: "Cool Guy (Glasses Down)",
+          copies: "1/1",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        dasher: {
+          name: "Dasher",
+          copies: "1/1",
+          artist: "Chairlord",
+          honorary: true,
+        },
+        dasher2: {
+          name: "Dasher 2",
+          copies: "1/1",
+          artist: "Chairlord",
+          honorary: true,
+        },
+        coolguynoir: {
+          name: "Cool Guy (Noir)",
+          copies: "1/3",
+          artist: "Torgaar",
+        },
         metallic: {
           name: "Metallic Anger",
           copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+          versions: [
+            { name: "Original", img: "metallic_old.png" },
+            { name: "Current", img: "metallic.png" },
+          ],
         },
-        legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
-        galaxy: { name: "Galaxy", copies: "N/A" },
-        golden: { name: "Golden", copies: "N/A" },
-        rainbowcoolguy: { name: "Cool Guy (Rainbow Glasses)", copies: "1/3" },
-        coolerguy: { name: "Cool Guy (Cooler)", copies: "1/2" },
-        coolerguytexture: { name: "Cool Guy (Cooler Texture)", copies: "1/2" },
-        thecat: { name: "The Cat", copies: "1/1" },
-        efanballoon: { name: "Efan Balloon", copies: "1/1" },
-        deacy: { name: "Deacy", copies: "1/1" },
-        triplet: { name: "Tung Tung Tung Sahur", copies: "1/2"} ,
-        cityboi: { name: "City Boy", copies: "1/11" },
-        cityboilegend: { name: "City Boy (Legendary)", copies: "1/2" },
-        coolguylogo: {name: "Cool Guy (Logo)", copies: "1/5"},
-        coolguylogomonogram: {name: "Cool Guy (Logo Monogram Special Edition)", copies: "1/3"},
-        coolguysignature: { name: "Cool Guy (Signature Logo)", copies: "1/3" },
+        legendsgalaxy: {
+          name: "Galaxy (Legends Edition)",
+          copies: "1/3",
+          artist: "Torgaar",
+          competitive: true,
+        },
+        galaxy: {
+          name: "Galaxy",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+        },
+        frozenkingbanana: {
+          name: "King Banana (Frozen)",
+          copies: "1/3",
+          artist: "Torgaar",
+        },
+        golden: {
+          name: "Golden",
+          copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true,
+          versions: [
+            { name: "Golden Clock (Original)", img: "goldenclock.png" },
+            { name: "Golden (New)", img: "golden.png" },
+          ],
+        },
+        rainbowcoolguy: {
+          name: "Cool Guy (Rainbow Glasses)",
+          copies: "1/3",
+          artist: "Chairlord & Torgaar",
+        },
+        coolerguy: {
+          name: "Cool Guy (Cooler)",
+          copies: "1/2",
+          artist: "Chairlord & Torgaar",
+        },
+        coolerguytexture: {
+          name: "Cool Guy (Cooler Texture)",
+          copies: "1/2",
+          artist: "Chairlord & Torgaar",
+        },
+        thecat: {
+          name: "The Cat",
+          copies: "1/1",
+          firstPlace: true,
+          artist: "Mcdongos",
+        },
+        efanballoon: {
+          name: "Efan Balloon",
+          copies: "1/1",
+          artist: "Torgaar",
+          honorary: true,
+        },
+        deacy: {
+          name: "Deacy",
+          copies: "1/1",
+          artist: "Dbumgarner",
+          honorary: true,
+        },
+        triplet: {
+          name: "Tung Tung Tung Sahur",
+          copies: "1/3",
+          artist: "jude",
+        },
+        cityboi: {
+          name: "City Boy",
+          copies: "1/3",
+          artist: "Torgaar & Ligmadaddy69",
+          unlockCode: true,
+        },
+        cityboilegend: {
+          name: "City Boy (Legendary)",
+          copies: "1/2",
+          artist: "Torgaar & Ligmadaddy69",
+        },
+
+        coolguysignature: {
+          name: "Cool Guy (Signature Logo)",
+          copies: "1/3",
+          artist: "Torgaar",
+          unlockCode: true
+        },
         coolguytorgaarsignature: {
           name: "Cool Guy (Torgaar Signature)",
           copies: "1/1",
+          artist: "Torgaar",
+          honorary: true,
+          versions: [
+            {name: "Original", img: "coolguytorgaarog.png"},
+            {name: "Remaster", img: "coolguytorgaarsignature.png"},
+          ]
         },
-        coolguyoregon: { name: "Cool Guy (Oregon Signature)", copies: "1/3" },
-        mistymountains: { name: "Misty Mountains", copies: "1/1" },
-        jimbotree: { name: "J_imbo Tree", copies: "1/1" },
-        smiley: { name: "Smiley", copies: "1/1" },
         deathfire: {
           name: "Death Fire",
           copies: "1/1",
+          firstPlace: true,
+          artist: "Jude",
         },
-        earth: { name: "Earth", copies: "N/A" },
-        tothemoon: { name: "Cool Guy (To the Moon)", copies: "1/7" },
-        WINSTONTHEGREAT: { name: "WINSTONTHEGREAT", copies: "1/1" },
-        coolguygalaxy: { name: "Cool Guy (Galaxy)", copies: "1/3" },
+        coolguyoregon: {
+          name: "Cool Guy (Oregon Signature)",
+          copies: "1/3",
+          artist: "Torgaar",
+          unlockCode: true,
+        },
+        mistymountains: {
+          name: "Misty Mountains",
+          copies: "1/1",
+          honorary: true,
+          artist: "Novalis & Torgaar",
+        },
+        jimbotree: {
+          name: "J_imbo Tree",
+          copies: "1/1",
+          artist: "Seppe & Torgaar",
+          honorary: true,
+        },
+        smiley: {
+          name: "Smiley",
+          copies: "1/1",
+          artist: "Torgaar",
+          firstPlace: true,
+        },
+
+        earth: {
+          name: "Earth",
+          copies: "N/A",
+          artist: "MidgeMidge22",
+          gameUnlock: true,
+        },
+        tothemoon: {
+          name: "Cool Guy (To the Moon)",
+          copies: "1/7",
+          artist: "Torgaar",
+          unlockCode: true,
+        },
+        WINSTONTHEGREAT: {
+          name: "WINSTONTHEGREAT",
+          copies: "1/1",
+          artist: "Torgaar & WINSTONISTHEBEST",
+          honorary: true,
+        },
+        coolguygalaxy: {
+          name: "Cool Guy (Galaxy)",
+          copies: "1/3",
+          artist: "Torgaar",
+        },
         coolguypristine: {
           name: "Cool Guy (Pristine)",
           copies: "1/3",
+          artist: "Torgaar",
         },
         coolguymagma: {
           name: "Cool Guy (Magma)",
-          copies: "1/3",
+          copies: "1/5",
+          artist: "Torgaar",
         },
         coolguypurplemagma: {
           name: "Cool Guy (Purple Magma)",
           copies: "1/3",
+          artist: "Torgaar",
         },
         earthpolluted: {
           name: "Earth (Polluted)",
           copies: "1/3",
+          artist: "MidgeMidge22 & Torgaar",
+          gameUnlock: true,
         },
         blockynosleep: {
           name: "Blocky (No Sleep)",
           copies: "1/3",
+          artist: "Crosby & Torgaar"
+        },
+        reddino: {
+          name: "Dino (Red)",
+          copies: "1/5",
+          artist: "Torgaar & Mcdongos",
+          event: true,
+        },
+        rainbowmonsterremastered: {
+          name: "Rainbow Monster (Remastered)",
+          copies: "1/5",
+          artist: "Torgaar & Chairlord",
+          event: true,
+        },
+        bluedino: {
+          name: "Dino (Blue)",
+          copies: "1/3",
+          artist: "Torgaar & Mcdongos",
+          event: true,
         },
         cubemouthdevourer: {
           name: "Cubemouth (Devourer)",
           copies: "N/A",
+          artist: "Torgaar and Chairlord",
+          event: true,
         },
         midgemidge: {
           name: "MidgeMidge",
           copies: "1/1",
+          artist: "Torgaar and MidgeMidge22",
+          honorary: true
         },
-        blackbeard: {
+          blackbeard: {
           name: "Blocky (Blackbeard)",
-          copies: "1/5",
+          copies: "1/11",
+          artist: "Torgaar",
+          unlockCode: true
         },
         coolguypainted: {
           name: "Cool Guy (Painted)",
           copies: "1/5",
+          artist: "Torgaar",
+          unlockCode: true,        
+          versions: [
+            {name: "OG", img: "coolguypaintog.png"},
+            {name: "Remaster", img: "coolguypainted.png"},
+          ]
         },
         redtrail: {
           name: "Red Trail",
           copies: "1/3",
+          artist: "Torgaar & pedro",
+          unlockCode: true,
+          img: "redtrail.png",
+          color: "#c0392b"
         },
         coolguydeepbluespecial: {
           name: "Cool Guy (Deep Blue)",
           copies: "1/3",
+          artist: "Torgaar",
+          unlockCode: true
+        },
+          coolguymoney: {
+          name: "Cool Guy (Money)",
+          copies: "1/5",
+          artist: "Torgaar",
+          gameUnlock: true
         },
         demon: {
           name: "Demon",
           copies: "N/A",
+          artist: "Torgaar",
+          gameUnlock: true
         },
-        coolguymoney: {
-          name: "Cool Guy (Money)",
-          copies: "1/3",
+        coolguylogomonogram: {
+          name: "Cool Guy (Logo Monogram)",
+          copies: "1/5",
+          artist: "Torgaar",
         },
-
-        reddino: {
-          name: "Dino (Red)",
-          copies: "N/A",
-        },
-        bluedino: {
-          name: "Dino (Blue)",
-          copies: "N/A",
-        },
-        rainbowmonsterremastered: {
-          name: "Rainbow Monster (Remastered)",
-          copies: "N/A",
-        },
-        coolguymonogram: {
-          name: "Cool Guy (Monogram)",
-          copies:"1/5"
-        },
-        coolguy10: {
-          name: "Cool Guy (1.10!)",
-          copies:"1.10"
+        coolguy10:{
+          name: "Cool Guy (1.10)",
+          copies:"1/10",
+          artist: "Torgaar"
         }
-
       };
+
 
 
       const UPDATE_GROUPS = [
