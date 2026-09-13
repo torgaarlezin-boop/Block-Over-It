@@ -5275,22 +5275,18 @@
         bluecoin: { name: "Blue Gem", copies: "N/A" },
         coolguy: { name: "Cool Guy", copies: "1/5" },
         goldcoolguy: { name: "Golden Cool Guy", copies: "1/1" },
-        inkcoolguy: { name: "Cool Guy (Ink)", copies: "1/3" },
         rainbownoir: { name: "Rainbow Monster (Noir)", copies: "1/3" },
         rainbowretro: { name: "Rainbow Monster (Retro)", copies: "1/3" },
         vintageemo: { name: "Emotions (Vintage)", copies: "1/3" },
-        voodoocoolguy: { name: "Cool Guy (Voodoo)", copies: "1/1" },
         coolguyglassesdown: { name: "Cool Guy (Glasses Down)", copies: "1/1" },
         dasher: { name: "Dasher", copies: "1/1" },
         dasher2: { name: "Dasher 2", copies: "1/1" },
-        coolguynoir: { name: "Cool Guy (Noir)", copies: "1/3" },
         metallic: {
           name: "Metallic Anger",
           copies: "N/A",
         },
         legendsgalaxy: { name: "Galaxy (Legends Edition)", copies: "1/3" },
         galaxy: { name: "Galaxy", copies: "N/A" },
-        frozenkingbanana: { name: "King Banana (Frozen)", copies: "1/3" },
         golden: { name: "Golden", copies: "N/A" },
         rainbowcoolguy: { name: "Cool Guy (Rainbow Glasses)", copies: "1/3" },
         coolerguy: { name: "Cool Guy (Cooler)", copies: "1/2" },
@@ -5332,10 +5328,6 @@
           name: "Cool Guy (Purple Magma)",
           copies: "1/3",
         },
-        coolguyice: {
-          name: "Cool Guy (Ice)",
-          copies: "1/3",
-        },
         earthpolluted: {
           name: "Earth (Polluted)",
           copies: "1/3",
@@ -5356,8 +5348,8 @@
           name: "Blocky (Blackbeard)",
           copies: "1/5",
         },
-        coolguypaint: {
-          name: "Cool Guy (Paint)",
+        coolguypainted: {
+          name: "Cool Guy (Painted)",
           copies: "1/5",
         },
         redtrail: {
@@ -5863,6 +5855,41 @@
         }
         return legendaryArchiveSupported;
       })();
+
+      // Publishing an update inserts a new row that reuses the level's id, so
+      // the table keeps every version of every level. Only the newest version
+      // should ever be browsed, searched, played or counted, and the
+      // published_levels_latest view is the one row per id that satisfies
+      // that. Reads go through levelsTable(); writes still go to the base
+      // table, because a DISTINCT ON view is not updatable.
+      //
+      // Probed once on load, the same way legendary_archive is, so a database
+      // without the view falls back to the raw table rather than 404-ing the
+      // whole level browser.
+      const LEVELS_VIEW = "published_levels_latest";
+      const LEVELS_TABLE = "published_levels";
+      let levelsViewSupported = false;
+      const levelsViewReady = (async () => {
+        if (!_supabase) return false;
+        try {
+          const { error } = await _supabase.from(LEVELS_VIEW).select("id").limit(1);
+          levelsViewSupported = !error;
+          if (error) {
+            console.warn(
+              "published_levels_latest view unavailable; old level versions " +
+                "may appear in the browser.",
+              error.message,
+            );
+          }
+        } catch (e) {
+          levelsViewSupported = false;
+        }
+        return levelsViewSupported;
+      })();
+
+      function levelsTable() {
+        return levelsViewSupported ? LEVELS_VIEW : LEVELS_TABLE;
+      }
 
       // True for a level in the archive that is not currently legendary --
       // i.e. one that should read "Former Legendary" rather than "Legendary".
@@ -7726,6 +7753,88 @@
         if (currentUser) await refreshCurrentUserAdmin();
       }
 
+      // A stored session is just a username. If the account behind it is gone
+      // -- deleted, or renamed -- the player is signed in as nobody: their
+      // progress never syncs, and anything that records their name records
+      // nothing. That is how levels ended up verified by no one.
+      //
+      // Two rules keep this from logging people out wrongly. A network or
+      // permission failure is never treated as a missing account, and neither
+      // is the ambiguous case where rows come back but none matches exactly
+      // (usernames here can differ only by case). Only a confirmed empty
+      // answer counts, and it is confirmed twice, because a lookup run in the
+      // same moment as a signup can race the row that was just inserted.
+      let missingAccountCheckInFlight = false;
+
+      async function signOutIfAccountMissing(name) {
+        if (!_supabase || !name) return false;
+        if (missingAccountCheckInFlight) return false;
+        // Already signed out by the time this resolved.
+        if (String(currentUser).trim() !== String(name).trim()) return false;
+
+        missingAccountCheckInFlight = true;
+        try {
+          // Second opinion, a moment later, so a row mid-insert is not read as
+          // a deleted account.
+          await new Promise((r) => setTimeout(r, 1500));
+          if (String(currentUser).trim() !== String(name).trim()) return false;
+
+          const { data, error } = await _supabase
+            .from("users")
+            .select("username")
+            .ilike("username", String(name).trim())
+            .limit(1);
+          // Anything other than a clean empty answer means "do not act".
+          if (error) return false;
+          if (!Array.isArray(data) || data.length > 0) return false;
+
+          forceSignOut(
+            "The account “" +
+              name +
+              "” no longer exists, so you have been signed out. Your " +
+              "progress on this device is untouched.",
+          );
+          return true;
+        } catch (e) {
+          return false;
+        } finally {
+          missingAccountCheckInFlight = false;
+        }
+      }
+
+      // Drops the session without touching saved progress. The manual Log Out
+      // button clears all of local storage; this must not, because the player
+      // did not ask for it and a wrong call would cost them their game.
+      function forceSignOut(message) {
+        const wasSignedIn = !!currentUser;
+        currentUser = null;
+        currentUserIsAdmin = false;
+        adminCheckState = "unknown";
+        // Kept a resolved promise rather than null: callers await this.
+        userDataReady = Promise.resolve();
+        safeStorage.removeItem("blockoverit_username");
+
+        try {
+          resetBlueCoinWallet();
+        } catch (e) {}
+        try {
+          resetEditorLevelCaches();
+        } catch (e) {}
+        try {
+          updateLoginButton();
+        } catch (e) {}
+        try {
+          refreshSharedLevelBadge();
+        } catch (e) {}
+        try {
+          refreshUserDependentViews();
+        } catch (e) {}
+
+        if (wasSignedIn && message) {
+          showPopup("SIGNED OUT", message, () => {});
+        }
+      }
+
       async function refreshCurrentUserAdmin() {
         if (!currentUser) {
           currentUserIsAdmin = false;
@@ -7760,6 +7869,10 @@
           if (!row) {
             adminCheckState = rows.length ? "ambiguous" : "no-row";
             currentUserIsAdmin = false;
+            // No rows at all means the account is not there any more. Rows that
+            // exist but do not match exactly are a different problem and must
+            // not sign anyone out.
+            if (!rows.length) signOutIfAccountMissing(name);
             return false;
           }
 
@@ -7908,6 +8021,10 @@
               refreshUserDependentViews();
             } else if (error) {
               adminCheckState = "error";
+            } else if (!list.length) {
+              // The query succeeded and the account simply is not there.
+              adminCheckState = "no-row";
+              signOutIfAccountMissing(name);
             }
           } catch (e) {
             console.warn("Sync error:", e);
@@ -9053,8 +9170,9 @@
       // so the game keeps working against a database without a version column.
       async function fetchLatestLevelRow(id, columns = "*") {
         if (!_supabase) return null;
+        await levelsViewReady;
         let res = await _supabase
-          .from("published_levels")
+          .from(levelsTable())
           .select(columns)
           .eq("id", id)
           .order("version", { ascending: false })
@@ -9063,13 +9181,371 @@
 
         if (res.error) {
           res = await _supabase
-            .from("published_levels")
+            .from(levelsTable())
             .select(columns)
             .eq("id", id)
             .limit(1)
             .maybeSingle();
         }
         return res.error ? null : res.data;
+      }
+
+      // ---- VERIFICATION ----------------------------------------------------
+      //
+      // A verification says "somebody cleared this layout", and a level can
+      // have several layouts because publishing an update keeps the old row.
+      // Which of those counts is an admin's choice, held site-wide in
+      // app_settings under "verification_scope":
+      //
+      //   "current" -- only the version people are playing now counts. Editing
+      //                a level clears its badge until someone beats the edit.
+      //   "first"   -- the earliest version that was ever verified counts, and
+      //                that first verifier keeps the credit through later
+      //                edits.
+      //
+      // The published_levels_latest view carries both answers on every row:
+      // verified/verifier for the current version and ever_verified/
+      // ever_verifier across all of them. Same again for blue coins, which are
+      // verified separately by clearing a level having collected every one.
+      const VERIFICATION_SCOPES = ["current", "first"];
+      const DEFAULT_VERIFICATION_SCOPE = "current";
+      let verificationScope = DEFAULT_VERIFICATION_SCOPE;
+      let appSettingsSupported = false;
+      // The view's ever_* columns, and the base table's bluecoin_verified
+      // pair. Probed rather than assumed, because naming a column that is not
+      // there 400s the whole query and would take the level browser down.
+      let everVerifiedSupported = false;
+      let blueCoinVerifySupported = false;
+
+      const verificationReady = (async () => {
+        if (!_supabase) return false;
+        const probe = async (table, column) => {
+          try {
+            const { error } = await _supabase.from(table).select(column).limit(1);
+            return !error;
+          } catch (e) {
+            return false;
+          }
+        };
+        const [settings, ever, coin] = await Promise.all([
+          probe("app_settings", "key"),
+          probe(LEVELS_VIEW, "ever_verified"),
+          probe(LEVELS_TABLE, "bluecoin_verified"),
+        ]);
+        appSettingsSupported = settings;
+        everVerifiedSupported = ever;
+        blueCoinVerifySupported = coin;
+        if (settings) await loadVerificationScope();
+        if (!ever) {
+          console.warn(
+            "published_levels_latest has no ever_verified columns; the " +
+              '"first verification" scope is unavailable.',
+          );
+        }
+        if (!coin) {
+          console.warn(
+            "published_levels has no bluecoin_verified column; blue coin " +
+              "verification is off.",
+          );
+        }
+        return ever && coin;
+      })();
+
+      async function loadVerificationScope() {
+        if (!_supabase || !appSettingsSupported) return verificationScope;
+        try {
+          const { data, error } = await _supabase
+            .from("app_settings")
+            .select("value")
+            .eq("key", "verification_scope")
+            .maybeSingle();
+          if (!error && data && VERIFICATION_SCOPES.includes(data.value)) {
+            verificationScope = data.value;
+          }
+        } catch (e) {}
+        return verificationScope;
+      }
+
+      // "first" only means anything when the view can answer it, so a database
+      // without those columns quietly behaves as "current" rather than showing
+      // every level as unverified.
+      function activeVerificationScope() {
+        return verificationScope === "first" && everVerifiedSupported
+          ? "first"
+          : "current";
+      }
+
+      // The name a verification would be recorded under, or null when there is
+      // nobody to credit. Verifying is only open to signed-in players: the
+      // badge names a person, and "verified by nobody" is not a claim the game
+      // can make. Three rows were written that way before this check existed.
+      function verificationCredit() {
+        const name = typeof currentUser === "string" ? currentUser.trim() : "";
+        return name ? name : null;
+      }
+
+      // A verification with no verifier names nobody, so it is not one. Rows
+      // like that exist from before signing in was required, and they read as
+      // unverified rather than inventing a name to show.
+      function hasNamedVerifier(verified, verifier) {
+        return (
+          !!verified && typeof verifier === "string" && verifier.trim() !== ""
+        );
+      }
+
+      // What to draw for a level: whether it counts as verified, who gets the
+      // credit, and which version they cleared.
+      function levelVerification(lvl) {
+        const none = { verified: false, verifier: null, version: null };
+        if (!lvl) return none;
+        if (
+          activeVerificationScope() === "first" &&
+          hasNamedVerifier(lvl.ever_verified, lvl.ever_verifier)
+        ) {
+          return {
+            verified: true,
+            verifier: lvl.ever_verifier,
+            version: lvl.ever_verified_version ?? null,
+          };
+        }
+        if (!hasNamedVerifier(lvl.verified, lvl.verifier)) return none;
+        return {
+          verified: true,
+          verifier: lvl.verifier,
+          version: levelVersion(lvl),
+        };
+      }
+
+      function levelBlueCoinVerification(lvl) {
+        const none = { verified: false, verifier: null, version: null };
+        if (!lvl) return none;
+        if (
+          activeVerificationScope() === "first" &&
+          hasNamedVerifier(lvl.ever_bluecoin_verified, lvl.ever_bluecoin_verifier)
+        ) {
+          return {
+            verified: true,
+            verifier: lvl.ever_bluecoin_verifier,
+            version: lvl.ever_bluecoin_verified_version ?? null,
+          };
+        }
+        if (!hasNamedVerifier(lvl.bluecoin_verified, lvl.bluecoin_verifier))
+          return none;
+        return {
+          verified: true,
+          verifier: lvl.bluecoin_verifier,
+          version: levelVersion(lvl),
+        };
+      }
+
+      // Blue coin verification is only meaningful for levels that contain blue
+      // coins, so the badge is hidden entirely on levels with none. The count
+      // comes from the stored plan rather than a column, since that is where
+      // the coins actually are.
+      function levelHasBlueCoins(lvl) {
+        let data = lvl && lvl.data;
+        if (typeof data === "string") {
+          try {
+            data = JSON.parse(data);
+          } catch (e) {
+            return false;
+          }
+        }
+        const plan = data && data.plan;
+        if (!Array.isArray(plan)) return false;
+        // Safe on a compact plan as well as an expanded one: run-length rows
+        // are digits and block characters, so a "B" is always a blue coin and
+        // never part of a count.
+        return plan.some((row) =>
+          typeof row === "string" ? row.includes("B") : false,
+        );
+      }
+
+      // The clear badge, and the blue coin badge beneath it on levels that
+      // have coins to collect. In "first" scope a badge earned on an earlier
+      // version says so, rather than silently crediting the current one.
+      function verificationBadgesHTML(lvl) {
+        const clear = levelVerification(lvl);
+        const coin = levelBlueCoinVerification(lvl);
+        const current = levelVersion(lvl);
+        const earlier = (v) =>
+          v != null && Number(v) < current
+            ? ` <span style="color:#888; font-weight:normal;">(v${Number(v)})</span>`
+            : "";
+
+        const rows = [];
+        if (clear.verified) {
+          rows.push(
+            `<div style="margin-top:10px; font-size:0.8rem; color:#2ecc71; font-weight:bold; display:flex; align-items:center; gap:5px;">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+              VERIFIED BY <span id="verifier-link" style="text-decoration:underline; cursor:pointer;">${escapeHtml(clear.verifier)}</span>${earlier(clear.version)}
+            </div>`,
+          );
+        } else {
+          rows.push(
+            `<div style="margin-top:10px; font-size:0.8rem; color:#aaa; font-weight:bold;">UNVERIFIED</div>`,
+          );
+        }
+
+        if (blueCoinVerifySupported && levelHasBlueCoins(lvl)) {
+          rows.push(
+            coin.verified
+              ? `<div style="margin-top:6px; font-size:0.8rem; color:#4aa3ff; font-weight:bold; display:flex; align-items:center; gap:5px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" fill="#0b1a2b"/></svg>
+                  ALL COINS BY <span id="coin-verifier-link" style="text-decoration:underline; cursor:pointer;">${escapeHtml(coin.verifier)}</span>${earlier(coin.version)}
+                </div>`
+              : `<div style="margin-top:6px; font-size:0.8rem; color:#7a7a7a; font-weight:bold; display:flex; align-items:center; gap:5px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" fill="#0b1a2b"/></svg>
+                  NO BLUE COIN CLEAR YET
+                </div>`,
+          );
+        }
+
+        return rows.join("");
+      }
+
+      // Writes the site-wide scope. Admin-only: the check is here as well as
+      // on the button, because this changes what every player sees.
+      async function setVerificationScope(scope) {
+        if (!VERIFICATION_SCOPES.includes(scope)) return false;
+        if (!_supabase || !appSettingsSupported) return false;
+        if (!(await ensureAdminChecked())) return false;
+        const { error } = await _supabase.from("app_settings").upsert(
+          [
+            {
+              key: "verification_scope",
+              value: scope,
+              updated_at: new Date().toISOString(),
+              updated_by: currentUser || null,
+            },
+          ],
+          { onConflict: "key" },
+        );
+        if (error) {
+          console.error("Failed to save verification scope:", error);
+          return false;
+        }
+        verificationScope = scope;
+        return true;
+      }
+
+      // The admin panel's control for it. Two radio choices rather than a
+      // checkbox, because neither setting is the "off" state of the other.
+      function buildVerificationScopeCard() {
+        const card = document.createElement("div");
+        card.style.cssText =
+          "width:100%; background:rgba(51,86,153,0.1); border:1px solid #335699; border-radius:8px; padding:15px; margin-bottom:20px; display:flex; flex-direction:column; gap:10px;";
+
+        const heading = document.createElement("div");
+        heading.style.cssText =
+          "font-weight:bold; color:#335699; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px;";
+        heading.textContent = "Verification Counting";
+        card.appendChild(heading);
+
+        const blurb = document.createElement("div");
+        blurb.style.cssText = "color:#999; font-size:0.75rem; line-height:1.5;";
+        blurb.textContent =
+          "Editing a level publishes a new version. This decides which " +
+          "version's verification the whole site shows, for clears and for " +
+          "blue coins alike.";
+        card.appendChild(blurb);
+
+        const status = document.createElement("div");
+        status.style.cssText = "color:#2ecc71; font-size:0.75rem; min-height:1em;";
+
+        const options = [
+          {
+            value: "current",
+            label: "Current version only",
+            hint: "An edit clears the badge until someone beats the new version.",
+          },
+          {
+            value: "first",
+            label: "First verification ever",
+            hint: "The earliest verified version counts, and its verifier keeps the credit.",
+          },
+        ];
+
+        const radios = [];
+        options.forEach((opt) => {
+          const row = document.createElement("label");
+          row.style.cssText =
+            "display:flex; gap:10px; align-items:flex-start; cursor:pointer; color:#ccc; font-size:0.85rem;";
+
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "verification-scope";
+          input.value = opt.value;
+          input.checked = verificationScope === opt.value;
+          input.style.cssText = "width:18px; height:18px; margin-top:2px; flex-shrink:0;";
+          radios.push(input);
+
+          const text = document.createElement("div");
+          text.innerHTML =
+            "<div style='font-weight:bold;'>" +
+            escapeHtml(opt.label) +
+            "</div><div style='color:#888; font-size:0.75rem; margin-top:2px;'>" +
+            escapeHtml(opt.hint) +
+            "</div>";
+
+          input.onchange = async () => {
+            if (!input.checked) return;
+            const previous = verificationScope;
+            radios.forEach((r) => (r.disabled = true));
+            status.style.color = "#888";
+            status.textContent = "Saving...";
+            const ok = await setVerificationScope(opt.value);
+            radios.forEach((r) => (r.disabled = false));
+            if (ok) {
+              status.style.color = "#2ecc71";
+              status.textContent = "Saved. Reopen a level to see the change.";
+            } else {
+              status.style.color = "#e74c3c";
+              status.textContent = "Could not save that.";
+              radios.forEach((r) => (r.checked = r.value === previous));
+            }
+          };
+
+          row.appendChild(input);
+          row.appendChild(text);
+          card.appendChild(row);
+        });
+
+        card.appendChild(status);
+
+        if (!appSettingsSupported) {
+          radios.forEach((r) => (r.disabled = true));
+          status.style.color = "#a44";
+          status.textContent =
+            "The app_settings table is missing, so this cannot be changed.";
+        } else if (!everVerifiedSupported) {
+          status.style.color = "#a44";
+          status.textContent =
+            "The level view has no ever_verified columns, so only the current " +
+            "version can be counted right now.";
+        }
+
+        // The probes may still be in flight when the panel opens.
+        verificationReady.then(() => {
+          radios.forEach((r) => (r.checked = r.value === verificationScope));
+        });
+
+        return card;
+      }
+
+      // Which columns the Unverified filter tests depends on the scope, and it
+      // also has to catch rows flagged verified that name nobody -- those read
+      // as unverified everywhere else, so they belong in this list.
+      function unverifiedFilter() {
+        const first = activeVerificationScope() === "first";
+        const flag = first ? "ever_verified" : "verified";
+        const who = first ? "ever_verifier" : "verifier";
+        return [
+          flag + ".is.null",
+          flag + ".eq.false",
+          who + ".is.null",
+          who + ".eq.",
+        ].join(",");
       }
 
       // A published level keeps one row per version, all sharing the same id.
@@ -11317,8 +11793,9 @@
         if (beatenIds.length === 0) return;
 
         try {
+          await levelsViewReady;
           const { data, error } = await _supabase
-            .from("published_levels")
+            .from(levelsTable())
             .select("id")
             .in("id", beatenIds)
             .eq("official_rating", true)
@@ -17522,21 +17999,70 @@
                   levelData &&
                   levelData.dbId != null &&
                   _supabase &&
+                  // A verification is a claim that a named person cleared this
+                  // layout, so a signed-out run cannot make one. Without this
+                  // the write went ahead with a null verifier and the level
+                  // showed a badge crediting nobody.
+                  verificationCredit() &&
                   (currentGameMode === "custom" ||
                     currentGameMode === "speedrun")
                 ) {
-                  fetchLatestLevelRow(levelData.dbId, "verified, verifier")
-                    .then((data) => {
-                      if (data && !data.verified) {
-                        _supabase
-                          .from("published_levels")
-                          .update({ verified: true, verifier: currentUser })
-                          .eq("id", levelData.dbId)
-                          .then(({ error }) => {
-                            if (!error) showTopNotification("Level Verified!");
-                          });
+                  // Verification belongs to the layout that was beaten, so it
+                  // is written to that one version rather than to every row
+                  // sharing the level's id. An older version that nobody has
+                  // cleared must not inherit this run's badge.
+                  //
+                  // Collecting every blue coin on the way verifies the level a
+                  // second, harder way. The two are independent: a level can be
+                  // cleared long before anyone manages it coin-complete, and
+                  // both are written against the version actually played.
+                  verificationReady.then(() => {
+                    const columns = blueCoinVerifySupported
+                      ? "verified, verifier, bluecoin_verified, bluecoin_verifier, version"
+                      : "verified, verifier, version";
+                    fetchLatestLevelRow(levelData.dbId, columns).then((data) => {
+                      if (!data) return;
+
+                      // Re-read rather than closing over the earlier check:
+                      // signing out mid-level must not still write a name.
+                      const credit = verificationCredit();
+                      if (!credit) return;
+
+                      const patch = {};
+                      // A row that was verified but names nobody is not a
+                      // verification anyone can stand behind, so a signed-in
+                      // clear is allowed to claim it properly.
+                      if (!data.verified || !data.verifier) {
+                        patch.verified = true;
+                        patch.verifier = credit;
                       }
+                      const coinVerifies =
+                        blueCoinVerifySupported &&
+                        collectedBlueCoin &&
+                        (!data.bluecoin_verified || !data.bluecoin_verifier);
+                      if (coinVerifies) {
+                        patch.bluecoin_verified = true;
+                        patch.bluecoin_verifier = credit;
+                      }
+                      if (!Object.keys(patch).length) return;
+
+                      let update = _supabase
+                        .from("published_levels")
+                        .update(patch)
+                        .eq("id", levelData.dbId);
+                      if (data.version != null)
+                        update = update.eq("version", data.version);
+                      update.then(({ error }) => {
+                        if (error) return;
+                        // Coin verification is the rarer of the two, so it is
+                        // the one worth announcing when a run earns both.
+                        if (coinVerifies)
+                          showTopNotification("Blue Coin Verified!");
+                        else if (patch.verified)
+                          showTopNotification("Level Verified!");
+                      });
                     });
+                  });
                 }
 
                 exitToMenu();
@@ -18352,8 +18878,9 @@
         showTopNotification("Opened random level.");
 
         // Get count of total levels first to pick a random offset
+        await levelsViewReady;
         const { count, error: countError } = await _supabase
-          .from("published_levels")
+          .from(levelsTable())
           .select("*", { count: "exact", head: true })
           .or("impossible.eq.false,impossible.is.null");
 
@@ -18364,14 +18891,23 @@
 
         const randomOffset = Math.floor(Math.random() * count);
         const { data, error } = await _supabase
-          .from("published_levels")
+          .from(levelsTable())
           .select("*")
           .or("impossible.eq.false,impossible.is.null")
           .range(randomOffset, randomOffset)
           .maybeSingle();
 
-        if (data)
-          showMenu("browse-levels", { viewLevel: data, fromRandom: true });
+        // Without the view an offset can land on a superseded row, handing the
+        // player an old layout under the level's current name. Re-read by id so
+        // random always opens the version everyone else is playing.
+        let level = data;
+        if (!levelsViewSupported && level && level.id != null) {
+          const latest = await fetchLatestLevelRow(level.id);
+          if (latest) level = latest;
+        }
+
+        if (level)
+          showMenu("browse-levels", { viewLevel: level, fromRandom: true });
         else showPopup("ERROR", "Failed to fetch random level.", () => {});
       }
 
@@ -20113,7 +20649,7 @@
             // A published level keeps one row per version, so counting rows
             // would count every version of the same level. Count distinct ids.
             _supabase
-              .from("published_levels")
+              .from(levelsTable())
               .select("id")
               .in("id", uniqueBeatenIds)
               .then(({ data: rows, error }) => {
@@ -20423,7 +20959,7 @@
             // A published level has one row per version, so count the distinct
             // ids that still exist rather than the number of matching rows.
             _supabase
-              .from("published_levels")
+              .from(levelsTable())
               .select("id")
               .in("id", uniqueProfileBeatenIds)
               .then(({ data: rows, error }) => {
@@ -20699,14 +21235,15 @@
 
             // Ask for the version column so the newest row of each level wins,
             // falling back for databases that don't have that column yet.
+            await levelsViewReady;
             let { data: validLevels, error } = await _supabase
-              .from("published_levels")
+              .from(levelsTable())
               .select(baseCols + ", version")
               .in("id", ids);
 
             if (error) {
               ({ data: validLevels, error } = await _supabase
-                .from("published_levels")
+                .from(levelsTable())
                 .select(baseCols)
                 .in("id", ids));
             }
@@ -20833,7 +21370,7 @@
           container.appendChild(btnBack);
           fetchAndRender();
         } else if (view === "admin-feedback") {
-          subtitle.textContent = "FEEDBACK INBOX";
+          subtitle.textContent = "ADMIN PANEL";
           container.style.maxWidth = "800px";
           const isMobile = document.body.classList.contains("mobile-mode");
 
@@ -20863,6 +21400,8 @@
           }
           closeBtn.onclick = () => showMenu("main");
           container.appendChild(closeBtn);
+
+          container.appendChild(buildVerificationScopeCard());
 
           const resultCountEl = document.createElement("div");
           resultCountEl.style.cssText =
@@ -23340,8 +23879,14 @@
           const rangeStart = page * pageSize;
           const rangeEnd = rangeStart + pageSize - 1;
 
+          // Read the one-row-per-level view, so a page holds ten distinct
+          // levels and the count in the pager is a count of levels rather than
+          // of stored versions.
+          await levelsViewReady;
+          // The Unverified filter tests a different column in each scope.
+          await verificationReady;
           let query = _supabase
-            .from("published_levels")
+            .from(levelsTable())
             .select("*", { count: "exact" });
 
           if (term) {
@@ -23383,10 +23928,11 @@
             query = query
               .eq("awards", true)
               .order("created_at", { ascending: false });
-          else if (sort === "unverified")
+          else if (sort === "unverified") {
             query = query
-              .or("verified.eq.false,verified.is.null")
+              .or(unverifiedFilter())
               .order("created_at", { ascending: false });
+          }
           else if (sort === "official")
             query = query
               .eq("official_rating", true)
@@ -23605,8 +24151,10 @@
           const rangeStart = page * pageSize;
           const rangeEnd = rangeStart + pageSize - 1;
 
+          await levelsViewReady;
+          await verificationReady;
           let query = _supabase
-            .from("published_levels")
+            .from(levelsTable())
             .select("*", { count: "exact" });
 
           if (term) {
@@ -23651,7 +24199,7 @@
               .order("created_at", { ascending: false });
           } else if (sort === "unverified") {
             query = query
-              .or("verified.eq.false,verified.is.null")
+              .or(unverifiedFilter())
               .order("created_at", { ascending: false });
           } else if (sort === "upvotes") {
             query = query.order("upvotes", { ascending: false });
@@ -23903,14 +24451,7 @@
                                 )}</span>`
                               : escapeHtml(currentLvl.creator || "Anonymous")
                           }</div>
-                          ${
-                            currentLvl.verified
-                              ? `<div style="margin-top:10px; font-size:0.8rem; color:#2ecc71; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                            VERIFIED BY <span id="verifier-link" style="text-decoration:underline; cursor:pointer;">${currentLvl.verifier}</span>
-                          </div>`
-                              : `<div style="margin-top:10px; font-size:0.8rem; color:#aaa; font-weight:bold;">UNVERIFIED</div>`
-                          }
+                          ${verificationBadgesHTML(currentLvl)}
                       </div>
                       <div style="display:flex; justify-content:space-between; background:#111; padding:15px; border-radius:8px;">
                           <div style="text-align:center;"><div>DIFFICULTY</div><div id="detail-difficulty-val" style="color:${window.DIFFICULTY_COLORS[currentLvl.difficulty] || "#e67e22"}; font-weight:bold; ${currentUserIsAdmin ? "cursor:pointer; text-decoration:underline;" : ""}">${window.DIFFICULTY_LABELS[currentLvl.difficulty] || currentLvl.difficulty} (${currentLvl.difficulty}/10)${currentLvl.official_rating ? '<svg width="18" height="18" fill="#335699" viewBox="0 0 24 24" style="margin-left:8px; vertical-align:middle; display:inline-block;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : ""}</div></div>
@@ -24117,13 +24658,23 @@
             });
         }
 
+        // The name on a badge is whoever the active scope credits, which in
+        // "first" scope is not necessarily the current row's verifier.
         const verifierLink = details.querySelector("#verifier-link");
         if (verifierLink) {
+          const who = levelVerification(currentLvl).verifier;
           verifierLink.onclick = () =>
             // Pass currentLvl to openUserProfile to allow it to display admin tag
-            openUserProfile(currentLvl.verifier, "browse-levels", {
+            openUserProfile(who, "browse-levels", {
               viewLevel: currentLvl,
             });
+        }
+
+        const coinVerifierLink = details.querySelector("#coin-verifier-link");
+        if (coinVerifierLink) {
+          const who = levelBlueCoinVerification(currentLvl).verifier;
+          coinVerifierLink.onclick = () =>
+            openUserProfile(who, "browse-levels", { viewLevel: currentLvl });
         }
 
         details.querySelector("#upvote-btn").onclick = () =>
@@ -24280,7 +24831,74 @@
         loadComments(currentLvl);
       }
 
+      // A play used to be counted only if you were still in the level twenty
+      // seconds later, which almost never happened: dying restarts in place
+      // without coming back through here, so a whole session of attempts is a
+      // single entry, and most of those entries ended well inside the twenty
+      // seconds. Levels were being played far more than their counter showed.
+      //
+      // Now an entry counts once you have actually stayed in the level for a
+      // few seconds, with two limits so re-opening the same level over and
+      // over cannot inflate the number.
       let communityPlayCounterTimeout = null;
+
+      // How long you must remain in the level before the entry counts. Long
+      // enough to discard opening a level and immediately backing out, short
+      // enough that a quick death still counts.
+      const PLAY_COUNT_GRACE_MS = 3000;
+      // The same level will not count again this soon after it last counted.
+      const PLAY_COUNT_COOLDOWN_MS = 60 * 1000;
+      // ...nor more than this many times in a rolling day.
+      const PLAY_COUNT_DAILY_CAP = 20;
+      const PLAY_COUNT_DAY_MS = 24 * 60 * 60 * 1000;
+      const PLAY_COUNT_STORAGE_KEY = "boi_counted_plays";
+
+      // { [levelId]: [timestamps] }, pruned to the last day on every read.
+      function readCountedPlays() {
+        try {
+          const raw = JSON.parse(
+            localStorage.getItem(PLAY_COUNT_STORAGE_KEY) || "{}",
+          );
+          if (!raw || typeof raw !== "object") return {};
+          const cutoff = Date.now() - PLAY_COUNT_DAY_MS;
+          const out = {};
+          Object.keys(raw).forEach((key) => {
+            const kept = (Array.isArray(raw[key]) ? raw[key] : [])
+              .filter((t) => typeof t === "number" && t > cutoff);
+            if (kept.length) out[key] = kept;
+          });
+          return out;
+        } catch (e) {
+          return {};
+        }
+      }
+
+      // Throttling lives in localStorage, so it is per device and a cleared
+      // browser simply starts counting again. That is the right trade here:
+      // this exists to stop a counter running away, not to stop cheating, and
+      // the alternative is refusing to count honest plays.
+      function shouldCountPlay(levelId) {
+        const key = String(levelId);
+        const history = readCountedPlays();
+        const times = history[key] || [];
+        const now = Date.now();
+        if (times.length >= PLAY_COUNT_DAILY_CAP) return false;
+        if (times.some((t) => now - t < PLAY_COUNT_COOLDOWN_MS)) return false;
+        return true;
+      }
+
+      function recordCountedPlay(levelId) {
+        const key = String(levelId);
+        const history = readCountedPlays();
+        history[key] = (history[key] || []).concat(Date.now());
+        try {
+          localStorage.setItem(
+            PLAY_COUNT_STORAGE_KEY,
+            JSON.stringify(history),
+          );
+        } catch (e) {}
+      }
+
       window.playCommunityLevel = async (
         id,
         dataObj,
@@ -24318,25 +24936,32 @@
           }
           startGameLevel(data, -1, "custom");
 
-          // Then, try to update the play count after 20 seconds.
+          // Count the entry once the player has actually settled into the
+          // level, unless this level already counted too recently or too often
+          // on this device.
           if (communityPlayCounterTimeout)
             clearTimeout(communityPlayCounterTimeout);
           communityPlayCounterTimeout = setTimeout(async () => {
-            if (
-              _supabase &&
-              activeLevelDisplay &&
-              currentLevelData &&
-              currentLevelData.dbId === id
-            ) {
-              const { error } = await _supabase.rpc("increment_plays", {
-                row_id: parseInt(id),
-              });
-              if (error) {
-                console.error("Failed to increment play count:", error);
-              }
-            }
             communityPlayCounterTimeout = null;
-          }, 20000);
+            if (
+              !_supabase ||
+              !activeLevelDisplay ||
+              !currentLevelData ||
+              currentLevelData.dbId !== id
+            )
+              return;
+            if (!shouldCountPlay(id)) return;
+
+            // Written before the request so a slow or failed round trip cannot
+            // let a retry loop send the same play twice.
+            recordCountedPlay(id);
+            const { error } = await _supabase.rpc("increment_plays", {
+              row_id: parseInt(id),
+            });
+            if (error) {
+              console.error("Failed to increment play count:", error);
+            }
+          }, PLAY_COUNT_GRACE_MS);
         } catch (e) {
           console.error("Failed to start level:", e);
           // Don't show a popup as the game might have started.
@@ -24635,13 +25260,19 @@
                   .getElementById("meta-edit-area")
                   .value.trim();
                 if (!newVal) return;
-                const { data, error } = await _supabase
+                // A level with a publish history has several rows under one
+                // id, so .single() used to reject the whole edit. Write every
+                // version, then re-read the one the browser shows.
+                const { error } = await _supabase
                   .from("published_levels")
                   .update({ [field]: newVal })
-                  .eq("id", id)
-                  .select()
-                  .single();
-                if (!error && data) {
+                  .eq("id", id);
+                if (error) {
+                  showPopup("ERROR", "Could not save " + label + ".", () => {});
+                  return;
+                }
+                const data = await fetchLatestLevelRow(id);
+                if (data) {
                   showTopNotification(label + " updated.");
                   showMenu("browse-levels", {
                     viewLevel: data,
