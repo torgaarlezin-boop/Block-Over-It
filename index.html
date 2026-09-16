@@ -1430,6 +1430,34 @@
         color: #fff;
       }
 
+      /* The level's id, in the bottom right of its description. Reads as a
+         quiet label until you point at it, because it is also a button. */
+      .level-id-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .level-id-chip {
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        color: #888;
+        font-family: inherit;
+        font-size: 0.65rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        padding: 3px 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .level-id-chip:hover {
+        color: #fff;
+        border-color: #335699;
+        background: #335699;
+      }
+      .level-id-chip:active {
+        border-color: #eee;
+      }
+
       .custom-level-details {
         display: flex;
         gap: 15px;
@@ -6693,30 +6721,18 @@
           copies: "1.10",
           color: "#30547a",
         },
-                  coolguybloody:{
-          name: "Cool Guy (Bloody)",
-          copies:"1/3",
-          artist: "Torgaar",
-          color: "#e7191f"
+        coolguyfuture: {
+          name: "Cool Guy (Future)",
+          copies: "1/3",
+          color: "#1fd4d0",
         },
-          alien:{
-          name: "Alien",
-          copies:"1/10",
-          artist: "Torgaar",
-          color: "#17c96a"
+        // Wears the plain Cool Guy art and leaves it behind him: see
+        // TRAIL_SKINS.
+        coolguytrail: {
+          name: "Cool Guy (Trail)",
+          copies: "1/3",
+          color: "#009fe3",
         },
-          alienblocktober:{
-          name: "Alien (Yellow Eyes)",
-          copies:"1/3",
-          artist: "Torgaar",
-          color: "#eeff2b"
-        },
-        burningheartremastered: {
-          name: "Burning Heart (Remastered)",
-          copies:"1/3",
-          artist: "Torgaar",
-          color: "#ffa629"
-        }
       };
 
 
@@ -11740,7 +11756,7 @@
                                       ${isBeaten ? '<div class="cl-meta-item" style="color:#2ecc71; font-weight:bold; display:flex; align-items:center; gap:4px;"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> BEATEN</div>' : ""}
                                     ${hasBlueCoin ? '<div class="cl-meta-item" style="color:#335699; font-weight:bold;">BLUE COIN</div>' : ""}
                                   </div>
-                                  <div class="cl-desc">${desc}</div>
+                                  <div class="cl-desc">${desc}${levelIdChipHTML(lvl.dbId)}</div>
                                   <div class="cl-stats">
                                       <div class="cl-stat-box"><div class="cl-stat-label">Best Time</div><div class="cl-stat-value">${timeStr}</div></div>
                                       <div class="cl-stat-box"><div class="cl-stat-label">Size</div><div class="cl-stat-value">${lvl.plan[0].length}x${lvl.plan.length}</div></div>
@@ -13290,10 +13306,27 @@
         return ANIMATED_SKINS.includes(id) ? "gif" : "png";
       }
 
+      // A few skins borrow another skin's picture rather than shipping one of
+      // their own. Cool Guy (Trail) is plain Cool Guy; what makes it its own
+      // skin is what it leaves behind.
+      const SKIN_IMAGE_OVERRIDES = {
+        coolguytrail: "coolguy.png",
+        // The art for the reflection skin is filed under the shorter name.
+        coolguyreflection: "coolguyreflect.png",
+      };
+
       function skinImageFile(id) {
         if (id === "default") return "blockoverit.png";
+        if (SKIN_IMAGE_OVERRIDES[id]) return SKIN_IMAGE_OVERRIDES[id];
         return `${id}.${skinFileExtension(id)}`;
       }
+
+      // Skins that drop a fading copy of themselves as the player moves.
+      // `color` paints a flat block (Red Trail); `img` leaves the picture.
+      const TRAIL_SKINS = {
+        redtrail: { color: "red" },
+        coolguytrail: { img: "coolguy.png" },
+      };
 
       function getAvailableSkins() {
         return currentUserSkins;
@@ -13403,12 +13436,16 @@
       }
       BlueCoin.prototype.type = "blue-coin";
 
-      function Trail(pos, color) {
+      function Trail(pos, color, img) {
         this.pos = new Vector(pos.x, pos.y);
-        this.size = new Vector(0.5, 1);
+        // A picture trail copies the player's drawn width (skins are drawn a
+        // full block wide), so the ghosts line up with the block that left
+        // them instead of sitting half its size.
+        this.size = new Vector(img ? 1 : 0.5, 1);
         this.life = 0.5;
         this.maxLife = 0.5;
         this.color = color;
+        this.img = img || null;
       }
       Trail.prototype.type = "trail";
       Trail.prototype.act = function (step, level) {
@@ -16336,8 +16373,9 @@
           this.size.y -= step;
         }
 
+        const trailSkin = TRAIL_SKINS[gameSettings.currentSkin];
         if (
-          gameSettings.currentSkin === "redtrail" &&
+          trailSkin &&
           !level.forceDefaultSkin &&
           level.status === null &&
           level.playerHasMoved
@@ -16345,10 +16383,19 @@
           if (typeof this.trailTimer === "undefined") this.trailTimer = 0;
           this.trailTimer -= step;
           if (this.trailTimer <= 0) {
-            let trail = new Trail(this.pos, "red");
+            // A picture trail is left a little less often: the ghosts are a
+            // whole block wide, so packed as tightly as the red one they read
+            // as a smear rather than a trail.
+            let trailPos = this.pos;
+            if (trailSkin.img)
+              trailPos = new Vector(
+                this.pos.x - (1 - this.size.x) / 2,
+                this.pos.y,
+              );
+            let trail = new Trail(trailPos, trailSkin.color, trailSkin.img);
             trail.id = level.nextActorId++;
             level.actors.push(trail);
-            this.trailTimer = 0.02;
+            this.trailTimer = trailSkin.img ? 0.05 : 0.02;
           }
         }
       };
@@ -17611,13 +17658,34 @@
         delete el.dataset.reflected;
       }
 
-      DOMDisplay.prototype.syncSkinReflection = function (el, actor) {
-        const groups = ensureReflectionGroups();
-        if (!groups || !groups.length) {
-          clearSkinReflection(el);
-          return;
-        }
+      // background-position decides where the letterboxed picture lands. The
+      // player in a level is centred; the item cards stand their skin on a
+      // platform, so theirs is anchored to the bottom.
+      function positionFraction(token) {
+        if (!token) return 0.5;
+        if (token.endsWith("%")) return parseFloat(token) / 100;
+        if (token === "left" || token === "top") return 0;
+        if (token === "right" || token === "bottom") return 1;
+        return 0.5;
+      }
 
+      function skinPictureRect(el) {
+        const box = containedImageRect(
+          el.clientWidth,
+          el.clientHeight,
+          reflectionImageSize.w,
+          reflectionImageSize.h,
+        );
+        const pos = String(window.getComputedStyle(el).backgroundPosition || "")
+          .toLowerCase()
+          .split(/\s+/);
+        box.x = (el.clientWidth - box.w) * positionFraction(pos[0]);
+        box.y = (el.clientHeight - box.h) * positionFraction(pos[1] || pos[0]);
+        return box;
+      }
+
+      // One mirror per painted run, built once per element and kept.
+      function ensureReflectionPanels(el, groups) {
         let panels = el.querySelectorAll(".skin-reflect");
         if (panels.length !== groups.length) {
           panels.forEach((n) => n.remove());
@@ -17630,17 +17698,18 @@
           });
           panels = el.querySelectorAll(".skin-reflect");
           el.dataset.reflected = "1";
+          // The mirrors are placed against the element they sit on, so an
+          // item card's preview -- laid out as a plain static box -- has to
+          // become something they can be placed against.
+          if (window.getComputedStyle(el).position === "static")
+            el.style.position = "relative";
         }
+        return panels;
+      }
 
-        // One render of the level per frame, copied into each mirror.
-        const map = drawReflectionMap(this.level);
-        const box = containedImageRect(
-          el.clientWidth,
-          el.clientHeight,
-          reflectionImageSize.w,
-          reflectionImageSize.h,
-        );
-
+      function paintReflectionPanels(el, groups, map) {
+        const panels = ensureReflectionPanels(el, groups);
+        const box = skinPictureRect(el);
         groups.forEach((g, i) => {
           const panel = panels[i];
           if (!panel) return;
@@ -17658,7 +17727,191 @@
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(map, 0, 0);
         });
+      }
+
+      DOMDisplay.prototype.syncSkinReflection = function (el, actor) {
+        const groups = ensureReflectionGroups();
+        if (!groups || !groups.length) {
+          clearSkinReflection(el);
+          return;
+        }
+        // One render of the level per frame, copied into each mirror.
+        paintReflectionPanels(el, groups, drawReflectionMap(this.level));
       };
+
+      // ---- The mirrors outside a level ----
+      // In a level they show the level. Everywhere else -- a collection, the
+      // shop, the inspect popup -- they show the screen the skin is standing
+      // on: a low-resolution map of the page, drawn from the boxes the
+      // browser has already laid out. Nothing here reads pixels back off the
+      // screen; it repaints the visible elements' own colours at thumbnail
+      // size, which is all a mirror a few pixels across can show anyway.
+      const SCREEN_MAP_MAX = 240;
+      const SCREEN_MAP_MS = 140;
+      // A ceiling on how much of the page one map may walk, so a long list of
+      // levels can never turn a decoration into a stall.
+      const SCREEN_MAP_NODES = 700;
+      const SCREEN_REFLECT_MS = 90;
+      const SCREEN_REFLECT_MIN_SIZE = 20;
+
+      let screenMap = null;
+      let screenMapAt = 0;
+      let screenReflectAt = 0;
+      let screenReflectStarted = false;
+
+      // The colour an element actually paints, or null when it paints nothing
+      // worth drawing. Translucent backgrounds are handed to the canvas as
+      // they are: a popup dimming the screen has to dim the mirrors too, not
+      // black them out.
+      function paintedBackground(style) {
+        const value = String(style.backgroundColor || "");
+        if (!value || value === "transparent") return null;
+        const m = /^rgba?\(([^)]+)\)$/.exec(value);
+        if (m) {
+          const parts = m[1].split(",").map((v) => parseFloat(v));
+          if (parts.length > 3 && parts[3] < 0.05) return null;
+        }
+        return value;
+      }
+
+      function drawScreenMap() {
+        const now = performance.now();
+        if (screenMap && now - screenMapAt < SCREEN_MAP_MS) return screenMap;
+        screenMapAt = now;
+
+        const vw = window.innerWidth || 1;
+        const vh = window.innerHeight || 1;
+        const scale = SCREEN_MAP_MAX / Math.max(vw, vh);
+        if (!screenMap) screenMap = document.createElement("canvas");
+        const w = Math.max(1, Math.round(vw * scale));
+        const h = Math.max(1, Math.round(vh * scale));
+        if (screenMap.width !== w || screenMap.height !== h) {
+          screenMap.width = w;
+          screenMap.height = h;
+        }
+
+        const ctx = screenMap.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle =
+          paintedBackground(window.getComputedStyle(document.body)) || "#111";
+        ctx.fillRect(0, 0, w, h);
+        ctx.scale(scale, scale);
+
+        // Collected in document order, which is close enough to the order the
+        // browser paints them at this size.
+        let budget = SCREEN_MAP_NODES;
+        const found = [];
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_ELEMENT,
+          {
+            acceptNode(node) {
+              if (budget <= 0) return NodeFilter.FILTER_REJECT;
+              // A mirror never shows itself.
+              if (node.classList && node.classList.contains("skin-reflect"))
+                return NodeFilter.FILTER_REJECT;
+              const r = node.getBoundingClientRect();
+              if (!r.width || !r.height) return NodeFilter.FILTER_REJECT;
+              if (r.right <= 0 || r.bottom <= 0 || r.left >= vw || r.top >= vh)
+                return NodeFilter.FILTER_REJECT;
+              const style = window.getComputedStyle(node);
+              if (
+                style.visibility === "hidden" ||
+                parseFloat(style.opacity || "1") < 0.15
+              )
+                return NodeFilter.FILTER_REJECT;
+              budget--;
+              found.push({ node: node, r: r, style: style });
+              return NodeFilter.FILTER_ACCEPT;
+            },
+          },
+        );
+        while (walker.nextNode()) {
+          /* the filter does the collecting */
+        }
+
+        found.forEach((hit) => {
+          const colour = paintedBackground(hit.style);
+          if (colour) {
+            ctx.fillStyle = colour;
+            ctx.fillRect(hit.r.left, hit.r.top, hit.r.width, hit.r.height);
+          }
+          const node = hit.node;
+          if (node.tagName === "IMG" && node.complete && node.naturalWidth) {
+            try {
+              ctx.drawImage(
+                node,
+                hit.r.left,
+                hit.r.top,
+                hit.r.width,
+                hit.r.height,
+              );
+            } catch (e) {
+              /* a picture that will not draw is simply left out */
+            }
+          }
+        });
+        return screenMap;
+      }
+
+      // Every reflection skin on screen that is not the player in a level.
+      function screenReflectHosts() {
+        const hosts = [];
+        // Matched on the picture rather than the id, so a skin that borrows
+        // another file is still found.
+        document
+          .querySelectorAll('[style*="' + skinImageFile(REFLECTION_SKIN) + '"]')
+          .forEach((el) => {
+            if (el.classList.contains("actor")) return;
+            if (
+              el.clientWidth < SCREEN_REFLECT_MIN_SIZE ||
+              el.clientHeight < SCREEN_REFLECT_MIN_SIZE
+            )
+              return;
+            hosts.push(el);
+          });
+        return hosts;
+      }
+
+      function tickScreenReflections() {
+        const now = performance.now();
+        if (now - screenReflectAt < SCREEN_REFLECT_MS) return;
+        screenReflectAt = now;
+
+        const hosts = screenReflectHosts();
+        // Trying a different skin on swaps the picture without rebuilding the
+        // element, so mirrors left on something that is no longer wearing the
+        // reflection skin have to go.
+        document.querySelectorAll("[data-reflected]").forEach((el) => {
+          if (!el.classList.contains("actor") && hosts.indexOf(el) === -1)
+            clearSkinReflection(el);
+        });
+        if (!hosts.length) return;
+
+        const groups = ensureReflectionGroups();
+        if (!groups || !groups.length) return;
+        const map = drawScreenMap();
+        hosts.forEach((el) => paintReflectionPanels(el, groups, map));
+      }
+
+      function startScreenReflections() {
+        if (screenReflectStarted) return;
+        screenReflectStarted = true;
+        const loop = () => {
+          try {
+            tickScreenReflections();
+          } catch (e) {
+            /* a decoration must never take the game down with it */
+          }
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+
+      if (document.readyState === "loading")
+        document.addEventListener("DOMContentLoaded", startScreenReflections);
+      else startScreenReflections();
 
       DOMDisplay.prototype.syncActors = function () {
         var s = this.scale;
@@ -17724,9 +17977,17 @@
             }
 
             if (actor.type === "trail") {
-              el.style.backgroundColor = actor.color;
               el.style.border = "none";
               el.style.zIndex = "1";
+              if (actor.img) {
+                el.style.backgroundColor = "transparent";
+                el.style.backgroundImage = `url('${actor.img}')`;
+                el.style.backgroundSize = "contain";
+                el.style.backgroundRepeat = "no-repeat";
+                el.style.backgroundPosition = "center";
+              } else {
+                el.style.backgroundColor = actor.color;
+              }
             }
 
             if (visualType === "decoration") {
@@ -18021,8 +18282,8 @@
             el.style.border = "";
             el.style.backgroundColor = actor.color || "";
 
-            if (skin === "redtrail") {
-              el.style.backgroundColor = "red";
+            if (TRAIL_SKINS[skin] && TRAIL_SKINS[skin].color) {
+              el.style.backgroundColor = TRAIL_SKINS[skin].color;
               el.style.backgroundImage = "none";
               el.style.filter = "";
             } else if (skin != "default") {
@@ -18036,11 +18297,9 @@
                 } else if (skin === "vintageemo") {
                   el.style.backgroundImage = `url('vintageemowin.png')`;
                 } else if (skin === "rainbownoir" || skin === "coolguynoir") {
-                  const ext = skinFileExtension(skin);
-                  el.style.backgroundImage = `url('${skin}.${ext}')`;
+                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
                 } else {
-                  const ext = skinFileExtension(skin);
-                  el.style.backgroundImage = `url('${skin}.${ext}')`;
+                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
                   el.style.filter =
                     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
                 }
@@ -18067,8 +18326,7 @@
                       ? `url('vintageemodeath.png')`
                       : `url('vintageemo.png')`;
                 } else {
-                  const ext = skinFileExtension(skin);
-                  el.style.backgroundImage = `url('${skin}.${ext}')`;
+                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
                 }
                 el.style.filter = "";
               }
@@ -20221,8 +20479,7 @@
           modalPreview.style.borderRadius = "8px";
         } else {
           modalPreview.style.backgroundColor = "transparent";
-          const ext = skinFileExtension(id);
-          const img = customImg || `${id}.${ext}`;
+          const img = customImg || skinImageFile(id);
           modalPreview.style.backgroundImage = `url('${img}')`;
         }
       }
@@ -27018,7 +27275,16 @@
         let q = _supabase.from(levelsTable()).select("*", { count: "exact" });
 
         if (term) {
-          q = q.or("name.ilike.%" + term + "%,creator.ilike.%" + term + "%");
+          // A search that is nothing but digits is also read as a level id, so
+          // typing the id off a level's page finds that exact level. Names and
+          // creators still match, so a level called "1000" is not lost.
+          const parts = [
+            "name.ilike.%" + term + "%",
+            "creator.ilike.%" + term + "%",
+          ];
+          if (/^\d+$/.test(term) && term.length < 10)
+            parts.unshift("id.eq." + term);
+          q = q.or(parts.join(","));
         } else if (sort !== "newest") {
           q = q.or("impossible.eq.false,impossible.is.null");
         }
@@ -27652,7 +27918,7 @@
                           }</div></div>
                       </div>
                       ${levelMusicRowHTML(currentLvl)}
-                      <div style="background:#222; padding:15px; border-radius:8px; color:#ccc; line-height:1.5; position:relative;">${currentLvl.description || "No description."}${currentUserIsAdmin ? `<button onclick="window.editLevelMetadata(${currentLvl.id}, 'description', '${(currentLvl.description || "").replace(/'/g, "\\'")}', 'DESCRIPTION')" style="position:absolute; top:5px; right:10px; background:none; border:none; color:#335699; text-decoration:underline; font-size:0.6rem; cursor:pointer; font-family:inherit;">EDIT</button>` : ""}</div>
+                      <div style="background:#222; padding:15px; border-radius:8px; color:#ccc; line-height:1.5; position:relative;">${currentLvl.description || "No description."}${currentUserIsAdmin ? `<button onclick="window.editLevelMetadata(${currentLvl.id}, 'description', '${(currentLvl.description || "").replace(/'/g, "\\'")}', 'DESCRIPTION')" style="position:absolute; top:5px; right:10px; background:none; border:none; color:#335699; text-decoration:underline; font-size:0.6rem; cursor:pointer; font-family:inherit;">EDIT</button>` : ""}${levelIdChipHTML(currentLvl.id)}</div>
 
                       ${
                         currentUserIsAdmin
@@ -28451,6 +28717,59 @@
         });
       };
 
+      // ---- A LEVEL'S ID ------------------------------------------------------
+      // Every published level has one, and it is what the level browser's
+      // search matches when you type a number, so it sits in the corner of the
+      // description where it can be read off and copied.
+      function levelIdChipHTML(id) {
+        if (!Number.isFinite(Number(id))) return "";
+        return (
+          '<div class="level-id-row"><button type="button" class="level-id-chip" onclick="window.copyLevelId(' +
+          Number(id) +
+          ')" title="Copy this level\'s ID">ID ' +
+          Number(id) +
+          "</button></div>"
+        );
+      }
+
+      // navigator.clipboard needs a secure context, which the game does not
+      // always have (a level shared over plain http, a file:// copy), and it
+      // refuses while the page is not focused, so the old textarea trick is
+      // kept as the fallback for both.
+      function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext)
+          return navigator.clipboard
+            .writeText(text)
+            .catch(() => copyTextFallback(text));
+        return copyTextFallback(text);
+      }
+
+      function copyTextFallback(text) {
+        return new Promise((resolve, reject) => {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.setAttribute("readonly", "");
+          area.style.cssText = "position:fixed; top:-1000px; opacity:0;";
+          document.body.appendChild(area);
+          area.select();
+          let ok = false;
+          try {
+            ok = document.execCommand("copy");
+          } catch (e) {
+            ok = false;
+          }
+          area.remove();
+          ok ? resolve() : reject(new Error("copy refused"));
+        });
+      }
+
+      window.copyLevelId = (id) => {
+        copyText(String(id)).then(
+          () => showTopNotification("Copied level ID " + id),
+          () => showTopNotification("Level ID: " + id),
+        );
+      };
+
       window.editLevelMetadata = (id, field, oldVal, label) => {
         if (!currentUserIsAdmin || !_supabase) return;
         popupManager.show({
@@ -28689,8 +29008,7 @@
           gameSettings.currentSkin !== "default"
         ) {
           const skin = gameSettings.currentSkin;
-          const ext = skinFileExtension(skin);
-          blockEl.style.backgroundImage = `url('${skin}.${ext}')`;
+          blockEl.style.backgroundImage = `url('${skinImageFile(skin)}')`;
           blockEl.style.backgroundSize = "contain";
           blockEl.style.backgroundRepeat = "no-repeat";
           blockEl.style.backgroundPosition = "center";
@@ -28741,7 +29059,9 @@
               (u) => u.v === LATEST_NEWS_VERSION,
             );
             if (latestUpdate) {
-
+              // Share the news screen's renderer instead of printing `d`:
+              // new-format entries carry grouped `items` and no `d` at all,
+              // so the old popup showed the word "undefined".
               const html = `
                   <div style="text-align:left; margin-bottom:20px;">
                     <div style="color:#335699; font-weight:bold; font-size:1.2rem; margin-bottom:5px;">v${latestUpdate.v} - ${latestUpdate.t}</div>
