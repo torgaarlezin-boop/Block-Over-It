@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Skin Explorer - Block Over It</title>
     <style>
-      {
+      * {
         box-sizing: border-box;
         border-radius: 0 !important;
       }
@@ -70,6 +70,12 @@
         color: #fff;
         font-weight: 900;
         text-align: center;
+      }
+      .count-line {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #777;
       }
 
       #search-container {
@@ -170,56 +176,97 @@
         background: #335699;
       }
 
-      .skin-card {
-        background-color: #222;
-        border: 4px solid #333;
-        padding: 14px 10px;
+      /* ---- The item card, as the game draws it ---- */
+      .skin-item {
+        --card: #444;
+        --card-ink: #fff;
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
+        gap: 4px;
+        padding: 14px 10px 12px;
+        background: #1a1a1a;
+        border: 2px solid #2b2b2b;
+        color: #fff;
         cursor: pointer;
-        position: relative;
+        user-select: none;
       }
-      .skin-card:hover {
-        background-color: #2a2a2a;
-        border-color: #335699;
+      .skin-item:hover {
+        border-color: var(--card);
       }
-      .skin-preview {
-        width: 60px;
-        height: 120px;
+      .skin-item:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+      .skin-item-stage {
+        width: 100%;
+        height: 128px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        margin-bottom: 6px;
+        pointer-events: none;
+      }
+      .skin-item-preview {
+        width: 56px;
+        height: 112px;
         background-size: contain;
         background-repeat: no-repeat;
-        background-position: center;
-        flex-shrink: 0;
+        background-position: center bottom;
       }
-      .skin-name {
+      .skin-item:hover .skin-item-preview {
+        animation: skinHop 0.35s ease-in-out;
+      }
+      .skin-platform {
+        width: 72px;
+        height: 10px;
+        background: #444;
+        border: 2px solid #333;
+        box-sizing: border-box;
+      }
+      .skin-item-name {
         font-size: 0.85rem;
         font-weight: bold;
-        text-align: center;
         color: #fff;
+        text-align: center;
+        line-height: 1.2;
+        pointer-events: none;
+      }
+      /* The one coloured thing on the card */
+      .skin-item-desc {
+        margin-top: 2px;
+        padding: 2px 8px;
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 1px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        line-height: 1.3;
+        text-align: center;
+        color: var(--card-ink);
+        background: var(--card);
+        pointer-events: none;
       }
-      .skin-copies {
-        font-size: 0.7rem;
-        color: #aaa;
-        background-color: #111;
-        padding: 3px 8px;
-        border: 2px solid #335699;
-        font-weight: bold;
+      /* A skin with more than one drawing of it says so in the corner. */
+      .skin-item-versions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: #888;
+        pointer-events: none;
       }
-      .skin-copies.legendary {
-        color: #ffd700;
-        border-color: #ffd700;
-      }
+
+      /* ---- What the explorer adds ---- */
       .skin-tags {
         display: flex;
         gap: 4px;
         flex-wrap: wrap;
         justify-content: center;
+        margin-top: 2px;
+        pointer-events: none;
       }
       .skin-tag {
         font-size: 0.6rem;
@@ -253,21 +300,37 @@
         border-color: #2ecc71;
         color: #9bf0bd;
       }
-      .skin-tag.event {
-        background-color: #5c221c;
-        border-color: #e74c3c;
-        color: #ffab9f;
+      /* Yellow for summer, pumpkin for Blocktober -- both kept clear of the
+         first-place gold and the competitive orange they sit next to. */
+      .skin-tag.blocky-summer {
+        background-color: #4a4213;
+        border-color: #ffe14d;
+        color: #fff3b0;
+      }
+      .skin-tag.blocktober {
+        background-color: #4a2408;
+        border-color: #ff7a18;
+        color: #ffc48c;
+      }
+      /* Anything a skin puts in its own `tag` field. No meaning attached, so
+         it reads as plain as it is: the panel colours with a pale border. */
+      .skin-tag.custom {
+        background-color: #222;
+        border-color: #555;
+        color: #ddd;
       }
       .skin-artist {
         font-size: 0.65rem;
         color: #888;
         text-align: center;
+        pointer-events: none;
       }
       .skin-for {
         font-size: 0.65rem;
         color: #5588cc;
         font-weight: bold;
         text-align: center;
+        pointer-events: none;
       }
       .no-results {
         grid-column: 1 / -1;
@@ -279,44 +342,47 @@
         text-transform: uppercase;
       }
 
-      /* Modal */
+      /* ---- Inspecting an item ----------------------------------------
+         The whole screen: the skin as big as it will go on the left, every
+         other skin on the right to walk through. Same flat panels and hard
+         edges as the grid behind it -- the only new thing is the size. */
       .modal-overlay {
+        --card: #444;
+        --card-ink: #fff;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.85);
+        background: #0d0d0d;
         display: none;
-        align-items: center;
-        justify-content: center;
         z-index: 1000;
-        padding: 16px;
+        opacity: 0;
+        transition: opacity 0.15s;
       }
       .modal-overlay.active {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
       }
+      /* Left: the skin on its platform, with everything it is underneath */
       .modal-content {
-        background-color: #1a1a1a;
-        border: 4px solid #335699;
-        padding: 24px;
-        width: 100%;
-        max-width: 420px;
-        max-height: calc(100dvh - 32px);
-        overflow-y: auto;
+        position: relative;
+        background: #111;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
-        position: relative;
+        justify-content: center;
+        padding: 28px 24px;
+        min-width: 0;
+        overflow-y: auto;
       }
       .modal-close {
         position: absolute;
-        top: 10px;
-        right: 10px;
+        top: 16px;
+        left: 16px;
         background: #444;
         border: 3px solid #333;
         color: #fff;
-        width: 36px;
-        height: 36px;
-        font-size: 1.3rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.4rem;
         font-family: inherit;
         cursor: pointer;
         display: flex;
@@ -324,49 +390,176 @@
         justify-content: center;
         transition: all 0.2s;
         line-height: 1;
+        z-index: 2;
       }
       .modal-close:hover {
         background: #a04040;
         border-color: #eee;
       }
       .modal-preview {
-        width: 90px;
-        height: 180px;
+        width: min(38vh, 300px);
+        height: min(58vh, 460px);
         background-size: contain;
         background-repeat: no-repeat;
-        background-position: center;
+        background-position: center bottom;
         flex-shrink: 0;
       }
+      .skin-inspect-platform {
+        width: min(48vh, 380px);
+        height: 16px;
+        margin-bottom: 26px;
+      }
       .modal-title {
-        font-size: 1.2rem;
+        font-size: clamp(1.4rem, 3.2vw, 2.4rem);
         font-weight: 900;
         text-transform: uppercase;
         text-align: center;
-        letter-spacing: 1px;
-        line-height: 1.3;
+        letter-spacing: 3px;
+        line-height: 1.15;
       }
-      .modal-subtitle {
-        font-size: 0.85rem;
-        color: #335699;
-        font-weight: bold;
+
+      /* Right: the rest of the collection, one tile each */
+      .locker-list {
+        background: #141414;
+        border-left: 4px solid #333;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .locker-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-bottom: 4px solid #333;
+        flex-shrink: 0;
+      }
+      .locker-head input {
+        flex: 1;
+        min-width: 0;
+        padding: 9px 12px;
+        background: #0d0d0d;
+        border: 3px solid #333;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.8rem;
         text-transform: uppercase;
+        outline: none;
       }
-      .modal-details {
+      .locker-head input:focus {
+        border-color: #335699;
+      }
+      .locker-count {
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+        color: #777;
+        white-space: nowrap;
+      }
+      .locker-grid {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+        gap: 8px;
+        padding: 10px;
+        align-content: start;
+      }
+      .locker-grid::-webkit-scrollbar {
+        width: 10px;
+      }
+      .locker-grid::-webkit-scrollbar-track {
+        background: #111;
+      }
+      .locker-grid::-webkit-scrollbar-thumb {
+        background: #333;
+        border: 2px solid #111;
+      }
+      .locker-tile {
+        --card: #444;
+        background: #1a1a1a;
+        border: 2px solid #2b2b2b;
+        padding: 8px 4px 6px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .locker-tile:hover {
+        border-color: var(--card);
+      }
+      .locker-tile.selected {
+        border-color: var(--card);
+        background: #262626;
+      }
+      .locker-tile-preview {
+        width: 34px;
+        height: 68px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+      }
+      .locker-tile-platform {
+        width: 46px;
+        height: 6px;
+      }
+      .locker-tile-name {
+        font-size: 0.55rem;
+        line-height: 1.25;
+        color: #bbb;
+        text-align: center;
+      }
+      .locker-tile.selected .locker-tile-name {
+        color: #fff;
+      }
+      .locker-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #666;
+        font-size: 0.75rem;
+        padding: 30px 10px;
+        letter-spacing: 1px;
+      }
+      .skin-inspect-desc {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 10px;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--card-ink);
+        background: var(--card);
+      }
+      .skin-inspect-lines {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        margin: 12px 0 6px;
         font-size: 0.8rem;
-        color: #aaa;
+        color: #9a9a9a;
         text-align: center;
         width: 100%;
-        border-top: 3px solid #333;
-        padding-top: 12px;
+      }
+      .skin-inspect-lines b {
+        color: #fff;
+      }
+      .skin-inspect-file {
+        font-size: 0.7rem;
+        color: #5a5a5a;
+        word-break: break-all;
+      }
+      .modal-content .skin-tags {
+        margin: 10px 0 2px;
       }
       .version-controls {
         display: flex;
         align-items: center;
         gap: 10px;
+        margin-bottom: 12px;
       }
       .version-btn {
         background: #444;
@@ -385,7 +578,36 @@
         border-color: #eee;
       }
 
-      /* ---- Mobile: same theme, tighter layout, works in both orientations */
+      /* The loading block's jump, once */
+      @keyframes skinHop {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      /* The intro cube's fall: same ease-in curve */
+      @keyframes skinDrop {
+        from {
+          transform: translateY(-150px);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      .modal-overlay.active .modal-preview {
+        animation: skinDrop 0.4s cubic-bezier(0.6, 0.04, 0.98, 0.335) both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skin-item:hover .skin-item-preview,
+        .modal-overlay.active .modal-preview {
+          animation: none;
+        }
+      }
+
+      /* ---- Mobile: same theme, tighter layout, both orientations */
       @media (max-width: 820px) {
         header {
           padding: 10px 12px;
@@ -408,6 +630,9 @@
           letter-spacing: 2px;
           flex: 1;
           text-align: center;
+        }
+        .count-line {
+          display: none;
         }
         #search-input {
           padding: 10px 12px;
@@ -441,25 +666,26 @@
           padding: 8px 10px;
         }
         #skins-grid {
-          grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
           gap: 10px;
           padding: 12px;
         }
-        .skin-card {
-          border-width: 3px;
+        .skin-item {
           padding: 10px 6px;
-          gap: 6px;
         }
-        .skin-preview {
+        .skin-item-stage {
+          height: 96px;
+        }
+        .skin-item-preview {
           width: 44px;
           height: 88px;
         }
-        .skin-name {
-          font-size: 0.7rem;
+        .skin-platform {
+          width: 60px;
+          height: 8px;
         }
-        .skin-copies {
-          font-size: 0.6rem;
-          padding: 2px 6px;
+        .skin-item-name {
+          font-size: 0.7rem;
         }
         .skin-tag {
           font-size: 0.5rem;
@@ -468,9 +694,36 @@
         .skin-for {
           font-size: 0.55rem;
         }
+        /* The locker stacks: the skin on top, the rest of them underneath */
+        .modal-overlay.active {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(0, 1fr) minmax(0, 42vh);
+        }
         .modal-content {
-          border-width: 3px;
-          padding: 20px 16px;
+          padding: 16px 12px;
+        }
+        .modal-close {
+          top: 10px;
+          left: 10px;
+          width: 34px;
+          height: 34px;
+          font-size: 1.1rem;
+        }
+        .modal-preview {
+          width: min(30vh, 180px);
+          height: min(40vh, 270px);
+        }
+        .skin-inspect-platform {
+          width: min(38vh, 230px);
+          height: 12px;
+          margin-bottom: 16px;
+        }
+        .locker-list {
+          border-left: none;
+          border-top: 4px solid #333;
+        }
+        .locker-grid {
+          grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
         }
       }
 
@@ -501,35 +754,44 @@
           flex-shrink: 0;
         }
         #skins-grid {
-          grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
           padding: 10px;
         }
-        .skin-preview {
+        .skin-item-stage {
+          height: 84px;
+        }
+        .skin-item-preview {
           width: 38px;
           height: 76px;
         }
+        /* Wide and short: the locker keeps its two columns, with the list
+           narrower and the skin sized off the height it actually has. */
+        .modal-overlay.active {
+          grid-template-columns: minmax(0, 1fr) 42vw;
+          grid-template-rows: 1fr;
+        }
         .modal-content {
-          max-width: 560px;
-          flex-direction: row;
-          flex-wrap: wrap;
-          align-items: flex-start;
-          gap: 16px;
+          padding: 12px;
         }
         .modal-preview {
-          width: 70px;
-          height: 140px;
+          width: min(26vh, 150px);
+          height: min(46vh, 230px);
         }
-        .modal-content > *:not(.modal-preview):not(.modal-close) {
-          width: calc(100% - 90px);
-          margin-left: auto;
+        .skin-inspect-platform {
+          width: min(32vh, 190px);
+          height: 10px;
+          margin-bottom: 12px;
         }
-        .modal-details {
-          align-items: flex-start;
-          text-align: left;
+        .modal-title {
+          font-size: 1.1rem;
+          letter-spacing: 2px;
         }
-        .modal-title,
-        .modal-subtitle {
-          text-align: left;
+        .skin-inspect-lines {
+          margin: 8px 0 2px;
+          font-size: 0.7rem;
+        }
+        .locker-grid {
+          grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
         }
       }
     </style>
@@ -537,15 +799,12 @@
   <body>
     <header>
       <div class="header-top">
-        <a href="index.html" class="back-btn">&larr; Back to Game</a>
+        <a href="blockoverit.html" class="back-btn">&larr; Back to Game</a>
         <h1>Skin Explorer</h1>
       </div>
+      <div class="count-line" id="count-line"></div>
       <div id="search-container">
-        <input
-          type="text"
-          id="search-input"
-          placeholder="SEARCH SKINS..."
-        />
+        <input type="text" id="search-input" placeholder="SEARCH SKINS..." />
       </div>
       <div class="controls-container">
         <div class="filter-tags" id="filter-tags">
@@ -555,7 +814,8 @@
           <button class="filter-btn" data-tag="competitive">Competitive</button>
           <button class="filter-btn" data-tag="unlockCode">Code</button>
           <button class="filter-btn" data-tag="gameUnlock">Unlock</button>
-          <button class="filter-btn" data-tag="event">Event</button>
+          <button class="filter-btn" data-tag="blockySummer">Summer</button>
+          <button class="filter-btn" data-tag="blocktober">Blocktober</button>
         </div>
         <select id="sort-select">
           <option value="name_asc">Sort: Name (A-Z)</option>
@@ -569,513 +829,362 @@
     </header>
     <div id="skins-grid"></div>
 
+    <!-- The full view: one skin as big as the screen allows, and every other
+         skin beside it to step through. -->
     <div id="skin-modal" class="modal-overlay">
       <div class="modal-content">
         <button class="modal-close" onclick="closeSkinModal()">&times;</button>
-        <div
-          id="version-controls"
-          class="version-controls"
-          style="display: none"
-        >
+        <div id="version-controls" class="version-controls" style="display: none">
           <button class="version-btn" onclick="changeVersion(-1)">&lt;</button>
-          <span id="version-label" style="font-size: 0.8rem; color: #aaa"
-            >v1</span
-          >
+          <span id="version-label" style="font-size: 0.8rem; color: #aaa">v1</span>
           <button class="version-btn" onclick="changeVersion(1)">&gt;</button>
         </div>
         <div id="modal-preview" class="modal-preview"></div>
+        <div class="skin-platform skin-inspect-platform"></div>
         <div id="modal-title" class="modal-title"></div>
-        <div id="modal-subtitle" class="modal-subtitle"></div>
-        <div id="modal-details" class="modal-details"></div>
+        <div id="modal-subtitle"></div>
+        <div id="modal-tags" class="skin-tags"></div>
+        <div id="modal-details" class="skin-inspect-lines"></div>
+      </div>
+      <div class="locker-list">
+        <div class="locker-head">
+          <input
+            type="text"
+            id="locker-search"
+            placeholder="SEARCH..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <span class="locker-count" id="locker-count"></span>
+        </div>
+        <div class="locker-grid" id="locker-grid"></div>
       </div>
     </div>
 
+    <!-- The skin list, shared with the game. -->
+    <script src="skins.js"></script>
     <script>
-      const SKIN_DEFINITIONS = {
-        default: { name: "Default", copies: "N/A", gameUnlock: true },
-        chairlord: {
-          name: "Chairlord",
-          copies: "1/1",
-          firstPlace: true,
-          artist: "Chairlord",
-        },
-        sunset: { name: "Sunset", copies: "1/2", artist: "chairlord" },
-        rainbowmonster: {
-          name: "Rainbow Monster",
-          copies: "1/8",
-          artist: "chairlord",
-        },
-        burningheart: { name: "Burning Heart", copies: "1/3", artist: "Seppe" },
-        tv: { name: "TV", copies: "1/2", artist: "Seppe" },
-        cubemouth: { name: "Cube Mouth", copies: "1/5", artist: "chairlord" },
-        firstplacedaddy: {
-          name: "First Place Daddy",
-          copies: "1/1",
-          artist: "Ligmadaddy69 & Torgaar",
-          firstPlace: true,
-        },
-        dino: {
-          name: "Dino",
-          copies: "1/4",
-          artist: "Mcdongos",
-        },
-        emo: { name: "Emotions", copies: "1/3", artist: "ejohnson", versions: [{name: "Win", img: "emowin.png"},
-                    {name: "Death", img: "emodeath.png"},
-                    {name: "Normal", img: "emo.png"},] },
-        emo2: { name: "Emotions 2", copies: "1/3", artist: "ejohnson",          versions: [{name: "Win", img: "emo2win.png"},
-                    {name: "Death", img: "emo2death.png"},
-                    {name: "Normal", img: "emo2.png"},] },
-        emo3: { name: "Emotions 3", copies: "1/3", artist: "ejohnson",          versions: [{name: "Win", img: "emo3win.png"},
-                    {name: "Death", img: "emo3death.png"},
-                    {name: "Normal", img: "emo3.png"},] },
-        kingbanana: {
-          name: "King Banana",
-          copies: "1/5",
-          artist: "Torgaar",
-          unlockCode: true,
-        },
-        j_imbo: {
-          name: "J_imbo",
-          copies: "1/1",
-          artist: "Torgaar",
-          firstPlace: true,
-        },
-        bluecoin: {
-          name: "Blue Gem",
-          copies: "N/A",
-          artist: "Torgaar",
-          gameUnlock: true,
-        },
-        coolguy: {
-          name: "Cool Guy",
-          copies: "1/5",
-          artist: "Torgaar",
-          competitive: true,
-        },
-        goldcoolguy: {
-          name: "Cool Guy (Golden)",
-          copies: "1/1",
-          artist: "Torgaar",
-          competitive: true,
-        },
-        inkcoolguy: {
-          name: "Cool Guy (Ink)",
-          copies: "1/3",
-          artist: "Torgaar",
-          competitive: true,
-        },
-        rainbownoir: {
-          name: "Rainbow Monster (Noir)",
-          copies: "1/3",
-          artist: "Chairlord & Torgaar",
-        },
-        rainbowretro: {
-          name: "Rainbow Monster (Retro)",
-          copies: "1/3",
-          artist: "Chairlord & Torgaar",
-        },
-        vintageemo: {
-          name: "Emotions (Vintage)",
-          copies: "1/3",
-          artist: "ejohnson & Torgaar",
-          versions: [{name: "Win", img: "vintageemowin.png"},
-                    {name: "Death", img: "vintageemodeath.png"},
-                    {name: "Normal", img: "vintageemo.png"},]
-          
-        },
-        coolguyglassesdown: {
-          name: "Cool Guy (Glasses Down)",
-          copies: "1/1",
-          artist: "Torgaar",
-          competitive: true,
-        },
-        dasher: {
-          name: "Dasher",
-          copies: "1/1",
-          artist: "Chairlord",
-          honorary: true,
-        },
-        dasher2: {
-          name: "Dasher 2",
-          copies: "1/1",
-          artist: "Chairlord",
-          honorary: true,
-        },
-        metallic: {
-          name: "Metallic Anger",
-          copies: "N/A",
-          artist: "Torgaar",
-          gameUnlock: true,
-          versions: [
-            { name: "Original", img: "metallic_old.png" },
-            { name: "Current", img: "metallic.png" },
-          ],
-        },
-        legendsgalaxy: {
-          name: "Galaxy (Legends Edition)",
-          copies: "1/3",
-          artist: "Torgaar",
-          competitive: true,
-        },
-        galaxy: {
-          name: "Galaxy",
-          copies: "N/A",
-          artist: "Torgaar",
-          gameUnlock: true,
-        },
-        golden: {
-          name: "Golden",
-          copies: "N/A",
-          artist: "Torgaar",
-          gameUnlock: true,
-          versions: [
-            { name: "Golden Clock (Original)", img: "goldenclock.png" },
-            { name: "Golden (New)", img: "golden.png" },
-          ],
-        },
-        rainbowcoolguy: {
-          name: "Cool Guy (Rainbow Glasses)",
-          copies: "1/3",
-          artist: "Chairlord & Torgaar",
-        },
-        coolerguy: {
-          name: "Cool Guy (Cooler)",
-          copies: "1/2",
-          artist: "Chairlord & Torgaar",
-        },
-        coolerguytexture: {
-          name: "Cool Guy (Cooler Texture)",
-          copies: "1/2",
-          artist: "Chairlord & Torgaar",
-        },
-        thecat: {
-          name: "The Cat",
-          copies: "1/1",
-          firstPlace: true,
-          artist: "Mcdongos",
-        },
-        efanballoon: {
-          name: "Efan Balloon",
-          copies: "1/1",
-          artist: "Torgaar",
-          honorary: true,
-        },
-        deacy: {
-          name: "Deacy",
-          copies: "1/1",
-          artist: "Dbumgarner",
-          honorary: true,
-        },
-        triplet: {
-          name: "Tung Tung Tung Sahur",
-          copies: "1/3",
-          artist: "jude",
-        },
-        cityboi: {
-          name: "City Boy",
-          copies: "1/3",
-          artist: "Torgaar & Ligmadaddy69",
-          unlockCode: true,
-        },
-        cityboilegend: {
-          name: "City Boy (Legendary)",
-          copies: "1/2",
-          artist: "Torgaar & Ligmadaddy69",
-        },
-
-        coolguysignature: {
-          name: "Cool Guy (Signature Logo)",
-          copies: "1/3",
-          artist: "Torgaar",
-          unlockCode: true
-        },
-        coolguytorgaarsignature: {
-          name: "Cool Guy (Torgaar Signature)",
-          copies: "1/1",
-          artist: "Torgaar",
-          honorary: true,
-          versions: [
-            {name: "Original", img: "coolguytorgaarog.png"},
-            {name: "Remaster", img: "coolguytorgaarsignature.png"},
-          ]
-        },
-        deathfire: {
-          name: "Death Fire",
-          copies: "1/1",
-          firstPlace: true,
-          artist: "Jude",
-        },
-        coolguyoregon: {
-          name: "Cool Guy (Oregon Signature)",
-          copies: "1/3",
-          artist: "Torgaar",
-          unlockCode: true,
-        },
-        mistymountains: {
-          name: "Misty Mountains",
-          copies: "1/1",
-          honorary: true,
-          artist: "Novalis & Torgaar",
-        },
-        jimbotree: {
-          name: "J_imbo Tree",
-          copies: "1/1",
-          artist: "Seppe & Torgaar",
-          honorary: true,
-        },
-        smiley: {
-          name: "Smiley",
-          copies: "1/1",
-          artist: "Torgaar",
-          firstPlace: true,
-        },
-
-        earth: {
-          name: "Earth",
-          copies: "N/A",
-          artist: "MidgeMidge22",
-          gameUnlock: true,
-        },
-        tothemoon: {
-          name: "Cool Guy (To the Moon)",
-          copies: "1/7",
-          artist: "Torgaar",
-          unlockCode: true,
-        },
-        WINSTONTHEGREAT: {
-          name: "WINSTONTHEGREAT",
-          copies: "1/1",
-          artist: "Torgaar & WINSTONISTHEBEST",
-          honorary: true,
-        },
-        coolguygalaxy: {
-          name: "Cool Guy (Galaxy)",
-          copies: "1/3",
-          artist: "Torgaar",
-        },
-        coolguypristine: {
-          name: "Cool Guy (Pristine)",
-          copies: "1/3",
-          artist: "Torgaar",
-        },
-        coolguymagma: {
-          name: "Cool Guy (Magma)",
-          copies: "1/5",
-          artist: "Torgaar",
-        },
-        coolguypurplemagma: {
-          name: "Cool Guy (Purple Magma)",
-          copies: "1/3",
-          artist: "Torgaar",
-        },
-        earthpolluted: {
-          name: "Earth (Polluted)",
-          copies: "1/3",
-          artist: "MidgeMidge22 & Torgaar",
-          gameUnlock: true,
-        },
-        blockynosleep: {
-          name: "Blocky (No Sleep)",
-          copies: "1/3",
-          artist: "Crosby & Torgaar"
-        },
-        reddino: {
-          name: "Dino (Red)",
-          copies: "1/5",
-          artist: "Torgaar & Mcdongos",
-          event: true,
-        },
-        rainbowmonsterremastered: {
-          name: "Rainbow Monster (Remastered)",
-          copies: "1/5",
-          artist: "Torgaar & Chairlord",
-          event: true,
-        },
-        bluedino: {
-          name: "Dino (Blue)",
-          copies: "1/3",
-          artist: "Torgaar & Mcdongos",
-          event: true,
-        },
-        cubemouthdevourer: {
-          name: "Cubemouth (Devourer)",
-          copies: "N/A",
-          artist: "Torgaar and Chairlord",
-          event: true,
-        },
-        midgemidge: {
-          name: "MidgeMidge",
-          copies: "1/1",
-          artist: "Torgaar and MidgeMidge22",
-          honorary: true
-        },
-          blackbeard: {
-          name: "Blocky (Blackbeard)",
-          copies: "1/11",
-          artist: "Torgaar",
-          unlockCode: true
-        },
-        coolguypainted: {
-          name: "Cool Guy (Painted)",
-          copies: "1/5",
-          artist: "Torgaar",
-          unlockCode: true,        
-          versions: [
-            {name: "OG", img: "coolguypaintog.png"},
-            {name: "Remaster", img: "coolguypainted.png"},
-          ]
-        },
-        redtrail: {
-          name: "Red Trail",
-          copies: "1/3",
-          artist: "Torgaar & pedro",
-          unlockCode: true,
-          img: "redtrail.png",
-          color: "#c0392b"
-        },
-        coolguydeepbluespecial: {
-          name: "Cool Guy (Deep Blue)",
-          copies: "1/3",
-          artist: "Torgaar",
-          unlockCode: true
-        },
-          coolguymoney: {
-          name: "Cool Guy (Money)",
-          copies: "1/5",
-          artist: "Torgaar",
-          gameUnlock: true
-        },
-        demon: {
-          name: "Demon",
-          copies: "N/A",
-          artist: "Torgaar",
-          gameUnlock: true
-        },
-        coolguylogomonogram: {
-          name: "Cool Guy (Logo Monogram)",
-          copies: "1/5",
-          artist: "Torgaar",
-        },
-        coolguy10:{
-          name: "Cool Guy (1.10)",
-          copies:"1/10",
-          artist: "Torgaar"
-        },
-        coolguybloody:{
-          name: "Cool Guy (Bloody)",
-          copies:"1/3",
-          artist: "Torgaar"
-        },
-          alien:{
-          name: "Alien",
-          copies:"1/10",
-          artist: "Torgaar"
-        },
-          alienblocktober:{
-          name: "Alien (Yellow Eyes)",
-          copies:"1/3",
-          artist: "Torgaar"
-        },
-      };
-
-
-      const ANIMATED_SKINS = [
-        "smiley",
-        "deathfire",
-        "WINSTONTHEGREAT",
-        "coolguymagma",
-        "coolguypurplemagma",
-      ];
-      function skinFileExtension(id) {
-        return ANIMATED_SKINS.includes(id) ? "gif" : "png";
+      // The skin list lives in skins.js, which the game loads too. This page
+      // used to carry its own copy plus a separate table of card colours, and
+      // both had drifted from the game's.
+      const SKIN_DEFINITIONS = window.SKIN_DEFINITIONS || {};
+      if (!window.SKIN_DEFINITIONS) {
+        document.title = "Skin Explorer - skins.js missing";
+        console.error("skins.js did not load; no skins to show.");
       }
 
-      // Initialize new variables (Defaults)
-      Object.values(SKIN_DEFINITIONS).forEach((def) => {
+      const SKIN_GOLD = "#e8b923";
+      const SKIN_CARD_FALLBACK = "#444";
+
+      // Which picture a skin is drawn from, and the two that are a flat
+      // colour block rather than a picture, both come from skins.js.
+      const SOLID_SKIN_PREVIEW = window.SOLID_SKIN_COLORS || {};
+      const SOLID_SKIN_OUTLINE = "inset 0 0 0 2px rgba(0, 0, 0, 0.4)";
+
+      // Fill in what the shared list leaves out, so the filters and the sort
+      // never have to test for a missing field.
+      Object.entries(SKIN_DEFINITIONS).forEach(([id, def]) => {
         if (typeof def.honorary === "undefined") def.honorary = false;
         if (typeof def.firstPlace === "undefined") def.firstPlace = false;
         if (typeof def.artist === "undefined") def.artist = "Unknown";
         if (typeof def.competitive === "undefined") def.competitive = false;
         if (typeof def.unlockCode === "undefined") def.unlockCode = false;
         if (typeof def.gameUnlock === "undefined") def.gameUnlock = false;
-        if (typeof def.event === "undefined") def.event = false;
+        if (typeof def.blockySummer === "undefined") def.blockySummer = false;
+        if (typeof def.blocktober === "undefined") def.blocktober = false;
         if (typeof def.forPlayer === "undefined") def.forPlayer = "";
+        if (typeof def.copies === "undefined") def.copies = "";
+        if (typeof def.color === "undefined") def.color = "";
+        // Honorary and first-place skins get a gold card in the game.
+        if (typeof def.gold === "undefined")
+          def.gold = def.honorary || def.firstPlace;
       });
 
+      // [r, g, b] for a hex colour, or null for anything else.
+      function colorChannels(color) {
+        const named = { white: "#ffffff", black: "#000000", red: "#ff0000" };
+        const value = String(color || "").trim().toLowerCase();
+        const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/.exec(named[value] || value);
+        if (!m) return null;
+        let h = m[1];
+        if (h.length === 3)
+          h = h.split("").map((c) => c + c).join("");
+        const n = parseInt(h, 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+
+      // Whichever of white or near-black reads better on the card colour.
+      function accentInk(color) {
+        const c = colorChannels(color);
+        if (!c) return "#fff";
+        const linear = c.map((v) => {
+          const x = v / 255;
+          return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        });
+        const lum = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+        const onWhite = 1.05 / (lum + 0.05);
+        const onDark = (lum + 0.05) / 0.054;
+        return onDark > onWhite ? "#0d0d0d" : "#fff";
+      }
+
+      function skinCardColor(id) {
+        const def = SKIN_DEFINITIONS[id];
+        if (def && def.gold) return SKIN_GOLD;
+        return def && colorChannels(def.color) ? def.color : SKIN_CARD_FALLBACK;
+      }
+
+      function applySkinCardVars(el, id) {
+        const card = skinCardColor(id);
+        el.style.setProperty("--card", card);
+        el.style.setProperty("--card-ink", accentInk(card));
+      }
+
+      // The line under a skin's name: "Honorary" or "First Place" when it is
+      // one of those, otherwise how many copies exist.
+      function skinDescription(id) {
+        const def = SKIN_DEFINITIONS[id];
+        if (!def) return "";
+        if (def.honorary) return "Honorary";
+        if (def.firstPlace) return "First Place";
+        // A skin can name its own line -- which is what the game shows on the
+        // card as well.
+        if (def.desc) return def.desc;
+        // "N/A" as the game writes it. What it means -- that anyone can
+        // unlock it by playing -- is the Unlock Skin tag's job.
+        if (def.copies === "N/A") return "N/A";
+        return def.copies ? def.copies + " Copies" : "";
+      }
+
+      // The picture on a preview box, or a flat colour for the two skins that
+      // are drawn as plain blocks.
+      function paintPreview(el, id, customImg) {
+        const solid = SOLID_SKIN_PREVIEW[id];
+        if (solid && !customImg) {
+          el.style.backgroundImage = "none";
+          el.style.backgroundColor = solid;
+          el.style.boxShadow = SOLID_SKIN_OUTLINE;
+          return;
+        }
+        el.style.backgroundColor = "transparent";
+        el.style.boxShadow = "";
+        el.style.backgroundImage =
+          "url('" + (customImg || skinImageFile(id)) + "')";
+      }
+
+      const TAG_LIST = [
+        { key: "honorary", cls: "honorary", label: "Honorary" },
+        { key: "firstPlace", cls: "first-place", label: "First Place" },
+        { key: "competitive", cls: "competitive", label: "Competitive" },
+        { key: "unlockCode", cls: "unlock-code", label: "Unlock Code" },
+        { key: "gameUnlock", cls: "game-unlock", label: "Unlock Skin" },
+        { key: "blockySummer", cls: "blocky-summer", label: "Blocky Summer" },
+        { key: "blocktober", cls: "blocktober", label: "Blocktober" },
+      ];
+
+      // A skin's own `tag`, which can say anything: one string, or several.
+      function customTags(data) {
+        const raw = data && data.tag;
+        if (!raw) return [];
+        return (Array.isArray(raw) ? raw : [raw])
+          .map((t) => String(t).trim())
+          .filter(Boolean);
+      }
+
+      // The coloured tag under the name already says Honorary or First
+      // Place, so the chip that repeats it is left off.
+      function tagElements(data, headline) {
+        const chip = (cls, text) => {
+          const el = document.createElement("div");
+          el.className = "skin-tag " + cls;
+          el.textContent = text;
+          return el;
+        };
+        const known = TAG_LIST.filter(
+          (t) => data[t.key] && t.label !== headline,
+        ).map((t) => chip(t.cls, t.label));
+        return known.concat(
+          customTags(data)
+            .filter((t) => t !== headline)
+            .map((t) => chip("custom", t)),
+        );
+      }
+
+      // ---- The full view ---------------------------------------------------
+      // One skin filling the left of the screen, and the rest of the
+      // collection down the right to step through -- click a tile or use the
+      // arrow keys. The list carries its own search so picking through
+      // everything never means closing this and starting the grid again.
       const modal = document.getElementById("skin-modal");
       const modalPreview = document.getElementById("modal-preview");
       const modalTitle = document.getElementById("modal-title");
       const modalSubtitle = document.getElementById("modal-subtitle");
+      const modalTags = document.getElementById("modal-tags");
       const modalDetails = document.getElementById("modal-details");
       const versionControls = document.getElementById("version-controls");
       const versionLabel = document.getElementById("version-label");
+      const modalContent = modal.querySelector(".modal-content");
+      const lockerGrid = document.getElementById("locker-grid");
+      const lockerSearch = document.getElementById("locker-search");
+      const lockerCount = document.getElementById("locker-count");
 
       let currentModalSkinId = null;
       let currentSkinData = null;
       let currentVersionIdx = 0;
+      // The ids in the right-hand list, in the order they are shown; the
+      // arrow keys walk this.
+      let lockerOrder = [];
 
-      function openSkinModal(id, data) {
+      function openSkinModal(id) {
+        modal.classList.add("active");
+        buildLockerList();
+        showInLocker(id);
+        requestAnimationFrame(() => {
+          modal.style.opacity = 1;
+        });
+      }
+
+      function buildLockerList() {
+        const terms = (lockerSearch.value || "")
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        lockerOrder = Object.entries(SKIN_DEFINITIONS)
+          .filter(([id, data]) => {
+            if (!terms.length) return true;
+            const hay = (
+              data.name +
+              " " +
+              id +
+              " " +
+              data.artist +
+              " " +
+              data.forPlayer +
+              " " +
+              customTags(data).join(" ")
+            ).toLowerCase();
+            return terms.every((t) => hay.includes(t));
+          })
+          .sort(skinComparator(sortSelect.value))
+          .map(([id]) => id);
+
+        lockerGrid.innerHTML = "";
+        if (!lockerOrder.length) {
+          lockerGrid.innerHTML =
+            '<div class="locker-empty">Nothing matches that</div>';
+        }
+        lockerOrder.forEach((id) => {
+          const data = SKIN_DEFINITIONS[id];
+          const tile = document.createElement("div");
+          tile.className = "locker-tile";
+          tile.dataset.skin = id;
+          tile.title = data.name;
+          applySkinCardVars(tile, id);
+
+          const preview = document.createElement("div");
+          preview.className = "locker-tile-preview";
+          paintPreview(preview, id);
+          const platform = document.createElement("div");
+          platform.className = "skin-platform locker-tile-platform";
+          const name = document.createElement("div");
+          name.className = "locker-tile-name";
+          name.textContent = data.name;
+
+          tile.append(preview, platform, name);
+          tile.onclick = () => showInLocker(id);
+          lockerGrid.appendChild(tile);
+        });
+
+        lockerCount.textContent =
+          lockerOrder.length + "/" + Object.keys(SKIN_DEFINITIONS).length;
+        if (currentModalSkinId) markSelectedTile(currentModalSkinId);
+      }
+
+      function markSelectedTile(id) {
+        lockerGrid.querySelectorAll(".locker-tile").forEach((tile) => {
+          const on = tile.dataset.skin === id;
+          tile.classList.toggle("selected", on);
+          if (on) tile.scrollIntoView({ block: "nearest" });
+        });
+      }
+
+      function showInLocker(id) {
+        const data = SKIN_DEFINITIONS[id];
+        if (!data) return;
         currentModalSkinId = id;
         currentSkinData = data;
+        applySkinCardVars(modal, id);
+        applySkinCardVars(modalContent, id);
+
         modalTitle.textContent = data.name;
-        modalSubtitle.textContent =
-          data.copies === "N/A" ? "Unlock Skin" : `${data.copies} Copies`;
 
-        // Modal Details
-        let detailsHtml = `<div>Artist: ${data.artist}</div>`;
-        if (data.forPlayer) {
-          detailsHtml += `<div style="color: #335699; font-weight: bold;">For: ${data.forPlayer}</div>`;
-        }
-        if (data.honorary) {
-          detailsHtml += `<div class="skin-tag honorary" style="display:inline-block;">Honorary</div>`;
-        }
-        if (data.firstPlace) {
-          detailsHtml += `<div class="skin-tag first-place" style="display:inline-block;">First Place</div>`;
-        }
-        if (data.competitive) {
-          detailsHtml += `<div class="skin-tag competitive" style="display:inline-block;">Competitive</div>`;
-        }
-        if (data.unlockCode) {
-          detailsHtml += `<div class="skin-tag unlock-code" style="display:inline-block;">Unlock Code</div>`;
-        }
-        if (data.gameUnlock) {
-          detailsHtml += `<div class="skin-tag game-unlock" style="display:inline-block;">Game Unlock</div>`;
-        }
-        if (data.event) {
-          detailsHtml += `<div class="skin-tag event" style="display:inline-block;">Event</div>`;
-        }
-        modalDetails.innerHTML = detailsHtml;
+        modalSubtitle.innerHTML = "";
+        const desc = document.createElement("span");
+        desc.className = "skin-inspect-desc";
+        desc.textContent = skinDescription(id);
+        if (desc.textContent) modalSubtitle.appendChild(desc);
 
-        // Handle Versions
+        // The tags live here and nowhere else: on the grid they were six
+        // small words competing with the skin.
+        modalTags.innerHTML = "";
+        tagElements(data, skinDescription(id)).forEach((t) =>
+          modalTags.appendChild(t),
+        );
+
+        // The explorer's own reading: who drew it, who it was for, how many
+        // exist even when the line above says something else, and the file
+        // the game loads for it.
+        modalDetails.innerHTML = "";
+        const line = (html, cls) => {
+          const el = document.createElement("div");
+          if (cls) el.className = cls;
+          el.innerHTML = html;
+          modalDetails.appendChild(el);
+        };
+        line("Artist: <b>" + escapeHtml(data.artist) + "</b>");
+        if (data.forPlayer)
+          line(
+            '<span style="color:#5588cc">For: <b>' +
+              escapeHtml(data.forPlayer) +
+              "</b></span>",
+          );
+        if (data.copies && skinDescription(id) !== data.copies + " Copies")
+          line("Copies: " + escapeHtml(data.copies));
+        line("File: " + escapeHtml(skinImageFile(id)), "skin-inspect-file");
+
         if (data.versions && data.versions.length > 0) {
-          currentVersionIdx = data.versions.length - 1; // Default to latest
+          currentVersionIdx = data.versions.length - 1; // latest by default
           versionControls.style.display = "flex";
           updateModalVersionDisplay();
         } else {
           versionControls.style.display = "none";
-          updateModalImage(id);
+          paintPreview(modalPreview, id);
         }
 
-        modal.classList.add("active");
+        // The intro cube's fall, once per skin picked
+        modalPreview.style.animation = "none";
+        void modalPreview.offsetWidth;
+        modalPreview.style.animation = "";
+
+        markSelectedTile(id);
       }
+
+      // One step through the list, whichever arrow was pressed.
+      function stepLocker(dir) {
+        if (!lockerOrder.length) return;
+        const at = lockerOrder.indexOf(currentModalSkinId);
+        const next =
+          lockerOrder[(at + dir + lockerOrder.length) % lockerOrder.length];
+        if (next) showInLocker(next);
+      }
+
+      lockerSearch.addEventListener("input", buildLockerList);
 
       function updateModalVersionDisplay() {
         const v = currentSkinData.versions[currentVersionIdx];
-        versionLabel.textContent = v.name || `v${currentVersionIdx + 1}`;
-        updateModalImage(currentModalSkinId, v.img);
-      }
-
-      function updateModalImage(id, customImg) {
-        const data = currentSkinData || {};
-        if (id === "default") {
-          modalPreview.style.backgroundImage = "none";
-          modalPreview.style.backgroundColor = "#335699";
-        } else {
-          const ext = skinFileExtension(id);
-          const img = customImg || data.img || `${id}.${ext}`;
-          modalPreview.style.backgroundImage = `url('${img}')`;
-          modalPreview.style.backgroundColor = data.color || "transparent";
-        }
+        versionLabel.textContent = v.name || "v" + (currentVersionIdx + 1);
+        paintPreview(modalPreview, currentModalSkinId, v.img);
       }
 
       function changeVersion(dir) {
@@ -1089,25 +1198,70 @@
       }
 
       function closeSkinModal() {
-        modal.classList.remove("active");
+        modal.style.opacity = 0;
+        setTimeout(() => modal.classList.remove("active"), 150);
       }
 
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeSkinModal();
-      });
-
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modal.classList.contains("active")) {
+        if (!modal.classList.contains("active")) return;
+        if (e.key === "Escape") {
           closeSkinModal();
+          return;
         }
+        // Left and right belong to the caret while the search box has focus
+        const typing = document.activeElement === lockerSearch;
+        const dir = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+        const sideways = typing
+          ? 0
+          : { ArrowRight: 1, ArrowLeft: -1 }[e.key] || 0;
+        if (!dir && !sideways) return;
+        e.preventDefault();
+        stepLocker(dir || sideways);
       });
 
+      function escapeHtml(text) {
+        const d = document.createElement("div");
+        d.textContent = text == null ? "" : String(text);
+        return d.innerHTML;
+      }
+
+      // ---- The grid ---------------------------------------------------------
       const grid = document.getElementById("skins-grid");
       const searchInput = document.getElementById("search-input");
       const sortSelect = document.getElementById("sort-select");
       const filterBtns = document.querySelectorAll(".filter-btn");
+      const countLine = document.getElementById("count-line");
 
       let currentFilter = "all";
+
+      // Shared by the grid and the full view's list, so both are in the same
+      // order and stepping through one matches what you were looking at.
+      function skinComparator(sortMode) {
+        return ([, dataA], [, dataB]) => {
+          if (sortMode === "name_asc")
+            return dataA.name.localeCompare(dataB.name);
+          if (sortMode === "name_desc")
+            return dataB.name.localeCompare(dataA.name);
+          if (sortMode === "artist_asc")
+            return dataA.artist.localeCompare(dataB.artist);
+          if (sortMode === "artist_desc")
+            return dataB.artist.localeCompare(dataA.artist);
+
+          if (sortMode.startsWith("rarity")) {
+            const getScore = (copies) => {
+              if (copies === "N/A") return 999;
+              const parts = String(copies).split("/");
+              if (parts.length === 2) return parseInt(parts[1]);
+              return 100;
+            };
+            const scoreA = getScore(dataA.copies);
+            const scoreB = getScore(dataB.copies);
+            if (sortMode === "rarity_asc") return scoreA - scoreB;
+            return scoreB - scoreA;
+          }
+          return 0;
+        };
+      }
 
       function renderSkins(filterText = "") {
         grid.innerHTML = "";
@@ -1115,7 +1269,6 @@
         const searchTerms = searchString.split(/\s+/).filter((t) => t);
         const sortMode = sortSelect.value;
 
-        let count = 0;
         let skinsList = Object.entries(SKIN_DEFINITIONS);
 
         // Filter by Tag
@@ -1131,133 +1284,79 @@
           return searchTerms.every((term) => searchableText.includes(term));
         });
 
-        // Sort
-        skinsList.sort((a, b) => {
-          const [idA, dataA] = a;
-          const [idB, dataB] = b;
-
-          if (sortMode === "name_asc")
-            return dataA.name.localeCompare(dataB.name);
-          if (sortMode === "name_desc")
-            return dataB.name.localeCompare(dataA.name);
-          if (sortMode === "artist_asc")
-            return dataA.artist.localeCompare(dataB.artist);
-          if (sortMode === "artist_desc")
-            return dataB.artist.localeCompare(dataA.artist);
-
-          if (sortMode.startsWith("rarity")) {
-            const getScore = (copies) => {
-              if (copies === "N/A") return 999;
-              const parts = copies.split("/");
-              if (parts.length === 2) return parseInt(parts[1]);
-              return 100;
-            };
-            const scoreA = getScore(dataA.copies);
-            const scoreB = getScore(dataB.copies);
-            if (sortMode === "rarity_asc") return scoreA - scoreB;
-            return scoreB - scoreA;
-          }
-          return 0;
-        });
+        skinsList.sort(skinComparator(sortMode));
 
         skinsList.forEach(([id, data]) => {
-          let match = true;
-
-          if (match) {
-            count++;
-            const card = document.createElement("div");
-            card.className = "skin-card";
-            card.title = data.name;
-            card.onclick = () => openSkinModal(id, data);
-
-            const preview = document.createElement("div");
-            preview.className = "skin-preview";
-
-            if (id === "default") {
-              preview.style.backgroundImage = "none";
-              preview.style.backgroundColor = "#335699";
-            } else {
-              // Always apply a color fallback when provided so the grid shows a
-              // visible preview even if the image asset is missing.
-              preview.style.backgroundColor = data.color || "transparent";
-              const ext = skinFileExtension(id);
-              if (data.img) {
-                preview.style.backgroundImage = `url('${data.img}')`;
-              } else {
-                preview.style.backgroundImage = `url('${id}.${ext}')`;
-              }
+          const card = document.createElement("div");
+          card.className = "skin-item";
+          applySkinCardVars(card, id);
+          card.dataset.skin = id;
+          card.tabIndex = 0;
+          card.setAttribute("role", "button");
+          card.setAttribute("aria-label", data.name + ", " + skinDescription(id));
+          card.title = data.name;
+          card.onclick = () => openSkinModal(id);
+          card.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openSkinModal(id);
             }
+          };
 
-            const name = document.createElement("div");
-            name.className = "skin-name";
-            name.textContent = data.name;
+          const stage = document.createElement("div");
+          stage.className = "skin-item-stage";
+          const preview = document.createElement("div");
+          preview.className = "skin-item-preview";
+          paintPreview(preview, id);
+          const platform = document.createElement("div");
+          platform.className = "skin-platform";
+          stage.appendChild(preview);
+          stage.appendChild(platform);
+          card.appendChild(stage);
 
-            const copies = document.createElement("div");
-            copies.className =
-              "skin-copies" + (data.copies === "1/1" ? " legendary" : "");
-            copies.textContent = data.copies;
-
-            const tags = document.createElement("div");
-            tags.className = "skin-tags";
-
-            if (data.honorary) {
-              const t = document.createElement("div");
-              t.className = "skin-tag honorary";
-              t.textContent = "Honorary";
-              tags.appendChild(t);
-            }
-            if (data.firstPlace) {
-              const t = document.createElement("div");
-              t.className = "skin-tag first-place";
-              t.textContent = "1st Place";
-              tags.appendChild(t);
-            }
-            if (data.competitive) {
-              const t = document.createElement("div");
-              t.className = "skin-tag competitive";
-              t.textContent = "Comp";
-              tags.appendChild(t);
-            }
-            if (data.unlockCode) {
-              const t = document.createElement("div");
-              t.className = "skin-tag unlock-code";
-              t.textContent = "Code";
-              tags.appendChild(t);
-            }
-            if (data.gameUnlock) {
-              const t = document.createElement("div");
-              t.className = "skin-tag game-unlock";
-              t.textContent = "Unlock";
-              tags.appendChild(t);
-            }
-            if (data.event) {
-              const t = document.createElement("div");
-              t.className = "skin-tag event";
-              t.textContent = "Event";
-              tags.appendChild(t);
-            }
-
-            const artist = document.createElement("div");
-            artist.className = "skin-artist";
-            artist.textContent = data.artist;
-
-            card.appendChild(preview);
-            card.appendChild(name);
-            card.appendChild(copies);
-            if (tags.children.length > 0) card.appendChild(tags);
-            card.appendChild(artist);
-            if (data.forPlayer) {
-              const forP = document.createElement("div");
-              forP.className = "skin-for";
-              forP.textContent = "For: " + data.forPlayer;
-              card.appendChild(forP);
-            }
-            grid.appendChild(card);
+          if (data.versions && data.versions.length > 1) {
+            const versions = document.createElement("div");
+            versions.className = "skin-item-versions";
+            versions.textContent = data.versions.length + " VER";
+            card.appendChild(versions);
           }
+
+          const name = document.createElement("div");
+          name.className = "skin-item-name";
+          name.textContent = data.name;
+          card.appendChild(name);
+
+          const desc = document.createElement("div");
+          desc.className = "skin-item-desc";
+          desc.textContent = skinDescription(id);
+          if (desc.textContent) card.appendChild(desc);
+
+          // Tags are not on the card any more -- they crowded out the skin.
+          // They are all in the full view, which has room for them.
+
+          const artist = document.createElement("div");
+          artist.className = "skin-artist";
+          artist.textContent = data.artist;
+          card.appendChild(artist);
+
+          if (data.forPlayer) {
+            const forP = document.createElement("div");
+            forP.className = "skin-for";
+            forP.textContent = "For: " + data.forPlayer;
+            card.appendChild(forP);
+          }
+
+          grid.appendChild(card);
         });
 
-        if (count === 0) {
-          grid.innerHTML = `<div class="no-results">No skins found matching "${filterText}"</div>`;
+        const total = Object.keys(SKIN_DEFINITIONS).length;
+        countLine.textContent =
+          skinsList.length === total
+            ? total + " skins"
+            : skinsList.length + " of " + total + " skins";
+
+        if (skinsList.length === 0) {
+          grid.innerHTML = `<div class="no-results">No skins found matching "${escapeHtml(filterText)}"</div>`;
         }
       }
 
@@ -1265,14 +1364,14 @@
         renderSkins(e.target.value);
       });
 
-      sortSelect.addEventListener("change", () => renderSkins());
+      sortSelect.addEventListener("change", () => renderSkins(searchInput.value));
 
       filterBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
           filterBtns.forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
           currentFilter = btn.dataset.tag;
-          renderSkins();
+          renderSkins(searchInput.value);
         });
       });
 
