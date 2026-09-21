@@ -361,6 +361,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#243378",
     artist: "Torgaar",
+    tag: "Shop S1",
   },
   coolguypristine: {
     name: "Cool Guy (Pristine)",
@@ -449,7 +450,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#cbae62",
     artist: "Torgaar",
-    gameUnlock: true,
+    tag: "Shop S2",
   },
   reddino: {
     name: "Dino (Red)",
@@ -471,11 +472,6 @@ window.SKIN_DEFINITIONS = {
     color: "#f5b80d",
     artist: "Torgaar & Chairlord",
     blockySummer: true,
-  },
-  coolguymonogram: {
-    name: "Cool Guy (Monogram)",
-    copies: "1/5",
-    artist: "Torgaar",
   },
   coolguy10: {
     name: "Cool Guy (1.10!)",
@@ -545,14 +541,14 @@ window.SKIN_DEFINITIONS = {
     artist: "Torgaar & Chairlord",
     tag: "Shop S2",
   },
-  coolguyrainbowmonster: {
+  coolguysunset: {
     name: "Cool Guy (Sunset)",
     copies: "1/5",
     color: "#eaee00",
     artist: "Torgaar & Chairlord",
     tag: "Shop S2",
   },
-  coolguyrainbowmonster: {
+  coolguydino: {
     name: "Cool Guy (Dino)",
     copies: "1/5",
     color: "#aefe61",
