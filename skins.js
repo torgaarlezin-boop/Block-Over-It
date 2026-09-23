@@ -478,6 +478,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1.10",
     color: "#30547a",
     artist: "Torgaar",
+    tag: "Shop S1",
   },
   coolguytrail: {
     name: "Cool Guy (Trail)",
@@ -554,6 +555,26 @@ window.SKIN_DEFINITIONS = {
     color: "#aefe61",
     artist: "Torgaar & Chairlord",
     tag: "Shop S2",
+  },
+  coolguyrounded: {
+    name: "Cool Guy (Rounded)",
+    copies: "1/5",
+    color: "#009fe3",
+    artist: "Torgaar",
+    tag: "Rounded Series",
+  },
+  ghost: {
+    name: "Ghost",
+    copies: "1/5",
+    color: "#FFFFFF",
+    artist: "Torgaar",
+    blocktober: true,
+  },
+  americancoolguy: {
+    name: "Cool Guy (Very American)",
+    copies: "1/10",
+    color: "#FFFFFF",
+    artist: "Mcdongos",
   },
 };
 
