@@ -5,7 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Block Architect Pro - Phanes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- The database client is created once, at startup, from this library.
+         When the CDN request failed the editor ran with no database until a
+         reload, so a second CDN gets a try first. Pinned to the same version
+         as the game. -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+    <script>
+      window.supabase ||
+        document.write(
+          '<script src="https://unpkg.com/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"><\/script>',
+        );
+    </script>
     <style>
       :root {
         --bg-dark: #07090e;
@@ -641,8 +651,23 @@
       #level-grid {
         transform-origin: 0 0;
         background: #000;
-        display: grid;
         position: relative;
+      }
+      /* One block per row of the level, each a fixed box with layout
+         containment. Drawing into a cell then lays out that one row. As a
+         single CSS grid, every painted cell re-laid out every cell in the
+         level -- a third of a second per cell on a 100x300 level. */
+      #level-grid > .grid-row {
+        height: 24px;
+        contain: layout size style;
+      }
+      #level-grid > .grid-row > .cell {
+        float: left;
+      }
+      /* Nothing in a blank cell needs placing against it, and a positioned
+         box per cell is a paint layer per cell. */
+      #level-grid .cell.blank {
+        position: static;
       }
       .right-sidebar {
         width: 320px;
@@ -753,6 +778,66 @@
       }
       #level-grid.area-bg-picking {
         cursor: crosshair;
+      }
+      /* Deadly Edges picker: the level drawn as a box with a button on each
+         side of it. A side that kills turns lava red, on its button and on
+         that side of the box; a side that is a wall stays slate. */
+      .deadly-edges {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr 1fr;
+        grid-template-areas:
+          ". top ."
+          "left level right"
+          ". bottom .";
+        gap: 5px;
+      }
+      .deadly-edges button {
+        padding: 5px 0;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        border: 1px solid #1e293b;
+        background: transparent;
+        color: #94a3b8;
+        transition:
+          background-color 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+      .deadly-edges button:hover {
+        border-color: #475569;
+        color: #e2e8f0;
+      }
+      .deadly-edges button.deadly {
+        background: rgba(239, 68, 68, 0.16);
+        border-color: #ef4444;
+        color: #f87171;
+      }
+      .deadly-edges [data-edge="top"] {
+        grid-area: top;
+      }
+      .deadly-edges [data-edge="bottom"] {
+        grid-area: bottom;
+      }
+      .deadly-edges [data-edge="left"] {
+        grid-area: left;
+      }
+      .deadly-edges [data-edge="right"] {
+        grid-area: right;
+      }
+      .deadly-edges-level {
+        grid-area: level;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        border: 3px solid #334155;
+        border-radius: 3px;
+        background: #020617;
+        color: #475569;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
       }
       /* Always-on gravity zone visualiser. Sits above the cells so a zone is
          legible while you are building the level, but never eats clicks. */
@@ -1654,6 +1739,125 @@
       }
       .mod-btn-apply:hover {
         background: #2563eb;
+      }
+      /* ---- Textures popup ----
+         The same frame as the other block popups above, holding a plain list:
+         one real checkbox per texture the selection can take. The list gives
+         up height (and scrolls) only when the window is too short for it. */
+      .tex-popup-panel {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 3rem);
+      }
+      .tex-popup-panel > * {
+        flex-shrink: 0;
+      }
+      .tex-popup-panel > .tex-list-section {
+        display: flex;
+        flex-direction: column;
+        flex: 0 1 auto;
+        min-height: 0;
+      }
+      .tex-list {
+        min-height: 72px;
+        overflow-y: auto;
+        background: #0a0d14;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: #334155 transparent;
+      }
+      .tex-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: #94a3b8;
+        cursor: pointer;
+        user-select: none;
+      }
+      .tex-row + .tex-row {
+        border-top: 1px solid #1e293b;
+      }
+      .tex-row:hover {
+        background: #111827;
+        color: #e2e8f0;
+      }
+      .tex-row.on {
+        color: #f1f5f9;
+      }
+      .tex-row input {
+        -webkit-appearance: none;
+        appearance: none;
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        border: 1px solid #334155;
+        border-radius: 3px;
+        background: #0f121a center / 10px 10px no-repeat;
+        cursor: pointer;
+      }
+      .tex-row input:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2l2.1 2.1L8 2.8' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      }
+      .tex-row input:focus-visible {
+        outline: 2px solid #60a5fa;
+        outline-offset: 1px;
+      }
+      .tex-row-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+      }
+      .tex-empty {
+        padding: 16px 10px;
+        font-size: 11px;
+        color: #64748b;
+        text-align: center;
+      }
+      .tex-note {
+        font-size: 10px;
+        color: rgba(251, 191, 36, 0.8);
+        margin: -8px 0 12px;
+      }
+      .tex-symbol-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tex-symbol-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #0a0d14;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        color: #f1f5f9;
+        font-size: 16px;
+      }
+      .tex-symbol-change {
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #1e293b;
+        color: #94a3b8;
+        border: 1px solid #334155;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .tex-symbol-change:hover {
+        background: #334155;
+        color: #f1f5f9;
       }
       .selection-popup {
         width: 14rem;
@@ -3427,6 +3631,27 @@
                     Upside Down
                   </button>
                 </div>
+              </div>
+              <!-- Which edges of the level kill. Filled in by
+                   refreshDeadlyEdgeControls(), like the copy in Settings. -->
+              <div class="mt-3">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <label class="text-[9px] text-slate-500 font-bold uppercase"
+                    >Deadly Edges</label
+                  >
+                  <div
+                    onclick="
+                      showInfo(
+                        'Deadly Edges',
+                        'Which edges of the level kill the player instead of acting as walls. Click a side to switch it. By default only the side you fall out of is deadly: the bottom, or the top when the level is upside down. Switching Level Orientation moves that default with it, unless you have changed the top or bottom yourself.',
+                      )
+                    "
+                    class="flex items-center justify-center w-3 h-3 rounded-full border border-slate-600 text-[8px] text-slate-400 cursor-pointer hover:text-white hover:border-white transition-colors"
+                  >
+                    i
+                  </div>
+                </div>
+                <div class="deadly-edges" data-deadly-edges></div>
               </div>
               <input type="hidden" id="prop-rise" value="0" />
               <span id="rise-val" style="display: none"></span>
@@ -6151,64 +6376,46 @@
     <!-- DECORATION PICKER MODAL -->
     <div
       id="deco-picker-modal"
-      class="fixed inset-0 z-[400] hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+      class="fixed inset-0 z-[400] hidden flex items-center justify-center p-6 bg-black/80"
     >
       <div
-        class="bg-[#0f121a] border border-slate-800 w-full max-w-xl rounded-xl shadow-2xl p-5"
+        class="bg-[#0f121a] border border-slate-800 w-full max-w-lg rounded-lg p-4"
       >
-        <h3
-          class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4"
-        >
-          Select Decoration
-        </h3>
-        <div
-          id="dp-tabs"
-          class="flex gap-2 mb-4 overflow-x-auto pb-2 border-b border-slate-800"
-        ></div>
-        <div class="mb-3">
-          <input
-            id="dp-search"
-            type="text"
-            placeholder="Search symbols (e.g. 'arrow', 'sun')..."
-            oninput="decoPicker.renderGrid()"
-            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
-          />
-        </div>
-        <div class="mb-4">
-          <label
-            class="text-[10px] text-slate-500 font-bold uppercase block mb-1.5"
-            >Custom Character</label
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-white">Decoration</h3>
+          <button
+            onclick="decoPicker.close()"
+            class="text-slate-500 hover:text-white text-lg leading-none w-6 h-6"
+            title="Close"
           >
-          <div class="flex gap-2">
-            <input
-              id="dp-custom"
-              type="text"
-              placeholder="Type anything..."
-              onkeydown="if (event.key === 'Enter') decoPicker.useCustom()"
-              class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
-            />
-            <button
-              onclick="decoPicker.useCustom()"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded whitespace-nowrap"
-            >
-              Use
-            </button>
-          </div>
+            &times;
+          </button>
         </div>
+        <input
+          id="dp-search"
+          type="text"
+          placeholder="Search"
+          oninput="decoPicker.renderGrid()"
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-blue-500 mb-3"
+        />
+        <div id="dp-tabs" class="flex gap-1 mb-3 overflow-x-auto pb-1"></div>
         <div
-          class="grid grid-cols-8 gap-2 mb-6 max-h-60 overflow-y-auto p-1"
+          class="grid grid-cols-8 gap-1.5 mb-3 max-h-60 overflow-y-auto"
           id="dp-grid"
         ></div>
-        <div class="flex justify-end gap-2">
+        <div class="flex gap-2 border-t border-slate-800 pt-3">
+          <input
+            id="dp-custom"
+            type="text"
+            placeholder="Or type your own"
+            onkeydown="if (event.key === 'Enter') decoPicker.useCustom()"
+            class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+          />
           <button
-            onclick="
-              document
-                .getElementById('deco-picker-modal')
-                .classList.add('hidden')
-            "
-            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded"
+            onclick="decoPicker.useCustom()"
+            class="px-4 py-2 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white text-xs rounded"
           >
-            Cancel
+            Use
           </button>
         </div>
       </div>
@@ -6482,6 +6689,24 @@
                       ></div>
                     </div>
                   </label>
+                </div>
+
+                <!-- Deadly Edges: the sidebar's picker, kept in step with it -->
+                <div class="pt-4 border-t border-slate-800 setting-item">
+                  <label
+                    class="text-[10px] text-slate-500 font-bold uppercase block mb-2"
+                    >Deadly Edges</label
+                  >
+                  <p class="text-[10px] text-slate-500 mb-3">
+                    Edges that kill instead of acting as walls. By default
+                    only the bottom does, or the top when the level starts
+                    upside down.
+                  </p>
+                  <div
+                    class="deadly-edges"
+                    data-deadly-edges
+                    style="max-width: 280px"
+                  ></div>
                 </div>
 
 
@@ -7983,6 +8208,10 @@
           document.getElementById("set-prop-start-gravity-reversed").checked =
             document.getElementById("prop-start-gravity-reversed").value ===
             "true";
+          // Every loader ends here, so this is where the sidebar's own
+          // orientation and edge controls catch up with the level too.
+          refreshLevelOrientationButtons();
+          refreshDeadlyEdgeControls();
           document.getElementById("set-prop-block-hitboxes").checked =
             document.getElementById("prop-block-hitboxes").value === "true";
           document.getElementById("set-prop-force-default-skin").checked =
@@ -8079,8 +8308,12 @@
             document.getElementById("set-prop-force-zoom").checked;
           document.getElementById("prop-disable-zoom").value =
             document.getElementById("set-prop-disable-zoom").checked;
+          const wasUpsideDown = levelStartsUpsideDown();
           document.getElementById("prop-start-gravity-reversed").value =
             document.getElementById("set-prop-start-gravity-reversed").checked;
+          // The Settings toggle is the other way to flip the level, so it
+          // carries the deadly edges across the same way the sidebar does.
+          deadlyEdgesFollowOrientation(wasUpsideDown, levelStartsUpsideDown());
           refreshLevelOrientationButtons();
           document.getElementById("prop-block-hitboxes").value =
             document.getElementById("set-prop-block-hitboxes").checked;
@@ -8615,6 +8848,9 @@
         areaBackgrounds: [],
         gravityZones: [],
         windZones: [],
+        // Which edges kill: { top, bottom, left, right }. Null until a level
+        // is loaded, which reads as the default (see normalizeDeadlyEdges).
+        deadlyEdges: null,
         publishedId: null,
         publishedVersion: null,
         publishedName: null,
@@ -8756,6 +8992,7 @@
           document.getElementById("level-grid").classList.add("grid-lines");
         setDifficulty(1);
         refreshLevelOrientationButtons();
+        refreshDeadlyEdgeControls();
         refreshTelePaletteIcon();
         render();
         history.push();
@@ -8961,14 +9198,93 @@
         "upvotes",
         "downvotes",
         "plays",
-        "verified",
-        "verifier",
         "featured",
         "legendary",
         "impossible",
         "awards",
         "official_rating",
       ];
+
+      // Verification says "somebody beat this layout", so it belongs to the
+      // layout rather than to the level. These two are carried over only when
+      // a re-publish leaves the playable level untouched -- otherwise an edit
+      // could turn a beaten level into an impossible one that still shows a
+      // verified badge and a verifier who never saw it.
+      const VERIFICATION_LEVEL_FIELDS = [
+        "verified",
+        "verifier",
+        "bluecoin_verified",
+        "bluecoin_verifier",
+      ];
+
+      // Fields in the level blob that change nothing about playing it. A name
+      // or description edit should not cost a level its verification.
+      const NON_PLAYABLE_LEVEL_FIELDS = new Set([
+        "name",
+        "creator",
+        "creatorAccount",
+        "description",
+        "difficulty",
+        "linkAccount",
+        "notes",
+        "publishedId",
+        "publishedVersion",
+        "publishedName",
+        "publishedLegendary",
+        "collabTeam",
+        "collabPerms",
+        "fmt",
+      ]);
+
+      // Key order is not meaningful in JSON and the database hands rows back
+      // in its own order, so compare a sorted copy rather than raw text.
+      function sortKeysDeep(value) {
+        if (Array.isArray(value)) return value.map(sortKeysDeep);
+        if (value && typeof value === "object") {
+          const out = {};
+          Object.keys(value)
+            .sort()
+            .forEach((k) => {
+              out[k] = sortKeysDeep(value[k]);
+            });
+          return out;
+        }
+        return value;
+      }
+
+      function playableLevelFingerprint(data) {
+        if (!data || typeof data !== "object") return null;
+        const stripped = {};
+        Object.keys(data).forEach((k) => {
+          if (!NON_PLAYABLE_LEVEL_FIELDS.has(k)) stripped[k] = data[k];
+        });
+        try {
+          return JSON.stringify(sortKeysDeep(stripped));
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Unknown on either side means "assume it changed": dropping a
+      // verification badge is recoverable, leaving a false one is not.
+      function levelPlaysTheSame(previousData, nextData) {
+        const a = playableLevelFingerprint(previousData);
+        const b = playableLevelFingerprint(nextData);
+        return a !== null && b !== null && a === b;
+      }
+
+      // Reads whatever the database returned in `data`, which may be a jsonb
+      // object or a JSON string depending on how the column was set up.
+      function parseStoredLevelData(raw) {
+        if (typeof raw === "string") {
+          try {
+            return JSON.parse(raw);
+          } catch (e) {
+            return null;
+          }
+        }
+        return raw && typeof raw === "object" ? raw : null;
+      }
 
       const shareManager = {
         open() {
@@ -9122,6 +9438,7 @@
             };
 
             let version = 1;
+            let verificationWasReset = false;
             if (
               isUpdate &&
               state.publishedId !== null &&
@@ -9143,6 +9460,30 @@
                   payload[field] = previous[field];
                 }
               });
+
+              const unchanged = levelPlaysTheSame(
+                parseStoredLevelData(previous && previous.data),
+                payload.data,
+              );
+              if (unchanged) {
+                VERIFICATION_LEVEL_FIELDS.forEach((field) => {
+                  if (
+                    previous &&
+                    previous[field] !== undefined &&
+                    previous[field] !== null
+                  ) {
+                    payload[field] = previous[field];
+                  }
+                });
+              } else {
+                payload.verified = false;
+                payload.verifier = null;
+                payload.bluecoin_verified = false;
+                payload.bluecoin_verifier = null;
+                verificationWasReset =
+                  previous &&
+                  (!!previous.verified || !!previous.bluecoin_verified);
+              }
             }
             payload.version = version;
 
@@ -9162,7 +9503,10 @@
               isUpdate
                 ? "Update published as v" +
                     state.publishedVersion +
-                    "."
+                    "." +
+                    (verificationWasReset
+                      ? " The level changed, so it is unverified again until someone beats this version."
+                      : "")
                 : "Level uploaded successfully! It is now available in the Community Browser.",
             );
           } catch (e) {
@@ -9222,6 +9566,23 @@
               creator_user: data.creatorAccount || null,
             };
 
+            // Replacing the layout invalidates the old verification: nobody
+            // has beaten what players are about to download.
+            const stillPlaysTheSame = levelPlaysTheSame(
+              parseStoredLevelData(previous && previous.data),
+              patch.data,
+            );
+            let verificationWasReset = false;
+            if (!stillPlaysTheSame) {
+              patch.verified = false;
+              patch.verifier = null;
+              patch.bluecoin_verified = false;
+              patch.bluecoin_verifier = null;
+              verificationWasReset =
+                previous &&
+                (!!previous.verified || !!previous.bluecoin_verified);
+            }
+
             let res = await _supabase
               .from("published_levels")
               .update(patch)
@@ -9231,6 +9592,19 @@
 
             if (res.error && /creator_user/i.test(res.error.message || "")) {
               delete patch.creator_user;
+              res = await _supabase
+                .from("published_levels")
+                .update(patch)
+                .eq("id", state.publishedId)
+                .select()
+                .maybeSingle();
+            }
+            if (res.error && /verif/i.test(res.error.message || "")) {
+              delete patch.verified;
+              delete patch.verifier;
+              delete patch.bluecoin_verified;
+              delete patch.bluecoin_verifier;
+              verificationWasReset = false;
               res = await _supabase
                 .from("published_levels")
                 .update(patch)
@@ -9258,7 +9632,10 @@
               "SUCCESS",
               "Level replaced with v" +
                 nextVersion +
-                ". Only this version is stored.",
+                ". Only this version is stored." +
+                (verificationWasReset
+                  ? " The level changed, so it is unverified again until someone beats this version."
+                  : ""),
             );
           } catch (e) {
             dialog.alert("UPDATE FAILED", describePublishError(e, false));
@@ -9417,6 +9794,7 @@
             cloudLevels.sync();
             collabManager.refreshInbox();
             collabManager.startPolling();
+            this.unlinkIfAccountMissing();
           }
         },
 
@@ -9559,6 +9937,58 @@
             btn.disabled = false;
             btn.innerText = "Link Account";
           }
+        },
+
+        // The editor links to a game account by name only, so a deleted
+        // account leaves the chip showing a user who is not there: cloud saves
+        // go nowhere and published levels credit an account nobody can open.
+        // Same rules as the game's check -- act only on a confirmed empty
+        // answer, never on an error, and confirm it twice so a lookup racing a
+        // fresh sign-up cannot unlink a real account.
+        async unlinkIfAccountMissing() {
+          const name = this.username;
+          if (!_supabase || !name) return false;
+          try {
+            await new Promise((r) => setTimeout(r, 1500));
+            if (this.username !== name) return false;
+
+            const { data, error } = await _supabase
+              .from("users")
+              .select("username")
+              .eq("username", name)
+              .limit(1);
+            if (error) return false;
+            if (!Array.isArray(data) || data.length > 0) return false;
+
+            this.forceUnlink();
+            dialog.alert(
+              "ACCOUNT GONE",
+              "The account “" +
+                name +
+                "” no longer exists, so this browser has been unlinked " +
+                "from it. Your local projects are untouched.",
+            );
+            return true;
+          } catch (e) {
+            return false;
+          }
+        },
+
+        // The unlink itself, without the confirmation prompt. Local projects
+        // are never touched: the player did not ask for this.
+        forceUnlink() {
+          this.username = null;
+          localStorage.removeItem(ACCOUNT_KEY);
+          cloudLevels.rows = [];
+          cloudLevels.loaded = false;
+          collabManager.pending = [];
+          collabManager.joined = [];
+          collabManager.mySubmissions = [];
+          collabManager.stopPolling();
+          this.refreshChip();
+          collabManager.refreshBadge();
+          projectManager.renderList();
+          updateStatus("Account unlinked: it no longer exists");
         },
 
         signOut() {
@@ -11859,6 +12289,8 @@
         if (textures.includes("particles")) {
           const parentGrid = particleLayer();
           if (parentGrid) {
+            // So renderCell knows there is a wrapper to clear up later
+            cell.boiParticles = true;
             const prevP = parentGrid.querySelector(`.pcl-${x}-${y}`);
             const sig = `${isSlab}|${isSideSlab}|${sideRight}|${flipped}|${particleColor}`;
             const upToDate = prevP && prevP.dataset.sig === sig;
@@ -12077,9 +12509,11 @@
       // render() compares it against the last value stored on the element and
       // skips cells that cannot have changed — without this, a full-level
       // render rebuilds thousands of nodes for no reason.
-      function cellSignature(x, y) {
+      // `flip` can be passed in by a caller that signs every cell, so the
+      // orientation is read off the page once rather than once per cell.
+      function cellSignature(x, y, flip) {
         const k = `${x},${y}`;
-        const flip = levelStartsUpsideDown() ? "^" : "v";
+        if (flip === undefined) flip = levelStartsUpsideDown() ? "^" : "v";
         const cfg = state.blockConfigs[k];
         const tele = cfg && cfg.teleGroup !== undefined ? "t" + cfg.teleGroup : "";
         const wet = cfg && getTextureConfigForCell(x, y).includes("underwater")
@@ -12138,21 +12572,34 @@
         return currentWaterLayer || document.getElementById("water-overlay");
       }
 
-      // Every cell the water covers: real water tiles plus anything carrying
-      // the Underwater texture.
+      // Every cell the water covers: real water tiles, blocks wearing the
+      // Water illusion (the game pours those into the pool around them too),
+      // and anything carrying the Underwater texture.
+      //
+      // Only a water tile or a cell with a block config can be water, so the
+      // rest of the level is never asked. Checking every cell for textures
+      // cost more than the whole overlay does on a big level.
       function waterCellKeys() {
         const keys = [];
         for (let y = 0; y < state.height; y++) {
+          const row = state.grid[y];
           for (let x = 0; x < state.width; x++) {
-            if (state.grid[y][x] === "w") {
-              keys.push(x + "," + y);
-              continue;
-            }
-            if (!canApplyTexturesToCell(x, y)) continue;
-            if (getTextureConfigForCell(x, y).includes("underwater"))
-              keys.push(x + "," + y);
+            if (row[x] === "w") keys.push(x + "," + y);
           }
         }
+        Object.keys(state.blockConfigs).forEach((k) => {
+          const comma = k.indexOf(",");
+          const x = +k.slice(0, comma);
+          const y = +k.slice(comma + 1);
+          if (!(x >= 0 && y >= 0 && x < state.width && y < state.height)) return;
+          if (state.grid[y][x] === "w") return;
+          if (state.illusions.has(k) && state.blockConfigs[k]?.illusion === "w") {
+            keys.push(k);
+            return;
+          }
+          if (!canApplyTexturesToCell(x, y)) return;
+          if (getTextureConfigForCell(x, y).includes("underwater")) keys.push(k);
+        });
         return keys;
       }
 
@@ -12318,7 +12765,46 @@
         );
       }
 
-      function renderCell(cell, x, y) {
+      // A cell that used to have particles loses its wrapper on the grid
+      function dropCellParticles(cell, x, y) {
+        if (!cell.boiParticles) return;
+        cell.boiParticles = false;
+        const pLayer = particleLayer();
+        const stale = pLayer && pLayer.querySelector(`.pcl-${x}-${y}`);
+        if (stale) stale.remove();
+      }
+
+      // Empty space with nothing attached to it, which draws nothing at all
+      function isBlankCell(x, y) {
+        if (state.grid[y][x] !== " " || state.picker.active) return false;
+        const k = `${x},${y}`;
+        return (
+          state.colors[k] === undefined &&
+          !state.blockConfigs[k] &&
+          !state.fakes.has(k) &&
+          !state.flickers.has(k) &&
+          !state.jumpFlickers.has(k) &&
+          !state.touchFlickers.has(k) &&
+          !state.illusions.has(k)
+        );
+      }
+
+      function renderCell(cell, x, y, flip) {
+        // Most of a level is empty space, so a blank cell skips the dozen
+        // style resets and lookups below, which were most of the time it took
+        // to open a big level. render() also knows a cell that is still blank
+        // needs nothing redone (boiBlank).
+        if (isBlankCell(x, y)) {
+          cell.className = "cell blank";
+          if (cell.firstChild) cell.textContent = "";
+          if (cell.hasAttribute("style")) cell.removeAttribute("style");
+          dropCellParticles(cell, x, y);
+          cell.boiBlank = true;
+          cell.boiSig = null;
+          return;
+        }
+        cell.boiBlank = false;
+
         const char = state.grid[y][x];
         const isIllusion = state.illusions.has(`${x},${y}`);
         let visualChar = char;
@@ -12346,15 +12832,11 @@
         cell.style.clipPath = "";
 
         // Drop a stale particle wrapper if this cell no longer has particles.
-        const pLayer = particleLayer();
-        if (pLayer) {
-          const staleParticles = pLayer.querySelector(`.pcl-${x}-${y}`);
-          if (
-            staleParticles &&
-            !getTextureConfigForCell(x, y).includes("particles")
-          ) {
-            staleParticles.remove();
-          }
+        if (
+          cell.boiParticles &&
+          !getTextureConfigForCell(x, y).includes("particles")
+        ) {
+          dropCellParticles(cell, x, y);
         }
 
         // Pads are half-height in game. A reverse pad with a solid block above
@@ -12595,7 +13077,7 @@
           renderTextureOverlays(cell, x, y, color);
         }
 
-        cell.dataset.sig = cellSignature(x, y);
+        cell.boiSig = cellSignature(x, y, flip);
 
         // Picker Highlight
         if (state.picker.active) {
@@ -12655,6 +13137,15 @@
         }
       }
 
+      // The cell elements in row-major order. Cells live inside row blocks, so
+      // they cannot be found by indexing the grid's children.
+      var gridCells = [];
+      var gridCellsWidth = 0;
+
+      function gridCellAt(x, y) {
+        return gridCells[y * state.width + x] || null;
+      }
+
       function render() {
         const gridEl = document.getElementById("level-grid");
         const totalCells = state.width * state.height;
@@ -12662,9 +13153,16 @@
         currentWaterLayer = document.getElementById("water-overlay");
         let rebuilt = false;
 
-        // Only rebuild if dimensions changed or grid is empty
-        if (gridEl.children.length !== totalCells + GRID_LAYER_COUNT) {
-          gridEl.style.gridTemplateColumns = `repeat(${state.width}, 24px)`;
+        // Only rebuild if the dimensions changed or the cells are gone. This
+        // used to count the grid's children, and the visual title preview
+        // lives in the grid too -- so any level with a title rebuilt every
+        // cell on every render.
+        if (
+          gridCells.length !== totalCells ||
+          gridCellsWidth !== state.width ||
+          !gridCells.length ||
+          gridCells[0].parentNode?.parentNode !== gridEl
+        ) {
           gridEl.style.width = `${state.width * 24}px`;
           gridEl.style.height = `${state.height * 24}px`;
           gridEl.innerHTML = "";
@@ -12701,24 +13199,37 @@
           gviz.id = "gravity-viz-overlay";
           frag.appendChild(gviz);
 
+          gridCells = new Array(totalCells);
+          gridCellsWidth = state.width;
+          const rowWidth = state.width * 24 + "px";
+          const flip = levelStartsUpsideDown() ? "^" : "v";
           for (let y = 0; y < state.height; y++) {
+            const row = document.createElement("div");
+            row.className = "grid-row";
+            row.style.width = rowWidth;
             for (let x = 0; x < state.width; x++) {
               const cell = document.createElement("div");
               cell.dataset.x = x;
               cell.dataset.y = y;
-              renderCell(cell, x, y);
-              frag.appendChild(cell);
+              renderCell(cell, x, y, flip);
+              row.appendChild(cell);
+              gridCells[y * state.width + x] = cell;
             }
+            frag.appendChild(row);
           }
           gridEl.appendChild(frag);
         } else {
-          // Incremental update — only touch cells whose inputs actually moved
+          // Incremental update — only touch cells whose inputs actually moved.
+          // A cell that was blank and still is needs no signature at all.
+          const flip = levelStartsUpsideDown() ? "^" : "v";
           for (let i = 0; i < totalCells; i++) {
-            const cell = gridEl.children[i + GRID_LAYER_COUNT];
+            const cell = gridCells[i];
             const x = i % state.width;
-            const y = Math.floor(i / state.width);
-            if (cell.dataset.sig === cellSignature(x, y)) continue;
-            renderCell(cell, x, y);
+            const y = (i - x) / state.width;
+            if (cell.boiBlank) {
+              if (isBlankCell(x, y)) continue;
+            } else if (cell.boiSig === cellSignature(x, y, flip)) continue;
+            renderCell(cell, x, y, flip);
           }
         }
         renderAreaBackgrounds();
@@ -13799,6 +14310,7 @@
       // here so they cannot disagree.
       function setLevelOrientation(upsideDown) {
         const on = !!upsideDown;
+        const was = levelStartsUpsideDown();
         const hidden = document.getElementById("prop-start-gravity-reversed");
         if (hidden) hidden.value = on ? "true" : "false";
 
@@ -13807,8 +14319,139 @@
         );
         if (modalToggle) modalToggle.checked = on;
 
+        deadlyEdgesFollowOrientation(was, on);
         refreshLevelOrientationButtons();
         history.push();
+      }
+
+      // Which edges of the level kill instead of acting as walls. By default
+      // only the one you fall out of -- the bottom, or the top of an upside
+      // down level -- which is all the game ever did before this was a
+      // setting. state.deadlyEdges holds all four sides; a level stores them
+      // only when they differ from that default (deadlyEdgesForSave), so the
+      // default keeps following Level Orientation. The game reads the same
+      // field through levelDeadlyEdges() and must agree with this.
+      const LEVEL_EDGES = ["top", "bottom", "left", "right"];
+
+      function defaultDeadlyEdges(upsideDown) {
+        return {
+          top: !!upsideDown,
+          bottom: !upsideDown,
+          left: false,
+          right: false,
+        };
+      }
+
+      // Whatever a level carries, filled out against its orientation.
+      // Missing or malformed sides take the default.
+      function normalizeDeadlyEdges(saved, upsideDown) {
+        const edges = defaultDeadlyEdges(upsideDown);
+        if (saved && typeof saved === "object") {
+          LEVEL_EDGES.forEach((side) => {
+            if (typeof saved[side] === "boolean") edges[side] = saved[side];
+          });
+        }
+        return edges;
+      }
+
+      function currentDeadlyEdges() {
+        return normalizeDeadlyEdges(state.deadlyEdges, levelStartsUpsideDown());
+      }
+
+      // For every loader. Runs after the orientation field has been set,
+      // since that is what a level without the field defaults against.
+      function loadDeadlyEdges(saved) {
+        state.deadlyEdges = normalizeDeadlyEdges(saved, levelStartsUpsideDown());
+        refreshDeadlyEdgeControls();
+      }
+
+      // Undefined while the edges are just the default, so the field is left
+      // out altogether and an untouched level still fingerprints the same as
+      // it did before this setting existed -- re-publishing it must not cost
+      // its verification.
+      function deadlyEdgesForSave() {
+        const edges = currentDeadlyEdges();
+        const def = defaultDeadlyEdges(levelStartsUpsideDown());
+        return LEVEL_EDGES.every((side) => edges[side] === def[side])
+          ? undefined
+          : edges;
+      }
+
+      function toggleDeadlyEdge(side) {
+        if (!LEVEL_EDGES.includes(side)) return;
+        const edges = currentDeadlyEdges();
+        edges[side] = !edges[side];
+        state.deadlyEdges = edges;
+        refreshDeadlyEdgeControls();
+        const name = side[0].toUpperCase() + side.slice(1);
+        updateStatus(`${name} edge ${edges[side] ? "kills" : "is a wall"}`);
+      }
+
+      // Flipping the level carries the default across, so an upside-down
+      // level still dies off the top -- but only while top and bottom are
+      // exactly the old default. Once you have set them yourself they are
+      // yours, and left and right never move with gravity.
+      function deadlyEdgesFollowOrientation(wasUpsideDown, upsideDown) {
+        if (!!wasUpsideDown === !!upsideDown) return;
+        const edges = normalizeDeadlyEdges(state.deadlyEdges, wasUpsideDown);
+        const before = defaultDeadlyEdges(wasUpsideDown);
+        if (edges.top === before.top && edges.bottom === before.bottom) {
+          const after = defaultDeadlyEdges(upsideDown);
+          edges.top = after.top;
+          edges.bottom = after.bottom;
+        }
+        state.deadlyEdges = edges;
+        refreshDeadlyEdgeControls();
+      }
+
+      function buildDeadlyEdgePicker(picker) {
+        LEVEL_EDGES.forEach((side) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.dataset.edge = side;
+          btn.textContent = side[0].toUpperCase() + side.slice(1);
+          btn.onclick = () => toggleDeadlyEdge(side);
+          picker.appendChild(btn);
+        });
+        const box = document.createElement("div");
+        box.className = "deadly-edges-level";
+        box.textContent = "LEVEL";
+        picker.appendChild(box);
+      }
+
+      // Both pickers (sidebar and Settings) and the canvas show the same
+      // four edges, so they are all redrawn from state together.
+      function refreshDeadlyEdgeControls() {
+        const edges = currentDeadlyEdges();
+        document.querySelectorAll("[data-deadly-edges]").forEach((picker) => {
+          if (!picker.childElementCount) buildDeadlyEdgePicker(picker);
+          const box = picker.querySelector(".deadly-edges-level");
+          LEVEL_EDGES.forEach((side) => {
+            const btn = picker.querySelector(`[data-edge="${side}"]`);
+            const name = side[0].toUpperCase() + side.slice(1);
+            btn.classList.toggle("deadly", edges[side]);
+            btn.title = edges[side]
+              ? `${name} edge kills. Click to make it a wall.`
+              : `${name} edge is a wall. Click to make it kill.`;
+            box.style[`border${name}Color`] = edges[side] ? "#ef4444" : "";
+          });
+        });
+
+        // On the canvas, a lava-red rule along the outside of every edge that
+        // kills. The grid's own drop shadow stays at the end of the list.
+        const grid = document.getElementById("level-grid");
+        if (grid) {
+          const rule = {
+            top: "0 -3px 0 0",
+            bottom: "0 3px 0 0",
+            left: "-3px 0 0 0",
+            right: "3px 0 0 0",
+          };
+          grid.style.boxShadow = LEVEL_EDGES.filter((side) => edges[side])
+            .map((side) => rule[side] + " #ef4444")
+            .concat("0 0 100px rgba(0, 0, 0, 0.5)")
+            .join(", ");
+        }
       }
 
       function refreshLevelOrientationButtons() {
@@ -14974,10 +15617,7 @@
         state.illusions.delete(`${x},${y}`);
 
         if (updateView) {
-          const cell =
-            document.getElementById("level-grid").children[
-              y * state.width + x + GRID_LAYER_COUNT
-            ];
+          const cell = gridCellAt(x, y);
           if (cell) renderCell(cell, x, y);
           minimap.render();
           if (touchedTeleporter) renderTeleporterPanel();
@@ -15182,57 +15822,56 @@
 
         const options = Array.from(optionPool).sort();
 
-        // Create the Modal Overlay
+        // Create the Modal Overlay. It wears the same frame as the other block
+        // popups (Color Flash, Glow, Transparency), so the Textures button no
+        // longer opens something that looks like it belongs to another app.
         const overlay = document.createElement("div");
-        overlay.className =
-          "fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm";
+        overlay.className = "mod-popup-overlay open";
+        overlay.style.zIndex = "99999";
         overlay.id = "block-modder-modal";
 
         const panel = document.createElement("div");
-        panel.className =
-          "w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-800 bg-[#0f121a] p-5 shadow-2xl text-slate-200 flex flex-col gap-4";
+        panel.className = "mod-popup-panel tex-popup-panel";
 
-        // Header
         panel.innerHTML = `
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="mod-popup-header">
+            <div class="mod-popup-icon" style="background: rgba(245, 158, 11, 0.15)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round">
+                <path d="M4 7h16M4 12h10M4 17h16" />
+              </svg>
+            </div>
             <div>
-              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Block Textures</h3>
-              <p class="text-[10px] text-slate-500">Apply surface textures to selection</p>
+              <div class="mod-popup-title">Textures</div>
+              <div class="mod-popup-subtitle">Change how the selected blocks look</div>
             </div>
-            <button id="modder-close-btn" class="text-slate-500 hover:text-white text-lg font-bold leading-none w-6 h-6 flex items-center justify-center rounded hover:bg-slate-800 transition-colors">×</button>
           </div>
 
-          <!-- Textures Grid -->
-          <div class="flex flex-col gap-3">
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Select Textures</div>
-            <div id="textures-grid" class="grid grid-cols-2 gap-2"></div>
-
-            <!-- Deco Char Selector -->
-            <div id="deco-char-section" class="hidden flex items-center justify-between bg-slate-950/80 border border-slate-900 rounded-xl p-2.5 mt-1">
-              <div>
-                <div class="text-xs font-semibold text-white">Decoration Symbol</div>
-                <div class="text-[9px] text-slate-500">Rendered in center of block</div>
-              </div>
-              <button type="button" id="deco-picker-trigger" class="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold transition-all">
-                <span id="deco-char-preview" class="text-sm font-bold bg-black/30 w-6 h-6 rounded flex items-center justify-center">${selectedDecoChar}</span>
-                <span>Choose...</span>
-              </button>
-            </div>
-
-            <!-- Mutual exclusion note -->
-            <div id="zigzag-wavy-note" class="hidden text-[9px] text-amber-400/80 px-1">⚠ Zigzag and Wavy are mutually exclusive — only one will apply.</div>
-            <div id="sideslab-shape-note" class="hidden text-[9px] text-amber-400/80 px-1">⚠ Side Slab does not combine with a shaped top edge — Zigzag or Wavy will win.</div>
+          <div class="mod-popup-section tex-list-section">
+            <div id="textures-grid" class="tex-list"></div>
           </div>
 
-          <!-- Actions Footer -->
-          <div class="flex items-center justify-between border-t border-slate-800 pt-4 mt-1">
-            <button type="button" id="modder-clear-btn" class="rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-red-950/40 hover:border-red-900 px-4 py-2 text-xs font-bold text-red-400 transition-all">Clear All</button>
-            <div class="flex gap-2">
-              <button type="button" id="modder-cancel-btn" class="rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-400 transition-all">Cancel</button>
-              <button type="button" id="modder-apply-btn" class="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2 text-xs font-bold text-white shadow-lg transition-all">Apply</button>
+          <div id="zigzag-wavy-note" class="tex-note" hidden>Zigzag and Wavy cannot both apply — only one will show.</div>
+          <div id="sideslab-shape-note" class="tex-note" hidden>Side Slab cannot combine with Zigzag or Wavy — the top edge wins.</div>
+
+          <div id="deco-char-section" class="mod-popup-section" hidden>
+            <span class="mod-popup-label">Symbol</span>
+            <div class="tex-symbol-row">
+              <span id="deco-char-preview" class="tex-symbol-preview"></span>
+              <button type="button" id="deco-picker-trigger" class="tex-symbol-change">Change</button>
+            </div>
+          </div>
+
+          <div class="mod-popup-footer">
+            <button type="button" id="modder-clear-btn" class="mod-btn-remove">Remove</button>
+            <div style="display: flex; gap: 8px">
+              <button type="button" id="modder-cancel-btn" class="mod-btn-cancel">Cancel</button>
+              <button type="button" id="modder-apply-btn" class="mod-btn-apply">Apply</button>
             </div>
           </div>
         `;
+        // The symbol can be anything a level author typed, so it goes in as
+        // text rather than as markup.
+        panel.querySelector("#deco-char-preview").textContent = selectedDecoChar;
 
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
@@ -15374,79 +16013,84 @@
           },
         ];
 
-        const renderTextureGrid = () => {
-          grid.innerHTML = "";
+        const updateNotes = () => {
           const hasZig = selectedTextures.has("zigzag");
           const hasWav = selectedTextures.has("wavy");
-          zigzagWavyNote.classList.toggle("hidden", !(hasZig && hasWav));
+          zigzagWavyNote.hidden = !(hasZig && hasWav);
           // Side Slab is a clip rectangle; Zigzag and Wavy replace the clip
           // outright, so the two cannot both shape the same cell.
-          sideSlabNote.classList.toggle(
-            "hidden",
-            !(selectedTextures.has("sideslab") && (hasZig || hasWav)),
+          sideSlabNote.hidden = !(
+            selectedTextures.has("sideslab") &&
+            (hasZig || hasWav)
           );
+        };
 
+        const renderTextureGrid = () => {
+          grid.innerHTML = "";
+          updateNotes();
+
+          // One plain row per texture: a real checkbox, the icon that shows
+          // what it does, and its name. The icon carries the explanation, so
+          // the row does not repeat it in words. Ticking a box updates its row
+          // in place, so the box keeps focus and the list keeps its scroll.
           texItems.forEach((item) => {
-            const isAvailable = options.includes(item.id);
-            if (!isAvailable) return;
+            if (!options.includes(item.id)) return;
 
-            const active = selectedTextures.has(item.id);
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = `group relative rounded-xl border p-3 text-left transition-all flex flex-col gap-1 ${
-              active
-                ? "border-blue-500/70 bg-blue-600/15 text-blue-100 shadow-[0_0_10px_rgba(59,130,246,0.15)]"
-                : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:bg-slate-900/60 hover:text-slate-200"
-            }`;
+            const row = document.createElement("label");
+            row.title = item.desc;
+            row.className = "tex-row";
 
-            btn.innerHTML = `
-              <div class="flex items-center justify-between w-full">
-                <div class="flex items-center gap-2">
-                  <span class="flex items-center justify-center w-6 h-6 leading-none flex-shrink-0">${item.icon}</span>
-                  <span class="text-[10px] font-bold uppercase tracking-wider">${item.name}</span>
-                </div>
-                <div class="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${
-                  active ? "border-blue-400 bg-blue-500" : "border-slate-700"
-                }">
-                  ${active ? '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4L3.5 6L6.5 2" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>' : ""}
-                </div>
-              </div>
-              <div class="text-[9px] text-slate-500 ${active ? "text-blue-300/60" : ""}">${item.desc}</div>
-              ${item.id === "decoration" && active ? `<div class="text-sm font-bold text-center text-white/90 bg-white/5 rounded py-0.5">${selectedDecoChar}</div>` : ""}
-            `;
-
-            btn.onclick = () => {
-              if (selectedTextures.has(item.id)) {
-                selectedTextures.delete(item.id);
-              } else {
-                selectedTextures.add(item.id);
-              }
-              renderTextureGrid();
+            const box = document.createElement("input");
+            box.type = "checkbox";
+            box.checked = selectedTextures.has(item.id);
+            row.classList.toggle("on", box.checked);
+            box.onchange = () => {
+              if (box.checked) selectedTextures.add(item.id);
+              else selectedTextures.delete(item.id);
+              row.classList.toggle("on", box.checked);
+              updateNotes();
               updateDecoVisibility();
             };
-            grid.appendChild(btn);
+
+            const icon = document.createElement("span");
+            icon.className = "tex-row-icon";
+            icon.innerHTML = item.icon;
+
+            const name = document.createElement("span");
+            name.textContent = item.name;
+
+            row.append(box, icon, name);
+            grid.appendChild(row);
           });
+
+          if (!grid.children.length) {
+            const empty = document.createElement("div");
+            empty.className = "tex-empty";
+            empty.textContent = "No textures fit these blocks.";
+            grid.appendChild(empty);
+          }
         };
 
         const updateDecoVisibility = () => {
-          const section = panel.querySelector("#deco-char-section");
-          if (selectedTextures.has("decoration")) {
-            section.classList.remove("hidden");
-          } else {
-            section.classList.add("hidden");
-          }
+          panel.querySelector("#deco-char-section").hidden =
+            !selectedTextures.has("decoration");
         };
 
         // Decoration Picker Integration
         const decoPickerTrigger = panel.querySelector("#deco-picker-trigger");
-        decoPickerTrigger.onclick = () => {
+        decoPickerTrigger.onclick = (e) => {
+          e.preventDefault();
           overlay.style.visibility = "hidden";
-          decoPicker.open((char) => {
-            selectedDecoChar = char;
-            panel.querySelector("#deco-char-preview").innerText = char;
-            overlay.style.visibility = "visible";
-            renderTextureGrid();
-          });
+          decoPicker.open(
+            (char) => {
+              selectedDecoChar = char;
+              panel.querySelector("#deco-char-preview").innerText = char;
+            },
+            // Back again however the picker closes, not only on a pick.
+            () => {
+              if (overlay.isConnected) overlay.style.visibility = "visible";
+            },
+          );
         };
 
         // Initialize state
@@ -15512,8 +16156,6 @@
           overlay.remove();
         };
 
-        panel.querySelector("#modder-close-btn").onclick = () =>
-          overlay.remove();
         panel.querySelector("#modder-cancel-btn").onclick = () =>
           overlay.remove();
 
@@ -15521,8 +16163,7 @@
           if (e.target === overlay) {
             const pickerModal = document.getElementById("deco-picker-modal");
             if (pickerModal && !pickerModal.classList.contains("hidden")) {
-              pickerModal.classList.add("hidden");
-              overlay.style.visibility = "visible";
+              decoPicker.close();
             } else {
               overlay.remove();
             }
@@ -16891,8 +17532,14 @@
           "↕": "arrow vertical up-down",
           "✔": "check mark yes success correct",
         },
-        open(cb) {
+        // onClose runs however the picker goes away -- a pick, the ×, or the
+        // backdrop behind it -- so whoever opened it can put themselves back.
+        // The Textures popup hides itself while the picker is up, and with
+        // only a pick to tell it, closing the picker any other way left it
+        // hidden for good and threw away what had been ticked.
+        open(cb, onClose) {
           this.callback = cb;
+          this.onClose = onClose || null;
           const tabs = document.getElementById("dp-tabs");
           tabs.innerHTML = "";
           // The old nested sub-tab row is gone; clear it out for anyone
@@ -16903,19 +17550,13 @@
           Object.keys(this.groups).forEach((name) => {
             const btn = document.createElement("button");
             btn.className =
-              "px-3 py-1 text-[10px] font-bold text-slate-500 hover:text-white rounded border border-slate-800 transition-colors whitespace-nowrap";
+              "px-2.5 py-1 text-xs text-slate-500 hover:text-white rounded whitespace-nowrap";
             btn.innerText = name;
             btn.onclick = () => {
               document
                 .querySelectorAll("#dp-tabs button")
-                .forEach((b) =>
-                  b.classList.remove(
-                    "bg-blue-600",
-                    "text-white",
-                    "border-blue-500",
-                  ),
-                );
-              btn.classList.add("bg-blue-600", "text-white", "border-blue-500");
+                .forEach((b) => b.classList.remove("bg-slate-800", "text-white"));
+              btn.classList.add("bg-slate-800", "text-white");
               this.currentCat = name;
               this.renderGrid();
             };
@@ -16963,7 +17604,7 @@
           items.forEach((char) => {
             const btn = document.createElement("button");
             btn.className =
-              "w-10 h-10 bg-slate-900 border border-slate-800 rounded hover:border-blue-500 text-white flex items-center justify-center text-lg transition-all";
+              "w-10 h-10 bg-slate-900 border border-slate-800 rounded hover:border-blue-500 text-white flex items-center justify-center text-lg";
             btn.innerText = char;
             const meta = this.metadata[char];
             if (meta) btn.title = meta.split(" ")[0];
@@ -16976,7 +17617,13 @@
         },
         confirm(char) {
           if (this.callback) this.callback(char);
+          this.close();
+        },
+        close() {
           document.getElementById("deco-picker-modal").classList.add("hidden");
+          const onClose = this.onClose;
+          this.onClose = null;
+          if (onClose) onClose();
         },
       };
 
@@ -18462,6 +19109,7 @@
         document.getElementById("prop-h").value = state.height;
         document.getElementById("prop-gravity").value = t.gravity || 27;
         document.getElementById("gravity-val").innerText = t.gravity || 27;
+        loadDeadlyEdges(t.deadlyEdges);
         document.getElementById("prop-background").value = t.background || "";
         document.getElementById("prop-rise").value = t.riseInterval || 0;
         document.getElementById("prop-vis-title").value = t.visualTitle || "";
@@ -18560,6 +19208,8 @@
             startGravityReversed:
               document.getElementById("prop-start-gravity-reversed").value ===
               "true",
+            // Left out unless the level changes which edges kill
+            deadlyEdges: deadlyEdgesForSave(),
             blockHitboxes:
               document.getElementById("prop-block-hitboxes").value === "true",
             forceDefaultSkin:
@@ -19172,6 +19822,7 @@
             startGravityReversed:
               document.getElementById("prop-start-gravity-reversed").value ===
               "true",
+            deadlyEdges: deadlyEdgesForSave(),
             visualTitle: document.getElementById("prop-vis-title").value,
             visualAuthor: document.getElementById("prop-vis-author").value,
             visualWin: document.getElementById("prop-vis-win").value,
@@ -19302,6 +19953,7 @@
             document.getElementById("prop-h").value = state.height;
             document.getElementById("gravity-val").innerText =
               document.getElementById("prop-gravity").value;
+            loadDeadlyEdges(null);
 
             CELL_SET_KEYS.forEach((k) => (state[k] = new Set()));
             state.risingSpeeds = {};
@@ -19351,6 +20003,7 @@
                 d.disableZoom || false;
               document.getElementById("prop-start-gravity-reversed").value =
                 d.startGravityReversed || d.reverseGravity || false;
+              loadDeadlyEdges(d.deadlyEdges);
               document.getElementById("prop-block-hitboxes").value =
                 d.blockHitboxes || false;
               document.getElementById("prop-force-default-skin").value =
@@ -19468,6 +20121,7 @@
             startGravityReversed:
               document.getElementById("prop-start-gravity-reversed").value ===
               "true",
+            deadlyEdges: deadlyEdgesForSave(),
             blockHitboxes:
               document.getElementById("prop-block-hitboxes").value === "true",
             forceDefaultSkin:
@@ -19596,6 +20250,7 @@
               data.disableZoom || false;
             document.getElementById("prop-start-gravity-reversed").value =
               data.startGravityReversed || data.reverseGravity || false;
+            loadDeadlyEdges(data.deadlyEdges);
             document.getElementById("prop-block-hitboxes").value =
               data.blockHitboxes || false;
             document.getElementById("prop-force-default-skin").value =
@@ -20593,6 +21248,7 @@
               document.getElementById("prop-gravity").value;
             document.getElementById("prop-start-gravity-reversed").value =
               d.startGravityReversed || d.reverseGravity || false;
+            loadDeadlyEdges(d.deadlyEdges);
             document.getElementById("prop-rise").value = d.riseInterval || 0;
             document.getElementById("rise-val").innerText = d.riseInterval || 0;
 
@@ -20638,7 +21294,11 @@
             document.getElementById("prop-w").value = state.width;
             document.getElementById("prop-h").value = state.height;
 
+            settingsManager.syncToModal();
+            editorApplyBackground();
+
             render();
+            history.stack = [];
             history.push();
             autoAdjust();
           };
