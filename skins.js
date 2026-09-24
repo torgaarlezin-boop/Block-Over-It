@@ -576,6 +576,13 @@ window.SKIN_DEFINITIONS = {
     color: "#FFFFFF",
     artist: "Mcdongos",
   },
+  face: {
+    name: "Ghost (Face)",
+    copies: "1/5",
+    color: "#FFFFFF",
+    artist: "Torgaar",
+    blocktober: true,
+  },
 };
 
 window.ANIMATED_SKINS = [
