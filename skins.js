@@ -598,7 +598,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   dino: "dinoskin.png",
   bluedino: "bluedinoskin.png",
   reddino: "reddinoskin.png",
-  ghost: "ghostfacewhite",
+  ghost: "ghostfacewhite.png",
 };
 
 window.SOLID_SKIN_COLORS = {
