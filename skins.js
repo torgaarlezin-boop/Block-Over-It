@@ -450,7 +450,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#cbae62",
     artist: "Torgaar",
-    tag: "Shop S2",
+    tag: "Shop S1",
   },
   reddino: {
     name: "Dino (Red)",
@@ -576,12 +576,12 @@ window.SKIN_DEFINITIONS = {
     color: "#FFFFFF",
     artist: "Mcdongos",
   },
-  face: {
-    name: "Ghost (Face)",
-    copies: "1/5",
-    color: "#FFFFFF",
-    artist: "Torgaar",
-    blocktober: true,
+  desert: {
+    name: "Desert",
+    copies: "1/2",
+    color: "#ede98a",
+    artist: "Seppe & Torgaar",
+    tag: "Seppe Collection",
   },
 };
 
@@ -595,6 +595,10 @@ window.ANIMATED_SKINS = [
 
 window.SKIN_IMAGE_OVERRIDES = {
   coolguytrail: "coolguy.png",
+  dino: "dinoskin.png",
+  bluedino: "bluedinoskin.png",
+  reddino: "reddinoskin.png",
+  ghost: "ghostfacewhite",
 };
 
 window.SOLID_SKIN_COLORS = {
