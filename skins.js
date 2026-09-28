@@ -600,6 +600,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   reddino: "reddinoskin.png",
   ghost: "ghostfacewhite.png",
   coolguyreflection: "coolguyreflectionwhite.png",
+  coolguysignature: "coolguylogosignature.png",
 };
 
 window.SOLID_SKIN_COLORS = {
