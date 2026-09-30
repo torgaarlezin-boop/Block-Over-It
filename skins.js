@@ -1,3 +1,4 @@
+
 window.SKIN_DEFINITIONS = {
   default: {
     name: "Default",
@@ -22,12 +23,14 @@ window.SKIN_DEFINITIONS = {
   },
   rainbowmonster: {
     name: "Rainbow Monster",
+    collection: "Rainbow Monster",
     copies: "1/10",
     color: "#f51600",
     artist: "chairlord",
   },
   burningheart: {
     name: "Burning Heart",
+    collection: "Burning Heart",
     copies: "1/3",
     color: "#130c10",
     artist: "Seppe",
@@ -35,6 +38,7 @@ window.SKIN_DEFINITIONS = {
   tv: { name: "TV", copies: "1/2", color: "#f1eef4", artist: "Seppe" },
   cubemouth: {
     name: "Cube Mouth",
+    collection: "Cube Mouth",
     copies: "1/6",
     color: "#1101d1",
     artist: "chairlord",
@@ -50,24 +54,28 @@ window.SKIN_DEFINITIONS = {
   },
   dino: {
     name: "Dino",
+    collection: "Dino",
     copies: "1/20",
     color: "#aefe61",
     artist: "Mcdongos",
   },
   emo: {
     name: "Emotions",
+    collection: "Emotions",
     copies: "1/3",
     color: "#398dfa",
     artist: "ejohnson",
   },
   emo2: {
     name: "Emotions 2",
+    collection: "Emotions",
     copies: "1/5",
     color: "#476ffa",
     artist: "ejohnson",
   },
   emo3: {
     name: "Emotions 3",
+    collection: "Emotions",
     copies: "1/5",
     color: "#388bf6",
     artist: "ejohnson",
@@ -97,6 +105,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguy: {
     name: "Cool Guy",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#009fe3",
     artist: "Torgaar",
@@ -104,6 +113,7 @@ window.SKIN_DEFINITIONS = {
   },
   goldcoolguy: {
     name: "Golden Cool Guy",
+    collection: "Cool Guy",
     copies: "1/1",
     color: "#dcb86f",
     artist: "Torgaar",
@@ -111,24 +121,28 @@ window.SKIN_DEFINITIONS = {
   },
   rainbownoir: {
     name: "Rainbow Monster (Noir)",
+    collection: "Rainbow Monster",
     copies: "1/3",
     color: "#7e8185",
     artist: "Chairlord & Torgaar",
   },
   rainbowretro: {
     name: "Rainbow Monster (Retro)",
+    collection: "Rainbow Monster",
     copies: "1/3",
     color: "#e9a13e",
     artist: "Chairlord & Torgaar",
   },
   vintageemo: {
     name: "Emotions (Vintage)",
+    collection: "Emotions",
     copies: "1/3",
     color: "#85bdd4",
     artist: "ejohnson & Torgaar",
   },
   coolguyglassesdown: {
     name: "Cool Guy (Glasses Down)",
+    collection: "Cool Guy",
     copies: "1/1",
     color: "#019adc",
     artist: "Torgaar",
@@ -136,12 +150,14 @@ window.SKIN_DEFINITIONS = {
   },
   coolguyreflection: {
     name: "Cool Guy (Reflection)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#009fe3",
     artist: "Torgaar",
   },
   dasher: {
     name: "Dasher",
+    collection: "Dasher",
     copies: "1/1",
     color: "#e8e800",
     desc: "Honorary",
@@ -151,6 +167,7 @@ window.SKIN_DEFINITIONS = {
   },
   dasher2: {
     name: "Dasher 2",
+    collection: "Dasher",
     copies: "1/1",
     color: "#00e813",
     desc: "Honorary",
@@ -171,6 +188,7 @@ window.SKIN_DEFINITIONS = {
   },
   legendsgalaxy: {
     name: "Galaxy (Legends Edition)",
+    collection: "Galaxy",
     copies: "1/3",
     color: "#71b5d5",
     artist: "Torgaar",
@@ -178,6 +196,7 @@ window.SKIN_DEFINITIONS = {
   },
   galaxy: {
     name: "Galaxy",
+    collection: "Galaxy",
     copies: "N/A",
     color: "#243175",
     artist: "Torgaar",
@@ -196,18 +215,21 @@ window.SKIN_DEFINITIONS = {
   },
   rainbowcoolguy: {
     name: "Cool Guy (Rainbow Glasses)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#01a0e6",
     artist: "Chairlord & Torgaar",
   },
   coolerguy: {
     name: "Cool Guy (Cooler)",
+    collection: "Cool Guy",
     copies: "1/2",
     color: "#93c3f7",
     artist: "Chairlord & Torgaar",
   },
   coolerguytexture: {
     name: "Cool Guy (Cooler Texture)",
+    collection: "Cool Guy",
     copies: "1/2",
     color: "#1f2b80",
     artist: "Chairlord & Torgaar",
@@ -247,6 +269,7 @@ window.SKIN_DEFINITIONS = {
   },
   cityboi: {
     name: "City Boy",
+    collection: "City Boy",
     copies: "1/11",
     color: "#165392",
     artist: "Torgaar & Ligmadaddy69",
@@ -254,24 +277,28 @@ window.SKIN_DEFINITIONS = {
   },
   cityboilegend: {
     name: "City Boy (Legendary)",
+    collection: "City Boy",
     copies: "1/2",
     color: "#135fbb",
     artist: "Torgaar & Ligmadaddy69",
   },
   coolguylogo: {
     name: "Cool Guy (Logo)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#2493d4",
     artist: "Torgaar",
   },
   coolguylogomonogram: {
     name: "Cool Guy (Logo Monogram Special Edition)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#348fc4",
     artist: "Torgaar",
   },
   coolguysignature: {
     name: "Cool Guy (Signature Logo)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#7fb8e0",
     artist: "Torgaar",
@@ -279,6 +306,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguytorgaarsignature: {
     name: "Cool Guy (Torgaar Signature)",
+    collection: "Cool Guy",
     copies: "1/1",
     color: "#d4a51f",
     desc: "Honorary",
@@ -292,6 +320,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguyoregon: {
     name: "Cool Guy (Oregon Signature)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#076b65",
     artist: "Torgaar",
@@ -335,6 +364,7 @@ window.SKIN_DEFINITIONS = {
   },
   earth: {
     name: "Earth",
+    collection: "Earth",
     copies: "N/A",
     color: "#76a0bb",
     artist: "MidgeMidge22",
@@ -342,6 +372,7 @@ window.SKIN_DEFINITIONS = {
   },
   tothemoon: {
     name: "Cool Guy (To the Moon)",
+    collection: "Cool Guy",
     copies: "1/7",
     color: "#232f71",
     artist: "Torgaar",
@@ -358,6 +389,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguygalaxy: {
     name: "Cool Guy (Galaxy)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#243378",
     artist: "Torgaar",
@@ -365,24 +397,28 @@ window.SKIN_DEFINITIONS = {
   },
   coolguypristine: {
     name: "Cool Guy (Pristine)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#bebcb9",
     artist: "Torgaar",
   },
   coolguymagma: {
     name: "Cool Guy (Magma)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#680e0d",
     artist: "Torgaar",
   },
   coolguypurplemagma: {
     name: "Cool Guy (Purple Magma)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#470d60",
     artist: "Torgaar",
   },
   earthpolluted: {
     name: "Earth (Polluted)",
+    collection: "Earth",
     copies: "1/3",
     color: "#69858a",
     artist: "MidgeMidge22 & Torgaar",
@@ -390,12 +426,14 @@ window.SKIN_DEFINITIONS = {
   },
   blockynosleep: {
     name: "Blocky (No Sleep)",
+    collection: "Blocky",
     copies: "1/3",
     color: "#0ebbd9",
     artist: "Crosby & Torgaar",
   },
   cubemouthdevourer: {
     name: "Cubemouth (Devourer)",
+    collection: "Cube Mouth",
     copies: "N/A",
     color: "#3e54bb",
     artist: "Torgaar and Chairlord",
@@ -412,6 +450,7 @@ window.SKIN_DEFINITIONS = {
   },
   blackbeard: {
     name: "Blocky (Blackbeard)",
+    collection: "Blocky",
     copies: "1/5",
     color: "#813a0a",
     artist: "Torgaar",
@@ -419,6 +458,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguypainted: {
     name: "Cool Guy (Painted)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#c7ad23",
     artist: "Torgaar",
@@ -433,6 +473,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguydeepbluespecial: {
     name: "Cool Guy (Deep Blue)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#16086a",
     artist: "Torgaar",
@@ -447,6 +488,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguymoney: {
     name: "Cool Guy (Money)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#cbae62",
     artist: "Torgaar",
@@ -454,6 +496,7 @@ window.SKIN_DEFINITIONS = {
   },
   reddino: {
     name: "Dino (Red)",
+    collection: "Dino",
     copies: "N/A",
     color: "#fc5455",
     artist: "Torgaar & Mcdongos",
@@ -461,6 +504,7 @@ window.SKIN_DEFINITIONS = {
   },
   bluedino: {
     name: "Dino (Blue)",
+    collection: "Dino",
     copies: "N/A",
     color: "#025289",
     artist: "Torgaar & Mcdongos",
@@ -468,6 +512,7 @@ window.SKIN_DEFINITIONS = {
   },
   rainbowmonsterremastered: {
     name: "Rainbow Monster (Remastered)",
+    collection: "Rainbow Monster",
     copies: "N/A",
     color: "#f5b80d",
     artist: "Torgaar & Chairlord",
@@ -475,6 +520,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguy10: {
     name: "Cool Guy (1.10!)",
+    collection: "Cool Guy",
     copies: "1.10",
     color: "#30547a",
     artist: "Torgaar",
@@ -482,12 +528,14 @@ window.SKIN_DEFINITIONS = {
   },
   coolguytrail: {
     name: "Cool Guy (Trail)",
+    collection: "Cool Guy",
     copies: "1/4",
     color: "#009fe3",
     artist: "Torgaar",
   },
   coolguybloody: {
     name: "Cool Guy (Bloody)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#a20306",
     artist: "Torgaar",
@@ -495,6 +543,7 @@ window.SKIN_DEFINITIONS = {
   },
   alien: {
     name: "Alien",
+    collection: "Alien",
     copies: "1/10",
     color: "#7ed957",
     artist: "Torgaar",
@@ -502,6 +551,7 @@ window.SKIN_DEFINITIONS = {
   },
   alienblocktober: {
     name: "Alien (Yellow Eyes)",
+    collection: "Alien",
     copies: "1/3",
     color: "#fadb43",
     artist: "Torgaar",
@@ -509,6 +559,7 @@ window.SKIN_DEFINITIONS = {
   },
   burningheartremastered: {
     name: "Burning Heart (Remastered)",
+    collection: "Burning Heart",
     copies: "1/4",
     color: "#ffa629",
     artist: "Seppe",
@@ -530,6 +581,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolerguyredseppe: {
     name: "Cool Guy (Cooler Red)",
+    collection: "Cool Guy",
     copies: "1/3",
     color: "#930000",
     artist: "Seppe",
@@ -537,6 +589,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguyrainbowmonster: {
     name: "Cool Guy (Rainbow Monster)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#f5b80d",
     artist: "Torgaar & Chairlord",
@@ -544,6 +597,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguysunset: {
     name: "Cool Guy (Sunset)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#eaee00",
     artist: "Torgaar & Chairlord",
@@ -551,6 +605,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguydino: {
     name: "Cool Guy (Dino)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#aefe61",
     artist: "Torgaar & Chairlord",
@@ -558,6 +613,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguyrounded: {
     name: "Cool Guy (Rounded)",
+    collection: "Cool Guy",
     copies: "1/5",
     color: "#009fe3",
     artist: "Torgaar",
@@ -572,6 +628,7 @@ window.SKIN_DEFINITIONS = {
   },
   americancoolguy: {
     name: "Cool Guy (Very American)",
+    collection: "Cool Guy",
     copies: "1/10",
     color: "#FFFFFF",
     artist: "Mcdongos",
@@ -583,6 +640,14 @@ window.SKIN_DEFINITIONS = {
     artist: "Seppe & Torgaar",
     tag: "Seppe Collection",
   },
+  coolguyfunky: {
+    name: "Cool Guy (Funky)",
+    copies: "1/1",
+    collection: "Cool Guy",
+    color: "#ffa629",
+    artist: "seppe",
+    tag: "Seppe Collection"
+  }
 };
 
 window.ANIMATED_SKINS = [
