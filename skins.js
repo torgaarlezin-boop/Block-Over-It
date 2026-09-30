@@ -402,20 +402,6 @@ window.SKIN_DEFINITIONS = {
     color: "#bebcb9",
     artist: "Torgaar",
   },
-  coolguymagma: {
-    name: "Cool Guy (Magma)",
-    collection: "Cool Guy",
-    copies: "1/3",
-    color: "#680e0d",
-    artist: "Torgaar",
-  },
-  coolguypurplemagma: {
-    name: "Cool Guy (Purple Magma)",
-    collection: "Cool Guy",
-    copies: "1/3",
-    color: "#470d60",
-    artist: "Torgaar",
-  },
   earthpolluted: {
     name: "Earth (Polluted)",
     collection: "Earth",
@@ -513,7 +499,7 @@ window.SKIN_DEFINITIONS = {
   rainbowmonsterremastered: {
     name: "Rainbow Monster (Remastered)",
     collection: "Rainbow Monster",
-    copies: "N/A",
+    copies: "1/2",
     color: "#f5b80d",
     artist: "Torgaar & Chairlord",
     blockySummer: true,
@@ -654,8 +640,6 @@ window.ANIMATED_SKINS = [
   "smiley",
   "deathfire",
   "WINSTONTHEGREAT",
-  "coolguymagma",
-  "coolguypurplemagma",
 ];
 
 window.SKIN_IMAGE_OVERRIDES = {
