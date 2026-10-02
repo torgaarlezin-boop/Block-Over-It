@@ -1,7 +1,7 @@
 
 window.SKIN_DEFINITIONS = {
   default: {
-    name: "Default",
+    name: "Blocky",
     copies: "N/A",
     color: "#335699",
     gameUnlock: true,
@@ -96,7 +96,7 @@ window.SKIN_DEFINITIONS = {
     artist: "Torgaar",
     firstPlace: true,
   },
-  bluecoin: {
+  bluecoins: {
     name: "Blue Gem",
     copies: "N/A",
     color: "#2976bd",
@@ -435,8 +435,7 @@ window.SKIN_DEFINITIONS = {
     honorary: true,
   },
   blackbeard: {
-    name: "Blocky (Blackbeard)",
-    collection: "Blocky",
+    name: "Blackbeard",
     copies: "1/5",
     color: "#813a0a",
     artist: "Torgaar",
@@ -466,9 +465,9 @@ window.SKIN_DEFINITIONS = {
     unlockCode: true,
   },
   demon: {
-    name: "Demon",
+    name: "Nightmare",
     copies: "N/A",
-    color: "#a20306",
+    color: "#000000",
     artist: "Torgaar",
     gameUnlock: true,
   },
