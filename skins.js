@@ -97,7 +97,7 @@ window.SKIN_DEFINITIONS = {
     firstPlace: true,
   },
   bluecoins: {
-    name: "Blue Gem",
+    name: "Blue Coins",
     copies: "N/A",
     color: "#2976bd",
     artist: "Torgaar",
@@ -176,14 +176,15 @@ window.SKIN_DEFINITIONS = {
     honorary: true,
   },
   metallic: {
-    name: "Metallic Anger",
+    name: "Metallic Fire",
     copies: "N/A",
     color: "#df433d",
     artist: "Torgaar",
     gameUnlock: true,
     versions: [
       { name: "Original", img: "metallic_old.png" },
-      { name: "Current", img: "metallic.png" },
+      { name: "Old", img: "metallic.png" },
+      { name: "New", img: "metallicnew.png" },
     ],
   },
   legendsgalaxy: {
@@ -210,7 +211,8 @@ window.SKIN_DEFINITIONS = {
     gameUnlock: true,
     versions: [
       { name: "Golden Clock (Original)", img: "goldenclock.png" },
-      { name: "Golden (New)", img: "golden.png" },
+      { name: "Golden (Old))", img: "golden.png" },
+      { name: "Golden (New)", img: "goldennew.png" },
     ],
   },
   rainbowcoolguy: {
@@ -420,9 +422,9 @@ window.SKIN_DEFINITIONS = {
   cubemouthdevourer: {
     name: "Cubemouth (Devourer)",
     collection: "Cube Mouth",
-    copies: "N/A",
+    copies: "1/3",
     color: "#3e54bb",
-    artist: "Torgaar and Chairlord",
+    artist: "Torgaar & Chairlord",
     blockySummer: true,
   },
   midgemidge: {
@@ -431,12 +433,12 @@ window.SKIN_DEFINITIONS = {
     color: "#3317b1",
     desc: "Honorary",
     gold: true,
-    artist: "Torgaar and MidgeMidge22",
+    artist: "Torgaar & MidgeMidge22",
     honorary: true,
   },
   blackbeard: {
     name: "Blackbeard",
-    copies: "1/5",
+    copies: "1/11",
     color: "#813a0a",
     artist: "Torgaar",
     unlockCode: true,
@@ -632,7 +634,24 @@ window.SKIN_DEFINITIONS = {
     color: "#ffa629",
     artist: "seppe",
     tag: "Seppe Collection"
+  },
+  coolguypumpkin: {
+    name: "Cool Guy (Pumpkin)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    color: "#d7ac73",
+    artist: "Mcdongos & Torgaar",
+    blocktober: true
+  },
+  dinoclordconcept: {
+    name: "Dino (Clord 'Dragon' Concept)",
+    copies: "1/1",
+    collection: "Dino",
+    color: "#aefe61",
+    artist: "Torgaar, Chairlord, & Mcdongos",
+    tag: "Clord Concept S1"
   }
+
 };
 
 window.ANIMATED_SKINS = [
@@ -649,6 +668,9 @@ window.SKIN_IMAGE_OVERRIDES = {
   ghost: "ghostfacewhite.png",
   coolguyreflection: "coolguyreflectionwhite.png",
   coolguysignature: "coolguylogosignature.png",
+  metallic: "metallicnew",
+  golden: "goldennew",
+  ghost: "ghostnew"
 };
 
 window.SOLID_SKIN_COLORS = {
