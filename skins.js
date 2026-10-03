@@ -668,9 +668,9 @@ window.SKIN_IMAGE_OVERRIDES = {
   ghost: "ghostfacewhite.png",
   coolguyreflection: "coolguyreflectionwhite.png",
   coolguysignature: "coolguylogosignature.png",
-  metallic: "metallicnew",
-  golden: "goldennew",
-  ghost: "ghostnew"
+  metallic: "metallicnew.png",
+  golden: "goldennew.png",
+  ghost: "ghostnew.png"
 };
 
 window.SOLID_SKIN_COLORS = {
