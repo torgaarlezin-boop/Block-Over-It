@@ -305,6 +305,10 @@ window.SKIN_DEFINITIONS = {
     color: "#7fb8e0",
     artist: "Torgaar",
     unlockCode: true,
+    versions: [
+      { name: "Original", img: "coolguysignature.png" },
+      { name: "Remaster", img: "coolguylogosignature.png" },
+    ],
   },
   coolguytorgaarsignature: {
     name: "Cool Guy (Torgaar Signature)",
@@ -327,6 +331,10 @@ window.SKIN_DEFINITIONS = {
     color: "#076b65",
     artist: "Torgaar",
     unlockCode: true,
+    versions: [
+      { name: "Original", img: "coolguyoregon.png" },
+      { name: "Remaster", img: "coolguyoregonnew.png" },
+    ],
   },
   mistymountains: {
     name: "Misty Mountains",
@@ -650,6 +658,21 @@ window.SKIN_DEFINITIONS = {
     color: "#aefe61",
     artist: "Torgaar, Chairlord, & Mcdongos",
     tag: "Clord Concept S1"
+  },
+  pinnochio: {
+    name: "Pinnochio",
+    copies: "1/3",
+    color: "#dba465",
+    artist: "Torgaar",
+    tag: "Clord Concept S1"
+  },
+  coolguysignatureconcept: {
+    name: "Cool Guy (Signature Logo-Clord Concept)",
+    copies: "1/4",
+    collection: "Cool Guy",
+    color: "#7fb8e0",
+    artist: "Torgaar",
+    tag: "Clord Concept S2"
   }
 
 };
@@ -665,12 +688,13 @@ window.SKIN_IMAGE_OVERRIDES = {
   dino: "dinoskin.png",
   bluedino: "bluedinoskin.png",
   reddino: "reddinoskin.png",
-  ghost: "ghostfacewhite.png",
   coolguyreflection: "coolguyreflectionwhite.png",
   coolguysignature: "coolguylogosignature.png",
   metallic: "metallicnew.png",
   golden: "goldennew.png",
-  ghost: "ghostnew.png"
+  ghost: "ghostnew.png",
+  dinoclordconcept: "dinodragon.png",
+  coolguyoregon: "coolguyoregonnew.png"
 };
 
 window.SOLID_SKIN_COLORS = {
