@@ -5,6 +5,7 @@ window.SKIN_DEFINITIONS = {
     copies: "N/A",
     color: "#335699",
     gameUnlock: true,
+    artist: "Block Over It Dimension"
   },
   chairlord: {
     name: "Chairlord",
@@ -102,6 +103,11 @@ window.SKIN_DEFINITIONS = {
     color: "#2976bd",
     artist: "Torgaar",
     gameUnlock: true,
+    versions: [
+      {
+        name: "Blue Gem", img: "bluegem.png",
+        name: "Blue Coins", img: "bluecoins.png"}
+    ]
   },
   coolguy: {
     name: "Cool Guy",
@@ -147,13 +153,6 @@ window.SKIN_DEFINITIONS = {
     color: "#019adc",
     artist: "Torgaar",
     competitive: true,
-  },
-  coolguyreflection: {
-    name: "Cool Guy (Reflection)",
-    collection: "Cool Guy",
-    copies: "1/3",
-    color: "#009fe3",
-    artist: "Torgaar",
   },
   dasher: {
     name: "Dasher",
@@ -480,6 +479,12 @@ window.SKIN_DEFINITIONS = {
     color: "#000000",
     artist: "Torgaar",
     gameUnlock: true,
+    versions: [
+      {
+        name: "Demon", img: "demon.png",
+      },
+      {name: "Nightmare", img: "nightmare.png"}
+    ]
   },
   coolguymoney: {
     name: "Cool Guy (Money)",
@@ -694,7 +699,8 @@ window.SKIN_IMAGE_OVERRIDES = {
   golden: "goldennew.png",
   ghost: "ghostnew.png",
   dinoclordconcept: "dinodragon.png",
-  coolguyoregon: "coolguyoregonnew.png"
+  coolguyoregon: "coolguyoregonnew.png",
+  demon: "nightmare.png"
 };
 
 window.SOLID_SKIN_COLORS = {
