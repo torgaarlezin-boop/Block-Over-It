@@ -822,12 +822,6 @@
                     <button class="filter-btn active" data-tag="all">
                         All
                     </button>
-                    <button class="filter-btn" data-tag="firstPlace">
-                        1st Place
-                    </button>
-                    <button class="filter-btn" data-tag="honorary">
-                        Honorary
-                    </button>
                     <button class="filter-btn" data-tag="competitive">
                         Competitive
                     </button>
@@ -908,7 +902,12 @@
             // The skin list lives in skins.js, which the game loads too. This page
             // used to carry its own copy plus a separate table of card colours, and
             // both had drifted from the game's.
-            const SKIN_DEFINITIONS = window.SKIN_DEFINITIONS || {};
+            // Honorary and first-place skins are left off this page entirely.
+            const SKIN_DEFINITIONS = Object.fromEntries(
+                Object.entries(window.SKIN_DEFINITIONS || {}).filter(
+                    ([, def]) => !def.honorary && !def.firstPlace,
+                ),
+            );
             if (!window.SKIN_DEFINITIONS) {
                 document.title = "Skin Explorer - skins.js missing";
                 console.error("skins.js did not load; no skins to show.");
