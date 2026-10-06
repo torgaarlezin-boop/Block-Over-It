@@ -758,7 +758,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   dinoclordconcept: "dinodragonchairlord.png",
   coolguyoregon: "coolguyoregonnew.png",
   demon: "nightmare.png",
-  coolguysignatureconcept: "coolguysignaturelogo.png",
+  coolguysignatureconcept: "coolguysignaturechairlord.png",
   pinnochio: "pinnochiochairlord.png",
   alienblocktober: "alienmartian.png"
 };
