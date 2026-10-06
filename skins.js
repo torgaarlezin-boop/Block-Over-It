@@ -550,9 +550,9 @@ window.SKIN_DEFINITIONS = {
     blocktober: true,
   },
   alienblocktober: {
-    name: "Alien (Yellow Eyes)",
+    name: "Alien (Martian)",
     collection: "Alien",
-    copies: "1/3",
+    copies: "1/5",
     color: "#fadb43",
     artist: "Torgaar",
     blocktober: true,
@@ -677,8 +677,65 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     color: "#7fb8e0",
     artist: "Torgaar",
-    tag: "Clord Concept S2"
-  }
+    tag: "Clord Concept S3"
+  },
+  chicken: {
+    name: "Chicken",
+    copies: "N/A",
+    artist: "Deacon",
+    tag: "Farm",
+    color: "#ef8313"
+  },
+  pig: {
+    name: "Pig",
+    copies: "N/A",
+    artist: "Deacon",
+    tag: "Farm",
+    color: "#ea75c9",
+
+  },
+  coolguyfarmer: {
+    name: "Cool Guy (Farmer)",
+    copies: "1/2",
+    collection: "Cool Guy",
+    artist: "Deacon",
+    color: "#0d99ff",
+    tag: "Farm"
+
+  },
+  cat: {
+    name: "Cat",
+    copies: "1/7",
+    collection: "Cat",
+    artist: "Deacon",
+    color: "#fff1c0",
+    tag: "Farm"
+  },
+  catblack: {
+    name: "Cat (Black)",
+    copies: "1/3",
+    collection: "Cat",
+    artist: "Deacon & Torgaar",
+    color: "#000000",
+    tag: "Farm"
+  },
+  catdark: {
+    name: "Cat (In the Dark)",
+    copies: "1/1",
+    collection: "Cat",
+    artist: "Deacon & Torgaar",
+    color: "#1e1e1e",
+    tag: "Farm"
+  },
+  cattabby: {
+    name: "Cat (Tabby)",
+    copies: "1/3",
+    collection: "Cat",
+    artist: "Deacon & Torgaar",
+    color: "#ff751f",
+    tag: "Farm"
+  },
+
 
 };
 
@@ -698,9 +755,12 @@ window.SKIN_IMAGE_OVERRIDES = {
   metallic: "metallicnew.png",
   golden: "goldennew.png",
   ghost: "ghostnew.png",
-  dinoclordconcept: "dinodragon.png",
+  dinoclordconcept: "dinodragonchairlord.png",
   coolguyoregon: "coolguyoregonnew.png",
-  demon: "nightmare.png"
+  demon: "nightmare.png",
+  coolguysignatureconcept: "coolguysignaturelogo.png",
+  pinnochio: "pinnochiochairlord.png",
+  alienblocktober: "alienmartian.png"
 };
 
 window.SOLID_SKIN_COLORS = {
