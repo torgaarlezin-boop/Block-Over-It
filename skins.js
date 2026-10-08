@@ -692,7 +692,6 @@ window.SKIN_DEFINITIONS = {
     artist: "Deacon",
     tag: "Farm",
     color: "#ea75c9",
-
   },
   coolguyfarmer: {
     name: "Cool Guy (Farmer)",
@@ -701,7 +700,6 @@ window.SKIN_DEFINITIONS = {
     artist: "Deacon",
     color: "#0d99ff",
     tag: "Farm"
-
   },
   cat: {
     name: "Cat",
@@ -735,7 +733,30 @@ window.SKIN_DEFINITIONS = {
     color: "#ff751f",
     tag: "Farm"
   },
-
+  coolguysad: {
+    name: "Cool Guy (Sad)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "MidgeMidge22",
+    color: "#009fe3",
+    tag: "Shop S3"
+  },
+  coolguymagmanew: {
+    name: "Cool Guy (Magma)",
+    copies: "1/5",
+    collection: "Cool Guy",
+    artist: "Deacon",
+    color: "#ff751f",
+    tag: "Shop S3"
+  },
+  catlavender: {
+    name: "Cat (Lavender)",
+    copies: "1/3",
+    collection: "Cat",
+    artist: "Torgaar & Deacon",
+    color: "#272030",
+    tag: "Farm"
+  }
 
 };
 
