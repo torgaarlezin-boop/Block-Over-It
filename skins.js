@@ -56,7 +56,7 @@ window.SKIN_DEFINITIONS = {
   dino: {
     name: "Dino",
     collection: "Dino",
-    copies: "1/20",
+    copies: "1/68",
     color: "#aefe61",
     artist: "Mcdongos",
   },
@@ -560,7 +560,7 @@ window.SKIN_DEFINITIONS = {
   burningheartremastered: {
     name: "Burning Heart (Remastered)",
     collection: "Burning Heart",
-    copies: "1/4",
+    copies: "1/8",
     color: "#ffa629",
     artist: "Seppe",
     tag: "Seppe Collection",
@@ -681,14 +681,14 @@ window.SKIN_DEFINITIONS = {
   },
   chicken: {
     name: "Chicken",
-    copies: "N/A",
+    copies: "1/8",
     artist: "Deacon",
     tag: "Farm",
     color: "#ef8313"
   },
   pig: {
     name: "Pig",
-    copies: "N/A",
+    copies: "1/10",
     artist: "Deacon",
     tag: "Farm",
     color: "#ea75c9",
@@ -703,7 +703,7 @@ window.SKIN_DEFINITIONS = {
   },
   cat: {
     name: "Cat",
-    copies: "1/7",
+    copies: "1/11",
     collection: "Cat",
     artist: "Deacon",
     color: "#fff1c0",
@@ -711,7 +711,7 @@ window.SKIN_DEFINITIONS = {
   },
   catblack: {
     name: "Cat (Black)",
-    copies: "1/3",
+    copies: "1/5",
     collection: "Cat",
     artist: "Deacon & Torgaar",
     color: "#000000",
@@ -727,7 +727,7 @@ window.SKIN_DEFINITIONS = {
   },
   cattabby: {
     name: "Cat (Tabby)",
-    copies: "1/3",
+    copies: "1/6",
     collection: "Cat",
     artist: "Deacon & Torgaar",
     color: "#ff751f",
@@ -735,7 +735,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguysad: {
     name: "Cool Guy (Sad)",
-    copies: "1/3",
+    copies: "1/6",
     collection: "Cool Guy",
     artist: "MidgeMidge22",
     color: "#009fe3",
@@ -756,8 +756,89 @@ window.SKIN_DEFINITIONS = {
     artist: "Torgaar & Deacon",
     color: "#272030",
     tag: "Farm"
-  }
-
+  },
+  coolguyalien: {
+    name: "Cool Guy (Alien)",
+    copies: "1/4",
+    collection: "Cool Guy",
+    artist: "MidgeMidge22 & Torgaar",
+    color: "#7ed957",
+    blocktober: "true"
+  },
+  coolguyalienalternate: {
+    name: "Cool Guy (Alien Alternate)",
+    copies: "1/2",
+    collection: "Cool Guy",
+    artist: "MidgeMidge22 & Torgaar",
+    color: "#ff751f",
+    blocktober: true,
+    tag: "Extra Styles Blocktober"
+  },
+  coolguyalientraditional: {
+    name: "Cool Guy (Alien Traditional)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "Torgaar & MidgeMidge22",
+    color: "#38b6ff",
+    blocktober: true,
+    tag: "Extra Styles Blocktober"
+  },
+  coolguygreenstripes: {
+    name: "Cool Guy (Stripes Green)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#a8d67c",
+  },
+  coolguyorangestripes: {
+    name: "Cool Guy (Stripes Orange)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#ff751f",
+  },
+  coolguybluestripes: {
+    name: "Cool Guy (Stripes Blue)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#0879bf",
+  },
+  skeleton: {
+    name: "Skeleton",
+    copies: "1/3",
+    collection: "Skeleton",
+    artist: "Mcdongos",
+    color: "#dee7ec",
+    blocktober: true,
+  },
+  skeletonred: {
+    name: "Skeleton (Red)",
+    copies: "1/3",
+    collection: "Skeleton",
+    artist: "Mcdongos",
+    color: "#ff3131",
+    blocktober: true,
+    tag: "Extra Styles Blocktober"
+  },
+  skeletonblue: {
+    name: "Skeleton (Blue Glow)",
+    copies: "1/3",
+    collection: "Skeleton",
+    artist: "Mcdongos",
+    color: "#38b6ff",
+    blocktober: true,
+    tag: "Extra Styles Blocktober"
+  },
+  skeletoninverted: {
+    name: "Skeleton (Inverted)",
+    copies: "1/3",
+    collection: "Skeleton",
+    artist: "Mcdongos",
+    color: "#000000",
+    blocktober: true,
+    tag: "Extra Styles Blocktober"
+  },
 };
 
 window.ANIMATED_SKINS = [
