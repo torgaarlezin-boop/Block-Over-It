@@ -20962,14 +20962,16 @@
         normal: "chairlordnormal.png",
         blinkleft: "chairlordblinkleft.png",
         blinkright: "chairlordblinkright.png",
-        death: "chairlorddeath.png",
+        // uploaded as "chairlordead" (one d)
+        death: "chairlordead.png",
         win: "chairlordwin.png",
         tongueleft: "chairlordtongueleft.png",
         tongueright: "chairlordtongueright.png",
       };
       const SKIN_FRAMES = {
         chairlordremastered: { frames: CHAIRLORD_FRAMES, emote: "tongueshake" },
-        chairlord: {
+        // (plain `chairlord` is the OG, drawn from chairlord.png like any skin)
+        chairlordcrowned: {
           frames: CHAIRLORD_FRAMES,
           emote: "tongueshake",
           crown: "chairlordcrown.png",
@@ -28746,7 +28748,7 @@
         tongueshake: {
           name: "Chairlord Tongue Shake",
           color: "#d4d2c7",
-          skins: ["chairlordremastered", "chairlord"],
+          skins: ["chairlordremastered", "chairlordcrowned"],
         },
       };
       // The emotes that draw something of their own (buildEmote); the rest
