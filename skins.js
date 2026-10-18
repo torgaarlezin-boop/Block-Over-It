@@ -2,25 +2,26 @@
 window.SKIN_DEFINITIONS = {
   default: {
     name: "Blocky",
+    collection: "Blocky",
     copies: "N/A",
     color: "#335699",
     gameUnlock: true,
     artist: "Block Over It Dimension"
   },
   chairlord: {
-    name: "Chairlord",
-    copies: "1/1",
+    name: "Chairlord (OG)",
+    copies: "1/5",
     color: "#d4d2c7",
-    desc: "First Place",
     gold: true,
     artist: "Chairlord",
-    firstPlace: true,
+    tag: "OG"
   },
   sunset: {
     name: "Sunset",
-    copies: "1/2",
+    copies: "1/3",
     color: "#eaee00",
     artist: "chairlord",
+    tag: "OG"
   },
   rainbowmonster: {
     name: "Rainbow Monster",
@@ -28,21 +29,24 @@ window.SKIN_DEFINITIONS = {
     copies: "1/10",
     color: "#f51600",
     artist: "chairlord",
+    tag: "OG"
   },
   burningheart: {
     name: "Burning Heart",
     collection: "Burning Heart",
-    copies: "1/3",
+    copies: "1/4",
     color: "#130c10",
     artist: "Seppe",
+    tag: "OG"
   },
-  tv: { name: "TV", copies: "1/2", color: "#f1eef4", artist: "Seppe" },
+  tv: { name: "TV", copies: "1/2", color: "#f1eef4", artist: "Seppe",tag: "OG" },
   cubemouth: {
     name: "Cube Mouth",
     collection: "Cube Mouth",
-    copies: "1/6",
+    copies: "1/9",
     color: "#1101d1",
     artist: "chairlord",
+    tag: "OG"
   },
   firstplacedaddy: {
     name: "First Place Daddy",
@@ -52,6 +56,7 @@ window.SKIN_DEFINITIONS = {
     gold: true,
     artist: "Ligmadaddy69 & Torgaar",
     firstPlace: true,
+    tag: "OG"
   },
   dino: {
     name: "Dino",
@@ -59,6 +64,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/68",
     color: "#aefe61",
     artist: "Mcdongos",
+    tag: "OG"
   },
   emo: {
     name: "Emotions",
@@ -66,6 +72,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#398dfa",
     artist: "ejohnson",
+    tag: "OG"
   },
   emo2: {
     name: "Emotions 2",
@@ -73,6 +80,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#476ffa",
     artist: "ejohnson",
+    tag: "OG"
   },
   emo3: {
     name: "Emotions 3",
@@ -80,6 +88,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#388bf6",
     artist: "ejohnson",
+    tag: "OG"
   },
   kingbanana: {
     name: "King Banana",
@@ -87,6 +96,7 @@ window.SKIN_DEFINITIONS = {
     color: "#f2c94c",
     artist: "Torgaar",
     unlockCode: true,
+    tag: "OG"
   },
   j_imbo: {
     name: "J_imbo",
@@ -96,6 +106,7 @@ window.SKIN_DEFINITIONS = {
     gold: true,
     artist: "Torgaar",
     firstPlace: true,
+    tag: "OG"
   },
   bluecoins: {
     name: "Blue Coins",
@@ -106,7 +117,8 @@ window.SKIN_DEFINITIONS = {
     versions: [
       {
         name: "Blue Gem", img: "bluegem.png",
-        name: "Blue Coins", img: "bluecoins.png"}
+        name: "Blue Coins", img: "bluecoins.png"
+      }
     ]
   },
   coolguy: {
@@ -128,16 +140,18 @@ window.SKIN_DEFINITIONS = {
   rainbownoir: {
     name: "Rainbow Monster (Noir)",
     collection: "Rainbow Monster",
-    copies: "1/3",
+    copies: "1/4",
     color: "#7e8185",
     artist: "Chairlord & Torgaar",
+    tag: "Shop S4"
   },
   rainbowretro: {
     name: "Rainbow Monster (Retro)",
     collection: "Rainbow Monster",
-    copies: "1/3",
+    copies: "1/5",
     color: "#e9a13e",
     artist: "Chairlord & Torgaar",
+    tag: "Shop S4"
   },
   vintageemo: {
     name: "Emotions (Vintage)",
@@ -186,14 +200,6 @@ window.SKIN_DEFINITIONS = {
       { name: "New", img: "metallicnew.png" },
     ],
   },
-  legendsgalaxy: {
-    name: "Galaxy (Legends Edition)",
-    collection: "Galaxy",
-    copies: "1/3",
-    color: "#71b5d5",
-    artist: "Torgaar",
-    competitive: true,
-  },
   galaxy: {
     name: "Galaxy",
     collection: "Galaxy",
@@ -201,6 +207,10 @@ window.SKIN_DEFINITIONS = {
     color: "#243175",
     artist: "Torgaar",
     gameUnlock: true,
+    version: [
+      { name: "Galaxy (Old)",  },
+      {name: "Galaxy (New)"}
+    ]
   },
   golden: {
     name: "Golden",
@@ -264,9 +274,10 @@ window.SKIN_DEFINITIONS = {
   },
   triplet: {
     name: "Tung Tung Tung Sahur",
-    copies: "1/2",
+    copies: "1/5",
     color: "#e5ab52",
     artist: "jude",
+    tag: "Brainrot Series"
   },
   cityboi: {
     name: "City Boy",
@@ -275,6 +286,7 @@ window.SKIN_DEFINITIONS = {
     color: "#165392",
     artist: "Torgaar & Ligmadaddy69",
     unlockCode: true,
+    tag: "Brainrot Series"
   },
   cityboilegend: {
     name: "City Boy (Legendary)",
@@ -433,6 +445,7 @@ window.SKIN_DEFINITIONS = {
     color: "#3e54bb",
     artist: "Torgaar & Chairlord",
     blockySummer: true,
+    blocktober: true,
   },
   midgemidge: {
     name: "MidgeMidge",
@@ -483,7 +496,7 @@ window.SKIN_DEFINITIONS = {
       {
         name: "Demon", img: "demon.png",
       },
-      {name: "Nightmare", img: "nightmare.png"}
+      { name: "Nightmare", img: "nightmare.png" }
     ]
   },
   coolguymoney: {
@@ -789,6 +802,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar",
     color: "#a8d67c",
+    gameUnlock: true,
   },
   coolguyorangestripes: {
     name: "Cool Guy (Stripes Orange)",
@@ -796,6 +810,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar",
     color: "#ff751f",
+    gameUnlock: true,
   },
   coolguybluestripes: {
     name: "Cool Guy (Stripes Blue)",
@@ -803,6 +818,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar",
     color: "#0879bf",
+    gameUnlock: true,
   },
   skeleton: {
     name: "Skeleton",
@@ -839,6 +855,121 @@ window.SKIN_DEFINITIONS = {
     blocktober: true,
     tag: "Extra Styles Blocktober"
   },
+  blockyorange: {
+    name: "Blocky (Orange)",
+    collection: "Blocky",
+    copies: "N/A",
+    color: "#d9772b",
+    artist: "Block Over It Dimension",
+    gameUnlock: true,
+  },
+  blockygreen: {
+    name: "Blocky (Green)",
+    collection: "Blocky",
+    copies: "N/A",
+    color: "#3d8f4f",
+    artist: "Block Over It Dimension",
+    gameUnlock: true,
+  },
+  blockypurple: {
+    name: "Blocky (Purple)",
+    collection: "Blocky",
+    copies: "N/A",
+    color: "#6f4aa8",
+    artist: "Block Over It Dimension",
+    gameUnlock: true,
+  },
+  blockypink: {
+    name: "Blocky (Pink)",
+    collection: "Blocky",
+    copies: "N/A",
+    color: "#d0618f",
+    artist: "Block Over It Dimension",
+    gameUnlock: true,
+  },
+  blockywhite: {
+    name: "Blocky (White)",
+    collection: "Blocky",
+    copies: "N/A",
+    color: "#e6e6e6",
+    artist: "Block Over It Dimension",
+    gameUnlock: true,
+  },
+  clown: {
+    name: "Clown",
+    copies: "1/5",
+    artist: "Torgaar",
+    color: "#e0383e",
+    blocktober: true,
+    tag: "In The Dark Blocktober"
+  },
+  coolguyscribbled: {
+    name: "Cool Guy (Scribbled)",
+    copies: "1/4",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Cool Guy"
+  },
+  cubemouthscribbled: {
+    name: "Cubemouth (Scribbled)",
+    copies: "1/3",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Cube Mouth"
+  },
+  rainbowscribbled: {
+    name: "Rainbow Monster (Scribbled)",
+    copies: "1/3",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Rainbow Monster"
+  },
+  nightmarescribbled: {
+    name: "Nightmare (Scribbled)",
+    copies: "1/1",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Nightmare",
+  },
+  galaxyscribbled: {
+    name: "Galaxy (Scribbled)",
+    copies: "1/2",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Galaxy",
+  },
+  clownscribbled: {
+    name: "Clown (Scribbled)",
+    copies: "1/3",
+    artist: "Torgaar",
+    color: "",
+    tag: "Scribbled",
+    collection: "Clown",
+  },
+  chairlordcrowned: {
+    name: "Chairlord (Crowned)",
+    copies: "1/1",
+    color: "#d4d2c7",
+    gold: true,
+    artist: "Chairlord",
+    collection: "Chairlord",
+    firstPlace: true,
+  },
+  chairlordremastered: {
+    name: "Chairlord (Remastered)",
+    copies: "1/5",
+    color: "#d4d2c7",
+    gold: true,
+    artist: "Chairlord",
+    collection: "Chairlord"
+  },
+
+
 };
 
 window.ANIMATED_SKINS = [
@@ -862,12 +993,21 @@ window.SKIN_IMAGE_OVERRIDES = {
   demon: "nightmare.png",
   coolguysignatureconcept: "coolguysignaturechairlord.png",
   pinnochio: "pinnochiochairlord.png",
-  alienblocktober: "alienmartian.png"
+  alienblocktober: "alienmartian.png",
+  chairlordcrowned: "chairlordnormal.png",
+  chairlordremastered: "chairlordnormal.png",
+  galaxy: "galaxynew",
+  coolguygalaxy: "coolguygalaxynew"
 };
 
 window.SOLID_SKIN_COLORS = {
   default: "#335699",
   redtrail: "red",
+  blockyorange: "#d9772b",
+  blockygreen: "#3d8f4f",
+  blockypurple: "#6f4aa8",
+  blockypink: "#d0618f",
+  blockywhite: "#e6e6e6",
 };
 
 window.skinFileExtension = function (id) {
