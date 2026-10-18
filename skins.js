@@ -907,7 +907,7 @@ window.SKIN_DEFINITIONS = {
     name: "Cool Guy (Scribbled)",
     copies: "1/4",
     artist: "Torgaar",
-    color: "",
+    color: "#009fe3",
     tag: "Scribbled",
     collection: "Cool Guy"
   },
@@ -915,7 +915,7 @@ window.SKIN_DEFINITIONS = {
     name: "Cubemouth (Scribbled)",
     copies: "1/3",
     artist: "Torgaar",
-    color: "",
+    color: "#1101d1",
     tag: "Scribbled",
     collection: "Cube Mouth"
   },
@@ -923,7 +923,7 @@ window.SKIN_DEFINITIONS = {
     name: "Rainbow Monster (Scribbled)",
     copies: "1/3",
     artist: "Torgaar",
-    color: "",
+    color: "#f51600",
     tag: "Scribbled",
     collection: "Rainbow Monster"
   },
@@ -931,7 +931,7 @@ window.SKIN_DEFINITIONS = {
     name: "Nightmare (Scribbled)",
     copies: "1/1",
     artist: "Torgaar",
-    color: "",
+    color: "#000000",
     tag: "Scribbled",
     collection: "Nightmare",
   },
@@ -939,7 +939,7 @@ window.SKIN_DEFINITIONS = {
     name: "Galaxy (Scribbled)",
     copies: "1/2",
     artist: "Torgaar",
-    color: "",
+    color: "#243175",
     tag: "Scribbled",
     collection: "Galaxy",
   },
@@ -947,7 +947,7 @@ window.SKIN_DEFINITIONS = {
     name: "Clown (Scribbled)",
     copies: "1/3",
     artist: "Torgaar",
-    color: "",
+    color: "#e0383e",
     tag: "Scribbled",
     collection: "Clown",
   },
@@ -996,8 +996,8 @@ window.SKIN_IMAGE_OVERRIDES = {
   alienblocktober: "alienmartian.png",
   chairlordcrowned: "chairlordnormal.png",
   chairlordremastered: "chairlordnormal.png",
-  galaxy: "galaxynew",
-  coolguygalaxy: "coolguygalaxynew"
+  galaxy: "galaxynew.png",
+  coolguygalaxy: "coolguygalaxynew.png"
 };
 
 window.SOLID_SKIN_COLORS = {
