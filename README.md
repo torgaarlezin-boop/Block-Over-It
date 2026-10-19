@@ -1,2 +1,1 @@
-# Block-Over-It
-Big Game
+Block Over It has been shutdown because of John (himejohn)
