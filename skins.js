@@ -14,7 +14,7 @@ window.SKIN_DEFINITIONS = {
     color: "#d4d2c7",
     gold: true,
     artist: "Chairlord",
-    tag: "OG"
+    tag: ["OG", "Icons"]
   },
   sunset: {
     name: "Sunset",
@@ -966,7 +966,24 @@ window.SKIN_DEFINITIONS = {
     color: "#d4d2c7",
     gold: true,
     artist: "Chairlord",
-    collection: "Chairlord"
+    collection: "Chairlord",
+    tag: "Icons"
+  },
+  jdoglime: {
+    name: "Cool Guy (Jdog Lime)",
+    copies: "1/1",
+    color: "#13ff1c",
+    artist: "Jdog",
+    collection: "Cool Guy",
+    honorary: true
+  },
+  jdog: {
+    name: "Cool Guy (Jdog)",
+    copies: "1/4",
+    color: "#ffc800",
+    artist: "Jdog",
+    collection: "Cool Guy",
+    tag: "Icons"
   },
 
 
