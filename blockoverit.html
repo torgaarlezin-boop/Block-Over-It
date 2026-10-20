@@ -6861,6 +6861,21 @@
       body.mobile-mode .ls-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      .ls-chips {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+        margin-top: 4px;
+      }
+      .ls-chips .sv-chip {
+        border: 2px solid;
+        padding: 1px 6px;
+        font-size: 0.6rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
       .ls-card .ls-thumb {
         width: 100%;
         margin-bottom: 6px;
@@ -9877,10 +9892,134 @@
       // carrying this header take a skin away or write progress; anything
       // older can only add.
       const SAVE_CLIENT = "2026-09-29";
+
+      // ---- SESSIONS (real_logins_setup.sql) ------------------------------
+      // Signing in hands back a random token, kept here and sent with every
+      // request as x-boi-session. The database works out the account from
+      // it (boi_session_user), so a username in storage is no longer enough
+      // to be someone: until 2026-10-18 it was, and that is how the admin
+      // account was taken over.
+      const SESSION_KEY = "blockoverit_session";
+      function sessionToken() {
+        return safeStorage.getItem(SESSION_KEY) || "";
+      }
+      function setSessionToken(token) {
+        if (token) safeStorage.setItem(SESSION_KEY, token);
+        else safeStorage.removeItem(SESSION_KEY);
+      }
+      // Session checks are off (the user asked, 2026-10-19): the token is no
+      // longer sent, so a saved username is enough again and the server never
+      // answers "signed in as someone else". Set SEND_SESSION back to true
+      // (and turn boi_config.sessions_enforced on) to bring them back.
+      const SEND_SESSION = false;
+      function fetchWithSession(input, init) {
+        const token = SEND_SESSION ? sessionToken() : "";
+        if (!token) return fetch(input, init);
+        const opts = Object.assign({}, init);
+        const headers = new Headers((init && init.headers) || {});
+        headers.set("x-boi-session", token);
+        opts.headers = headers;
+        return fetch(input, opts);
+      }
+
       if (window.supabase && supabaseKey !== "INSERT_YOUR_ANON_KEY_HERE") {
         _supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-          global: { headers: { "x-boi-client": SAVE_CLIENT } },
+          global: {
+            headers: { "x-boi-client": SAVE_CLIENT },
+            fetch: fetchWithSession,
+          },
         });
+      }
+
+      // Whether the server checks sessions yet (the switch in
+      // real_logins_setup.sql). Until it does, a saved username alone still
+      // signs in, as before.
+      let sessionsEnforced = false;
+      // Set when a saved sign-in was dropped on load, so the player is asked
+      // to sign in again instead of being offered the sign-up skin.
+      let signInAgainNeeded = false;
+
+      // The saved account, once the server agrees this browser is signed in
+      // as it -- or null. Both auto sign-ins on load wait for this.
+      const startupSession = (async () => {
+        const saved = safeStorage.getItem("blockoverit_username");
+        if (!saved || !_supabase) return saved;
+        try {
+          const { data, error } = await _supabase.rpc("boi_whoami");
+          // Unreachable or not set up yet: carry on as before; any write
+          // the server refuses is caught where it happens.
+          if (error || !data) return saved;
+          sessionsEnforced = !!data.enforced;
+          if (data.username === saved) return saved;
+          if (!sessionsEnforced || !SEND_SESSION) return saved;
+          safeStorage.removeItem("blockoverit_username");
+          setSessionToken(null);
+          signInAgainNeeded = true;
+          return null;
+        } catch (e) {
+          return saved;
+        }
+      })();
+
+      // The server said this browser is not signed in (an error with hint
+      // BOI_SESSION, or a write to your own row that matched nothing).
+      function isSessionError(error) {
+        return !!(
+          error &&
+          (error.hint === "BOI_SESSION" ||
+            /Please sign in again|Signed in as someone else/.test(error.message || ""))
+        );
+      }
+      let sessionLostShown = false;
+      async function sessionStillValid() {
+        if (!SEND_SESSION || !_supabase || !currentUser) return true;
+        try {
+          const { data, error } = await _supabase.rpc("boi_whoami");
+          if (error || !data) return true;
+          sessionsEnforced = !!data.enforced;
+          return !sessionsEnforced || data.username === currentUser;
+        } catch (e) {
+          return true;
+        }
+      }
+      function handleSessionLost() {
+        // With session checks off nobody is signed out or asked again
+        if (!SEND_SESSION) {
+          setSessionToken(null);
+          return;
+        }
+        if (sessionLostShown) return;
+        sessionLostShown = true;
+        setSessionToken(null);
+        forceSignOut();
+        popupManager.show({
+          title: "SIGN IN AGAIN",
+          html:
+            '<div style="color:#ccc;">Your sign-in has ended. Your progress on this device is kept. Sign in again to keep saving it.</div>',
+          buttons: [
+            {
+              text: "SIGN IN",
+              onClick: () => {
+                sessionLostShown = false;
+                openLoginModal();
+              },
+            },
+            {
+              text: "LATER",
+              class: "secondary",
+              onClick: () => {
+                sessionLostShown = false;
+              },
+            },
+          ],
+        });
+      }
+      // For callers holding an RPC error: true when it was a lost session
+      // (and the player has been asked to sign in again).
+      function checkSessionError(error) {
+        if (!isSessionError(error)) return false;
+        handleSessionLost();
+        return true;
       }
 
       // ---- AN OUT OF DATE TAB ---------------------------------------------
@@ -10428,77 +10567,101 @@
         return { available: true, reason: "ready", label: "Blue Coin ready" };
       }
 
-      // Adds (or subtracts) coins on any account. Prefers the SQL function so
-      // two purchases landing together cannot overwrite each other; falls back
-      // to read-modify-write when the function has not been created.
-      async function changeBlueCoinBalance(username, delta) {
-        if (!_supabase || !blueCoinsSupported) return null;
-        try {
-          const { data, error } = await _supabase.rpc("add_bluecoins", {
-            p_username: username,
-            p_amount: delta,
-          });
-          if (!error && typeof data === "number") return data;
-        } catch (e) {
-          /* fall through to the manual path */
-        }
-
-        const { data: row } = await _supabase
-          .from("users")
-          .select("bluecoins")
-          .eq("username", username)
-          .maybeSingle();
-        if (!row) return null;
-        const next = Math.max(0, (row.bluecoins || 0) + delta);
-        const { error: upErr } = await _supabase
-          .from("users")
-          .update({ bluecoins: next })
-          .eq("username", username);
-        return upErr ? null : next;
-      }
-
       // Paying for something. The coins come off first and only if they are
-      // there: changeBlueCoinBalance stops at 0, so charging after the item
+      // there: a balance can't go below 0, so charging after the item
       // was handed over let a burst of clicks buy a crate per click for the
-      // price of one. Resolves { ok: true, total } once paid, { short: true }
-      // when the balance does not cover it, or { error } when it could not
-      // be done (nothing was taken).
-      async function spendBlueCoins(username, amount) {
+      // price of one. Resolves { ok: true, total, receipt } once paid,
+      // { short: true } when the balance does not cover it, or { error }
+      // when it could not be done (nothing was taken). The receipt is what
+      // refundSpend gives back if the item can't be handed over after all.
+      async function spendBlueCoins(username, amount, reason) {
         amount = Math.floor(Number(amount) || 0);
-        if (amount <= 0) return { ok: true, total: null };
+        if (amount <= 0) return { ok: true, total: null, receipt: null };
         if (!_supabase || !blueCoinsSupported) return { error: "unavailable" };
-        const { data, error } = await _supabase.rpc("spend_bluecoins", {
+        const { data, error } = await _supabase.rpc("boi_spend", {
           p_username: username,
           p_amount: amount,
+          p_reason: reason || null,
         });
-        if (!error) {
-          if (typeof data === "number") return { ok: true, total: data };
-          return { short: true };
-        }
-        // Any other failure may have spent the coins already
-        if (error.code !== "PGRST202" && error.code !== "42883")
+        if (error) {
+          checkSessionError(error);
           return { error };
-        // Without the function: the same thing as a compare-and-set
-        for (let attempt = 0; attempt < 4; attempt++) {
-          const { data: row, error: readErr } = await _supabase
-            .from("users")
-            .select("bluecoins")
-            .eq("username", username)
-            .maybeSingle();
-          if (readErr || !row) return { error: readErr || "no account" };
-          const have = Number(row.bluecoins) || 0;
-          if (have < amount) return { short: true };
-          const { data: written, error: upErr } = await _supabase
-            .from("users")
-            .update({ bluecoins: have - amount })
-            .eq("username", username)
-            .eq("bluecoins", have)
-            .select("bluecoins");
-          if (upErr) return { error: upErr };
-          if (written && written.length)
-            return { ok: true, total: have - amount };
         }
-        return { error: "the balance kept changing" };
+        if (data && data.ok)
+          return { ok: true, total: data.balance, receipt: data.receipt };
+        if (data && data.short) return { short: true };
+        return { error: "not spent" };
+      }
+
+      // Gives back a spendBlueCoins payment, once. Returns the new balance or
+      // null.
+      async function refundSpend(paid) {
+        if (!paid || !paid.receipt || !_supabase) return null;
+        try {
+          const { data, error } = await _supabase.rpc("boi_refund", {
+            p_username: currentUser,
+            p_receipt: paid.receipt,
+          });
+          if (error) checkSessionError(error);
+          return !error && data && data.ok ? data.balance : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Writes a bluecoin_claims row through the server, which decides what
+      // it pays (see boi_claim in real_logins_setup.sql). Resolves
+      // { ok, coins, balance } or { ok: false, reason }; "already" means the
+      // row was there (another device, or an earlier visit).
+      async function serverClaim(key, isCustom) {
+        if (!_supabase || !currentUser) return { ok: false, reason: "signed-out" };
+        try {
+          const { data, error } = await _supabase.rpc("boi_claim", {
+            p_username: currentUser,
+            p_key: key,
+            p_is_custom: !!isCustom,
+          });
+          if (error) {
+            checkSessionError(error);
+            return { ok: false, reason: "error", error };
+          }
+          return data || { ok: false, reason: "error" };
+        } catch (e) {
+          return { ok: false, reason: "error", error: e };
+        }
+      }
+
+      // Why the server turned down a trade (boi_buy_listing, boi_give_item,
+      // boi_send_coins), in the game's words.
+      const TRADE_REFUSALS = {
+        gone: ["GONE", "That listing is no longer available."],
+        "not-yours": ["GONE", "That offer is for someone else."],
+        own: ["YOUR LISTING", "You can't buy your own listing."],
+        "sold-out": ["SOLD OUT", "That one has gone."],
+        "no-copy": ["GONE", "The seller no longer has it, so the sale could not go through. You have not been charged."],
+        "already-owned": ["ALREADY YOURS", "You already have that."],
+        blocked: ["BLOCKED", "An admin has blocked sending from your account to that player."],
+        review: ["UNDER REVIEW", "This has been flagged for an admin to check. If they let it go, you can send it again."],
+        "too-new": ["TOO NEW", "Accounts can send coins and skins once they are 7 days old."],
+        "daily-limit": ["DAILY LIMIT", "You've reached today's limit. Try again tomorrow."],
+        "no-spare": ["NO SPARE COPY", "You have no copy of that free to give. Any you have listed are set aside."],
+        "not-giftable": ["CAN'T BE GIVEN", "That can't be given to another player."],
+        nouser: ["NO SUCH PLAYER", "There is no account with that name."],
+        self: ["THAT'S YOU", "You can't send things to yourself."],
+      };
+      function showTradeRefused(reason, fallback) {
+        const known = TRADE_REFUSALS[reason];
+        if (known) showPopup(known[0], known[1], () => {});
+        else showPopup("ERROR", fallback || "That could not be done. You have not been charged.", () => {});
+      }
+      function showPurchaseRefused(reason, listing) {
+        if (reason === "short") return showNotEnoughCoins(listing.price);
+        if (reason === "already-claimed") return showAlreadyClaimed(listing.skin_id);
+        if (reason === "gone" || reason === "sold-out" || reason === "no-copy" || reason === "not-yours") {
+          const known = TRADE_REFUSALS[reason];
+          return showPopup(known[0], known[1], () => showMenu("shop"));
+        }
+        showTradeRefused(reason, "The purchase could not be completed. You have not been charged.");
       }
 
       function showNotEnoughCoins(price) {
@@ -10532,22 +10695,39 @@
               label: status.label,
             };
 
-          const { error } = await _supabase.from("bluecoin_claims").insert([
-            {
-              username: currentUser,
-              level_key: levelKey,
-              is_custom: !!isCustom,
-            },
-          ]);
-          if (error) return { awarded: false, reason: "error" };
+          // The server checks the same rules (and a daily total) and pays
+          const claim = await serverClaim(levelKey, isCustom);
+          if (!claim.ok) {
+            const reason =
+              claim.reason === "cooldown" ||
+              claim.reason === "claimed-today" ||
+              claim.reason === "daily-limit"
+                ? claim.reason
+                : "error";
+            if (reason !== "error") {
+              // Another device claimed it: this one learns when on the next read
+              blueCoinWallet.loaded = false;
+            }
+            return {
+              awarded: false,
+              reason,
+              label:
+                reason === "daily-limit"
+                  ? "Daily Blue Coin limit reached"
+                  : reason === "error"
+                    ? ""
+                    : status.label,
+            };
+          }
 
           const now = Date.now();
           blueCoinWallet.lastClaim[levelKey] = now;
           if (isCustom) blueCoinWallet.customToday.add(levelKey);
 
-          const total = await changeBlueCoinBalance(currentUser, 1);
           blueCoinWallet.balance =
-            total !== null ? total : blueCoinWallet.balance + 1;
+            typeof claim.balance === "number"
+              ? claim.balance
+              : blueCoinWallet.balance + (claim.coins || 0);
 
           updateBlueCoinDisplays();
           return { awarded: true, balance: blueCoinWallet.balance };
@@ -10670,7 +10850,7 @@
       //
       // Owning a skin no longer stops you buying another copy. A free official
       // listing is the exception: each account claims it once, recorded in
-      // free_skin_claims (see takeFreeClaim).
+      // free_skin_claims (written by boi_buy_listing).
       let shopSupported = false;
       const shopReady = (async () => {
         if (!_supabase) return false;
@@ -10757,30 +10937,6 @@
           return freeClaims.user === currentUser && freeClaims.skins.has(skinId);
         // Without the table, holding one is the best evidence there is
         return itemCopies(skinId) > 0;
-      }
-
-      // Takes this account's one claim on a free skin. "ok" to go ahead,
-      // "taken" if it was used already, "error" if nothing could be written
-      // -- in which case the skin is not given, or the rule means nothing.
-      async function takeFreeClaim(skinId, listingId) {
-        await freeClaimsReady;
-        if (!freeClaimsSupported)
-          return itemCopies(skinId) > 0 ? "taken" : "ok";
-        const { error } = await _supabase
-          .from("free_skin_claims")
-          .insert([
-            { username: currentUser, skin_id: skinId, listing_id: listingId },
-          ]);
-        if (error && error.code !== "23505") {
-          console.warn("Free claim could not be recorded:", error);
-          return "error";
-        }
-        if (freeClaims.user !== currentUser) {
-          freeClaims.user = currentUser;
-          freeClaims.skins = new Set();
-        }
-        freeClaims.skins.add(skinId);
-        return error ? "taken" : "ok";
       }
 
       // Skins handed out by the game for reaching something. These are proof
@@ -11304,62 +11460,6 @@
         );
       }
 
-      // One copy off an official listing's stock. The write only lands if the
-      // count is still what was read, so two buyers racing for the last one
-      // cannot both get it -- the loser re-reads and tries again, or finds it
-      // gone. "unlimited" for a listing with no stock, "taken", or null.
-      async function takeOneFromStock(listing) {
-        if (listing.stock === null) return "unlimited";
-        let stock = listing.stock;
-        for (let attempt = 0; attempt < 4; attempt++) {
-          if (!(stock > 0)) return null;
-          const next = stock - 1;
-          const { data, error } = await _supabase
-            .from("shop")
-            .update({ stock: next, active: next > 0 })
-            .eq("id", listing.id)
-            .eq("stock", stock)
-            .select("id");
-          if (error) {
-            console.warn("Stock update failed:", error);
-            return null;
-          }
-          if (data && data.length) return "taken";
-          const { data: row } = await _supabase
-            .from("shop")
-            .select("stock, active")
-            .eq("id", listing.id)
-            .maybeSingle();
-          if (!row || !row.active) return null;
-          if (row.stock === null) return "unlimited";
-          stock = row.stock;
-        }
-        return null;
-      }
-
-      // Puts one back after a claim that could not go through. Taking the
-      // last copy switched the listing off, so putting it back switches it on.
-      async function returnOneToStock(listingId) {
-        for (let attempt = 0; attempt < 4; attempt++) {
-          const { data: row } = await _supabase
-            .from("shop")
-            .select("stock, active")
-            .eq("id", listingId)
-            .maybeSingle();
-          if (!row || row.stock === null) return;
-          const { data } = await _supabase
-            .from("shop")
-            .update({
-              stock: row.stock + 1,
-              active: row.active || row.stock === 0,
-            })
-            .eq("id", listingId)
-            .eq("stock", row.stock)
-            .select("id");
-          if (data && data.length) return;
-        }
-      }
-
       function showAlreadyClaimed(skinId) {
         showPopup(
           "ALREADY CLAIMED",
@@ -11431,7 +11531,7 @@
         }
 
         // One free claim per account. Checked here so the player is told
-        // before confirming; takeFreeClaim below is what actually enforces it.
+        // before confirming; the server (boi_buy_listing) is what enforces it.
         const freeGiveaway = !listing.seller && !listing.price;
         if (freeGiveaway && hasClaimedFree(listing.skin_id)) {
           showAlreadyClaimed(listing.skin_id);
@@ -11455,205 +11555,61 @@
 
         const complete = () => oneTradeAtATime(completeNow);
         const completeNow = async () => {
-          // Before the listing is claimed: a trade stopped halfway would
-          // leave the skin with nobody.
           if (await blockIfStale()) return;
           try {
-            // Re-read the row: someone else may have taken the last copy while
-            // the confirmation was open.
-            const { data: fresh } = await _supabase
-              .from("shop")
-              .select("*")
-              .eq("id", listing.id)
-              .maybeSingle();
-            if (!fresh || !fresh.active) {
-              showPopup("GONE", "That listing is no longer available.", () =>
-                showMenu("shop"),
-              );
+            // The whole sale happens on the server in one go: the price is
+            // read from the listing, the coins come off this account, the
+            // seller's copy moves here and they are paid, official stock and
+            // free claims are counted (boi_buy_listing). Nothing can stop
+            // halfway any more, so there is nothing to put back.
+            const { data: res, error } = await _supabase.rpc("boi_buy_listing", {
+              p_username: currentUser,
+              p_id: listing.id,
+            });
+            if (error) {
+              if (checkSessionError(error)) return;
+              throw error;
+            }
+            if (!res || !res.ok) {
+              await loadBlueCoinWallet(true);
+              showPurchaseRefused(res && res.reason, listing);
               return;
             }
-            // Checked against the freshly read row rather than the cached one,
-            // and before anything is claimed: the sender may have withdrawn
-            // the offer or re-aimed it while the confirmation was open.
-            if (fresh.recipient && fresh.recipient !== currentUser) {
-              showPopup("GONE", "That offer is for someone else now.", () =>
-                showMenu("shop"),
-              );
-              return;
+            if (typeof res.balance === "number") blueCoinWallet.balance = res.balance;
+            if (freeGiveaway) {
+              if (freeClaims.user !== currentUser) {
+                freeClaims.user = currentUser;
+                freeClaims.skins = new Set();
+              }
+              freeClaims.skins.add(listing.skin_id);
             }
 
-            if (fresh.seller) {
-              // Player listing: claim it first. Marking it sold is what stops
-              // two buyers getting the same skin.
-              const { data: claimed, error: claimErr } = await _supabase
-                .from("shop")
-                .update({
-                  active: false,
-                  buyer: currentUser,
-                  sold_at: new Date().toISOString(),
-                })
-                .eq("id", fresh.id)
-                .eq("active", true)
-                .select();
-              if (claimErr || !claimed || !claimed.length) {
-                showPopup("GONE", "Someone bought that first.", () =>
-                  showMenu("shop"),
-                );
-                return;
-              }
-
-              // The buyer pays before anything moves, and only with coins
-              // they have; short, and the listing goes back on sale.
-              const paid = await spendBlueCoins(currentUser, fresh.price);
-              if (!paid.ok) {
-                await _supabase
-                  .from("shop")
-                  .update({ active: true, buyer: null, sold_at: null })
-                  .eq("id", fresh.id);
-                await loadBlueCoinWallet(true);
-                if (paid.short) showNotEnoughCoins(fresh.price);
-                else
-                  showPopup(
-                    "ERROR",
-                    "The purchase could not be completed. You have not been charged.",
-                    () => showMenu("shop"),
-                  );
-                return;
-              }
-              if (paid.total !== null) blueCoinWallet.balance = paid.total;
-
-              // Take the item off the seller, then pay them. A crate comes
-              // out of their crates column; everything else is the same.
-              // One copy changes hands. A seller with two keeps one -- but a
-              // seller with none has nothing to sell, and going ahead anyway
-              // would create a copy out of thin air and pay for it. Listings
-              // outlive the collection they came from: the seller can have
-              // given the copy away from another device since. Put the
-              // listing back rather than completing a sale that cannot be
-              // honoured. rewriteUserList means the seller's own device saving
-              // at the same moment can neither undo this nor lose a skin to it.
-              const soldCrate = crateItemCollection(fresh.skin_id);
-              const taken = soldCrate
-                ? await changeUserCrates(fresh.seller, (list) => {
-                    const at = list.indexOf(soldCrate.id);
-                    if (at === -1) return false;
-                    list.splice(at, 1);
-                  })
-                : await rewriteUserList(fresh.seller, "skins", (list) =>
-                    removeOneSkin(list, fresh.skin_id) ? { skins: list } : null,
-                  );
-              // A write that failed may still have landed; the sale goes on
-              // then, because undoing it could cost the seller the copy.
-              const noCopy = !taken.ok && !taken.error;
-              const unreachable = !taken.ok && taken.error && !taken.stored;
-              if (noCopy || unreachable) {
-                // Unreachable goes back on sale; with no copy left there is
-                // nothing to sell, so the listing comes off the market.
-                await _supabase
-                  .from("shop")
-                  .update({ active: !noCopy, buyer: null, sold_at: null })
-                  .eq("id", fresh.id);
-                // The coins taken above go back
-                if (fresh.price) {
-                  const total = await changeBlueCoinBalance(
-                    currentUser,
-                    fresh.price,
-                  );
-                  if (total !== null) blueCoinWallet.balance = total;
-                  updateBlueCoinDisplays();
-                }
-                showPopup(
-                  noCopy ? "GONE" : "ERROR",
-                  noCopy
-                    ? skinDisplayName(fresh.skin_id) +
-                        " is no longer in " +
-                        fresh.seller +
-                        "'s collection, so the sale could not go through. You have not been charged."
-                    : "The purchase could not be completed. You have not been charged.",
-                  () => showMenu("shop"),
-                );
-                return;
-              }
-              if (fresh.price) {
-                await changeBlueCoinBalance(fresh.seller, fresh.price);
-              }
-            } else {
-              // Official stock, paid or free, comes off first...
-              const took = await takeOneFromStock(fresh);
-              if (!took) {
-                showPopup("SOLD OUT", "That one has gone.", () =>
-                  showMenu("shop"),
-                );
-                return;
-              }
-              // ...and a giveaway is one per account. If this account's claim
-              // turns out to be used already, the copy goes back on the shelf.
-              if (!fresh.price) {
-                const claim = await takeFreeClaim(fresh.skin_id, fresh.id);
-                if (claim !== "ok") {
-                  if (took === "taken") await returnOneToStock(fresh.id);
-                  if (claim === "taken") showAlreadyClaimed(fresh.skin_id);
-                  else
-                    showPopup(
-                      "ERROR",
-                      "The claim could not be recorded, so nothing was given. Try again in a moment.",
-                      () => showMenu("shop"),
-                    );
-                  return;
-                }
-              }
-              // ...then the coins, before the item: short, and the copy goes
-              // back on the shelf.
-              const paid = await spendBlueCoins(currentUser, fresh.price);
-              if (!paid.ok) {
-                if (took === "taken") await returnOneToStock(fresh.id);
-                await loadBlueCoinWallet(true);
-                if (paid.short) showNotEnoughCoins(fresh.price);
-                else
-                  showPopup(
-                    "ERROR",
-                    "The purchase could not be completed. You have not been charged.",
-                    () => showMenu("shop"),
-                  );
-                return;
-              }
-              if (paid.total !== null) blueCoinWallet.balance = paid.total;
-            }
-
-            // Paid for: give the buyer the item. It goes through the merge
-            // (changeOwnSkins / changeUserCrates): writing this tab's list as
-            // it stood would wipe anything that arrived elsewhere. A skin
-            // that could not be written right now is kept on this device
-            // (see notePendingSkins) and saved on the retry.
-            const boughtCrate = crateItemCollection(fresh.skin_id);
+            // The item is on this account's row now: bring this device up to it
+            const boughtCrate = crateItemCollection(res.item || listing.skin_id);
             let unsaved = false;
             if (boughtCrate) {
-              const got = await changeUserCrates(currentUser, (list) => {
-                list.push(boughtCrate.id);
-              });
-              if (got.ok) currentUserCrates = got.list.slice();
+              await loadCrates();
             } else {
-              const got = await grantOwnSkin(fresh.skin_id);
-              unsaved = !got.ok;
+              unsaved = !(await pullOwnSkins());
             }
             updateBlueCoinDisplays();
 
             const from =
-              (fresh.price ? "Bought from " : "Claimed from ") +
-              (fresh.seller ? fresh.seller + "." : SHOP_SEASON_SHORT + ".");
+              (listing.price ? "Bought from " : "Claimed from ") +
+              (listing.seller ? listing.seller + "." : SHOP_SEASON_SHORT + ".");
             if (boughtCrate) {
               showCrateBought(boughtCrate, from);
             } else {
               // The same reveal as any other new skin, with Use right there
               // instead of directions to the account page.
               showSkinUnlock(
-                fresh.skin_id,
+                listing.skin_id,
                 from +
                   (unsaved
-                    ? " It is saved on this device and will reach your account once the connection is back."
+                    ? " It is on your account and will show here once the connection is back."
                     : ""),
                 {
-                  title: fresh.price ? "PURCHASED" : "CLAIMED",
+                  title: listing.price ? "PURCHASED" : "CLAIMED",
                   after: () => showMenu("shop"),
                 },
               );
@@ -11672,6 +11628,30 @@
         showConfirmPopup("CONFIRM PURCHASE", confirmText, complete);
       }
 
+      // An admin adding or taking one copy of an item on another account,
+      // done by the server. `column`: skins, crates, emotes, loading_screens.
+      // Resolves { ok, list } or { ok: false, reason | error }.
+      async function adminEditList(username, column, item, change) {
+        if (!_supabase || !currentUser) return { ok: false, error: "signed out" };
+        try {
+          const { data, error } = await _supabase.rpc("boi_admin_edit_list", {
+            p_username: currentUser,
+            p_target: username,
+            p_column: column,
+            p_item: item,
+            p_change: change,
+          });
+          if (error) {
+            checkSessionError(error);
+            return { ok: false, error };
+          }
+          if (data && data.ok) return { ok: true, list: asStoredArray(data.list) };
+          return { ok: false, reason: (data && data.reason) || "error" };
+        } catch (e) {
+          return { ok: false, error: e };
+        }
+      }
+
       // An admin adding one copy of a skin to an account, or taking one away.
       // The stored row is written before the edit is logged, so the player's
       // client can never read the log ahead of the row it describes. Returns
@@ -11684,57 +11664,19 @@
         if (await blockIfStale()) return null;
         await skinAdminEditsReady;
 
-        // Applied to the list as it stands when the write lands, never to one
-        // read earlier: the player's own device may be saving at the same
-        // moment, and between the two nothing can be lost.
-        const apply = (list) => {
-          if (change === "add") list.push(skinId);
-          else if (!removeOneSkin(list, skinId)) return false;
-          regroupSkins(list);
-          if (!list.includes("default")) list.unshift("default");
-          return true;
-        };
-        const own = username === currentUser;
-        let skins = null;
-        if (own) {
-          // Your own row is also what a save reads and writes back, so it goes
-          // through the same merge as every other change to it.
-          let applied = false;
-          const result = await changeOwnSkins((list) => {
-            applied = apply(list);
-          });
-          if (result.ok && applied) {
-            skins = currentUserSkins.slice();
-            saveSettings(true);
-          }
-        } else {
-          const result = await rewriteUserList(username, "skins", (list) =>
-            apply(list) ? { skins: list } : null,
-          );
-          if (result.ok) skins = result.list;
-          else if (result.error)
-            console.warn("Admin skin edit failed:", result.error);
+        // Done on the server, to the row as it stands when the write lands,
+        // and logged in skin_admin_edits there so the player's open
+        // sessions follow it (boi_admin_edit_list). Your own row too: the
+        // log row can only be written by the server now.
+        const result = await adminEditList(username, "skins", skinId, change);
+        if (!result.ok) {
+          if (result.error) console.warn("Admin skin edit failed:", result.error);
+          return null;
         }
-        if (!skins) return null;
-
-        if (skinAdminEditsSupported) {
-          const { data: logged, error: logError } = await _supabase
-            .from("skin_admin_edits")
-            .insert([
-              {
-                username,
-                skin_id: skinId,
-                change,
-                admin: currentUser || null,
-                count_after: skinCopies(skins, skinId),
-              },
-            ])
-            .select("id");
-          if (logError) {
-            console.warn("Admin skin edit was not logged:", logError);
-          }
-        }
-        return skins;
+        if (username !== currentUser) return result.list;
+        await pullOwnSkins();
+        saveSettings(true);
+        return currentUserSkins.slice();
       }
 
       async function shopDelist(listingId) {
@@ -12293,64 +12235,12 @@
 
         const wasWearing = gameSettings.currentSkin === skinId;
         try {
-          // Taken off this account first, from what its row holds when the
-          // write lands. Handing it over first is how gifts were duplicated:
-          // a second click, or a copy this tab still showed after it had
-          // been sold, reached the other account with nothing here to take.
-          const listed = shopListedCounts().get(skinId) || 0;
-          let taken = false;
-          const took = await changeOwnSkins((list) => {
-            taken =
-              skinCopies(list, skinId) > listed && removeOneSkin(list, skinId);
-          });
-          if (took.stale) return showReloadForUpdate();
-          if (!took.ok || !taken) {
-            showPopup(
-              took.ok ? "NO SPARE COPY" : "ERROR",
-              took.ok
-                ? "You have no copy of that free to give. Any you have listed are set aside."
-                : "The gift could not be sent.",
-              () => {},
-            );
-            return;
-          }
-
-          // Added to what their row holds when it lands, not to the copy read
-          // a moment ago, so nothing they got in between is written over.
-          const given = await rewriteUserList(
-            target.username,
-            "skins",
-            (list) => {
-              list.push(skinId);
-              return { skins: list };
-            },
-          );
-          if (!given.ok && !(await writeLanded(given, target.username, "skins", skinId))) {
-            // It never reached them, so it comes back here
-            await grantOwnSkin(skinId);
-            showPopup(
-              "ERROR",
-              "The gift could not be sent, so " +
-                skinDisplayName(skinId) +
-                " is back in your collection.",
-              () => {},
-            );
-            return;
-          }
-
-          // The receipt, for the Transactions page and the daily limit
-          await _supabase.from("shop").insert([
-            {
-              skin_id: skinId,
-              price: 0,
-              seller: currentUser,
-              recipient: target.username,
-              buyer: target.username,
-              stock: 1,
-              active: false,
-              sold_at: new Date().toISOString(),
-            },
-          ]);
+          // One step on the server: a copy you have not listed moves from
+          // your row to theirs, with the receipt row (boi_give_item). Doing
+          // it as two writes from here is how gifts were duplicated.
+          const sent = await giveItemOnServer(target.username, skinId);
+          if (!sent) return;
+          await pullOwnSkins();
           dropWornSkinIfGone(skinId, wasWearing);
 
           showPopup(
@@ -12365,6 +12255,26 @@
           console.warn("Gift failed:", e);
           showPopup("ERROR", "The gift could not be sent.", () => {});
         }
+      }
+
+      // boi_give_item for a skin or crate:<id>. True once it has moved; on a
+      // refusal the player has been told why.
+      async function giveItemOnServer(to, item) {
+        const { data, error } = await _supabase.rpc("boi_give_item", {
+          p_username: currentUser,
+          p_to: to,
+          p_item: item,
+        });
+        if (error) {
+          if (!checkSessionError(error))
+            showPopup("ERROR", "The gift could not be sent.", () => {});
+          return false;
+        }
+        if (!data || !data.ok) {
+          showTradeRefused(data && data.reason, "The gift could not be sent.");
+          return false;
+        }
+        return true;
       }
 
       // Whether a write that came back failed reached the row anyway: a
@@ -12384,62 +12294,12 @@
         return asStoredArray(data[column]).filter((x) => x === id).length > before;
       }
 
-      // Giving away an unopened crate: the same order as a skin gift, taken
-      // from your crates first, then handed over, then the receipt.
+      // Giving away an unopened crate: the same server step as a skin gift.
       async function sendCrateGift(col, target) {
         try {
-          const listed = shopListedCounts().get(crateItemId(col.id)) || 0;
-          const kept = await changeUserCrates(currentUser, (list) => {
-            if (list.filter((c) => c === col.id).length <= listed) return false;
-            list.splice(list.indexOf(col.id), 1);
-          });
-          if (kept.stale) return showReloadForUpdate();
-          if (!kept.ok) {
-            showPopup(
-              kept.error ? "ERROR" : "NO SPARE CRATE",
-              kept.error
-                ? "The crate could not be sent."
-                : "You have no " +
-                    col.crateName +
-                    " free to give. Any you have listed are set aside.",
-              () => {},
-            );
-            return;
-          }
-          currentUserCrates = kept.list.slice();
-
-          const given = await changeUserCrates(target.username, (list) => {
-            list.push(col.id);
-          });
-          if (
-            !given.ok &&
-            !(await writeLanded(given, target.username, "crates", col.id))
-          ) {
-            const back = await changeUserCrates(currentUser, (list) => {
-              list.push(col.id);
-            });
-            if (back.ok) currentUserCrates = back.list.slice();
-            showPopup(
-              "ERROR",
-              "The crate could not be sent, so it is back with you.",
-              () => {},
-            );
-            return;
-          }
-
-          await _supabase.from("shop").insert([
-            {
-              skin_id: crateItemId(col.id),
-              price: 0,
-              seller: currentUser,
-              recipient: target.username,
-              buyer: target.username,
-              stock: 1,
-              active: false,
-              sold_at: new Date().toISOString(),
-            },
-          ]);
-
+          const sent = await giveItemOnServer(target.username, crateItemId(col.id));
+          if (!sent) return;
+          await loadCrates();
           showPopup(
             "GIFT SENT",
             "A " + col.crateName + " now belongs to " + target.username + ".",
@@ -12695,38 +12555,29 @@
           return;
         }
 
-        // Off the sender first, and only if they still have them: two sends
-        // racing each other could otherwise both pass the check above.
-        const debit = await spendBlueCoins(currentUser, amount);
-        if (!debit.ok) {
-          await loadBlueCoinWallet(true);
-          showPopup(
-            debit.short ? "NOT ENOUGH COINS" : "ERROR",
-            debit.short
-              ? "You no longer have " + amount + " Blue Coins to send."
-              : "The coins could not be sent.",
-            () => {},
-          );
+        // One step on the server: off you only if you have them, onto them,
+        // and logged for the daily cap (boi_send_coins). The server keeps
+        // the same age and daily rules as the checks above.
+        const { data: sent, error: sendError } = await _supabase.rpc("boi_send_coins", {
+          p_username: currentUser,
+          p_to: target.username,
+          p_amount: amount,
+        });
+        if (sendError) {
+          if (!checkSessionError(sendError))
+            showPopup("ERROR", "The coins could not be sent.", () => {});
           return;
         }
-
-        const credited = await changeBlueCoinBalance(target.username, amount);
-        if (credited === null) {
-          await changeBlueCoinBalance(currentUser, amount);
-          showPopup(
-            "ERROR",
-            "The coins could not be delivered, so they have been put back.",
-            () => {},
-          );
+        if (!sent || !sent.ok) {
           await loadBlueCoinWallet(true);
+          if (sent && sent.reason === "short")
+            showPopup(
+              "NOT ENOUGH COINS",
+              "You no longer have " + amount + " Blue Coins to send.",
+              () => {},
+            );
+          else showTradeRefused(sent && sent.reason, "The coins could not be sent.");
           return;
-        }
-
-        // The daily cap counts these rows.
-        if (coinGiftLogSupported) {
-          await _supabase.from("coin_gifts").insert([
-            { sender: currentUser, recipient: target.username, amount },
-          ]);
         }
 
         await loadBlueCoinWallet(true);
@@ -12868,21 +12719,24 @@
       //   }
       const ARTIST_COLLECTIONS = [
         {
-          id: "farm",
-          label: "Farm",
-          crateName: "Farm Crate",
-          cratePrice: 30,
-          items: [
-            { skin: "pig", chance: 25 },
-            { skin: "chicken", chance: 25 },
-            { skin: "cat", chance: 20 },
-            { skin: "cattabby", chance: 10 },
-            { skin: "catblack", chance: 10 },
-          ],
+          id: "scribbled",
+          label: "Scribbled",
+          crateName: "Scribbled Crate",
+          cratePrice: 45,
+          // Given with the crate when it is bought, unless you have it
+          comesWith: "loading:platforms",
+          // Every skin is limited, a pull per copy (skins.js `copies`).
+          // With no regular items, the odds are shared out among the copies
+          // still left (crateOdds), and once every copy is found the crate
+          // is sold out.
+          items: [],
           limited: [
-            { skin: "coolguyfarmer", chance: 5, pulls: 2 },
-            { skin: "catdark", chance: 5, pulls: 1 },
-            { skin: "catlavender", chance: 5, pulls: 3 },
+            { skin: "clownscribbled", chance: 20, pulls: 3 },
+            { skin: "coolguyscribbled", chance: 25, pulls: 4 },
+            { skin: "rainbowscribbled", chance: 20, pulls: 3 },
+            { skin: "cubemouthscribbled", chance: 20, pulls: 3 },
+            { skin: "galaxyscribbled", chance: 10, pulls: 2 },
+            { skin: "nightmarescribbled", chance: 5, pulls: 1 },
           ],
         },
       ];
@@ -12990,6 +12844,14 @@
       // is just the items' own chances.
       function crateOdds(col) {
         const rare = crateLimited(col);
+        // A crate of only limited skins: whatever is left shares all 100
+        if (!col.items.length) {
+          const sum = rare.reduce((n, i) => n + i.chance, 0) || 1;
+          const odds = new Map();
+          (col.limited || []).forEach((i) => odds.set(i.skin, 0));
+          rare.forEach((i) => odds.set(i.skin, (i.chance / sum) * 100));
+          return odds;
+        }
         const rest = 100 - rare.reduce((n, i) => n + i.chance, 0);
         const total = col.items.reduce((n, i) => n + (i.chance || 0), 0) || 1;
         const odds = new Map();
@@ -13000,6 +12862,11 @@
         return odds;
       }
 
+      // A crate of only limited skins with every copy found
+      function crateSoldOut(col) {
+        return !col.items.length && !crateLimited(col).length;
+      }
+
       function formatChance(n) {
         return Math.round(n * 10) / 10 + "%";
       }
@@ -13007,8 +12874,12 @@
       // The limited skins get their own roll first, at their own chance;
       // landing on one still has to win a claim before it counts.
       function rollCrateLimited(col) {
-        let roll = Math.random() * 100;
-        for (const item of crateLimited(col)) {
+        const rare = crateLimited(col);
+        // Only limited skins in it: always one of those still left
+        let roll =
+          Math.random() *
+          (col.items.length ? 100 : rare.reduce((n, i) => n + i.chance, 0));
+        for (const item of rare) {
           roll -= item.chance;
           if (roll < 0) return item;
         }
@@ -13175,6 +13046,12 @@
           (col.items.some((i) => isCosmeticItem(i.skin))
             ? "One item inside"
             : "One skin inside") +
+          (col.comesWith && cosmeticKind(col.comesWith)
+            ? " + the " +
+              escapeHtml(cosmeticName(col.comesWith)) +
+              " " +
+              cosmeticLabel(col.comesWith).toLowerCase()
+            : "") +
           "</div>" +
           '<div class="shop-card-odds">' +
           rare
@@ -13191,9 +13068,11 @@
           coin +
           col.cratePrice +
           "</div>" +
-          '<button class="shop-btn-buy" data-crate-buy="' +
-          col.id +
-          '">Buy Crate</button>' +
+          (crateSoldOut(col)
+            ? '<button class="shop-btn-buy" disabled>Sold Out</button>'
+            : '<button class="shop-btn-buy" data-crate-buy="' +
+              col.id +
+              '">Buy Crate</button>') +
           (mine
             ? '<button class="shop-btn-buy" data-crate-open="' +
               col.id +
@@ -13382,7 +13261,7 @@
           () =>
             oneTradeAtATime(async () => {
             // Paid for first, and only with coins that are there
-            const paid = await spendBlueCoins(currentUser, item.price);
+            const paid = await spendBlueCoins(currentUser, item.price, "skin:" + skinId);
             if (!paid.ok) {
               await loadBlueCoinWallet(true);
               if (paid.short) showNotEnoughCoins(item.price);
@@ -13403,7 +13282,7 @@
               // kept on this device for the next save to carry, so that copy
               // is taken back off before the coins go back.
               if (got.error) dropPendingSkin(skinId);
-              const total = await changeBlueCoinBalance(currentUser, item.price);
+              const total = await refundSpend(paid);
               if (total !== null) blueCoinWallet.balance = total;
               updateBlueCoinDisplays();
               showPopup(
@@ -13441,6 +13320,16 @@
           return;
         }
 
+        await loadOneOfOneClaims();
+        if (crateSoldOut(col)) {
+          showPopup(
+            "SOLD OUT",
+            "Every skin in the " + col.crateName + " has been found.",
+            () => {},
+          );
+          return;
+        }
+
         await loadBlueCoinWallet(true);
         if (col.cratePrice > blueCoinWallet.balance) {
           showPopup(
@@ -13460,7 +13349,7 @@
         // if they are there -- the crate used to be handed over first and
         // charged after, and since a charge stops at 0, clicking BUY quickly
         // gave a crate per click for the price of one.
-        const paid = await spendBlueCoins(currentUser, col.cratePrice);
+        const paid = await spendBlueCoins(currentUser, col.cratePrice, "crate:" + col.id);
         if (!paid.ok) {
           await loadBlueCoinWallet(true);
           if (paid.short) showNotEnoughCoins(col.cratePrice);
@@ -13477,7 +13366,7 @@
           !saved.ok &&
           !(await writeLanded(saved, currentUser, "crates", col.id))
         ) {
-          const total = await changeBlueCoinBalance(currentUser, col.cratePrice);
+          const total = await refundSpend(paid);
           if (total !== null) blueCoinWallet.balance = total;
           updateBlueCoinDisplays();
           showPopup(
@@ -13490,7 +13379,23 @@
         if (saved.ok) currentUserCrates = saved.list.slice();
         else await loadCrates();
 
-        showCrateBought(col);
+        // What the crate comes with, if you don't have it yet
+        let extra = "";
+        if (col.comesWith && cosmeticKind(col.comesWith)) {
+          await loadCosmetics();
+          if (
+            !ownsCosmetic(col.comesWith) &&
+            (await grantCosmetic(col.comesWith, crateItemId(col.id))) === "ok"
+          )
+            extra =
+              "It came with the " +
+              cosmeticName(col.comesWith) +
+              " " +
+              cosmeticLabel(col.comesWith).toLowerCase() +
+              ".";
+        }
+
+        showCrateBought(col, extra || undefined);
       }
 
       // What getting a crate looks like, however it arrived -- bought here,
@@ -13712,11 +13617,27 @@
         // loading screen
         await loadCosmetics();
         let skinId = null;
-        const rare = rollCrateLimited(col);
-        if (rare && (await takeLimitedSkin(rare, col)) === "ok")
-          skinId = rare.skin;
+        // A crate with nothing but limited skins rolls again among the
+        // copies still left when another player's claim got there first
+        for (let tries = 0; tries < 8 && !skinId; tries++) {
+          const rare = rollCrateLimited(col);
+          if (!rare) break;
+          const took = await takeLimitedSkin(rare, col);
+          if (took === "ok") skinId = rare.skin;
+          else if (took === "error" || col.items.length) break;
+        }
         const wonRare = !!skinId;
         if (!skinId) skinId = rollCrateSkin(col);
+        if (!skinId && crateSoldOut(col))
+          return keepCrate(
+            "SOLD OUT",
+            "Every skin in this crate has been found, so it has not been used.",
+          );
+        if (!skinId && !col.items.length)
+          return keepCrate(
+            "COULD NOT OPEN",
+            "The crate could not be opened just now, so it has not been used. Try again in a moment.",
+          );
         if (!skinId)
           return keepCrate(
             "NOTHING NEW",
@@ -14060,12 +13981,42 @@
           // seller), then each crate collection, which is not built from
           // listings -- most of what is in it is not for sale.
           if (shopState.tab === "game") {
-            const season = shopVisibleListings();
+            // Bundles get a section each (their def's `section`), after
+            // the season's listings
+            // as do the game's listings a bundle names in `alsoInSection`
+            const all = shopVisibleListings();
+            const sectionOf = (l) => {
+              if (isBundleItem(l.skin_id)) {
+                const def = bundleDef(l.skin_id);
+                return (def && (def.section || def.name)) || "Bundles";
+              }
+              if (l.seller) return null;
+              const def = Object.values(BUNDLES).find(
+                (b) => b.alsoInSection && b.alsoInSection.includes(l.skin_id),
+              );
+              return def ? def.section || def.name : null;
+            };
+            const season = all.filter((l) => !sectionOf(l));
+            const bundleSections = [];
+            all.forEach((l) => {
+              const label = sectionOf(l);
+              if (!label) return;
+              let sec = bundleSections.find((b) => b.label === label);
+              if (!sec) bundleSections.push((sec = { label, listings: [] }));
+              sec.listings.push(l);
+            });
             grid.innerHTML =
               shopSectionHTML(SHOP_SEASON) +
               (season.length
                 ? season.map((listing) => shopCardHTML(listing, isMobile)).join("")
                 : '<div class="shop-empty">Nothing on sale right now.</div>') +
+              bundleSections
+                .map(
+                  (sec) =>
+                    shopSectionHTML(sec.label) +
+                    sec.listings.map((listing) => shopCardHTML(listing, isMobile)).join(""),
+                )
+                .join("") +
               ARTIST_COLLECTIONS.map(
                 (col) => shopSectionHTML(col.label, col.signature) + collectionGridHTML(col),
               ).join("");
@@ -14354,12 +14305,12 @@
           blocktober.claimed.add(paidKey);
           return false;
         }
-        const { error } = await _supabase
-          .from("bluecoin_claims")
-          .insert([{ username: user, level_key: key, is_custom: false }]);
-        if (error) {
-          // 23505: another device paid it a moment ago
-          if (error.code === "23505") blocktober.claimed.add(paidKey);
+        // The server checks the progress and pays the coins (boi_claim)
+        if (currentUser !== user) return false;
+        const claim = await serverClaim(key);
+        if (!claim.ok) {
+          // "already": another device paid it a moment ago
+          if (claim.reason === "already") blocktober.claimed.add(paidKey);
           return false;
         }
         blocktober.claimed.add(paidKey);
@@ -14371,12 +14322,14 @@
             "."
           : "For collecting " + reward.at + " Blue Coins in Blocktober.";
         if (reward.coins) {
-          const total = await changeBlueCoinBalance(user, reward.coins);
           if (currentUser !== user) return true;
+          const paid = claim.coins || 0;
           blueCoinWallet.balance =
-            total !== null ? total : blueCoinWallet.balance + reward.coins;
+            typeof claim.balance === "number"
+              ? claim.balance
+              : blueCoinWallet.balance + paid;
           updateBlueCoinDisplays();
-          showBlueCoinReward("BLOCKTOBER", reward.coins, why);
+          showBlueCoinReward("BLOCKTOBER", paid, why);
         } else if (reward.skin) {
           if (currentUser !== user) return true;
           await grantOwnSkin(reward.skin);
@@ -14734,11 +14687,9 @@
             return "had";
           };
           if (prior && prior.length) return had();
-          const { error } = await _supabase
-            .from("bluecoin_claims")
-            .insert([{ username: user, level_key: key, is_custom: false }]);
-          // 23505: another device gave it a moment ago
-          if (error) return error.code === "23505" ? had() : "failed";
+          const claim = await serverClaim(key);
+          // "already": another device gave it a moment ago
+          if (!claim.ok) return claim.reason === "already" ? had() : "failed";
           safeStorage.removeItem("boi_dark_done:" + user);
           if (blocktober.user === user) blocktober.claimed.add(DARK_KEY);
           if (currentUser !== user) return "paid";
@@ -14830,7 +14781,7 @@
             skinPreviewCSS(DARK_SKIN) +
             '"></div><div class="skin-platform"></div></div>',
           skinDisplayName(DARK_SKIN),
-          !signedIn ? "Locked" : skinPaid ? "Claimed" : "Beat all " + total,
+          !signedIn ? "Locked" : skinPaid ? "Claimed" : "Beat all levels",
           skinCardVarsCSS(DARK_SKIN),
         );
         const emoteId = EMOTE_ITEM + DARK_EMOTE;
@@ -15325,6 +15276,13 @@
           if (writeError) return { ok: false, error: writeError, stored };
           if (written && written.length)
             return { ok: true, list: patch[column], stored };
+          // Nothing matched: someone else wrote first -- or the server no
+          // longer takes this browser's writes to the row (the session
+          // ended), which looks the same. Asked once, on the first miss.
+          if (!attempt && !(await sessionStillValid())) {
+            handleSessionLost();
+            return { ok: false, error: "signed out", stored };
+          }
           // Someone else wrote first: read their version and redo it
         }
         return { ok: false, error: lastError || "the row kept changing" };
@@ -15414,6 +15372,25 @@
         mergeSkinsFromCloud(stored);
         if (!currentUserSkins.includes(gameSettings.currentSkin))
           gameSettings.currentSkin = "default";
+      }
+
+      // Brings this device's skins up to the stored row after the server
+      // changed it (a purchase, a gift, an admin edit). True once read.
+      async function pullOwnSkins() {
+        if (!_supabase || !currentUser) return false;
+        const user = currentUser;
+        try {
+          const { data, error } = await _supabase
+            .from("users")
+            .select("skins")
+            .eq("username", user)
+            .maybeSingle();
+          if (error || !data || currentUser !== user) return false;
+          await foldStoredSkins(asStoredArray(data.skins));
+          return true;
+        } catch (e) {
+          return false;
+        }
       }
 
       // Changes this account's skins: `change(list)` edits the list in place.
@@ -15700,6 +15677,7 @@
         // Kept a resolved promise rather than null: callers await this.
         userDataReady = Promise.resolve();
         safeStorage.removeItem("blockoverit_username");
+        setSessionToken(null);
 
         try {
           resetBlueCoinWallet();
@@ -15929,6 +15907,7 @@
               await loadBlueCoinWallet(true);
               refreshUserDependentViews();
               tellAdminAboutNotices();
+              showAdminMessages();
               loadEmoteInventory();
               loadLoadingInventory();
               startFriends();
@@ -16287,12 +16266,10 @@
             streakRewards.claimed.add(reward.at);
             return;
           }
-          const { error } = await _supabase
-            .from("bluecoin_claims")
-            .insert([{ username: user, level_key: key, is_custom: false }]);
-          if (error) {
-            // 23505: another device claimed it a moment ago
-            if (error.code === "23505") streakRewards.claimed.add(reward.at);
+          const claim = await serverClaim(key);
+          if (!claim.ok) {
+            // "already": another device claimed it a moment ago
+            if (claim.reason === "already") streakRewards.claimed.add(reward.at);
             else showPopup("STREAK", "Could not claim the reward. Try again.");
             return;
           }
@@ -16503,6 +16480,12 @@
         if (!_supabase || !currentUser) return;
         if (!newPass)
           return showPopup("ERROR", "Password cannot be empty.", () => {});
+        if (newPass.length < MIN_PASSWORD_LENGTH)
+          return showPopup(
+            "ERROR",
+            "Use at least " + MIN_PASSWORD_LENGTH + " characters.",
+            () => {},
+          );
         if (!oldPass)
           return showPopup(
             "ERROR",
@@ -16521,7 +16504,11 @@
           if (!changed) {
             return showPopup("ERROR", "Incorrect current password.", () => {});
           }
-          showPopup("SUCCESS", "Password updated.", () => {});
+          showPopup(
+            "SUCCESS",
+            "Password updated. Any other device signed in to this account has been signed out.",
+            () => {},
+          );
         } catch (e) {
           showPopup(
             "ERROR",
@@ -16675,20 +16662,23 @@
         if (readErr) throw readErr;
         if (prior && prior.length) return used();
         if (await blockIfStale()) return;
-        const { error } = await _supabase
-          .from("bluecoin_claims")
-          .insert([{ username: user, level_key: key, is_custom: false }]);
-        if (error) {
-          if (error.code === "23505") return used();
-          throw error;
+        // The server reads the amount off the code and counts the use
+        // (boi_claim), so useOne is not called here.
+        const claim = await serverClaim(key);
+        if (!claim.ok) {
+          if (claim.reason === "already") return used();
+          if (claim.reason === "used-up")
+            return showPopup("CODE EXPIRED", "This code has no uses left.", () => {});
+          if (claim.reason === "invalid")
+            return showPopup("INVALID CODE", "The code you entered is not valid.", () => {});
+          throw claim.error || new Error(claim.reason || "not redeemed");
         }
-        await useOne();
-        const total = await changeBlueCoinBalance(user, amount);
         if (currentUser !== user) return;
+        const paid = claim.coins || amount;
         blueCoinWallet.balance =
-          total !== null ? total : blueCoinWallet.balance + amount;
+          typeof claim.balance === "number" ? claim.balance : blueCoinWallet.balance + paid;
         updateBlueCoinDisplays();
-        showBlueCoinReward("CODE", amount, "Redeemed with a code.");
+        showBlueCoinReward("CODE", paid, "Redeemed with a code.");
       }
 
       function updateLoginButton() {
@@ -17938,33 +17928,25 @@
           .eq("id", t.id);
       }
 
-      async function blueCoinBalanceOf(username) {
-        const { data } = await _supabase
-          .from("users")
-          .select("bluecoins")
-          .eq("username", username)
-          .maybeSingle();
-        return data ? Number(data.bluecoins) || 0 : null;
-      }
-
       // Takes up to `amount` from `from` and gives exactly what was taken to
-      // `to`. Returns how much moved, or null if nothing could be read.
+      // `to`, in one server step (boi_admin_move_coins). Returns how much
+      // moved, or null if it could not be done.
       async function moveCoinsBack(from, to, amount) {
         if (!amount) return 0;
-        const have = await blueCoinBalanceOf(from);
-        if (have === null) return null;
-        const take = Math.min(have, amount);
-        if (!take) return 0;
-        const debit = await spendBlueCoins(from, take);
-        if (debit.short) return 0;
-        if (!debit.ok) return null;
-        if ((await changeBlueCoinBalance(to, take)) === null) {
-          await changeBlueCoinBalance(from, take);
+        const { data, error } = await _supabase.rpc("boi_admin_move_coins", {
+          p_username: currentUser,
+          p_from: from,
+          p_to: to,
+          p_amount: amount,
+        });
+        if (error) {
+          checkSessionError(error);
           return null;
         }
+        if (!data || !data.ok) return null;
         if (from === currentUser || to === currentUser)
           await loadBlueCoinWallet(true);
-        return take;
+        return data.moved || 0;
       }
 
       // Moves one copy of a skin or crate from one account to another.
@@ -17972,23 +17954,14 @@
       async function moveItemBack(item, from, to) {
         const crate = crateItemCollection(item);
         if (crate) {
-          const taken = await changeUserCrates(from, (list) => {
-            const at = list.indexOf(crate.id);
-            if (at === -1) return false;
-            list.splice(at, 1);
-          });
-          if (!taken.ok) return taken.error ? "error" : "missing";
-          if (from === currentUser) currentUserCrates = taken.list.slice();
-          const given = await changeUserCrates(to, (list) => {
-            list.push(crate.id);
-          });
+          const taken = await adminEditList(from, "crates", crate.id, "remove");
+          if (!taken.ok) return taken.reason === "missing" ? "missing" : "error";
+          const given = await adminEditList(to, "crates", crate.id, "add");
           if (!given.ok) {
-            await changeUserCrates(from, (list) => {
-              list.push(crate.id);
-            });
+            await adminEditList(from, "crates", crate.id, "add");
             return "error";
           }
-          if (to === currentUser) currentUserCrates = given.list.slice();
+          if (from === currentUser || to === currentUser) await loadCrates();
           return "ok";
         }
         // adminEditUserSkins logs the change, so the players' open sessions
@@ -18429,6 +18402,186 @@
             list.appendChild(row);
           });
         })();
+      }
+
+      // ---- ADMIN MESSAGES (admin_messages_setup.sql) ---------------------------
+      // An admin writes to one player, or to everyone with the name left
+      // blank; the player gets it as a popup the next time they sign in or
+      // open the game, once. Sending needs a real admin session.
+      const ADMIN_MESSAGE_REASONS = {
+        empty: "Write a message first.",
+        long: "Keep it under 1000 characters.",
+        nouser: "There is no account with that name. Names are case sensitive.",
+      };
+
+      function renderAdminMessages(container) {
+        const to = document.createElement("input");
+        to.type = "text";
+        to.placeholder = "Player (blank = everyone)";
+        to.autocomplete = "off";
+        to.spellcheck = false;
+        to.className = "admin-input";
+        to.style.cssText = "width:100%; font-size:1rem; margin-bottom:10px;";
+        const body = document.createElement("textarea");
+        body.placeholder = "Message";
+        body.maxLength = 1000;
+        body.className = "admin-input";
+        body.style.cssText = "width:100%; font-size:1rem; min-height:110px; resize:vertical; margin-bottom:10px;";
+        const send = document.createElement("button");
+        send.className = "btn admin-btn";
+        send.textContent = "SEND";
+        send.style.cssText = "width:100%; margin-bottom:20px;";
+        container.append(to, body, send);
+
+        const list = document.createElement("div");
+        list.style.cssText =
+          "width:100%; display:flex; flex-direction:column; gap:8px; margin-bottom:20px;";
+        container.appendChild(list);
+
+        const load = async () => {
+          list.innerHTML =
+            "<div style='text-align:center; color:#888; padding:20px;'>Loading...</div>";
+          const { data, error } = await _supabase.rpc("boi_admin_list_messages");
+          if (!list.isConnected) return;
+          if (error) {
+            list.innerHTML =
+              "<div style='text-align:center; color:#888; padding:20px;'>" +
+              (isSessionError(error)
+                ? "Sign out and back in on this device to use messages."
+                : "Couldn't load messages.") +
+              "</div>";
+            return;
+          }
+          const rows = Array.isArray(data) ? data : [];
+          if (!rows.length) {
+            list.innerHTML =
+              "<div style='text-align:center; color:#888; padding:20px;'>No messages sent yet.</div>";
+            return;
+          }
+          list.innerHTML = "";
+          rows.forEach((m) => {
+            const row = document.createElement("div");
+            row.className = "admin-row" + (m.active ? "" : " reversed");
+            row.style.flexWrap = "wrap";
+            row.innerHTML =
+              '<span style="min-width:0; flex:1; word-break:break-word;">' +
+              '<span class="admin-tag">' +
+              escapeHtml(m.recipient ? "TO " + m.recipient : "EVERYONE") +
+              "</span>" +
+              '<span style="color:#888; font-size:0.75rem;"> ' +
+              escapeHtml(new Date(m.created_at).toLocaleString()) +
+              " &middot; " +
+              escapeHtml(m.sender) +
+              " &middot; seen by " +
+              (Number(m.seen) || 0) +
+              (m.active ? "" : " &middot; withdrawn") +
+              '</span><br><span style="color:#eee; white-space:pre-wrap;">' +
+              escapeHtml(m.body) +
+              "</span></span>" +
+              (m.active
+                ? '<button class="btn" data-withdraw style="' + NOTICE_BTN_CSS + '">WITHDRAW</button>'
+                : "");
+            const w = row.querySelector("[data-withdraw]");
+            if (w)
+              w.onclick = async () => {
+                w.disabled = true;
+                const { error: wErr } = await _supabase.rpc("boi_admin_withdraw_message", {
+                  p_id: m.id,
+                });
+                if (wErr) {
+                  w.disabled = false;
+                  showTopNotification("Couldn't withdraw it.");
+                  return;
+                }
+                load();
+              };
+            list.appendChild(row);
+          });
+        };
+
+        send.onclick = async () => {
+          if (!_supabase) return;
+          send.disabled = true;
+          try {
+            const { data, error } = await _supabase.rpc("boi_admin_send_message", {
+              p_recipient: to.value.trim() || null,
+              p_body: body.value,
+            });
+            if (error) {
+              showPopup(
+                "NOT SENT",
+                isSessionError(error)
+                  ? "Sign out and back in on this device, then send it again."
+                  : "The message could not be sent.",
+                () => {},
+              );
+              return;
+            }
+            if (!data || !data.ok) {
+              showPopup(
+                "NOT SENT",
+                ADMIN_MESSAGE_REASONS[data && data.reason] || "The message could not be sent.",
+                () => {},
+              );
+              return;
+            }
+            showTopNotification(to.value.trim() ? "Sent to " + to.value.trim() : "Sent to everyone");
+            body.value = "";
+            load();
+          } finally {
+            send.disabled = false;
+          }
+        };
+
+        if (_supabase) load();
+      }
+
+      // The signed-in player's unread admin messages, one popup each. Each is
+      // marked read as it is closed, so it shows once wherever they sign in.
+      let adminMessagesRun = null;
+      function showAdminMessages() {
+        if (adminMessagesRun || !_supabase || !currentUser) return adminMessagesRun;
+        const user = currentUser;
+        adminMessagesRun = (async () => {
+          try {
+            const { data, error } = await _supabase.rpc("boi_my_messages", {
+              p_username: user,
+            });
+            if (error || !Array.isArray(data) || currentUser !== user) return;
+            data.forEach((m) => {
+              popupManager.show({
+                title: m.everyone ? "MESSAGE TO EVERYONE" : "MESSAGE",
+                html:
+                  '<div style="color:#eee; text-align:left; white-space:pre-wrap; word-break:break-word;">' +
+                  escapeHtml(m.body) +
+                  '</div><div style="color:#888; font-size:0.8rem; margin-top:12px; text-align:left;">From ' +
+                  escapeHtml(m.sender) +
+                  " &middot; " +
+                  escapeHtml(new Date(m.created_at).toLocaleDateString()) +
+                  "</div>",
+                buttons: [
+                  {
+                    text: "OK",
+                    onClick: () => {
+                      if (currentUser === user)
+                        _supabase
+                          .rpc("boi_read_message", { p_username: user, p_id: m.id })
+                          .then(
+                            () => {},
+                            () => {},
+                          );
+                    },
+                  },
+                ],
+              });
+            });
+          } catch (e) {
+            console.warn("Admin messages could not be read:", e);
+          } finally {
+            adminMessagesRun = null;
+          }
+        })();
+        return adminMessagesRun;
       }
 
       // Official levels whose creator published an update with a different
@@ -24751,6 +24904,73 @@
 
       var globalCameraMode = "wide";
       const CAMERA_MODE_CYCLE = ["focus", "wide"];
+      // Icons drawn the way the game draws everything: square blocks on an
+      // 8-block grid ("#" = a block), each block 3 of a 24-wide viewBox,
+      // centred. One rect per run of blocks in a row.
+      function blockIconRects(rows) {
+        const h = rows.length;
+        const w = Math.max(...rows.map((r) => r.length));
+        const ox = (24 - w * 3) / 2;
+        const oy = (24 - h * 3) / 2;
+        let out = "";
+        rows.forEach((row, y) => {
+          for (let x = 0; x < row.length; ) {
+            if (row[x] !== "#") {
+              x++;
+              continue;
+            }
+            let end = x;
+            while (row[end] === "#") end++;
+            out +=
+              '<rect x="' + (ox + x * 3) + '" y="' + (oy + y * 3) +
+              '" width="' + (end - x) * 3 + '" height="3"/>';
+            x = end;
+          }
+        });
+        return out;
+      }
+      function blockIcon(rows) {
+        return (
+          '<svg viewBox="0 0 24 24" fill="currentColor" shape-rendering="crispEdges">' +
+          blockIconRects(rows) +
+          "</svg>"
+        );
+      }
+      const BLOCK_ICONS = {
+        play: ["#...", "##..", "###.", "####", "###.", "##..", "#..."],
+        leaderboard: ["...##...", "...##...", "##.##...", "##.##.##", "##.##.##", "##.##.##"],
+        profile: ["..####..", "..####..", "..####..", "........", "########", "########"],
+        settings: ["...##...", ".######.", ".##..##.", "###..###", ".##..##.", ".######.", "...##..."],
+        news: ["########", "#......#", "#.####.#", "#......#", "#.####.#", "#......#", "########"],
+        beats: ["....####", "....####", "....#...", "....#...", ".####...", "#####...", ".###...."],
+        skins: ["########", "########", "##.##.##", "########", "########", "########"],
+        shop: ["..####..", "..#..#..", "########", "########", "########", "########"],
+        custom: ["......##", "......##", "....####", "....####", "..######", "..######", "########"],
+        awards: ["########", ".######.", ".######.", "..####..", "...##...", "...##...", ".######."],
+        left: ["...##", "..##.", ".##..", "##...", ".##..", "..##.", "...##"],
+        right: ["##...", ".##..", "..##.", "...##", "..##.", ".##..", "##..."],
+        up: ["...##...", "..####..", ".######.", "###..###", "##....##"],
+        restart: ["..####.#", ".#....##", "#....###", "#.......", "#......#", ".#....#.", "..####.."],
+        hitbox: ["########", "#......#", "#......#", "#......#", "#......#", "#......#", "#......#", "########"],
+        follow: ["...##...", "...##...", "..####..", "#######.", "..####..", "...##...", "...##..."],
+        focus: [".####...", "#....#..", "#....#..", "#....#..", ".####...", ".....##.", "......##"],
+        wide: [".####...", "#....#..", "#.##.#..", "#....#..", ".####...", ".....##.", "......##"],
+      };
+      // The level's own buttons, written in the page above as paths
+      [
+        ["restart-btn", "restart"],
+        ["hitbox-btn", "hitbox"],
+        ["mc-left", "left"],
+        ["mc-right", "right"],
+        ["mc-up", "up"],
+      ].forEach(([id, icon]) => {
+        const svg = document.querySelector("#" + id + " svg");
+        if (!svg) return;
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("shape-rendering", "crispEdges");
+        svg.innerHTML = blockIconRects(BLOCK_ICONS[icon]);
+      });
+
       const CAMERA_ICONS = {
         follow:
           '<path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06z"/>',
@@ -24768,7 +24988,10 @@
         const btn = document.getElementById("zoom-btn");
         if (!btn) return;
         const svg = btn.querySelector("svg");
-        if (svg) svg.innerHTML = CAMERA_ICONS[mode] || CAMERA_ICONS.follow;
+        if (svg) {
+          svg.setAttribute("shape-rendering", "crispEdges");
+          svg.innerHTML = blockIconRects(BLOCK_ICONS[mode] || BLOCK_ICONS.follow);
+        }
         btn.title = CAMERA_TITLES[mode] || "Camera";
       }
 
@@ -34337,13 +34560,13 @@
             // Leaderboard
             const lbBtn = document.createElement("button");
             lbBtn.className = "mobile-icon-btn";
-            lbBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>`;
+            lbBtn.innerHTML = blockIcon(BLOCK_ICONS.leaderboard);
             lbBtn.onclick = () => showMenu("leaderboards-new");
 
             // Campaign
             const campBtn = document.createElement("button");
             campBtn.className = "mobile-icon-btn campaign-btn";
-            campBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            campBtn.innerHTML = blockIcon(BLOCK_ICONS.play);
             campBtn.onclick = () => {
               showMenu("mobile-gamemodes");
             };
@@ -34351,7 +34574,7 @@
             // Profile
             const profBtn = document.createElement("button");
             profBtn.className = "mobile-icon-btn";
-            profBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+            profBtn.innerHTML = blockIcon(BLOCK_ICONS.profile);
             profBtn.onclick = () => {
               if (currentUser) showMenu("account");
               else openLoginModal();
@@ -34368,7 +34591,7 @@
               "mobile-icon-btn settings-btn-mobile mobile-fixed-btn";
             mobSettingsBtn.style.cssText =
               "position: fixed; bottom: calc(20px + var(--safe-b)); right: calc(20px + var(--safe-r)); width: 50px; height: 50px; z-index: 100;";
-            mobSettingsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`;
+            mobSettingsBtn.innerHTML = blockIcon(BLOCK_ICONS.settings);
             mobSettingsBtn.onclick = () => showMenu("mobile-settings");
             container.appendChild(mobSettingsBtn);
 
@@ -34378,7 +34601,7 @@
               "mobile-icon-btn news-btn-mobile mobile-fixed-btn";
             mobNewsBtn.style.cssText =
               "position: fixed; bottom: calc(20px + var(--safe-b)); right: calc(80px + var(--safe-r)); width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobNewsBtn.innerHTML = `<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 12H6v-2h5v2zm0-4H6V8h5v2zm6 4h-5v-2h5v2zm0-4h-5V8h5v2z"/></svg>`;
+            mobNewsBtn.innerHTML = blockIcon(BLOCK_ICONS.news);
             if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
               const dot = document.createElement("div");
               dot.className = "notif-dot";
@@ -34396,7 +34619,7 @@
               "mobile-icon-btn beats-btn-mobile mobile-fixed-btn";
             mobBeatsBtn.style.cssText =
               "position: fixed; bottom: calc(20px + var(--safe-b)); left: calc(20px + var(--safe-l)); width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobBeatsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`;
+            mobBeatsBtn.innerHTML = blockIcon(BLOCK_ICONS.beats);
             mobBeatsBtn.onclick = () => openMobileBeatsUI();
             container.appendChild(mobBeatsBtn);
 
@@ -34405,7 +34628,7 @@
               "mobile-icon-btn skins-btn-mobile mobile-fixed-btn";
             mobSkinsBtn.style.cssText =
               "position: fixed; top: calc(20px + var(--safe-t)); left: calc(80px + var(--safe-l)); width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobSkinsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
+            mobSkinsBtn.innerHTML = blockIcon(BLOCK_ICONS.skins);
             mobSkinsBtn.onclick = () =>
               (window.location.href = "skin_explorer.html");
             container.appendChild(mobSkinsBtn);
@@ -34416,7 +34639,7 @@
               "mobile-icon-btn shop-btn-mobile mobile-fixed-btn";
             mobShopBtn.style.cssText =
               "position: fixed; top: calc(20px + var(--safe-t)); left: calc(140px + var(--safe-l)); width: 50px; height: 50px; z-index: 100; display:flex; border-color:#335699; color:#cfe0ff;";
-            mobShopBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12l1.5 4H4.5L6 2zm-3 6h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8zm6 3v2a3 3 0 0 0 6 0v-2"/></svg>`;
+            mobShopBtn.innerHTML = blockIcon(BLOCK_ICONS.shop);
             mobShopBtn.onclick = () => showMenu("shop");
             container.appendChild(mobShopBtn);
 
@@ -34441,7 +34664,7 @@
               "mobile-icon-btn custom-btn-mobile mobile-fixed-btn";
             mobCustomBtn.style.cssText =
               "position: fixed; top: calc(20px + var(--safe-t)); right: calc(20px + var(--safe-r)); width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobCustomBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+            mobCustomBtn.innerHTML = blockIcon(BLOCK_ICONS.custom);
             mobCustomBtn.onclick = () => {
               currentGameMode = "custom";
               customMenuSource = "main";
@@ -34471,7 +34694,7 @@
               "mobile-icon-btn awards-btn-mobile mobile-fixed-btn";
             mobAwardsBtn.style.cssText =
               "position: fixed; top: calc(20px + var(--safe-t)); left: calc(20px + var(--safe-l)); width: 50px; height: 50px; z-index: 100; display:flex;";
-            mobAwardsBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM7 8V7h2v3.52C8.17 10.07 7.54 9.13 7 8zm10 0c-.54 1.13-1.17 2.07-2 2.52V7h2v1z"/></svg>`;
+            mobAwardsBtn.innerHTML = blockIcon(BLOCK_ICONS.awards);
             mobAwardsBtn.onclick = () => showMenu("level-awards");
             container.appendChild(mobAwardsBtn);
           } else {
@@ -35858,7 +36081,19 @@
             showConfirmPopup(
               "LOG OUT",
               "Are you sure you want to log out?",
-              () => {
+              async () => {
+                // The session ends on the server too, so the token is no
+                // good to anyone who copies it off this device. Not waited
+                // on for long: logging out must work offline.
+                if (_supabase && sessionToken()) {
+                  await Promise.race([
+                    _supabase.rpc("boi_sign_out").then(
+                      () => {},
+                      () => {},
+                    ),
+                    new Promise((r) => setTimeout(r, 2000)),
+                  ]);
+                }
                 // A skin still waiting to be saved belongs to the account,
                 // not the device: it is kept for that account's next sign-in.
                 const pending = safeStorage.getItem(PENDING_SKINS_KEY);
@@ -36546,6 +36781,7 @@
             ["SUGGESTED DIFFICULTIES", "admin-suggested"],
             ["UPDATED LEVELS", "admin-updated"],
             ["ALT FLAGS", "admin-alt-flags"],
+            ["MESSAGES", "admin-messages"],
           ].forEach(([text, target]) => {
             const b = document.createElement("button");
             b.className = "btn admin-btn";
@@ -36680,7 +36916,8 @@
           view === "admin-transactions" ||
           view === "admin-suggested" ||
           view === "admin-updated" ||
-          view === "admin-alt-flags"
+          view === "admin-alt-flags" ||
+          view === "admin-messages"
         ) {
           subtitle.textContent =
             view === "admin-transactions"
@@ -36689,7 +36926,9 @@
                 ? "ALT FLAGS"
                 : view === "admin-updated"
                   ? "UPDATED LEVELS"
-                  : "SUGGESTED DIFFICULTIES";
+                  : view === "admin-messages"
+                    ? "MESSAGES"
+                    : "SUGGESTED DIFFICULTIES";
           container.style.maxWidth = "800px";
           if (!currentUserIsAdmin) {
             showMenu("main");
@@ -36699,6 +36938,7 @@
             renderAdminTransactions(container);
           else if (view === "admin-alt-flags") renderAdminAltFlags(container);
           else if (view === "admin-updated") renderAdminNotices(container);
+          else if (view === "admin-messages") renderAdminMessages(container);
           else renderAdminSuggestedDifficulties(container);
 
           const btnBack = document.createElement("button");
@@ -38370,14 +38610,11 @@
             .eq("level_key", "credits")
             .limit(1);
           if (readErr || (prior && prior.length)) return;
-          const { error } = await _supabase
-            .from("bluecoin_claims")
-            .insert([{ username: user, level_key: "credits", is_custom: false }]);
-          if (error) return; // 23505: already paid
-          const total = await changeBlueCoinBalance(user, 1);
+          const claim = await serverClaim("credits");
+          if (!claim.ok) return; // "already": paid before
           if (currentUser !== user) return;
           blueCoinWallet.balance =
-            total !== null ? total : blueCoinWallet.balance + 1;
+            typeof claim.balance === "number" ? claim.balance : blueCoinWallet.balance + 1;
           updateBlueCoinDisplays();
           showBlueCoinReward("CREDITS", 1, "Thanks for watching to the end.");
         } catch (e) {
@@ -38458,20 +38695,13 @@
 
         try {
           if (type === "signup") {
-            const { data: existingUser } = await _supabase
-              .from("users")
-              .select("username")
-              .eq("username", username)
-              .single();
-
-            if (existingUser) {
+            if (password.length < MIN_PASSWORD_LENGTH) {
               return showPopup(
-                "ERROR",
-                "Username already taken. Please choose another.",
+                "PASSWORD TOO SHORT",
+                "Pick a password of at least " + MIN_PASSWORD_LENGTH + " characters.",
                 () => {},
               );
             }
-
             if (withReward && !currentUserSkins.includes("dino")) {
               currentUserSkins.push("dino");
             }
@@ -38484,25 +38714,33 @@
               gameSettings,
             };
 
-            const { error: insertError } = await _supabase
-              .from("users")
-              .insert([
-                {
-                  username: username,
-                  password: password,
-                  skins: currentUserSkins,
-                  beaten_levels: currentUserBeatenLevels,
-                  data: initialData,
-                },
-              ]);
+            // The account is made by the server, which hands back the
+            // session (boi_sign_up); the password never sits in the row.
+            const { data: made, error: signUpError } = await _supabase.rpc(
+              "boi_sign_up",
+              {
+                p_username: username,
+                p_password: password,
+                p_skins: currentUserSkins,
+                p_beaten: currentUserBeatenLevels,
+                p_data: initialData,
+              },
+            );
+            if (signUpError) throw signUpError;
+            if (!made || !made.ok) {
+              const reason = made && made.reason;
+              return showPopup(
+                "ERROR",
+                reason === "taken"
+                  ? "Username already taken. Please choose another."
+                  : reason === "short"
+                    ? "Pick a password of at least " + MIN_PASSWORD_LENGTH + " characters."
+                    : "That username can't be used. Names are 1 to 34 characters.",
+                () => {},
+              );
+            }
 
-            if (insertError) throw insertError;
-
-            currentUser = username;
-            safeStorage.setItem("blockoverit_username", username);
-            rememberDeviceAccount(username);
-            updateLoginButton();
-            refreshSharedLevelBadge();
+            startSession(username, made.token);
             await fetchAdminUsers();
             await fetchAndSyncUserData();
             showPopup(
@@ -38525,6 +38763,18 @@
                 () => {},
               );
             }
+            if (auth.reason === "throttled") {
+              return showPopup(
+                "TOO MANY TRIES",
+                "Too many wrong passwords. Wait 15 minutes and try again.",
+                () => {},
+              );
+            }
+            // Right password, but every account from before 2026-10-18 has
+            // to pick a new one first: the old passwords were stolen.
+            if (auth.reason === "reset") {
+              return openNewPasswordModal(username, password);
+            }
 
             const user = auth.user;
             if (!auth.ok || !user) {
@@ -38535,22 +38785,7 @@
               );
             }
 
-            currentUser = username;
-            safeStorage.setItem("blockoverit_username", username);
-            rememberDeviceAccount(username);
-            updateLoginButton();
-            refreshSharedLevelBadge();
-            refreshEditorLink();
-            // The row that just authenticated already carries the flag
-            currentUserIsAdmin = !!user.admin;
-            await fetchAdminUsers();
-            await syncLocalWithCloud(user.data, user.skins, user.beaten_levels);
-            recordDailyLogin(user.username);
-            showPopup(
-              "WELCOME BACK",
-              `Signed in as ${username}!`,
-              goOnAfterSignIn,
-            );
+            await finishSignIn(username, auth);
           }
         } catch (e) {
           console.error("Auth error:", e);
@@ -38558,10 +38793,108 @@
         }
       }
 
+      const MIN_PASSWORD_LENGTH = 6;
+
+      // A signed-in account on this browser: the name for the game, the
+      // token for the server.
+      function startSession(username, token) {
+        setSessionToken(token || null);
+        sessionLostShown = false;
+        signInAgainNeeded = false;
+        currentUser = username;
+        safeStorage.setItem("blockoverit_username", username);
+        rememberDeviceAccount(username);
+        updateLoginButton();
+        refreshSharedLevelBadge();
+      }
+
+      async function finishSignIn(username, auth) {
+        const user = auth.user;
+        startSession(username, auth.token);
+        refreshEditorLink();
+        // The row that just authenticated already carries the flag
+        currentUserIsAdmin = !!user.admin;
+        await fetchAdminUsers();
+        await syncLocalWithCloud(user.data, user.skins, user.beaten_levels);
+        recordDailyLogin(user.username);
+        showPopup(
+          "WELCOME BACK",
+          `Signed in as ${username}!`,
+          goOnAfterSignIn,
+        );
+        // Queued after the welcome, so they come up once it is closed
+        showAdminMessages();
+      }
+
+      // The one-time new password for accounts made before 2026-10-18
+      function openNewPasswordModal(username, oldPassword) {
+        const html = `
+                          <div style="color:#ccc; margin-bottom:12px; text-align:left;">Someone copied the old Block Over It passwords, so every account needs a new one. Pick a password you don't use anywhere else (at least ${MIN_PASSWORD_LENGTH} characters).</div>
+                          <div style="display:flex; flex-direction:column; gap:10px;">
+                            <input id="np-new" type="password" placeholder="New Password" autocomplete="new-password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
+                            <input id="np-again" type="password" placeholder="New Password Again" autocomplete="new-password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
+                          </div>
+                        `;
+        popupManager.show({
+          title: "NEW PASSWORD",
+          html: html,
+          buttons: [
+            {
+              text: "SAVE",
+              onClick: () =>
+                submitNewPassword(
+                  username,
+                  oldPassword,
+                  document.getElementById("np-new").value,
+                  document.getElementById("np-again").value,
+                ),
+            },
+            { text: "CANCEL", class: "secondary", onClick: () => {} },
+          ],
+        });
+      }
+
+      async function submitNewPassword(username, oldPassword, next, again) {
+        const retry = () => openNewPasswordModal(username, oldPassword);
+        if (next !== again)
+          return showPopup("NEW PASSWORD", "The two passwords don't match.", retry);
+        if (next.length < MIN_PASSWORD_LENGTH)
+          return showPopup(
+            "NEW PASSWORD",
+            "Use at least " + MIN_PASSWORD_LENGTH + " characters.",
+            retry,
+          );
+        if (next === oldPassword)
+          return showPopup("NEW PASSWORD", "Pick a different password from the old one.", retry);
+        try {
+          const { data: auth, error } = await _supabase.rpc("boi_reset_password", {
+            p_username: username,
+            p_old: oldPassword,
+            p_new: next,
+          });
+          if (error) throw error;
+          if (!auth || !auth.ok || !auth.user) {
+            const reason = auth && auth.reason;
+            return showPopup(
+              "ERROR",
+              reason === "throttled"
+                ? "Too many wrong passwords. Wait 15 minutes and try again."
+                : reason === "password"
+                  ? "The old password was not right. Sign in again."
+                  : "The new password could not be saved. Try again.",
+              () => {},
+            );
+          }
+          await finishSignIn(username, auth);
+        } catch (e) {
+          console.error("Password reset error:", e);
+          showPopup("ERROR", "The new password could not be saved: " + e.message, () => {});
+        }
+      }
+
       function openLoginModal(withReward = false) {
         const html = `
-                          ${withReward ? '<div style="color:#ffd700; margin-bottom:10px; font-weight:bold;">Sign Up to get Dino Skin!</div>' : ""}
-                          <div style="display:flex; flex-direction:column; gap:10px;">
+                                                    <div style="display:flex; flex-direction:column; gap:10px;">
                             <input id="auth-user" placeholder="Username" style="padding:10px; background:#333; color:white; border:1px solid #555;">
                             <input id="auth-pass" type="password" placeholder="Password" style="padding:10px; background:#333; color:white; border:1px solid #555;">
                           </div>
@@ -38599,35 +38932,33 @@
         showMenu("account");
       }
 
-      // Check for auto-login
-      const savedUser = safeStorage.getItem("blockoverit_username");
-      if (savedUser) {
+      // Check for auto-login, once the server has agreed to the session
+      startupSession.then((savedUser) => {
+        if (!savedUser || currentUser === savedUser) return;
         currentUser = savedUser;
         rememberDeviceAccount(savedUser);
         updateLoginButton();
         fetchAndSyncUserData();
         refreshSharedLevelBadge();
         refreshEditorLink();
-      }
+      });
 
-      // The sign-up nudge for a signed-out player. initGame shows it, once:
-      // this block used to show it as well, and since popups queue, a
-      // returning signed-out player got it twice in a row.
-      function offerDinoSkin() {
-        const html = `
-                      <div style="margin-bottom:15px; color:#ccc;">Create an account to unlock the exclusive <strong>Dino</strong> skin!</div>
-                      <img src="dino.png" style="width:50px; height:100px; display:block; margin:0 auto 15px auto; object-fit: contain;">
-                  `;
+      function askToSignInAgain() {
+        signInAgainNeeded = false;
         popupManager.show({
-          title: "GET THE FREE DINO SKIN!",
-          html: html,
+          title: "SIGN IN AGAIN",
+          html:
+            '<div style="color:#ccc;">Block Over It has real sign-ins now, so everyone signs in once more. Your progress on this device is kept.</div>',
           buttons: [
-            { text: "CLAIM REWARD", onClick: () => openLoginModal(true) },
+            { text: "SIGN IN", onClick: () => openLoginModal() },
             { text: "LATER", class: "secondary", onClick: () => {} },
           ],
         });
       }
 
+      // The sign-up nudge for a signed-out player. initGame shows it, once:
+      // this block used to show it as well, and since popups queue, a
+      // returning signed-out player got it twice in a row.
       // Intro
       function playIntro() {
         const layer = document.getElementById("intro-layer");
@@ -42595,7 +42926,7 @@
       const LOADING_SCREENS = [
         { id: "fluffy", name: "Fluffy", img: "fluffy.png", artist: "Torgaar" },
         { id: "loading", name: "Loading", img: "loading.png", artist: "J_imbo" },
-        { id: "platforms", name: "Platforms", img: "platforms.png", artist: "MidgeMidge22" },
+        { id: "platforms", name: "Platforms", img: "platforms.png", artist: "MidgeMidge22", tag: "Scribbled" },
         { id: "coolguyloading", name: "Cool Guy", img: "coolguyloading.png", artist: "Chairlord" },
         { id: "blockoverit", name: "Block Over It!!", img: "blockoverit!!.png", artist: "Jude" },
         { id: "kingblocky", name: "King Blocky", img: "kingblocky.png", artist: "Benjuhuman1" },
@@ -42603,6 +42934,7 @@
         { id: "letters", name: "Letters", img: "letters.png", artist: "Torgaar" },
         { id: "dinos", name: "Dinos", img: "dinos.png", artist: "Mcdongos" },
         { id: "swap", name: "Swap", img: "swap.png", artist: "Torgaar" },
+        { id: "artoflarsen", name: "Art of Larsen", img: "artoflarsen.png", artist: "Charliekirkedger41" },
       ];
       const FREE_LOADING_SCREENS = ["fluffy"];
       const RANDOM_LOADING_SCREEN = "random";
@@ -42741,7 +43073,10 @@
             escapeHtml(name) +
             '</div><div class="skin-item-desc">' +
             escapeHtml(random ? "Any of yours" : def.artist) +
-            "</div>";
+            "</div>" +
+            (!random && defTagChips(def, "").length
+              ? '<div class="ls-chips">' + defTagChips(def, "").join("") + "</div>"
+              : "");
           bindSkinCardPress(el, () => {
             setLoadingScreen(id);
             renderLoadingScreenGrid(container, onCount, stillShowing);
@@ -42820,6 +43155,14 @@
       async function changeCosmetics(username, kind, key, change) {
         const column = COSMETIC_COLUMN[kind];
         if (!_supabase || !username || !column || !key) return "error";
+        // Someone else's row (an admin on a profile): only the server writes it
+        if (username !== currentUser) {
+          const edited = await adminEditList(username, column, key, change);
+          if (edited.ok) return "ok";
+          if (edited.reason === "had" || edited.reason === "missing") return "had";
+          console.warn("Could not change " + column + ":", edited.error || edited.reason);
+          return "error";
+        }
         const result = await rewriteUserList(username, column, (list) => {
           const at = list.indexOf(key);
           if (change === "add") {
@@ -43099,8 +43442,18 @@
       const BUNDLES = {
         brainrot: {
           name: "Brainrot Series Bundle",
+          section: "Brainrot Series",
           items: ["triplet", "cityboi", "emote:sixseven"],
           color: "#e5ab52",
+        },
+        chairlord: {
+          name: "Chairlord Bundle",
+          section: "Chairlord",
+          items: ["chairlord", "chairlordremastered", "emote:tongueshake"],
+          color: "#d4d2c7",
+          // The game's own listings of these sit in the bundle's section
+          // too (Chairlord (OG) on its own)
+          alsoInSection: ["chairlord"],
         },
       };
       function isBundleItem(id) {
@@ -43147,38 +43500,22 @@
           oneTradeAtATime(async () => {
             if (await blockIfStale()) return;
             try {
-              // Re-read: the last one may have gone while this was open
-              const { data: fresh } = await _supabase
-                .from("shop")
-                .select("*")
-                .eq("id", listing.id)
-                .maybeSingle();
-              if (!fresh || !fresh.active || fresh.seller || fresh.skin_id !== listing.skin_id) {
-                showPopup("GONE", "That listing is no longer available.", () =>
-                  showMenu("shop"),
-                );
-                return;
+              // Stock and coins on the server, from the listing's own price
+              // (boi_buy_listing); what is in the bundle is given below.
+              const { data: res, error } = await _supabase.rpc("boi_buy_listing", {
+                p_username: currentUser,
+                p_id: listing.id,
+              });
+              if (error) {
+                if (checkSessionError(error)) return;
+                throw error;
               }
-              const cost = Number(fresh.price) || 0;
-              const took = await takeOneFromStock(fresh);
-              if (!took) {
-                showPopup("SOLD OUT", "They have all gone.", () => showMenu("shop"));
-                return;
-              }
-              const paid = await spendBlueCoins(currentUser, cost);
-              if (!paid.ok) {
-                if (took === "taken") await returnOneToStock(fresh.id);
+              if (!res || !res.ok || res.item !== listing.skin_id) {
                 await loadBlueCoinWallet(true);
-                if (paid.short) showNotEnoughCoins(cost);
-                else
-                  showPopup(
-                    "ERROR",
-                    "The purchase could not be completed. You have not been charged.",
-                    () => showMenu("shop"),
-                  );
+                showPurchaseRefused(res && res.reason, listing);
                 return;
               }
-              if (paid.total !== null) blueCoinWallet.balance = paid.total;
+              if (typeof res.balance === "number") blueCoinWallet.balance = res.balance;
 
               const skins = def.items.filter((it) => !isCosmeticItem(it));
               const cosmetics = def.items.filter((it) => isCosmeticItem(it));
@@ -43260,67 +43597,56 @@
           oneTradeAtATime(async () => {
           if (await blockIfStale()) return;
           try {
-            let took = null;
             if (listing) {
-              // Re-read: the last copy may have gone while this was open
-              const { data: fresh } = await _supabase
-                .from("shop")
-                .select("*")
-                .eq("id", listing.id)
-                .maybeSingle();
-              if (
-                !fresh ||
-                !fresh.active ||
-                fresh.seller ||
-                fresh.skin_id !== id
-              ) {
-                showPopup("GONE", "That listing is no longer available.", () =>
-                  showMenu("shop"),
-                );
+              // A shop listing: stock, coins and the item itself on the
+              // server, from the listing's own price (boi_buy_listing)
+              const { data: res, error } = await _supabase.rpc("boi_buy_listing", {
+                p_username: currentUser,
+                p_id: listing.id,
+              });
+              if (error) {
+                if (checkSessionError(error)) return;
+                throw error;
+              }
+              if (!res || !res.ok || res.item !== id) {
+                await loadBlueCoinWallet(true);
+                showPurchaseRefused(res && res.reason, listing);
                 return;
               }
-              price = Number(fresh.price) || 0;
-              took = await takeOneFromStock(fresh);
-              if (!took) {
-                showPopup("SOLD OUT", "That one has gone.", () =>
-                  showMenu("shop"),
-                );
+              price = Number(listing.price) || 0;
+              if (typeof res.balance === "number") blueCoinWallet.balance = res.balance;
+              await loadCosmetics();
+            } else {
+              // Priced by a collection: paid for with a receipt, then given
+              const paid = await spendBlueCoins(currentUser, price, id);
+              if (!paid.ok) {
+                await loadBlueCoinWallet(true);
+                if (paid.short) showNotEnoughCoins(price);
+                else
+                  showPopup(
+                    "ERROR",
+                    "The purchase could not be completed. You have not been charged.",
+                    () => showMenu("shop"),
+                  );
                 return;
               }
-            }
-            // Paid for before it is given, and only with coins that are there
-            const paid = await spendBlueCoins(currentUser, price);
-            if (!paid.ok) {
-              if (took === "taken") await returnOneToStock(listing.id);
-              await loadBlueCoinWallet(true);
-              if (paid.short) showNotEnoughCoins(price);
-              else
+              if (paid.total !== null) blueCoinWallet.balance = paid.total;
+              const got = await grantCosmetic(id, "shop");
+              if (got !== "ok") {
+                const total = await refundSpend(paid);
+                if (total !== null) blueCoinWallet.balance = total;
+                updateBlueCoinDisplays();
                 showPopup(
-                  "ERROR",
-                  "The purchase could not be completed. You have not been charged.",
+                  got === "had" ? "ALREADY YOURS" : "ERROR",
+                  got === "had"
+                    ? "You already have " +
+                        cosmeticName(id) +
+                        ". You have not been charged."
+                    : "The purchase could not be completed. You have not been charged.",
                   () => showMenu("shop"),
                 );
-              return;
-            }
-            if (paid.total !== null) blueCoinWallet.balance = paid.total;
-            const got = await grantCosmetic(id, "shop");
-            if (got !== "ok") {
-              if (took === "taken") await returnOneToStock(listing.id);
-              if (price) {
-                const total = await changeBlueCoinBalance(currentUser, price);
-                if (total !== null) blueCoinWallet.balance = total;
+                return;
               }
-              updateBlueCoinDisplays();
-              showPopup(
-                got === "had" ? "ALREADY YOURS" : "ERROR",
-                got === "had"
-                  ? "You already have " +
-                      cosmeticName(id) +
-                      ". You have not been charged."
-                  : "The purchase could not be completed. You have not been charged.",
-                () => showMenu("shop"),
-              );
-              return;
             }
             updateBlueCoinDisplays();
             showCosmeticUnlock(id, (price ? "Bought from " : "Claimed from ") + SHOP_SEASON_SHORT + ".", {
@@ -43366,10 +43692,25 @@
       const FRIENDS_FOLLOWED = 30;
       const INVITE_TTL_MS = 10 * 60000;
       // The stream: a position every STREAM_SAMPLE_MS, sent STREAM_SEND_MS
-      // apart, played back WATCH_DELAY_MS behind so it never stutters
-      const STREAM_SAMPLE_MS = 50;
+      // apart. It's played back far enough behind that the next batch is
+      // always in before it's needed: the batch gap plus however much the
+      // trip has been wobbling lately (WATCH_DELAY_MIN..MAX). A fixed 450ms
+      // ran dry whenever a batch came late, so the block froze and jumped.
+      const STREAM_SAMPLE_MS = 33;
       const STREAM_SEND_MS = 250;
-      const WATCH_DELAY_MS = 450;
+      const WATCH_DELAY_MIN = 350;
+      const WATCH_DELAY_MAX = 2500;
+      // How far back the trip times are remembered
+      const WATCH_JITTER_WINDOW_MS = 10000;
+      // ...and the share of them waited for (the latest tenth isn't)
+      const WATCH_LATE_PART = 0.9;
+      // Playback speeds up or slows down by at most this much to follow a
+      // new delay, so the change never shows; further off than
+      // WATCH_SNAP_MS it just jumps
+      const WATCH_SLEW = 0.06;
+      const WATCH_SNAP_MS = 2000;
+      // Past their newest position, their block keeps going this long
+      const WATCH_EXTRAPOLATE_MS = 150;
       // Watching: at most this many 1/60 steps of their level a frame, and
       // when it is first built (catching up to them -- 30 seconds of it)
       const WATCH_STEPS_MAX = 12;
@@ -44242,7 +44583,7 @@
 
       // ---- WATCHING A FRIEND ----
       // Their level, built here, with your copy of their block put where
-      // theirs is, WATCH_DELAY_MS behind. Their level plays on its own here,
+      // theirs is, a little behind. Their level plays on its own here,
       // so moving blocks keep moving; only the coins they take go, and
       // nothing can hurt the block you see. ESC leaves.
       let watch = null;
@@ -44332,12 +44673,46 @@
         currentGameMode = w.prevMode || "campaign";
       }
 
-      // Their clock: playback runs WATCH_DELAY_MS behind where they are, and
-      // `offset` turns this game's time into theirs (theirs = now - offset)
+      // Their clock: `offset` turns this game's time into theirs, playback
+      // included (theirs, played back = now - offset). Every message says how
+      // late it came (here-time minus their time, a constant clock difference
+      // plus the trip); the quickest of the last few seconds is the trip at
+      // its best, and the spread above it is how much later one can be.
       function syncWatchClock(w, theirNow) {
-        const target = performance.now() - theirNow + WATCH_DELAY_MS;
-        if (w.offset == null || Math.abs(target - w.offset) > 400) w.offset = target;
-        else w.offset += (target - w.offset) * 0.1;
+        const here = performance.now();
+        const late = here - theirNow;
+        if (!isFinite(late)) return;
+        if (!w.lates) w.lates = [];
+        w.lates.push({ at: here, v: late });
+        while (w.lates.length && here - w.lates[0].at > WATCH_JITTER_WINDOW_MS) w.lates.shift();
+        // The odd very late one is left out (WATCH_LATE_PART): waiting for
+        // it every time held the whole stream a second behind, and the block
+        // keeps going through one that late (WATCH_EXTRAPOLATE_MS)
+        const sorted = w.lates.map((l) => l.v).sort((a, b) => a - b);
+        const best = sorted[0];
+        const worst =
+          sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * WATCH_LATE_PART))];
+        const delay = Math.min(
+          WATCH_DELAY_MAX,
+          Math.max(WATCH_DELAY_MIN, STREAM_SEND_MS + (worst - best) + 80),
+        );
+        w.delay = delay;
+        w.offsetTarget = best + delay;
+        if (w.offset == null || Math.abs(w.offsetTarget - w.offset) > WATCH_SNAP_MS) {
+          w.offset = w.offsetTarget;
+          w.slewAt = here;
+        }
+      }
+      // Once a frame: the clock eased toward its target, a little faster or
+      // slower than real time, never jumping
+      function slewWatchClock(w) {
+        const here = performance.now();
+        const dt = Math.min(100, here - (w.slewAt || here));
+        w.slewAt = here;
+        if (w.offset == null || w.offsetTarget == null) return;
+        const diff = w.offsetTarget - w.offset;
+        const most = dt * WATCH_SLEW;
+        w.offset += Math.max(-most, Math.min(most, diff));
       }
       // What of the level's own was gone, from time t on (their clock)
       function addWatchGone(w, t, ids) {
@@ -44403,6 +44778,7 @@
           // A new life starts the level over, so what was taken comes back
           w.buf = [];
           w.offset = null;
+          w.lates = [];
           w.gones = [];
           // Gone before you started watching: gone from the start
           addWatchGone(w, 0, p.g);
@@ -44517,6 +44893,7 @@
         runAnimation((step) => {
           if (watch !== w || w.display !== display || activeLevelDisplay !== display)
             return false;
+          slewWatchClock(w);
           const t = watchTime(w);
           stepWatchLevel(w, level, t, WATCH_STEPS_MAX);
           applyWatchGone(w, level, t);
@@ -44526,7 +44903,7 @@
         });
       }
 
-      // Their clock now, WATCH_DELAY_MS behind; 0 until it's known
+      // Their clock now, played back behind them; 0 until it's known
       function watchTime(w) {
         return w.offset == null ? 0 : Math.max(0, performance.now() - w.offset);
       }
@@ -44621,7 +44998,21 @@
             };
           }
         }
-        return b[b.length - 1];
+        // Past their newest: on the way they were going, for a moment, so a
+        // batch that's a little late doesn't stop the block dead
+        const c = b[b.length - 1];
+        const a = b.length > 1 ? b[b.length - 2] : null;
+        const dt = a ? c.t - a.t : 0;
+        if (!a || dt <= 0 || Math.abs(c.x - a.x) > 3 || Math.abs(c.y - a.y) > 3) return c;
+        const vx = ((c.x - a.x) * 1000) / dt;
+        const vy = ((c.y - a.y) * 1000) / dt;
+        const ahead = Math.min(t - c.t, WATCH_EXTRAPOLATE_MS) / 1000;
+        const p = watch && watch.display && watch.display.level && watch.display.level.player;
+        let x = c.x + vx * ahead;
+        let y = c.y + vy * ahead;
+        if (p && watch.display.level.obstacleAt(new Vector(x, c.y), p.size)) x = c.x;
+        if (p && watch.display.level.obstacleAt(new Vector(x, y), p.size)) y = c.y;
+        return { x, y, g: c.g, vx, vy };
       }
 
       // ESC (or anything that leaves a level) stops watching
@@ -44715,7 +45106,7 @@
 
         // 1. Load Supabase Data
         const dataPromise = (async () => {
-          const savedUser = safeStorage.getItem("blockoverit_username");
+          const savedUser = await startupSession;
           if (savedUser) {
             currentUser = savedUser;
             updateLoginButton();
@@ -44790,10 +45181,6 @@
         if (!safeStorage.getItem("hasSeenIntro") && !pageLink) {
           safeStorage.setItem("hasSeenIntro", "true");
           playIntro();
-          // Waits under the intro (popups sit below it) and is there when
-          // the intro hands over to the first level
-          if (!safeStorage.getItem("blockoverit_username"))
-            setTimeout(offerDinoSkin, 1000);
         } else {
           const linkReady = pageLink
             ? preparePageLink(pageLink).catch((e) => {
@@ -44817,9 +45204,9 @@
           }
 
           // Check for login reward if not logged in
-          if (!safeStorage.getItem("blockoverit_username"))
-            setTimeout(offerDinoSkin, 500);
-          else checkBeatenLevelSkins(false);
+          if (signInAgainNeeded) setTimeout(askToSignInAgain, 500);
+          else if (safeStorage.getItem("blockoverit_username"))
+            checkBeatenLevelSkins(false);
 
           // Check News
           if (gameSettings.lastReadNews !== LATEST_NEWS_VERSION) {
@@ -44861,6 +45248,6 @@
         }
       })();
     </script>
-    <script src="boi-live.js?v=14"></script>
+    <script src="boi-live.js?v=16"></script>
   </body>
 </html>
