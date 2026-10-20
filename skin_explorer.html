@@ -25,11 +25,11 @@
             header {
                 background-color: #1a1a1a;
                 border-bottom: 4px solid #333;
-                padding: 16px 20px;
+                padding: 8px 16px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 14px;
+                gap: 6px;
                 z-index: 10;
                 position: relative;
                 flex-shrink: 0;
@@ -47,13 +47,13 @@
                 top: 50%;
                 transform: translateY(-50%);
                 background: #444;
-                border: 4px solid #333;
+                border: 3px solid #333;
                 color: #fff;
-                padding: 8px 16px;
+                padding: 4px 10px;
                 cursor: pointer;
                 text-transform: uppercase;
                 font-family: inherit;
-                font-size: 0.85rem;
+                font-size: 0.7rem;
                 font-weight: bold;
                 transition: all 0.2s;
                 text-decoration: none;
@@ -64,15 +64,15 @@
             }
             h1 {
                 margin: 0;
-                font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+                font-size: clamp(1rem, 2.2vw, 1.4rem);
                 text-transform: uppercase;
-                letter-spacing: 4px;
+                letter-spacing: 3px;
                 color: #fff;
                 font-weight: 900;
                 text-align: center;
             }
             .count-line {
-                font-size: 0.7rem;
+                font-size: 0.6rem;
                 letter-spacing: 2px;
                 text-transform: uppercase;
                 color: #777;
@@ -80,14 +80,14 @@
 
             #search-container {
                 width: 100%;
-                max-width: 650px;
+                max-width: 480px;
             }
             #search-input {
                 width: 100%;
-                padding: 12px 16px;
-                font-size: 1rem;
+                padding: 6px 10px;
+                font-size: 0.8rem;
                 background-color: #222;
-                border: 4px solid #333;
+                border: 3px solid #333;
                 color: #fff;
                 font-family: inherit;
                 outline: none;
@@ -104,24 +104,24 @@
             .controls-container {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 10px;
+                gap: 6px;
                 justify-content: center;
                 align-items: center;
                 width: 100%;
-                max-width: 800px;
+                max-width: 900px;
             }
             .filter-tags {
                 display: flex;
-                gap: 6px;
+                gap: 4px;
                 flex-wrap: wrap;
                 justify-content: center;
             }
             .filter-btn {
                 background: #222;
-                border: 3px solid #333;
+                border: 2px solid #333;
                 color: #aaa;
-                padding: 6px 12px;
-                font-size: 0.8rem;
+                padding: 3px 8px;
+                font-size: 0.65rem;
                 font-weight: bold;
                 cursor: pointer;
                 transition: all 0.2s;
@@ -139,10 +139,10 @@
             }
             #sort-select {
                 background: #222;
-                border: 3px solid #333;
+                border: 2px solid #333;
                 color: #fff;
-                padding: 6px 12px;
-                font-size: 0.8rem;
+                padding: 3px 8px;
+                font-size: 0.65rem;
                 font-weight: bold;
                 font-family: inherit;
                 cursor: pointer;
@@ -822,6 +822,16 @@
                     <button class="filter-btn active" data-tag="all">
                         All
                     </button>
+                    <button class="filter-btn" data-tag="tag:OG">OG</button>
+                    <button class="filter-btn" data-tag="tag:Icons">
+                        Icons
+                    </button>
+                    <button class="filter-btn" data-tag="tag:Shop">
+                        Shop
+                    </button>
+                    <button class="filter-btn" data-tag="tag:Scribbled">
+                        Scribbled
+                    </button>
                     <button class="filter-btn" data-tag="competitive">
                         Competitive
                     </button>
@@ -841,6 +851,7 @@
                 <select id="sort-select">
                     <option value="name_asc">Sort: Name (A-Z)</option>
                     <option value="name_desc">Sort: Name (Z-A)</option>
+                    <option value="recent">Sort: Recently Added</option>
                     <option value="rarity_asc">Sort: Rarest First</option>
                     <option value="rarity_desc">Sort: Common First</option>
                     <option value="artist_asc">Sort: Artist (A-Z)</option>
@@ -1228,8 +1239,11 @@
                     skinDescription(id) !== data.copies + " Copies"
                 )
                     line("Copies: " + escapeHtml(data.copies));
+                // A plain-colour skin has no file, only its colour
                 line(
-                    "File: " + escapeHtml(skinImageFile(id)),
+                    SOLID_SKIN_PREVIEW[id] && id !== "default"
+                        ? "Colour: " + escapeHtml(SOLID_SKIN_PREVIEW[id])
+                        : "File: " + escapeHtml(skinImageFile(id)),
                     "skin-inspect-file",
                 );
 
@@ -1317,10 +1331,30 @@
 
             let currentFilter = "all";
 
+            // skins.js lists skins in the order they were added, so a higher
+            // position means a newer skin.
+            const addedOrder = Object.fromEntries(
+                Object.keys(SKIN_DEFINITIONS).map((id, i) => [id, i]),
+            );
+
+            // A filter is either a flag on the skin ("competitive") or one of its
+            // own tags ("tag:OG"). "tag:Shop" also takes "Shop S1", "Shop S2"...
+            function matchesFilter(data, filter) {
+                if (filter === "all") return true;
+                if (!filter.startsWith("tag:")) return !!data[filter];
+                const want = filter.slice(4).toLowerCase();
+                return customTags(data).some((t) => {
+                    const tag = t.toLowerCase();
+                    return tag === want || tag.startsWith(want + " ");
+                });
+            }
+
             // Shared by the grid and the full view's list, so both are in the same
             // order and stepping through one matches what you were looking at.
             function skinComparator(sortMode) {
-                return ([, dataA], [, dataB]) => {
+                return ([idA, dataA], [idB, dataB]) => {
+                    if (sortMode === "recent")
+                        return addedOrder[idB] - addedOrder[idA];
                     if (sortMode === "name_asc")
                         return dataA.name.localeCompare(dataB.name);
                     if (sortMode === "name_desc")
@@ -1355,11 +1389,9 @@
                 let skinsList = Object.entries(SKIN_DEFINITIONS);
 
                 // Filter by Tag
-                if (currentFilter !== "all") {
-                    skinsList = skinsList.filter(
-                        ([id, data]) => data[currentFilter],
-                    );
-                }
+                skinsList = skinsList.filter(([id, data]) =>
+                    matchesFilter(data, currentFilter),
+                );
 
                 // Filter by Search
                 skinsList = skinsList.filter(([id, data]) => {
@@ -1373,71 +1405,9 @@
 
                 skinsList.sort(skinComparator(sortMode));
 
-                skinsList.forEach(([id, data]) => {
-                    const card = document.createElement("div");
-                    card.className = "skin-item";
-                    applySkinCardVars(card, id);
-                    card.dataset.skin = id;
-                    card.tabIndex = 0;
-                    card.setAttribute("role", "button");
-                    card.setAttribute(
-                        "aria-label",
-                        data.name + ", " + skinDescription(id),
-                    );
-                    card.title = data.name;
-                    card.onclick = () => openSkinModal(id);
-                    card.onkeydown = (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            openSkinModal(id);
-                        }
-                    };
-
-                    const stage = document.createElement("div");
-                    stage.className = "skin-item-stage";
-                    const preview = document.createElement("div");
-                    preview.className = "skin-item-preview";
-                    paintPreview(preview, id);
-                    const platform = document.createElement("div");
-                    platform.className = "skin-platform";
-                    stage.appendChild(preview);
-                    stage.appendChild(platform);
-                    card.appendChild(stage);
-
-                    if (data.versions && data.versions.length > 1) {
-                        const versions = document.createElement("div");
-                        versions.className = "skin-item-versions";
-                        versions.textContent = data.versions.length + " VER";
-                        card.appendChild(versions);
-                    }
-
-                    const name = document.createElement("div");
-                    name.className = "skin-item-name";
-                    name.textContent = data.name;
-                    card.appendChild(name);
-
-                    const desc = document.createElement("div");
-                    desc.className = "skin-item-desc";
-                    desc.textContent = skinDescription(id);
-                    if (desc.textContent) card.appendChild(desc);
-
-                    // Tags are not on the card any more -- they crowded out the skin.
-                    // They are all in the full view, which has room for them.
-
-                    const artist = document.createElement("div");
-                    artist.className = "skin-artist";
-                    artist.textContent = data.artist;
-                    card.appendChild(artist);
-
-                    if (data.forPlayer) {
-                        const forP = document.createElement("div");
-                        forP.className = "skin-for";
-                        forP.textContent = "For: " + data.forPlayer;
-                        card.appendChild(forP);
-                    }
-
-                    grid.appendChild(card);
-                });
+                skinsList.forEach(([id, data]) =>
+                    grid.appendChild(skinCard(id, data)),
+                );
 
                 const total = Object.keys(SKIN_DEFINITIONS).length;
                 countLine.textContent =
@@ -1448,6 +1418,72 @@
                 if (skinsList.length === 0) {
                     grid.innerHTML = `<div class="no-results">No skins found matching "${escapeHtml(filterText)}"</div>`;
                 }
+            }
+
+            function skinCard(id, data) {
+                const card = document.createElement("div");
+                card.className = "skin-item";
+                applySkinCardVars(card, id);
+                card.dataset.skin = id;
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute(
+                    "aria-label",
+                    data.name + ", " + skinDescription(id),
+                );
+                card.title = data.name;
+                card.onclick = () => openSkinModal(id);
+                card.onkeydown = (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openSkinModal(id);
+                    }
+                };
+
+                const stage = document.createElement("div");
+                stage.className = "skin-item-stage";
+                const preview = document.createElement("div");
+                preview.className = "skin-item-preview";
+                paintPreview(preview, id);
+                const platform = document.createElement("div");
+                platform.className = "skin-platform";
+                stage.appendChild(preview);
+                stage.appendChild(platform);
+                card.appendChild(stage);
+
+                if (data.versions && data.versions.length > 1) {
+                    const versions = document.createElement("div");
+                    versions.className = "skin-item-versions";
+                    versions.textContent = data.versions.length + " VER";
+                    card.appendChild(versions);
+                }
+
+                const name = document.createElement("div");
+                name.className = "skin-item-name";
+                name.textContent = data.name;
+                card.appendChild(name);
+
+                const desc = document.createElement("div");
+                desc.className = "skin-item-desc";
+                desc.textContent = skinDescription(id);
+                if (desc.textContent) card.appendChild(desc);
+
+                // Tags are not on the card any more -- they crowded out the skin.
+                // They are all in the full view, which has room for them.
+
+                const artist = document.createElement("div");
+                artist.className = "skin-artist";
+                artist.textContent = data.artist;
+                card.appendChild(artist);
+
+                if (data.forPlayer) {
+                    const forP = document.createElement("div");
+                    forP.className = "skin-for";
+                    forP.textContent = "For: " + data.forPlayer;
+                    card.appendChild(forP);
+                }
+
+                return card;
             }
 
             searchInput.addEventListener("input", (e) => {
