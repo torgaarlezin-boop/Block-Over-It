@@ -10391,7 +10391,6 @@
       // discipline as the legendary archive: a missing column or table 400s
       // the query, and none of this may be allowed to break finishing a level.
       const BLUE_COIN_COOLDOWN_MS = 3 * 60 * 60 * 1000;
-      const CUSTOM_BLUE_COIN_DAILY_LIMIT = 20;
 
       let blueCoinsSupported = false;
       let blueCoinClaimsSupported = false;
@@ -10518,10 +10517,6 @@
         return Math.max(0, last + BLUE_COIN_COOLDOWN_MS - Date.now());
       }
 
-      function customBlueCoinLimitReached() {
-        return blueCoinWallet.customToday.size >= CUSTOM_BLUE_COIN_DAILY_LIMIT;
-      }
-
       // "2h 14m" / "43m" / "18s" -- short enough to sit in a tooltip.
       function formatCooldown(ms) {
         if (ms <= 0) return "ready";
@@ -10554,13 +10549,6 @@
               available: false,
               reason: "claimed-today",
               label: "Already claimed today - available tomorrow",
-            };
-          }
-          if (customBlueCoinLimitReached()) {
-            return {
-              available: false,
-              reason: "daily-limit",
-              label: "Custom Level Limit for the day",
             };
           }
         }
