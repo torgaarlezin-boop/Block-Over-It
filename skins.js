@@ -985,6 +985,15 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     tag: "Icons"
   },
+  blockyrectangular: {
+    name: "Blocky (Designer Made)",
+    copies: "1/2",
+    color: "#335699",
+    artist: "Designer Torgaar",
+    collection: 'Blocky',
+    tag: "Designer"
+
+  }
 
 
 };
@@ -1025,6 +1034,7 @@ window.SOLID_SKIN_COLORS = {
   blockypurple: "#6f4aa8",
   blockypink: "#d0618f",
   blockywhite: "#e6e6e6",
+  blockyrectangular: "#335699"
 };
 
 window.skinFileExtension = function (id) {
