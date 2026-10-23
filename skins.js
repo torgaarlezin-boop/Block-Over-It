@@ -10,6 +10,7 @@ window.SKIN_DEFINITIONS = {
   },
   chairlord: {
     name: "Chairlord (OG)",
+    collection: "Chairlord",
     copies: "1/5",
     color: "#d4d2c7",
     gold: true,
@@ -448,13 +449,17 @@ window.SKIN_DEFINITIONS = {
     blocktober: true,
   },
   midgemidge: {
-    name: "MidgeMidge",
+    name: "Cool Guy (Alien MidgeMidge)",
     copies: "1/1",
-    color: "#3317b1",
+    color: "#6223b2",
     desc: "Honorary",
-    gold: true,
-    artist: "Torgaar & MidgeMidge22",
+    artist: "MidgeMidge22",
     honorary: true,
+    collection: "Cool Guy",
+    versions: [
+      { name: "MidgeMidge", img: "midgemidge.png" },
+      { name: "Cool Guy (Alien MidgeMidge)", img: "coolguymidgemidge.png" },
+    ],
   },
   blackbeard: {
     name: "Blackbeard",
@@ -812,14 +817,7 @@ window.SKIN_DEFINITIONS = {
     color: "#ff751f",
     gameUnlock: true,
   },
-  coolguybluestripes: {
-    name: "Cool Guy (Stripes Blue)",
-    copies: "N/A",
-    collection: "Cool Guy",
-    artist: "Torgaar",
-    color: "#0879bf",
-    gameUnlock: true,
-  },
+
   skeleton: {
     name: "Skeleton",
     copies: "1/3",
@@ -986,12 +984,60 @@ window.SKIN_DEFINITIONS = {
     tag: "Icons"
   },
   blockyrectangular: {
-    name: "Blocky (Designer Made)",
+    name: "Blocky (Deluxe)",
     copies: "1/2",
-    color: "#335699",
     artist: "Designer Torgaar",
     collection: 'Blocky',
-    tag: "Designer"
+    tag: "Designer",
+    gold: true
+  },
+  coolguylibrarian: {
+    name: "Cool Guy (Librarian)",
+    copies: "1/3",
+    color: "#38b6ff",
+    artist: "Jdog",
+    collection: 'Cool Guy',
+  },
+  coolguypurplestripes: {
+    name: "Cool Guy (Stripes Purple)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#0879bf",
+    gameUnlock: true,
+  },
+  coolguyyellowstripes: {
+    name: "Cool Guy (Stripes Yellow)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#ffde59",
+    gameUnlock: true,
+  },
+  coolguyredstripes: {
+    name: "Cool Guy (Stripes Red)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#ff3131",
+    gameUnlock: true,
+  },
+  mrolsen: {
+    name: "Cool Guy (Mr Olsen)",
+    copies: "1/5",
+    collection: "Cool Guy",
+    artist: "Torgaar, Bode H, Mcdongos",
+    tag: "Icons",
+    color: "#fff1c0",
+    tag: "Blockpass S1"
+  },
+  mrolsenpink: {
+    name: "Cool Guy (Mr Olsen Pink House)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "Torgaar, Bode H, Dbumgarner",
+    color: "#ff00de",
+    tag: "Icons",
 
   }
 
@@ -1023,7 +1069,8 @@ window.SKIN_IMAGE_OVERRIDES = {
   chairlordcrowned: "chairlordnormal.png",
   chairlordremastered: "chairlordnormal.png",
   galaxy: "galaxynew.png",
-  coolguygalaxy: "coolguygalaxynew.png"
+  coolguygalaxy: "coolguygalaxynew.png",
+  midgemidge: "coolguymidgemidge"
 };
 
 window.SOLID_SKIN_COLORS = {
