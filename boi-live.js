@@ -1,29 +1,4 @@
-// Block Over It - LIVE
-//
-// Race up to four friends through random community levels and see each other
-// in the level as you go. Loaded by blockoverit.html after the game's own
-// script, so everything the game declares at the top level -- Level,
-// DOMDisplay, runAnimation, _supabase, gameSettings, showMenu -- is in reach,
-// the same way boi-bot.js reaches it. Deploy it beside index.html; without it
-// the LIVE button just says LIVE did not load.
-//
-// Two networks, on purpose:
-//
-// - Supabase Realtime, on the game's own project, carries what is rare: who is
-//   online and in which room (lobby presence), the room's turns (a race
-//   starting, a finish, the results) and the handshake that connects players
-//   to each other. Its free tier allows 200 connections but only 100 messages
-//   a second for the whole project, counting every delivery, and 2 million a
-//   month. Five racers sending where they are 20 times a second would be 2,000
-//   a second, and Realtime drops every connection past the limit.
-// - Movement goes straight between the players' browsers over WebRTC data
-//   channels: free, with no message limit. A pair that cannot reach each other
-//   directly (some school and office networks block it) falls back to Realtime
-//   at a few updates a second, inside a budget every relaying player works out
-//   from the lobby, so LIVE can never use the project up.
-//
-// MAX_ONLINE caps how many can be in LIVE at once. Past it, LIVE says the
-// servers are full instead of letting anyone else in.
+
 (function () {
   "use strict";
   if (window.BoiLive) return;
@@ -32,34 +7,33 @@
   // ---- SETTINGS -------------------------------------------------------------
   var MAX_ONLINE = 20;
   var ROOM_SIZE = 5;
+  var EVENT_ROOM_SIZE = 20;
+  var EVENT_ONLY = true;
+  var EVENT_ONLY_TEXT = "LIVE IS ONLY OPEN FOR THE LEVEL AWARDS";
   var LOBBY_TOPIC = "boi-live-lobby";
   var ROOM_TOPIC = "boi-live-room-";
-  // Position packets a second to each directly connected player
   var SEND_HZ = 30;
-  // On the Realtime fallback a snapshot is kept this often, and they travel
-  // together as often as the shared budget allows
+  var KEYS_SEND_HZ = 60;
+  var IDLE_SEND_MS = 250;
+  var EXTRAS_EVERY_MS = 1000;
   var RELAY_SAMPLE_MS = 50;
-  // How quickly a remote racer's drawn position settles onto a correction
-  var SMOOTH_S = 0.06;
+  var SMOOTH_S = 0.035;
+  var SMOOTH_RELAY_S = 0.08;
+  var SNAP_BLOCKS = 2.5;
+  var CLOCK_EASE_MS = 250;
+  var CLOCK_SNAP_MS = 300;
+  var PREDICT_MAX_MS = 700;
+  var RELAY_ONE_WAY_MS = 80;
   var PING_EVERY_MS = 1000;
-  // How often the race clock's text is rewritten
   var TIMER_EVERY_MS = 50;
-  // The level picker flicks through levels for FLIP_MS, lands on the pick,
-  // holds a second and counts down. GO is GO_DELAY after the host's START.
   var FLIP_MS = 3600;
   var COUNTDOWN_MS = 3000;
   var GO_DELAY = FLIP_MS + 1000 + COUNTDOWN_MS;
-  // A race ends once everyone still here has finished, AFTER_FIRST_MS after
-  // the first finish, or RACE_MAX_MS after GO, whichever comes first.
   var AFTER_FIRST_MS = 45000;
   var RACE_MAX_MS = 5 * 60000;
-  // Back in the room with the podium, before the host can go again
   var SHOWOFF_MS = 20000;
-  // Realtime messages a second that every relaying player in LIVE shares
   var RELAY_BUDGET = 40;
   var CONNECT_TIMEOUT_MS = 12000;
-  // Pushing (see PUSHING): at most walking pace, renewed while you keep
-  // walking into someone; a hard enough hit is a shove instead
   var PUSH_MAX = 12;
   var PUSH_SEND_MS = 40;
   var PUSH_HOLD_MS = 120;
@@ -68,33 +42,19 @@
   var SHOVE_MAX = 14;
   var SHOVE_COOLDOWN_MS = 400;
   var SHOVE_HOP = 4;
-  // STUN finds each player's public address so two browsers can connect.
   var ICE_SERVERS = [
     { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
     { urls: "stun:stun.cloudflare.com:3478" },
   ];
-  // TURN carries the pairs whose network blocks a direct link (school Wi-Fi
-  // often does); without it they fall back to the slow Realtime relay. No
-  // TURN server works without an account any more. With one -- Metered's free
-  // plan is 20 GB a month -- put its credentials URL here, like
-  // "https://YOURAPP.metered.live/api/v1/turn/credentials?apiKey=YOURKEY".
   var TURN_CREDENTIALS_URL = "";
-  // Bumped whenever packets change shape. A room only takes players on the
-  // same version; someone with an older copy cached is told to reload.
-  var LIVE_VERSION = 6;
-  // Winning a race on a level above this difficulty pays the winner one Blue
-  // Coin, at most LIVE_COINS_PER_DAY times a day (see THE BLUE COIN FOR A WIN)
+  var LIVE_VERSION = 9;
   var LIVE_COIN_MIN_DIFF = 5;
-  // A shared race level is played in steps of exactly this long (see
-  // liveFrame), at most WORLD_STEPS_MAX of them a frame
   var WORLD_STEP = 1 / 60;
   var WORLD_STEPS_MAX = 20;
   var LIVE_COINS_PER_DAY = 10;
   var CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   var NO_KEYS = { left: false, right: false, up: false, down: false, p: false };
 
-  // ---- THE ROOM EVERYONE WAITS IN ---------------------------------------------
-  // A floor, two ledges a side and a podium in the middle: 2nd, 1st, 3rd.
   var HUB_W = 30;
   var HUB_H = 13;
   function hubPlan() {
@@ -123,8 +83,7 @@
     levelType: "custom",
     customLevelIndex: -1,
   };
-  // Where a player stands: x is the left edge of the half-block hitbox, y its
-  // top. Podium tops are rows 9 (1st), 10 (2nd) and 11 (3rd); the floor is 12.
+
   var PODIUM = [
     { x: 15.25, y: 8 },
     { x: 12.25, y: 9 },
@@ -143,10 +102,11 @@
     };
   }
 
-  // ---- SMALL THINGS -----------------------------------------------------------
+
   function now() {
     return performance.now();
   }
+  var PHONE_MIN_BLOCK_PX = 14;
   function randomId(n) {
     var abc = "abcdefghijklmnopqrstuvwxyz0123456789";
     var bytes = new Uint8Array(n);
@@ -206,7 +166,7 @@
     }, 4000);
   }
   function diffName(d) {
-    return d + " · " + ((window.DIFFICULTY_LABELS || {})[d] || "");
+    return d + " " + ((window.DIFFICULTY_LABELS || {})[d] || "");
   }
   function cleanName(n) {
     return String(n == null ? "" : n).slice(0, 24) || "PLAYER";
@@ -267,12 +227,6 @@
     return skin;
   }
 
-  // ---- STYLES -----------------------------------------------------------------
-  // Everything LIVE draws is made of the game's own blocks. A panel is a wall
-  // block -- the #444 face, the #333 edge, a darker bottom face -- with the
-  // hard offset shadow the title has; a player is their skin block; a room's
-  // seats, a coin count and the countdown are rows of small blocks. Flat
-  // colours only: no glows, no gradients.
   var STYLE = [
     // ---- the block kit ----
     ".lv-block{background:#444;border:4px solid #333;box-shadow:inset 0 -4px 0 #3a3a3a,4px 4px 0 rgba(0,0,0,.35);box-sizing:border-box;color:#fff}",
@@ -281,6 +235,7 @@
     ".lv-slot{display:inline-block;flex:none;width:12px;height:12px;background:#2a2a2a;border:2px solid #333;box-sizing:border-box;vertical-align:middle}",
     ".lv-slot.on{background:#335699;border-color:#26467e}",
     ".lv-slots{display:inline-flex;gap:3px;flex:none}",
+    ".lv-slots.wide{flex-wrap:wrap;width:147px;max-width:100%}",
     ".lv-place{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border:3px solid #333;background:#555;color:#fff;font-weight:900;font-size:13px;line-height:1}",
     ".lv-place.p1{background:#d4a017;border-color:#8a6a0e;color:#1a1a1a}",
     ".lv-place.p2{background:#a3acb5;border-color:#646c74;color:#1a1a1a}",
@@ -290,15 +245,20 @@
     // The host's KICK beside each other player: a small red block
     ".lv-kick{flex:none;background:#8a2a2a;border:2px solid #5a1616;color:#fff;font:inherit;font-size:10px;font-weight:900;letter-spacing:1px;padding:1px 5px;line-height:1.2;cursor:pointer;text-transform:uppercase}",
     ".lv-kick:hover{border-color:#eee}",
+    // HIDE / SHOW on the board: hidden, only the room's name and SHOW stay
+    ".lv-board-top{display:flex;align-items:center;gap:8px}",
+    ".lv-board-top .lv-code{flex:1;min-width:0}",
+    ".lv-hide{flex:none;background:#444;border:2px solid #333;color:#fff;font:inherit;font-size:10px;font-weight:900;letter-spacing:1px;padding:2px 6px;line-height:1.2;cursor:pointer;text-transform:uppercase;box-shadow:2px 2px 0 rgba(0,0,0,.35)}",
+    ".lv-hide:hover{border-color:#eee}",
+    "#lv-hud .lv-board.lv-folded{width:auto;padding:6px 8px}",
     ".lv-prog{display:inline-flex;gap:2px;flex:none}",
     ".lv-prog i{display:block;width:5px;height:10px;background:#2e2e2e;border:1px solid #333}",
     ".lv-prog i.on{background:#e2e838;border-color:#b5ba2a}",
     // ---- the overlay in a level ----
     "#lv-hud{position:fixed;inset:0;z-index:450;pointer-events:none;font-family:'Courier New',Courier,monospace;color:#fff;text-transform:uppercase;display:none}",
     "#lv-hud .lv-board{position:absolute;top:84px;left:20px;width:270px;max-width:calc(100vw - 40px);padding:8px 10px 10px;font-weight:bold;font-size:13px;pointer-events:auto}",
-    "#lv-hud .lv-code{font-size:22px;font-weight:900;letter-spacing:4px;text-shadow:3px 3px 0 #335699;cursor:pointer;user-select:none}",
-    "#lv-hud .lv-code:hover{color:#cfe0ff}",
-    "#lv-hud .lv-sub{display:flex;align-items:center;gap:8px;color:#bbb;font-size:11px;margin:4px 0 6px}",
+    "#lv-hud .lv-code{font-size:22px;font-weight:900;letter-spacing:4px;text-shadow:3px 3px 0 #335699;user-select:none}",
+    "#lv-hud .lv-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;color:#bbb;font-size:11px;margin:4px 0 6px}",
     "#lv-hud .lv-row{display:flex;gap:7px;align-items:center;padding:5px 0;border-top:3px solid #3a3a3a}",
     "#lv-hud .lv-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     "#lv-hud .lv-row.me .lv-nm{color:#cfe0ff}",
@@ -323,6 +283,13 @@
     "#lv-hud .lv-big-main{font-size:clamp(3rem,12vw,7rem);font-weight:900;line-height:1;text-shadow:6px 6px 0 #335699}",
     "#lv-hud .lv-big-sub{font-size:clamp(1rem,3vw,1.6rem);font-weight:bold;color:#fff;text-shadow:3px 3px 0 #335699;margin-top:12px}",
     "#lv-hud .lv-big.drop .lv-big-main{animation:lv-drop .45s both}",
+    // The awards show's banners stand on a block like a button's
+    "#lv-hud .lv-big.ev{left:50%;right:auto;translate:-50% 0;width:max-content;max-width:calc(100vw - 40px);box-sizing:border-box;padding:16px 28px 20px;background:#444;border:4px solid #333;box-shadow:inset 0 -4px 0 #3a3a3a,4px 4px 0 rgba(0,0,0,.35);text-align:center}",
+    "#lv-hud .lv-big.ev .lv-big-main{font-size:clamp(2rem,7vw,4.5rem)}",
+    "#lv-hud .lv-big.ev .lv-big-sub{color:#ffd75e;text-shadow:none;font-weight:900;letter-spacing:2px;font-size:clamp(.85rem,2.4vw,1.2rem)}",
+    "#lv-hud .lv-big.ev .lv-big-sub:empty{display:none}",
+    // The show's name, in one line, in purple
+    "#lv-hud .lv-big.intro .lv-big-main{white-space:nowrap;font-size:clamp(1rem,4vw,3rem);color:purple;text-shadow:4px 4px 0 #222}",
     // The countdown, built from blocks: player-blue for the numbers, the
     // green a finished block turns for GO
     "#lv-hud .lv-glyphs{--px:clamp(16px,3.6vw,34px);display:flex;gap:calc(var(--px) * 1.2)}",
@@ -337,9 +304,18 @@
     "#lv-hud .lv-label-diff{font-weight:900;text-shadow:1px 1px 0 #222}",
     "#lv-hud .lv-label-coin{margin-top:6px}",
     "body.mobile-mode #lv-hud .lv-label{bottom:16px;max-width:calc(100vw - 300px)}",
+    // An upright phone: the arrows and jump fill the bottom, so the level's
+    // name goes above them, across the screen, and the countdown drops
+    // below the board
+    "@media (orientation:portrait){body.mobile-mode #lv-hud .lv-label{bottom:calc(var(--safe-b, 0px) + 104px);max-width:calc(100vw - 20px);padding:6px 12px 8px}body.mobile-mode #lv-hud .lv-big{top:42%}}",
     // Too narrow for the bar between ESC and the corner buttons: it drops
-    // below them and the panels go under it
-    "@media (max-width:900px){#lv-hud .lv-bar{top:72px;max-width:calc(100vw - 20px)}#lv-hud .lv-board{top:128px;left:10px;width:200px;font-size:11px;padding:6px 8px}}",
+    // below them, across the screen with smaller buttons, and the board goes
+    // under it -- as far down as the bar really is (--lv-bar-bottom, kept by
+    // a ResizeObserver), so a bar that wraps never covers it
+    "@media (max-width:900px){#lv-hud .lv-bar{top:72px;left:10px;right:10px;transform:none;width:auto;max-width:none;gap:6px}#lv-hud .lv-bar .boi-btn{min-height:34px;padding:5px 10px;font-size:12px}#lv-hud .lv-bar .lv-note{padding:6px 10px;font-size:12px}#lv-hud .lv-board{top:calc(var(--lv-bar-bottom, 120px) + 8px);left:10px;width:200px;font-size:11px;padding:6px 8px}}",
+    // A phone on its side has little height: the board gets narrower and
+    // its rows tighter so it doesn't run into the controls
+    "@media (max-width:900px) and (max-height:500px){#lv-hud .lv-board{width:180px;padding:4px 7px}#lv-hud .lv-row{padding:3px 0}#lv-hud .lv-code{font-size:16px;letter-spacing:3px}}",
     // ---- in the level itself ----
     ".lv-racer{position:absolute;left:0;top:0;box-sizing:border-box;background-repeat:no-repeat;background-position:center;background-size:contain}",
     ".lv-trail{position:absolute;left:0;top:0;pointer-events:none;background-repeat:no-repeat;background-position:center;background-size:contain}",
@@ -376,6 +352,29 @@
     ".lv-room .lv-rc{font-size:1.3rem;font-weight:900;letter-spacing:4px;text-shadow:3px 3px 0 #335699;flex:none}",
     ".lv-room .lv-rh{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ddd}",
     ".lv-menu-empty{color:#888;font-weight:bold;padding:8px;text-align:center;text-transform:uppercase}",
+    // ---- the Level Awards event ----
+    ".lv-ev-card{display:flex;flex-direction:column;align-items:center;gap:6px;width:min(580px,100%);padding:14px 16px 16px;text-transform:uppercase;text-align:center}",
+    ".lv-ev-card .lv-ev-title{font-size:1.5rem;font-weight:900;letter-spacing:3px;text-shadow:3px 3px 0 #335699}",
+    ".lv-ev-card .lv-ev-sub{color:#ffd75e;font-weight:900;letter-spacing:2px;font-size:.85rem}",
+    ".lv-ev-card .lv-ev-when{color:#ddd;font-weight:bold;font-size:.95rem;letter-spacing:1px;white-space:pre-line}",
+    ".lv-ev-card .lv-ev-btns{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;justify-content:center}",
+    "#lv-hud .lv-rev{position:absolute;left:50%;top:16%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:10px;padding:18px 26px 22px;width:max-content;min-width:min(420px,calc(100vw - 40px));max-width:calc(100vw - 40px);text-align:center;text-transform:uppercase;pointer-events:none}",
+    "#lv-hud .lv-rev.on{display:flex}",
+    "#lv-hud .lv-rev-cat{color:#ffd75e;font-weight:900;letter-spacing:3px;font-size:clamp(.8rem,2.4vw,1.1rem)}",
+    "#lv-hud .lv-rev-place{font-weight:900;font-size:clamp(1.5rem,5.5vw,2.8rem);padding:6px 18px 8px;border:4px solid #333;box-shadow:4px 4px 0 rgba(0,0,0,.35);color:#1a1a1a;line-height:1}",
+    "#lv-hud .lv-rev-place.p1{background:#d4a017;border-color:#8a6a0e}",
+    "#lv-hud .lv-rev-place.p2{background:#a3acb5;border-color:#646c74}",
+    "#lv-hud .lv-rev-place.p3{background:#b06d34;border-color:#6e4320;color:#fff}",
+    "#lv-hud .lv-rev-name{font-weight:900;font-size:clamp(1.2rem,4.6vw,2.3rem);text-shadow:4px 4px 0 #335699;max-width:100%;overflow-wrap:anywhere;line-height:1.1}",
+    "#lv-hud .lv-rev-by{color:#ccc;font-weight:bold;letter-spacing:1px}",
+    "#lv-hud .lv-rev.on .lv-rev-place{animation:lv-drop .45s .15s both}",
+    "#lv-hud .lv-rev.on .lv-rev-name{animation:lv-drop .45s 1.4s both}",
+    "#lv-hud .lv-rev.on .lv-rev-by{animation:lv-drop .45s 2s both}",
+    "#lv-hud .lv-board.lv-ev{max-height:calc(100vh - 150px);overflow-y:auto;overflow-x:hidden}",
+    "#lv-hud .lv-ev-cat{font-size:11px;font-weight:900;letter-spacing:1px;color:#ffd75e;margin:8px 0 2px}",
+    "#lv-hud .lv-ev-cat.now{color:#fff}",
+    "#lv-hud .lv-row.ev-now .lv-nm{color:#cfe0ff}",
+    "@media (prefers-reduced-motion:reduce){#lv-hud .lv-rev.on>*{animation:none!important}}",
     // ---- motion: the intro cube's fall and its landing shake ----
     "@keyframes lv-drop{0%{transform:translateY(-50px);opacity:0;animation-timing-function:cubic-bezier(.6,.04,.98,.335)}60%{transform:translateY(0);opacity:1}73%{transform:translate(-3px,3px)}86%{transform:translate(3px,-3px)}100%{transform:none}}",
     "@keyframes lv-land{0%{translate:0 0}33%{translate:-3px 3px}66%{translate:3px -3px}100%{translate:0 0}}",
@@ -389,12 +388,9 @@
     document.head.appendChild(s);
   }
 
-  // ---- THE LOBBY --------------------------------------------------------------
-  // One presence channel for everyone in LIVE. It is the online count, the
-  // room list, and what relaying players read their budget from.
   var lobby = {
     ch: null,
-    status: "off", // off | connecting | joining | on | reconnecting | full | offline
+    status: "off",
     members: [],
     tracked: false,
     synced: false,
@@ -510,6 +506,7 @@
       p: r && r.state.priv ? 1 : 0,
       h: r && isHost() ? 1 : 0,
       ph: r && r.state.phase === "race" ? "race" : "",
+      e: r && r.state.ev && r.state.ev.m === "live" ? 1 : 0,
       rl: relaying ? 1 : 0,
       t: lobby.joinedAt,
       v: LIVE_VERSION,
@@ -546,10 +543,12 @@
           host: null,
           priv: false,
           racing: false,
+          ev: false,
           v: 1,
         });
       r.count++;
       if (m.h) {
+        r.ev = !!m.e;
         r.host = cleanName(m.n);
         r.priv = !!m.p;
         r.racing = m.ph === "race";
@@ -585,8 +584,35 @@
 
   function renderMenu(container) {
     injectStyles();
-    connectLobby();
     container.innerHTML = "";
+    // LIVE is for accounts only: a guest is asked to sign in and never joins
+    // the lobby
+    if (!currentUser) {
+      menuEls = null;
+      if (lobby.ch) dropLobby("off");
+      var ask = el("div", "lv-menu-status", "SIGN IN TO PLAY LIVE");
+      var signIn = el("button", "btn", "SIGN IN");
+      signIn.onclick = function () {
+        if (typeof openLoginModal === "function") openLoginModal();
+      };
+      var leave = el("button", "btn", "BACK");
+      leave.onclick = function () {
+        showMenu("main");
+      };
+      [ask, signIn, leave].forEach(function (n) {
+        container.appendChild(n);
+      });
+      // Signed in from here: on into LIVE
+      var wait = setInterval(function () {
+        if (!document.body.contains(ask)) clearInterval(wait);
+        else if (currentUser) {
+          clearInterval(wait);
+          renderMenu(container);
+        }
+      }, 500);
+      return;
+    }
+    connectLobby();
     // Only says something while the lobby isn't up: connecting, full, down
     var status = el("div", "lv-menu-status", "CONNECTING...");
     var who = el("div", "lv-menu-who");
@@ -595,7 +621,7 @@
       if (lobby.status === "full" || lobby.status === "offline") {
         dropLobby("off");
         connectLobby();
-      } else createRoom();
+      } else createRoom(null);
     };
     var joinRow = el("div", "lv-join-row");
     var input = el("input", "lv-code-input");
@@ -621,8 +647,11 @@
     back.onclick = function () {
       showMenu("main");
     };
-    [status, who, create, joinRow, list, back].forEach(function (n) {
-      container.appendChild(n);
+    var evCard = evMenuCard();
+    // Only the awards: no making or joining rooms here
+    if (EVENT_ONLY) joinRow.style.display = "none";
+    [status, who, evCard, create, joinRow, list, back].forEach(function (n) {
+      if (n) container.appendChild(n);
     });
     menuEls = {
       status: status,
@@ -643,7 +672,7 @@
       s === "on"
         ? ""
         : s === "full"
-          ? "SERVERS FULL · TRY AGAIN SOON"
+          ? "SERVERS FULL, TRY AGAIN SOON"
           : s === "offline"
             ? "CAN'T REACH THE SERVERS"
             : s === "reconnecting"
@@ -657,22 +686,29 @@
     menuEls.who.appendChild(swatch(wornSkin()));
     menuEls.who.appendChild(
       document.createTextNode(
-        "PLAYING AS " + myName() + (currentUser ? "" : " · SIGN IN TO WEAR YOUR SKINS"),
+        "PLAYING AS " + myName() + (currentUser ? "" : " (SIGN IN TO WEAR YOUR SKINS)"),
       ),
     );
     menuEls.create.textContent =
       s === "full" || s === "offline" ? "TRY AGAIN" : "CREATE ROOM";
     menuEls.create.disabled = !(ok || s === "full" || s === "offline");
+    // Only the awards: the button is only there as TRY AGAIN
+    if (EVENT_ONLY)
+      menuEls.create.style.display = s === "full" || s === "offline" ? "" : "none";
     menuEls.join.disabled = !ok;
 
     var list = menuEls.list;
     list.innerHTML = "";
+    if (EVENT_ONLY) {
+      list.appendChild(el("div", "lv-menu-empty", EVENT_ONLY_TEXT));
+      return;
+    }
     if (!ok) return;
     var rooms = lobbyRooms().filter(function (r) {
       return !r.priv;
     });
     if (!rooms.length) {
-      list.appendChild(el("div", "lv-menu-empty", "NO OPEN ROOMS · CREATE ONE"));
+      list.appendChild(el("div", "lv-menu-empty", "NO OPEN ROOMS, CREATE ONE"));
       return;
     }
     // Each open room as a block: its code, its host, its seats, and a tag
@@ -681,9 +717,15 @@
       var b = el("button", "lv-room lv-block");
       b.appendChild(el("span", "lv-rc", r.code));
       b.appendChild(el("span", "lv-rh", r.host || "..."));
-      b.appendChild(seats(r.count, ROOM_SIZE));
-      b.appendChild(el("span", "lv-tagblock" + (r.racing ? " gold" : ""), r.racing ? "RACING" : "OPEN"));
-      b.disabled = r.count >= ROOM_SIZE;
+      b.appendChild(seats(r.count, sizeOf(r.ev)));
+      b.appendChild(
+        el(
+          "span",
+          "lv-tagblock" + (r.racing || r.ev ? " gold" : ""),
+          r.ev ? "AWARDS" : r.racing ? "RACING" : "OPEN",
+        ),
+      );
+      b.disabled = r.count >= sizeOf(r.ev);
       b.onclick = function () {
         joinRoom(r.code);
       };
@@ -700,9 +742,18 @@
   function isHost() {
     return !!room && room.hostId === myId;
   }
+  // How many a room holds: an event room (`ev` in the lobby, or a room
+  // showing the awards) more than an ordinary one
+  function sizeOf(isEvent) {
+    return isEvent ? EVENT_ROOM_SIZE : ROOM_SIZE;
+  }
+  function roomSize(r) {
+    return sizeOf(!!(r && (r.big || r.state.ev)));
+  }
 
-  function createRoom() {
+  function createRoom(init) {
     if (lobby.status !== "on") return;
+    if (EVENT_ONLY && !(init && init.ev)) return notify(EVENT_ONLY_TEXT);
     var taken = {};
     lobbyRooms().forEach(function (r) {
       taken[r.code] = true;
@@ -713,7 +764,7 @@
       for (var i = 0; i < 4; i++)
         code += CODE_LETTERS[Math.floor(Math.random() * CODE_LETTERS.length)];
     } while (taken[code]);
-    enterRoom(code, true);
+    enterRoom(code, true, init);
   }
 
   function joinRoom(code) {
@@ -736,19 +787,26 @@
       notify("NO ROOM CALLED " + code);
       return;
     }
-    if (r.count >= ROOM_SIZE) {
+    if (EVENT_ONLY && !r.ev) {
+      notify(EVENT_ONLY_TEXT);
+      return;
+    }
+    if (r.count >= sizeOf(r.ev)) {
       notify("ROOM " + code + " IS FULL");
       return;
     }
     if (r.host && r.v !== LIVE_VERSION) {
-      notify("ROOM " + code + " IS ON ANOTHER VERSION OF LIVE · RELOAD THE PAGE");
+      notify("ROOM " + code + " IS ON ANOTHER VERSION OF LIVE, RELOAD THE PAGE");
       return;
     }
     enterRoom(code, false);
+    // Known to be an event room before its state arrives, so it isn't
+    // taken for a full ordinary room meanwhile
+    if (room) room.big = !!r.ev;
   }
 
-  function enterRoom(code, creating) {
-    if (room) return;
+  function enterRoom(code, creating, init) {
+    if (room || !currentUser) return;
     injectStyles();
     var r = (room = {
       code: code,
@@ -761,7 +819,7 @@
       hostId: creating ? myId : null,
       hostFlag: !!creating,
       joinedAt: Date.now(),
-      state: { phase: "lobby", round: 0, maxDiff: 5, priv: false, v: 0 },
+      state: Object.assign({ phase: "lobby", round: 0, maxDiff: 5, priv: false, v: 0, ev: null }, init || {}),
       gotState: !!creating,
       fins: {},
       finDeaths: {},
@@ -853,6 +911,9 @@
     stopPicker();
     var r = room;
     room = null;
+    evShown = null;
+    evNote = "";
+    hideReveal();
     clearInterval(housekeepingTimer);
     Object.keys(r.peers).forEach(function (id) {
       r.peers[id].close();
@@ -896,7 +957,8 @@
       return;
     }
     // More than a room holds got in together: the latest to join goes again
-    if (list.length > ROOM_SIZE && mine >= ROOM_SIZE && !r.hostFlag) {
+    var size = roomSize(r);
+    if (list.length > size && mine >= size && !r.hostFlag) {
       leaveRoom("ROOM " + r.code + " IS FULL");
       return;
     }
@@ -975,6 +1037,8 @@
       priv: st.priv,
       wins: st.wins || {},
       kicked: st.kicked || [],
+      // when the show started, as "this long ago" like every other time
+      ev: st.ev ? { m: st.ev.m, at: Math.round(st.ev.start - Date.now()) } : null,
     };
     if (st.phase === "race" || st.phase === "showoff") {
       wire.pick = st.pick;
@@ -1011,6 +1075,10 @@
       priv: !!w.priv,
       wins: {},
       kicked: readKicked(w.kicked),
+      ev:
+        w.ev && /^(live|preview|replay)$/.test(w.ev.m)
+          ? { m: w.ev.m, start: Date.now() + num(w.ev.at) }
+          : null,
     };
     if (w.wins && typeof w.wins === "object")
       Object.keys(w.wins)
@@ -1030,7 +1098,7 @@
         .slice(0, 30);
       st.pick = Number(w.pick);
       st.players = (Array.isArray(w.players) ? w.players : [])
-        .slice(0, ROOM_SIZE * 2)
+        .slice(0, EVENT_ROOM_SIZE * 2)
         .map(function (p) {
           return { id: String(p && p.id), n: cleanName(p && p.n) };
         });
@@ -1044,7 +1112,7 @@
       if (!isFinite(st.pick)) return;
     } else if (st.phase === "showoff") {
       st.results = (Array.isArray(w.results) ? w.results : [])
-        .slice(0, ROOM_SIZE * 2)
+        .slice(0, EVENT_ROOM_SIZE * 2)
         .map(function (r) {
           var time = r && r.time != null ? num(r.time, -1) : null;
           return {
@@ -1091,10 +1159,13 @@
         r.showoffRound = st.round;
         enterShowoff(st);
       }
-    } else {
+    } else if (!st.ev) {
       stopPicker();
       if (run && run.kind !== "hub") enterHub();
     }
+    // The show moves on its own clock (evTick); a change to it (SKIP, or
+    // it ending) is taken up at once
+    if (st.ev || prev.ev) evTick();
     renderBoard();
     renderBar();
     pushLobbyPresence();
@@ -1304,6 +1375,7 @@
     var t = now();
     tendPeers(t);
     if (isHost()) hostTick(t);
+    evTick();
     // The link times on the board, and in a race everyone's coins
     if (t - boardAt > (room.state.phase === "race" ? 500 : 2000)) {
       boardAt = t;
@@ -1369,7 +1441,7 @@
     var place = finishPlace(id);
     if (id === myId) {
       r.myFinish = time;
-      bigBanner("FINISHED", ordinal(place) + " · " + formatTime(time), true, 3500);
+      bigBanner("FINISHED", ordinal(place) + " IN " + formatTime(time), true, 3500);
     }
     renderBoard();
   }
@@ -1411,7 +1483,7 @@
   function newRun(data, kind, token) {
     return {
       data: data,
-      kind: kind, // hub | flip | race
+      kind: kind, // hub | flip | race | event
       token: token,
       spawnId: run ? run.spawnId : 0,
       level: null,
@@ -1419,7 +1491,17 @@
       layers: null,
       goAt: kind === "race" && room ? room.state.goAt : 0,
       finished: false,
-      sendTimer: 0,
+      // What the last position packet said (see sendDue)
+      sentAt: -1e9,
+      sentBits: -1,
+      sentLv: null,
+      sentSp: -1,
+      sentX: 0,
+      sentY: 0,
+      sentH: 0,
+      sentR: 0,
+      sentExtras: "",
+      extrasAt: -1e9,
       vx: 0,
       vy: 0,
       inBits: 0,
@@ -1438,7 +1520,7 @@
     }
     // The picker's cards keep the room's music going; a race brings its own
     var newMusic =
-      !run || kind === "race" || (run.kind !== kind && run.kind !== "flip");
+      !run || kind === "race" || kind === "event" || (run.kind !== kind && run.kind !== "flip");
     clearGame();
     run = newRun(data, kind, token);
     pushesOnMe = {};
@@ -1519,6 +1601,22 @@
     if (settle)
       for (var i = 0; i < 18 && !level.status; i++) level.animate(1 / 60, NO_KEYS);
     var display = new DOMDisplay(document.getElementById("game-container"), level);
+    // A phone held upright: the whole level across it ("wide") draws blocks
+    // a few px wide. Start in Focus there instead -- this race only; the
+    // game's own camera setting is left alone, and the zoom button still
+    // switches back.
+    if (
+      document.body.classList.contains("mobile-mode") &&
+      display.cameraMode === "wide" &&
+      !level.disableZoom &&
+      display.scale < PHONE_MIN_BLOCK_PX
+    ) {
+      display.cameraMode = "focus";
+      display.updateScale();
+      level.backgroundDirty = true;
+      display.drawFrame();
+      if (typeof updateZoomButtonIcon === "function") updateZoomButtonIcon("focus");
+    }
     activeLevelDisplay = display;
     run.level = level;
     run.display = display;
@@ -1601,6 +1699,10 @@
         played = step;
         if (run.kind === "race" && !run.finished && level.status === "won")
           finishRace(t);
+        if (run.kind === "event" && !run.finished && level.status === "won") {
+          run.finished = true;
+          bigBanner("BEAT IT", "", true, 2500, false, "ev");
+        }
       }
     } else run.inBits = 0;
     if (p && played > 0 && level === run.level) {
@@ -1630,13 +1732,43 @@
   var relayBufFor = "";
   var relaySampleAt = 0;
 
+  // When the next packet is due: right away (next frame) when your keys,
+  // state or life changed -- that is what the others can't work out for
+  // themselves -- SEND_HZ while you move (or move the grinders), and only a
+  // heartbeat while you stand still.
+  function sendDue(t, p, level) {
+    var st = level.status === "lost" ? 1 : level.status === "won" ? 2 : 0;
+    var bits = run.inBits | (st << 4) | (p.gravityDirection < 0 ? 64 : 0);
+    var since = t - run.sentAt;
+    var gap;
+    if (bits !== run.sentBits || run.sentLv !== run.token || run.sentSp !== run.spawnId)
+      gap = 1000 / KEYS_SEND_HZ;
+    else if (
+      Math.abs(p.pos.x - run.sentX) + Math.abs(p.pos.y - run.sentY) > 0.0005 ||
+      Math.abs(p.size.y - run.sentH) > 0.0005 ||
+      Math.abs((p.rotation || 0) - run.sentR) > 0.5 ||
+      (run.grinders && run.grinders.length)
+    )
+      gap = 1000 / SEND_HZ;
+    else gap = IDLE_SEND_MS;
+    // A couple of ms early is fine: frames don't land exactly
+    if (since < gap - 2) return false;
+    run.sentAt = t;
+    run.sentBits = bits;
+    run.sentLv = run.token;
+    run.sentSp = run.spawnId;
+    run.sentX = p.pos.x;
+    run.sentY = p.pos.y;
+    run.sentH = p.size.y;
+    run.sentR = p.rotation || 0;
+    return true;
+  }
+
   function sendState(t, step) {
-    run.sendTimer -= step;
-    if (run.sendTimer > 0) return;
-    run.sendTimer = Math.max(0, run.sendTimer + 1 / SEND_HZ);
     var level = run.level;
     var p = level.player;
     if (!p || !room) return;
+    if (!sendDue(t, p, level)) return;
     var snap = [
       Math.round(t),
       Math.round(p.pos.x * 1000) / 1000,
@@ -1658,16 +1790,24 @@
     var cl = race ? coinsTaken() : undefined;
     var ct = race ? run.coinTotal : undefined;
     var dt = race ? run.deaths : undefined;
+    // The skin and the board's numbers only when they changed, and once a
+    // second in case a packet with them was lost
+    var extras = skin + "|" + cl + "|" + ct + "|" + dt;
+    var withExtras = extras !== run.sentExtras || t - run.extrasAt >= EXTRAS_EVERY_MS;
+    if (withExtras) {
+      run.sentExtras = extras;
+      run.extrasAt = t;
+    }
     var json = JSON.stringify({
       k: "s",
       lv: run.token,
       sp: run.spawnId,
-      sk: skin,
+      sk: withExtras ? skin : undefined,
       s: [snap],
       gr: gr,
-      cl: cl,
-      ct: ct,
-      dt: dt,
+      cl: withExtras ? cl : undefined,
+      ct: withExtras ? ct : undefined,
+      dt: withExtras ? dt : undefined,
     });
     var behind = false;
     var stuck = false;
@@ -1750,21 +1890,26 @@
       rm.snap = true;
     }
     var recv = now();
-    if (rm.lastMsgAt)
-      rm.msgGap = rm.msgGap * 0.75 + Math.min(recv - rm.lastMsgAt, 3000) * 0.25;
+    var since = rm.lastMsgAt ? Math.min(recv - rm.lastMsgAt, 3000) : 0;
+    if (rm.lastMsgAt) rm.msgGap = rm.msgGap * 0.75 + since * 0.25;
     rm.lastMsgAt = recv;
     rm.heard = recv;
-    snaps.slice(-30).forEach(function (a) {
-      if (!Array.isArray(a)) return;
+    // Creeps up 10ms a second, by the clock rather than by the packet:
+    // packets now come at different rates (standing still, a key change)
+    var creep = since * 0.01;
+    for (var si = Math.max(0, snaps.length - 30); si < snaps.length; si++) {
+      var a = snaps[si];
+      if (!Array.isArray(a)) continue;
       var ts = num(a[0], NaN);
-      if (!isFinite(ts)) return;
+      if (!isFinite(ts)) continue;
       var last = rm.buf[rm.buf.length - 1];
-      if (last && ts <= last.t) return;
+      if (last && ts <= last.t) continue;
       // How far the sender's clock is behind ours, plus the quickest trip a
       // packet has made. It creeps up slowly, so a route that got slower is
       // followed too.
       var off = recv - ts;
-      rm.off = rm.off == null ? off : Math.min(off, rm.off + 1);
+      rm.off = rm.off == null ? off : Math.min(off, rm.off + creep);
+      creep = 0;
       rm.buf.push({
         t: ts,
         x: num(a[1]),
@@ -1777,9 +1922,11 @@
         st: Math.floor(num(a[8])),
         keys: Math.floor(num(a[9])) & 15,
       });
-    });
+    }
     if (rm.buf.length > 60) rm.buf.splice(0, rm.buf.length - 60);
-    rm.skin = typeof pkt.sk === "string" ? pkt.sk.slice(0, 64) : "default";
+    // Packets without the skin keep the one before
+    if (typeof pkt.sk === "string") rm.skin = pkt.sk.slice(0, 64);
+    else if (!rm.skin) rm.skin = "default";
     if (pkt.ct != null) {
       rm.ct = Math.max(0, Math.floor(num(pkt.ct)));
       rm.cl = clamp(Math.floor(num(pkt.cl)), 0, rm.ct);
@@ -1806,42 +1953,189 @@
   // block or more behind when running, and a bump landed before you could see
   // anyone touch you.
   //
-  // Over the fallback: their recorded path played back a little late, so
-  // there is always a next point to move towards.
+  // Over the fallback: the same, from further back. Its messages come a few
+  // times a second, so playing their path back late (as it used to) drew
+  // them up to a few seconds behind where they really were.
+  //
+  // "Carried forward" is their block run on through this level with the
+  // game's own physics and the keys they were holding, so a jump arcs and
+  // lands, a wall stops them, and letting go stops them -- a straight line
+  // at their last speed overshot every landing and turn.
+  //
+  // The run-on is kept from frame to frame: each frame only plays the time
+  // since the last one (a step or so), and it starts again from their newest
+  // packet only when one arrives. Rerunning the whole way every frame cost
+  // up to 42 steps per racer per frame on the fallback.
   function remoteTarget(rm, t) {
     var peer = room.peers[rm.id];
     var b = rm.buf;
     rm.direct = !rm.relayed && !!peer && peer.open;
-    if (rm.direct) {
-      var last = b[b.length - 1];
-      var oneWay = peer.rttMin != null ? peer.rttMin / 2 : 25;
-      var ahead = clamp(t - rm.off + oneWay - last.t, 0, 120) / 1000;
-      return carry(last, ahead);
+    var last = b[b.length - 1];
+    var oneWay = rm.direct
+      ? peer.rttMin != null
+        ? peer.rttMin / 2
+        : 25
+      : RELAY_ONE_WAY_MS;
+    // Where they are now on their own clock. It runs at our frame rate and
+    // is only eased toward the estimate: a packet that made the trip quicker
+    // than the rest moves the estimate at once, and drawing that straight
+    // away made the block leap forward.
+    var want = t - rm.off + oneWay;
+    if (rm.clock == null || rm.snap || Math.abs(want - rm.clock - (t - rm.clockAt)) > CLOCK_SNAP_MS)
+      rm.clock = want;
+    else {
+      rm.clock += t - rm.clockAt;
+      rm.clock += (want - rm.clock) * (1 - Math.exp(-(t - rm.clockAt) / CLOCK_EASE_MS));
     }
-    var delay = clamp(rm.msgGap * 1.3 + 90, 140, 3000);
-    var rt = t - rm.off - delay;
-    while (b.length > 2 && b[1].t <= rt) b.shift();
-    var a = b[0];
-    if (rt <= a.t || b.length === 1) return a;
-    var c = b[1];
-    if (rt <= c.t) {
-      // A teleport is a jump, not a slide across the level
-      if (Math.abs(c.x - a.x) + Math.abs(c.y - a.y) > 3) return c;
-      var f = (rt - a.t) / (c.t - a.t);
-      return {
-        t: rt,
-        x: a.x + (c.x - a.x) * f,
-        y: a.y + (c.y - a.y) * f,
-        h: a.h + (c.h - a.h) * f,
-        vx: c.vx,
-        vy: c.vy,
-        g: f < 0.5 ? a.g : c.g,
-        r: f < 0.5 ? a.r : c.r,
-        st: c.st,
-        keys: c.keys,
-      };
+    rm.clockAt = t;
+    var theirNow = rm.clock;
+    var pr = rm.pr || (rm.pr = newPredictor());
+    if (pr.from !== last) {
+      // A fresh packet. Where the old run-on had them this frame, against
+      // where the new one does, is the correction placeRemotes eases out.
+      if (pr.from && !rm.snap) {
+        runOn(pr, clamp(theirNow - pr.from.t, 0, PREDICT_MAX_MS));
+        var ox = pr.out.x;
+        var oy = pr.out.y;
+        startRunOn(pr, last);
+        runOn(pr, clamp(theirNow - last.t, 0, PREDICT_MAX_MS));
+        rm.jx += ox - pr.out.x;
+        rm.jy += oy - pr.out.y;
+        return pr.out;
+      }
+      startRunOn(pr, last);
     }
-    return carry(b[b.length - 1], Math.min(rt - b[b.length - 1].t, 150) / 1000);
+    runOn(pr, clamp(theirNow - last.t, 0, PREDICT_MAX_MS));
+    return pr.out;
+  }
+
+  // Their block run on from a snapshot, as their game would run it with the
+  // same keys held. It can't set anything off or die here: whatever it
+  // bumps into just stops it.
+  var PREDICT_STEP = 1 / 60;
+  var PREDICT_STEP_MS = 1000 / 60;
+  // Your block, while a run-on is going: in their game you are solid to
+  // them sideways (see PUSHING), so walking into you stops them at your edge.
+  // Run on without that, someone pushing you was drawn half inside you and
+  // pulled back out at every packet.
+  var predictBlocker = null;
+  function predictLevel() {
+    var lv = run.level;
+    if (run.predictFor === lv) return run.predictLevel;
+    var pl = Object.create(lv);
+    pl.playerTouched = function () {};
+    pl.obstacleAt = function (pos, size, actor) {
+      var o = lv.obstacleAt(pos, size);
+      if (o) return typeof o === "string" ? o : "wall";
+      var me = predictBlocker;
+      // Only a sideways move (moveX keeps y as it was), as in touchOthers
+      if (me && actor && pos.y === actor.pos.y) {
+        var ox = Math.min(pos.x + size.x, me.pos.x + me.size.x) - Math.max(pos.x, me.pos.x);
+        var oy = Math.min(pos.y + size.y, me.pos.y + me.size.y) - Math.max(pos.y, me.pos.y);
+        if (ox > 0 && oy >= 0.35) return "wall";
+      }
+      return o;
+    };
+    run.predictFor = lv;
+    run.predictLevel = pl;
+    return pl;
+  }
+  function newPredictor() {
+    return {
+      from: null,
+      p: typeof Player === "function" && Player.prototype.moveY ? Object.create(Player.prototype) : null,
+      keys: { left: false, right: false, up: false, down: false },
+      // How far past the snapshot it has been run, in whole steps (ms)
+      ms: 0,
+      // Where it was a step before, to carry it on between steps
+      px: 0,
+      py: 0,
+      broken: false,
+      out: { t: 0, x: 0, y: 0, h: 1, vx: 0, vy: 0, g: 1, r: 0, st: 0, keys: 0 },
+    };
+  }
+  function startRunOn(pr, s) {
+    pr.from = s;
+    pr.ms = 0;
+    pr.broken = !pr.p;
+    var o = pr.out;
+    o.t = s.t;
+    o.x = pr.px = s.x;
+    o.y = pr.py = s.y;
+    o.h = s.h;
+    o.vx = s.vx;
+    o.vy = s.vy;
+    o.g = s.g;
+    o.r = s.r;
+    o.st = s.st;
+    o.keys = s.keys;
+    if (pr.broken || s.st) return;
+    var p = pr.p;
+    p.pos = new Vector(s.x, s.y);
+    p.size = new Vector(0.5, Math.max(0.05, s.h));
+    p.speed = new Vector(s.vx, s.vy);
+    p.gravityDirection = s.g;
+    p.baseGravityDirection = s.g;
+    p.windSpeedX = 0;
+    p.dashDir = 0;
+    p.onIce = false;
+    p.inWater = false;
+    p.waterHopping = false;
+    pr.keys.left = !!(s.keys & 1);
+    pr.keys.right = !!(s.keys & 2);
+    pr.keys.up = !!(s.keys & 4);
+    pr.keys.down = !!(s.keys & 8);
+    // Already overlapping you (a shared spawn) they walk out freely, as in
+    // touchOthers
+    var me = run.level.player;
+    pr.clear =
+      !me ||
+      Math.min(s.x + 0.5, me.pos.x + me.size.x) - Math.max(s.x, me.pos.x) <= 0 ||
+      Math.min(s.y + s.h, me.pos.y + me.size.y) - Math.max(s.y, me.pos.y) <= 0;
+  }
+  // On to `ahead` ms past the snapshot: whole steps of the game's physics,
+  // run to the step just past it, and drawn between that step and the one
+  // before. Carrying the last step on past the newest one instead drew them
+  // poking into a wall or the floor for a frame and snapping back.
+  function runOn(pr, ahead) {
+    var s = pr.from;
+    var o = pr.out;
+    if (s.st) return;
+    if (pr.broken) {
+      var c = carry(s, ahead / 1000);
+      o.x = c.x;
+      o.y = c.y;
+      return;
+    }
+    // Further back than it has run already (their clock estimate moved):
+    // start over
+    if (ahead < pr.ms - PREDICT_STEP_MS - 0.5) startRunOn(pr, s);
+    var p = pr.p;
+    var lv = predictLevel();
+    var me = run.level.player;
+    predictBlocker =
+      pr.clear && me && !run.level.status && !run.finished && run.kind !== "flip" ? me : null;
+    try {
+      while (pr.ms < ahead - 1e-6) {
+        pr.px = p.pos.x;
+        pr.py = p.pos.y;
+        p.moveX(PREDICT_STEP, lv, pr.keys);
+        p.moveY(PREDICT_STEP, lv, pr.keys);
+        pr.ms += PREDICT_STEP_MS;
+      }
+    } catch (e) {
+      predictBlocker = null;
+      pr.broken = true;
+      runOn(pr, ahead);
+      return;
+    }
+    predictBlocker = null;
+    var f = pr.ms > 0 ? 1 - (pr.ms - ahead) / PREDICT_STEP_MS : 1;
+    o.x = pr.px + (p.pos.x - pr.px) * f;
+    o.y = pr.py + (p.pos.y - pr.py) * f;
+    o.vx = p.speed.x;
+    o.vy = p.speed.y;
+    o.g = p.gravityDirection < 0 ? -1 : 1;
   }
 
   // A snapshot moved on by its own speed, stopping at walls (both players
@@ -1852,18 +2146,7 @@
     var y = s.y + s.vy * dt;
     if (solidAt(x, s.y, s.h)) x = s.x;
     if (solidAt(x, y, s.h)) y = s.y;
-    return {
-      t: s.t,
-      x: x,
-      y: y,
-      h: s.h,
-      vx: s.vx,
-      vy: s.vy,
-      g: s.g,
-      r: s.r,
-      st: s.st,
-      keys: s.keys,
-    };
+    return { x: x, y: y };
   }
   function solidAt(x, y, h) {
     var o = run.level.obstacleAt(new Vector(x, y), new Vector(0.5, Math.max(0.05, h)));
@@ -1871,42 +2154,56 @@
     return !(typeof deadlyObstacleType === "function" && deadlyObstacleType(o));
   }
 
-  // The drawn position follows the target's own motion exactly and eases out
-  // of the small jumps a fresh packet brings, so a correction never shows as
-  // a stutter and steady running never lags behind.
+  // The drawn position is the target plus a correction that springs back to
+  // nothing. A fresh packet that moves the target adds to the correction
+  // rather than moving the block, and the spring takes it out without ever
+  // changing the drawn speed in one frame -- easing the position itself
+  // jolted the block's speed at every packet. A correction past SNAP_BLOCKS
+  // (a respawn, a teleport) is drawn at once.
   function placeRemotes(t, step) {
-    Object.keys(room.remotes).forEach(function (id) {
+    for (var id in room.remotes) {
       var rm = room.remotes[id];
       var member = memberOf(id);
       rm.live = !!(member && rm.lv === run.token && rm.buf.length && t - rm.heard < 8000);
       if (!rm.live) {
         rm.box = null;
         rm.disp = null;
-        return;
+        continue;
       }
+      if (rm.jx == null) rm.jx = rm.jy = rm.ex = rm.ey = rm.evx = rm.evy = 0;
       var at = remoteTarget(rm, t);
       var d = rm.disp;
-      if (!d || rm.snap || !rm.direct) {
-        rm.disp = { x: at.x, y: at.y };
+      rm.ex += rm.jx;
+      rm.ey += rm.jy;
+      rm.jx = rm.jy = 0;
+      if (!d || rm.snap || Math.abs(rm.ex) + Math.abs(rm.ey) > SNAP_BLOCKS) {
+        d = rm.disp = rm.disp || { x: 0, y: 0 };
         rm.snap = false;
-      } else {
-        var mx = d.x;
-        var my = d.y;
-        if (!at.st) {
-          if (!solidAt(d.x + at.vx * step, d.y, at.h)) mx = d.x + at.vx * step;
-          if (!solidAt(mx, d.y + at.vy * step, at.h)) my = d.y + at.vy * step;
-        }
-        var k = 1 - Math.exp(-step / SMOOTH_S);
-        d.x = mx + (at.x - mx) * k;
-        d.y = my + (at.y - my) * k;
-        if (Math.abs(at.x - d.x) + Math.abs(at.y - d.y) > 2.5) {
-          d.x = at.x;
-          d.y = at.y;
-        }
+        rm.ex = rm.ey = rm.evx = rm.evy = 0;
+      } else if (rm.ex || rm.ey || rm.evx || rm.evy) {
+        // A critically damped spring, solved exactly for this frame's step
+        var w = 1 / (rm.direct ? SMOOTH_S : SMOOTH_RELAY_S);
+        var decay = Math.exp(-w * step);
+        var kx = (rm.evx + w * rm.ex) * step;
+        var ky = (rm.evy + w * rm.ey) * step;
+        rm.ex = (rm.ex + kx) * decay;
+        rm.ey = (rm.ey + ky) * decay;
+        rm.evx = (rm.evx - w * kx) * decay;
+        rm.evy = (rm.evy - w * ky) * decay;
+        if (Math.abs(rm.ex) + Math.abs(rm.ey) + (Math.abs(rm.evx) + Math.abs(rm.evy)) * 0.01 < 1e-4)
+          rm.ex = rm.ey = rm.evx = rm.evy = 0;
       }
+      d.x = at.x + rm.ex;
+      d.y = at.y + rm.ey;
       rm.at = at;
-      rm.box = { x: rm.disp.x, y: rm.disp.y, w: 0.5, h: at.h, vx: at.st ? 0 : at.vx, st: at.st };
-    });
+      var box = rm.boxObj || (rm.boxObj = { x: 0, y: 0, w: 0.5, h: 1, vx: 0, st: 0 });
+      box.x = d.x;
+      box.y = d.y;
+      box.h = at.h;
+      box.vx = at.st ? 0 : at.vx;
+      box.st = at.st;
+      rm.box = box;
+    }
   }
 
   // ---- SHARED BLOCKS ------------------------------------------------------------
@@ -2571,7 +2868,7 @@
     if (!rm.emoteEl) {
       var under = typeof emoteDrawnUnder === "function" && emoteDrawnUnder(e.id);
       var layer = under ? run.layers.racers : run.layers.tags;
-      rm.emoteEl = layer.insertBefore(buildEmote(e.id, e.n), under ? layer.firstChild : null);
+      rm.emoteEl = layer.insertBefore(buildEmote(e.id, e.n, e.at), under ? layer.firstChild : null);
       rm.emoteKey = key;
       rm.emoteN = e.n;
     }
@@ -2612,12 +2909,29 @@
   var WIN_FILTER =
     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
 
+  // A skin drawn from frames (the game's SKIN_FRAMES: the Chairlords): the
+  // frame it shows now -- blinking, its win or death face, or its emote's
+  // frames while it does that emote (Chairlord Tongue Shake) -- or null
+  function racerFrame(skin, st, e) {
+    if (typeof SKIN_FRAMES !== "object" || !SKIN_FRAMES[skin]) return null;
+    return skinFrameFile(
+      skin,
+      st === 1 ? "lost" : st === 2 ? "won" : null,
+      e ? e.id : null,
+      e ? now() - e.at : 0,
+    );
+  }
+
   // Drawn the way syncActors draws the player: green when through, red when
-  // down, the emo faces, the ghost's float.
-  function paintRacer(node, skin, st) {
-    var key = skin + "|" + st;
+  // down, the emo faces, the ghost's float, a framed skin's frames and crown.
+  // `e` is the emote they are doing, if any.
+  function paintRacer(node, skin, st, e) {
+    var frame = racerFrame(skin, st, e);
+    var key = skin + "|" + st + "|" + (frame || "");
     if (node.lvKey === key) return;
     node.lvKey = key;
+    if (typeof syncSkinCrown === "function")
+      syncSkinCrown(node, frame && SKIN_FRAMES[skin].crown);
     var s = node.style;
     s.backgroundImage = "";
     s.filter = "";
@@ -2627,6 +2941,10 @@
       s.backgroundColor = trail.color;
     } else if (colorSkin(skin)) {
       s.backgroundColor = st === 1 ? "#a04040" : st === 2 ? "#2ecc71" : colorSkin(skin);
+    } else if (frame) {
+      // Its own win and death faces: never tinted
+      s.backgroundImage = "url('" + frame + "')";
+      s.backgroundColor = "transparent";
     } else if (skin !== "default") {
       var faces = EMO_FACES[skin];
       var pic = faces ? faces[st === 2 ? 1 : st === 1 ? 2 : 0] : skinImageFile(skin);
@@ -2640,8 +2958,11 @@
   }
 
   function hideRemote(rm) {
-    if (rm.el) rm.el.style.display = "none";
-    if (rm.tag) rm.tag.style.display = "none";
+    if (rm.hidden !== true) {
+      rm.hidden = true;
+      if (rm.el) rm.el.style.display = "none";
+      if (rm.tag) rm.tag.style.display = "none";
+    }
     dropRemoteEmote(rm);
     if (rm.trails && rm.trails.length) clearTrails(rm);
   }
@@ -2661,14 +2982,17 @@
         rm.el = L.racers.appendChild(el("div", "lv-racer"));
         rm.tag = L.tags.appendChild(el("div", "lv-tag"));
       }
-      rm.el.style.display = "";
-      rm.tag.style.display = "";
+      if (rm.hidden !== false) {
+        rm.hidden = false;
+        rm.el.style.display = "";
+        rm.tag.style.display = "";
+      }
       var name = cleanName(member.n);
-      if (rm.tag.textContent !== name) rm.tag.textContent = name;
+      if (rm.tag.lvName !== name) rm.tag.textContent = rm.tag.lvName = name;
 
       var at = rm.at;
       var skin = shownSkin(member, rm.skin);
-      paintRacer(rm.el, skin, at.st);
+      paintRacer(rm.el, skin, at.st, remoteEmote(rm));
       var w = isImageSkin(skin) ? 1 : 0.5;
       var x = rm.disp.x - (w - 0.5) / 2;
       var y = rm.disp.y;
@@ -2677,6 +3001,8 @@
       var pose = remotePose(rm, t);
       if (pose && pose.lift) y += at.g < 0 ? pose.lift : -pose.lift;
       if (pose && pose.dx) x += pose.dx;
+      // Tongue Shake grows them from the middle: moved to keep their feet put
+      if (pose && pose.grow) y += ((pose.grow - 1) * at.h / 2) * (at.g < 0 ? 1 : -1);
       // You see your shove land straight away; the shove itself shows up
       // when their next packets arrive
       if (rm.nudge && t - rm.nudge.at < 180)
@@ -2698,12 +3024,15 @@
         n.style.height = ph + "px";
       }
       var turned = !!(pose && pose.rot);
-      var turn = turned
-        ? "rotate(" + (at.g < 0 ? -pose.rot : pose.rot) + "deg)"
-        : "rotate(" + at.r + "deg)" + (at.g < 0 ? " scaleY(-1)" : "");
-      if (n.lvTurn !== turn) {
-        n.lvTurn = turn;
-        n.style.transform = turn;
+      // Give Me Tuff's flip turns them about their middle
+      var spin = pose && pose.spin ? pose.spin : 0;
+      // Its turn as a number first, so the string is only built on a change
+      var deg = turned ? (at.g < 0 ? -pose.rot : pose.rot) : spin ? (at.g < 0 ? -spin : spin) : at.r;
+      var flipY = !turned && at.g < 0;
+      if (n.lvDeg !== deg || n.lvFlipY !== flipY) {
+        n.lvDeg = deg;
+        n.lvFlipY = flipY;
+        n.style.transform = "rotate(" + deg + "deg)" + (flipY ? " scaleY(-1)" : "");
       }
       var origin = turned
         ? (pose.rot < 0 ? "left" : "right") + (at.g < 0 ? " top" : " bottom")
@@ -2711,6 +3040,11 @@
       if (n.lvOrigin !== origin) {
         n.lvOrigin = origin;
         n.style.transformOrigin = origin;
+      }
+      var grow = pose && pose.grow ? String(pose.grow) : "";
+      if (n.lvGrow !== grow) {
+        n.lvGrow = grow;
+        n.style.scale = grow;
       }
 
       // The reflection skin's mirrors show this level, a few times a second
@@ -3361,6 +3695,11 @@
       root.appendChild(n);
     });
     document.body.appendChild(root);
+    // Where the bar ends, for the board under it on narrow screens
+    if (typeof ResizeObserver === "function")
+      new ResizeObserver(function () {
+        root.style.setProperty("--lv-bar-bottom", bar.offsetTop + bar.offsetHeight + "px");
+      }).observe(bar);
     hud = {
       root: root,
       board: board,
@@ -3395,6 +3734,7 @@
   function hideHud() {
     if (!hud) return;
     hud.root.style.display = "none";
+    hideReveal();
     stopPicker();
     clearBanner();
     hud.bar.innerHTML = "";
@@ -3430,7 +3770,7 @@
   }
   // A row of seats, the taken ones lit
   function seats(taken, total) {
-    var row = el("span", "lv-slots");
+    var row = el("span", "lv-slots" + (total > 10 ? " wide" : ""));
     for (var i = 0; i < total; i++) row.appendChild(el("span", "lv-slot" + (i < taken ? " on" : "")));
     return row;
   }
@@ -3485,8 +3825,9 @@
     if (name) box.appendChild(el("div", "lv-label-name", name));
     if (row) {
       var d = Math.round(num(row.difficulty, 1));
-      var by = el("div", "lv-label-by", "BY " + (row.creator || "?") + " · ");
-      var chip = el("span", "lv-label-diff", diffName(d));
+      var by = el("div", "lv-label-by", "BY " + (row.creator || "?"));
+      var chip = el("span", "lv-label-diff", d + " " + ((window.DIFFICULTY_LABELS || {})[d] || ""));
+      chip.style.marginLeft = "10px";
       chip.style.color = (window.DIFFICULTY_COLORS || {})[d] || "#fff";
       by.appendChild(chip);
       box.appendChild(by);
@@ -3503,8 +3844,11 @@
   }
 
   // blocks: draw `main` with the block glyphs rather than as text
-  function bigBanner(main, sub, drop, ms, blocks) {
+  // `cls` dresses it differently ("ev": on a block, for the awards show;
+  // "intro": the show's one-line name)
+  function bigBanner(main, sub, drop, ms, blocks, cls) {
     buildHud();
+    hud.big.className = "lv-big" + (cls ? " " + cls : "");
     hud.bigMain.textContent = "";
     if (blocks) hud.bigMain.appendChild(blockWord(main));
     else hud.bigMain.textContent = main;
@@ -3559,7 +3903,8 @@
 
     var note = "";
     var st = room.state;
-    if (st.phase === "race" && room.firstFinAt && t >= st.goAt) {
+    if (st.ev) note = evNote;
+    else if (st.phase === "race" && room.firstFinAt && t >= st.goAt) {
       var left = Math.ceil((AFTER_FIRST_MS - (t - room.firstFinAt)) / 1000);
       if (left > 0) note = "RACE ENDS IN " + left;
     }
@@ -3569,17 +3914,54 @@
   // The room as blocks: who is in it, wearing what, how they are doing.
   // During a race each racer shows their coins as a bar of blocks, finishers
   // their place and time; between races the link to each player.
+  // Built aside and only put up when it reads differently: it is redrawn
+  // twice a second in a race, and swapping it every time restyled and
+  // relaid the panel even when nothing on it had changed.
   function renderBoard() {
     if (!room || !hud) return;
+    var next = el("div");
+    fillBoard(next);
+    var html = next.innerHTML;
+    if (html === hud.boardHtml && hud.board.firstChild) return;
+    hud.boardHtml = html;
+    hud.board.replaceChildren.apply(hud.board, Array.prototype.slice.call(next.childNodes));
+  }
+  // The board can be put away (HIDE) so it doesn't cover the level; kept
+  // on this device
+  var boardHidden = false;
+  try {
+    boardHidden = localStorage.getItem("boi-live-board-hidden") === "1";
+  } catch (e) {}
+  function toggleBoard(ev) {
+    if (ev) ev.stopPropagation();
+    boardHidden = !boardHidden;
+    try {
+      localStorage.setItem("boi-live-board-hidden", boardHidden ? "1" : "0");
+    } catch (e) {}
+    if (hud) hud.boardHtml = null;
+    renderBoard();
+    watchPanels();
+  }
+  function fillBoard(b) {
     var r = room;
-    var b = hud.board;
-    b.innerHTML = "";
+    hud.board.classList.toggle("lv-folded", boardHidden);
+    var top = el("div", "lv-board-top");
     var code = el("div", "lv-code", "ROOM " + r.code);
-    code.title = "Copy invite link";
-    code.onclick = copyInvite;
-    b.appendChild(code);
+    top.appendChild(code);
+    var hide = el("button", "lv-hide", boardHidden ? "SHOW" : "HIDE");
+    hide.type = "button";
+    hide.title = boardHidden ? "Show the players" : "Hide the players";
+    hide.onpointerdown = function (e) {
+      e.stopPropagation();
+    };
+    hide.onclick = toggleBoard;
+    top.appendChild(hide);
+    b.appendChild(top);
+    hud.board.classList.toggle("lv-ev", !!r.state.ev && !boardHidden);
+    if (boardHidden) return;
+    if (r.state.ev) return fillEventBoard(b);
     var sub = el("div", "lv-sub");
-    sub.appendChild(seats(r.members.length, ROOM_SIZE));
+    sub.appendChild(seats(r.members.length, roomSize(r)));
     sub.appendChild(document.createTextNode(r.state.priv ? "PRIVATE" : "PUBLIC"));
     b.appendChild(sub);
 
@@ -3589,7 +3971,7 @@
     // After a race: how it went, in finishing order, then anyone who came
     // in since
     if (st.phase === "showoff" && Array.isArray(st.results)) {
-      b.appendChild(el("div", "lv-board-head", "RESULTS · ROUND " + st.round));
+      b.appendChild(el("div", "lv-board-head", "ROUND " + st.round + " RESULTS"));
       var place = 0;
       var coin = raceCoinOn(st);
       var shown = {};
@@ -3691,28 +4073,14 @@
     }
   }
 
-  function copyInvite() {
-    if (!room) return;
-    var link = location.origin + location.pathname + "?live=" + room.code;
-    var done = function () {
-      notify("INVITE LINK COPIED · CODE " + room.code);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText)
-      navigator.clipboard.writeText(link).then(done, function () {
-        notify("ROOM CODE: " + room.code);
-      });
-    else notify("ROOM CODE: " + room.code);
-  }
-
   // Your friends, to invite into the room: the ones on now can be sent an
-  // invite (it shows in their Friends page), and the room's link is there
-  // for anyone else. Without friends INVITE just copies the link.
+  // invite (it shows in their Friends page). There is no link to share.
   var invitePanel = null;
   function openInvitePanel() {
     if (!room) return;
     var fr = currentUser && window.boiFriends ? window.boiFriends.list() : [];
     if (!fr.length) {
-      copyInvite();
+      notify("ADD FRIENDS TO INVITE THEM");
       return;
     }
     closeInvitePanel();
@@ -3743,14 +4111,8 @@
     });
     panel.appendChild(list);
     var foot = el("div", "lv-sk-foot");
-    var link = el("button", "boi-btn", "COPY LINK");
-    link.onclick = function () {
-      copyInvite();
-      closeInvitePanel();
-    };
     var close = el("button", "boi-btn", "CLOSE");
     close.onclick = closeInvitePanel;
-    foot.appendChild(link);
     foot.appendChild(close);
     panel.appendChild(foot);
     wrap.appendChild(panel);
@@ -3785,11 +4147,22 @@
     var r = room;
     var st = r.state;
     var host = isHost();
-    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, "")].join("|");
+    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, ""), st.ev ? st.ev.m : ""].join("|");
     if (key === r.barKey) return;
     r.barKey = key;
     var bar = hud.bar;
     bar.innerHTML = "";
+    if (st.ev) {
+      // The Level Awards: nothing to start or pick. A preview or a replay
+      // can skip ahead; on the day everyone plays it as it happens.
+      if (host && st.ev.m !== "live") bar.appendChild(barButton("SKIP", "blue", evSkip));
+      hud.note = bar.appendChild(el("div", "lv-note lv-block", evNote));
+      hud.flash = bar.appendChild(el("div", "lv-note lv-block lv-flash", ""));
+      if (st.ev.m === "live") bar.appendChild(barButton("INVITE", "", openInvitePanel));
+      bar.appendChild(barButton("LEAVE", "", askLeave));
+      watchPanels();
+      return;
+    }
     if (host && st.phase !== "race") {
       // How hard the random level can be -- the level itself is never picked
       var items = [];
@@ -3814,7 +4187,7 @@
         el(
           "div",
           "lv-note lv-block",
-          "WAITING FOR " + nameOf(r.hostId, "THE HOST") + " · MAX " + diffName(st.maxDiff),
+          "WAITING FOR " + nameOf(r.hostId, "THE HOST") + " (MAX " + diffName(st.maxDiff) + ")",
         ),
       );
     }
@@ -3869,15 +4242,18 @@
               notify("DAILY LIMIT OF LIVE BLUE COINS REACHED");
               return;
             }
-            return _supabase
-              .from("bluecoin_claims")
-              .insert([{ username: user, level_key: key, is_custom: false }])
-              .then(function (ins) {
-                if (ins.error) return;
-                return changeBlueCoinBalance(user, 1).then(function (total) {
+            // The server pays it and keeps the daily limit (boi_claim)
+            return serverClaim(key)
+              .then(function (claim) {
+                if (!claim.ok) {
+                  if (claim.reason === "daily-limit")
+                    notify("DAILY LIMIT OF LIVE BLUE COINS REACHED");
+                  return;
+                }
+                return Promise.resolve(claim.balance).then(function (total) {
                   if (currentUser !== user) return;
                   blueCoinWallet.balance =
-                    total !== null ? total : blueCoinWallet.balance + 1;
+                    typeof total === "number" ? total : blueCoinWallet.balance + 1;
                   updateBlueCoinDisplays();
                   showBlueCoinReward(
                     "LIVE WIN",
@@ -3925,8 +4301,9 @@
   function setRoomLink(code) {
     try {
       var params = new URLSearchParams(location.search);
-      if (code) params.set("live", code);
-      else params.delete("live");
+      // The room is no longer put in the address (no sharing links); an
+      // old ?live= is only taken away
+      params.delete("live");
       var q = params.toString();
       history.replaceState(
         history.state,
@@ -3934,6 +4311,568 @@
         location.pathname + (q ? "?" + q : "") + location.hash,
       );
     } catch (e) {}
+  }
+
+  // ---- THE LEVEL AWARDS LIVE EVENT ---------------------------------------------
+  // The Legends Level Awards for October, given out live. The game says when
+  // (window.LEVEL_AWARDS_EVENT: 4pm Sunday 25 October, Los Angeles) and which
+  // level_awards rows are its categories (title says "Legends" and
+  // "October"). Each category is announced, then its 3rd, 2nd and 1st place
+  // are revealed one at a time, and after each reveal everyone plays that
+  // level together for PLAY_MS. Best Overall Level comes last.
+  //
+  // It runs on the clock, not on the host: every event room works out where
+  // the show is from the start time alone, so all rooms -- and anyone who
+  // comes in late -- are at the same moment. On the day the start is the
+  // fixed time; an admin's preview, or a replay once it is over, starts when
+  // its (private) room is made, and its host can SKIP to the next part.
+  var EV_TITLE_MS = 7000;
+  var EV_CAT_MS = 5000;
+  var EV_REVEAL_MS = 6000;
+  var EV_PLAY_MS = 30000;
+  var EV_END_MS = 10000;
+  // Coming in after the start, the show's name is up this long first
+  var EV_LATE_INTRO_MS = 3500;
+  // JOIN opens this long before the start, to wait in the hub with the others
+  var EV_DOORS_MS = 10 * 60000;
+  var PLACE_NAMES = { 1: "1ST PLACE", 2: "2ND PLACE", 3: "3RD PLACE" };
+
+  function evInfo() {
+    return window.LEVEL_AWARDS_EVENT || null;
+  }
+
+  // Everyone who plays in the show on the day (not a preview or a replay)
+  // gets the Blue Coin Mog emote once it is over. Playing is noted on this
+  // device ("1"), and once the emote is given ("done") it isn't again.
+  var EV_REWARD = "emote:bluecoinmog";
+  function evRewardKey() {
+    var info = evInfo();
+    return info && currentUser ? "boi-awards-played:" + info.startsAt + ":" + currentUser : null;
+  }
+  function evRewardState() {
+    var key = evRewardKey();
+    try {
+      return key ? localStorage.getItem(key) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function setEvRewardState(v) {
+    var key = evRewardKey();
+    try {
+      if (key) localStorage.setItem(key, v);
+    } catch (e) {}
+  }
+  function noteEvPlayed() {
+    if (!evRewardState()) setEvRewardState("1");
+  }
+  var evGiving = false;
+  function giveEvReward() {
+    if (evGiving || evRewardState() !== "1" || typeof grantCosmetic !== "function") return;
+    evGiving = true;
+    grantCosmetic(EV_REWARD, "event:level-awards")
+      .then(function (got) {
+        evGiving = false;
+        if (got === "error") return;
+        setEvRewardState("done");
+        // The game's own "new emote" reveal; owning it already, just thanks
+        if (got === "ok" && typeof showCosmeticUnlock === "function")
+          showCosmeticUnlock(EV_REWARD, "For playing in the " + evInfo().name + ".", {
+            title: "LEVEL AWARDS",
+          });
+        else if (typeof showTopNotification === "function")
+          showTopNotification(
+            got === "ok"
+              ? "You got the Blue Coin Mog emote for playing in the Level Awards"
+              : "Thanks for playing in the Level Awards! You already have the Blue Coin Mog emote",
+          );
+      })
+      .catch(function () {
+        evGiving = false;
+      });
+  }
+  // Wherever you are in the game: once the show you played in is over,
+  // the emote comes (not only at the end of the show or on the LIVE menu,
+  // so leaving early or going elsewhere still gets it)
+  setInterval(function () {
+    if (evRewardState() !== "1") return;
+    if (!evData) return void loadEvData();
+    if (evPhase() === "over" && !(room && room.state.ev)) giveEvReward();
+  }, 5000);
+  // "LEGENDS LEVEL AWARDS OCTOBER"
+  function evTitle() {
+    var info = evInfo();
+    return (String(info.name) + " " + String(info.month)).toUpperCase();
+  }
+
+  // The award rows, in the order they were added, Best Overall Level last;
+  // and the show they make (evData.segs)
+  var evData = null;
+  var evLoading = null;
+  function loadEvData() {
+    if (evData) return Promise.resolve(evData);
+    if (evLoading) return evLoading;
+    var info = evInfo();
+    if (!info || typeof _supabase === "undefined" || !_supabase) return Promise.resolve(null);
+    evLoading = _supabase
+      .from("level_awards")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .then(function (res) {
+        if (res.error) {
+          evLoading = null;
+          return null;
+        }
+        var rows = (res.data || []).filter(function (row) {
+          return info.match(row.title);
+        });
+        return browserLevels(rows).then(function (byId) {
+          evLoading = null;
+          evData = buildShow(rows, byId);
+          refreshMenu();
+          return evData;
+        });
+      })
+      .catch(function () {
+        evLoading = null;
+        return null;
+      });
+    return evLoading;
+  }
+
+  // "2026 Best Overall Level Legends Level Awards October" -> "BEST OVERALL LEVEL"
+  function categoryName(title) {
+    var name = String(title || "")
+      .replace(/\b(19|20)\d\d\b/g, " ")
+      .replace(/\blegends?\b/gi, " ")
+      .replace(/\blevel awards?\b/gi, " ")
+      .replace(/\bawards?\b/gi, " ")
+      .replace(/\boctober\b/gi, " ")
+      .replace(/[-:|·]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return (name || "AWARD").toUpperCase();
+  }
+
+  function awardLevel(raw) {
+    var data = raw;
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (!data || typeof data !== "object" || !Array.isArray(data.plan)) return null;
+    return Object.assign({}, data, { levelType: "custom", customLevelIndex: -1 });
+  }
+
+  // The level browser's levels the rows name by id (level1_id..level3_id),
+  // as they are now: id -> row. Nothing for a row without ids, or offline.
+  function browserLevels(rows) {
+    var ids = [];
+    rows.forEach(function (row) {
+      [1, 2, 3].forEach(function (place) {
+        var id = row["level" + place + "_id"];
+        if (id != null && ids.indexOf(Number(id)) === -1) ids.push(Number(id));
+      });
+    });
+    if (!ids.length || typeof levelsTable !== "function") return Promise.resolve({});
+    var ready = typeof levelsViewReady !== "undefined" ? levelsViewReady : Promise.resolve();
+    return Promise.resolve(ready)
+      .then(function () {
+        return _supabase
+          .from(levelsTable())
+          .select("id, name, creator, difficulty, data")
+          .in("id", ids);
+      })
+      .then(function (res) {
+        var byId = {};
+        (res.data || []).forEach(function (r) {
+          byId[r.id] = r;
+        });
+        return byId;
+      })
+      .catch(function () {
+        return {};
+      });
+  }
+
+  // Each place is the level browser's level when the row names one by id
+  // (its current version, name and creator); otherwise the level the row
+  // itself holds
+  function buildShow(rows, byId) {
+    byId = byId || {};
+    var cats = rows.map(function (row) {
+      var places = [3, 2, 1]
+        .map(function (place) {
+          var pub = byId[row["level" + place + "_id"]];
+          var data = (pub && awardLevel(pub.data)) || awardLevel(row["level" + place]);
+          if (!data) return null;
+          var name = (pub && pub.name) || data.name || "LEVEL";
+          return {
+            place: place,
+            data: Object.assign(data, { name: name }),
+            name: String(name).slice(0, 80),
+            creator: (pub && pub.creator) || data.creator || data.visualAuthor || "?",
+            difficulty: num(pub && pub.difficulty != null ? pub.difficulty : data.difficulty, 0),
+          };
+        })
+        .filter(Boolean);
+      return { name: categoryName(row.title), places: places };
+    }).filter(function (c) {
+      return c.places.length;
+    });
+    // Best Overall Level is always the last
+    var overall = cats.filter(function (c) {
+      return /overall/i.test(c.name);
+    });
+    cats = cats.filter(function (c) {
+      return !/overall/i.test(c.name);
+    }).concat(overall);
+    var segs = [{ k: "title", ms: EV_TITLE_MS }];
+    cats.forEach(function (c, ci) {
+      segs.push({ k: "cat", ci: ci, ms: EV_CAT_MS });
+      c.places.forEach(function (pl) {
+        pl.revealAt = segs.length;
+        segs.push({ k: "reveal", ci: ci, pl: pl, ms: EV_REVEAL_MS });
+        segs.push({ k: "play", ci: ci, pl: pl, ms: EV_PLAY_MS });
+      });
+    });
+    segs.push({ k: "end", ms: EV_END_MS });
+    var at = 0;
+    segs.forEach(function (s) {
+      s.at = at;
+      at += s.ms;
+    });
+    return { cats: cats, segs: segs, total: at };
+  }
+
+  // Where the show is at `ms` from its start: the part's index, or -1
+  // before it and segs.length after it
+  function segAt(ms) {
+    if (!evData || ms < 0) return -1;
+    for (var i = 0; i < evData.segs.length; i++) {
+      var s = evData.segs[i];
+      if (ms < s.at + s.ms) return i;
+    }
+    return evData.segs.length;
+  }
+
+  // On the day: before the doors open, waiting, under way, or over
+  function evPhase() {
+    var info = evInfo();
+    if (!info) return "none";
+    var t = Date.now();
+    if (t < info.startsAt - EV_DOORS_MS) return "soon";
+    if (t < info.startsAt) return "doors";
+    var total = evData ? evData.total : 60 * 60000;
+    return t < info.startsAt + total ? "on" : "over";
+  }
+
+  function evClock(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    var d = Math.floor(s / 86400);
+    var h = Math.floor((s % 86400) / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var two = function (n) {
+      return (n < 10 ? "0" : "") + n;
+    };
+    var hms = (d || h ? h + ":" + two(m) : m) + ":" + two(s % 60);
+    return (d ? d + "D " : "") + hms;
+  }
+
+  function amAdmin() {
+    return typeof currentUserIsAdmin !== "undefined" && !!currentUserIsAdmin;
+  }
+
+  // The event's block on the LIVE menu: when it is, and JOIN once it is on
+  // (PREVIEW for admins before then, REPLAY once it is over)
+  function evMenuCard() {
+    var info = evInfo();
+    if (!info) return null;
+    loadEvData();
+    var card = el("div", "lv-ev-card lv-block");
+    card.appendChild(el("div", "lv-ev-title", "LEVEL AWARDS LIVE"));
+    card.appendChild(
+      el("div", "lv-ev-sub", evTitle()),
+    );
+    var when = el("div", "lv-ev-when", "");
+    card.appendChild(when);
+    var btns = el("div", "lv-ev-btns");
+    card.appendChild(btns);
+    var shown = "";
+    var day = new Date(info.startsAt).toLocaleString([], {
+      weekday: "long",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    // Stops once the card has been on the page and is gone again
+    var placed = false;
+    var tick = function () {
+      if (document.body.contains(card)) placed = true;
+      else if (placed) return clearInterval(timer);
+      var ph = evPhase();
+      var left = info.startsAt - Date.now();
+      // Played in it and left before the end: the emote now it's over
+      if (ph === "over") giveEvReward();
+      when.textContent =
+        ph === "soon" || ph === "doors"
+          ? String(day).toUpperCase() + "\nSTARTS IN " + evClock(left)
+          : ph === "on"
+            ? "HAPPENING NOW"
+            : "IT'S OVER\nPLAY IT AGAIN";
+      var key = ph + "|" + amAdmin() + "|" + lobby.status;
+      if (key === shown) return;
+      shown = key;
+      btns.innerHTML = "";
+      var ok = lobby.status === "on";
+      if (ph === "doors" || ph === "on") {
+        var join = el("button", "btn", "JOIN");
+        join.disabled = !ok;
+        join.onclick = function () {
+          startEvent("live");
+        };
+        btns.appendChild(join);
+      }
+      if (ph === "over") {
+        var again = el("button", "btn", "REPLAY");
+        again.disabled = !ok;
+        again.onclick = function () {
+          startEvent("replay");
+        };
+        btns.appendChild(again);
+      }
+      if (amAdmin() && ph !== "over") {
+        var pre = el("button", "btn", "PREVIEW");
+        pre.disabled = !ok;
+        pre.title = "Admins only: play it now, on your own";
+        pre.onclick = function () {
+          startEvent("preview");
+        };
+        btns.appendChild(pre);
+      }
+      btns.style.display = btns.childNodes.length ? "" : "none";
+    };
+    var timer = setInterval(tick, 1000);
+    tick();
+    return card;
+  }
+
+  // JOIN goes into an open event room (or makes one); PREVIEW and REPLAY get
+  // a private room of their own that starts in a moment
+  function startEvent(mode) {
+    if (room) return;
+    if (lobby.status !== "on") return notify("NOT CONNECTED YET");
+    loadEvData().then(function (data) {
+      if (room) return;
+      if (!data || !data.cats.length) return notify("THE AWARDS AREN'T IN YET");
+      if (mode === "preview" && !amAdmin()) return;
+      if (mode === "live") {
+        var open = lobbyRooms().find(function (r) {
+          return r.ev && !r.priv && r.count < EVENT_ROOM_SIZE && r.v === LIVE_VERSION;
+        });
+        if (open) return joinRoom(open.code);
+        createRoom({ ev: { m: "live", start: evInfo().startsAt }, priv: false });
+      } else {
+        createRoom({ ev: { m: mode, start: Date.now() + 3000 }, priv: true });
+      }
+    });
+  }
+
+  // ---- the show, in a room ----
+  var evShown = null; // the part on screen: an index, "wait", "intro" or "over"
+  var evNote = "";
+  var evIntroUntil = 0;
+
+  function evStart(ev) {
+    return ev.m === "live" && evInfo() ? evInfo().startsAt : ev.start;
+  }
+
+  function evTick() {
+    if (!room) return;
+    var ev = room.state.ev;
+    if (!ev) {
+      if (evShown !== null) {
+        evShown = null;
+        evNote = "";
+        hideReveal();
+        renderBoard();
+      }
+      return;
+    }
+    if (!evData) {
+      setEvNote("LOADING THE AWARDS...");
+      loadEvData();
+      return;
+    }
+    if (!evData.cats.length) return setEvNote("THE AWARDS AREN'T IN YET");
+    var ms = Date.now() - evStart(ev);
+    var i = segAt(ms);
+    if (i === -1) {
+      if (evShown !== "wait") {
+        evShown = "wait";
+        hideReveal();
+        enterHub();
+        renderBoard();
+      }
+      return setEvNote("STARTS IN " + evClock(-ms));
+    }
+    if (i >= evData.segs.length) {
+      // Over: everyone goes back to the LIVE menu. An event room never
+      // turns into an ordinary room someone could then run races in.
+      leaveRoom();
+      giveEvReward();
+      return;
+    }
+    if (ev.m === "live") noteEvPlayed();
+    var seg = evData.segs[i];
+    // In after the start: the show's name first, as if from the beginning,
+    // then whatever part it has got to
+    if (evShown === null && seg.k !== "title" && seg.k !== "end") {
+      evShown = "intro";
+      evIntroUntil = Date.now() + EV_LATE_INTRO_MS;
+      hideReveal();
+      hideLabel();
+      enterHub();
+      showIntro(EV_LATE_INTRO_MS - 300);
+      renderBoard();
+      renderBar();
+    }
+    if (evShown === "intro" && Date.now() < evIntroUntil) return setEvNote("");
+    if (evShown !== i) {
+      evShown = i;
+      enterSeg(seg, i);
+      renderBoard();
+      renderBar();
+    }
+    var left = seg.at + seg.ms - ms;
+    // While a place is revealed, how long until everyone plays it
+    setEvNote(
+      seg.k === "play"
+        ? "NEXT IN " + Math.ceil(left / 1000)
+        : seg.k === "reveal"
+          ? "PLAYING IN " + Math.ceil(left / 1000)
+          : seg.k === "end"
+            ? "THE END"
+            : evData.cats[seg.ci]
+              ? evData.cats[seg.ci].name
+              : "",
+    );
+  }
+
+  function setEvNote(text) {
+    evNote = text;
+    if (hud && hud.note && hud.note.textContent !== text) hud.note.textContent = text;
+  }
+
+  function enterSeg(seg, i) {
+    hideReveal();
+    hideLabel();
+    clearBanner();
+    var cat = seg.ci != null ? evData.cats[seg.ci] : null;
+    if (seg.k === "title") {
+      enterHub();
+      showIntro(seg.ms - 400);
+    } else if (seg.k === "cat") {
+      enterHub();
+      bigBanner(
+        cat.name,
+        "CATEGORY " + (seg.ci + 1) + " OF " + evData.cats.length,
+        true,
+        seg.ms - 300,
+        false,
+        "ev",
+      );
+    } else if (seg.k === "reveal") {
+      // The level itself, still, behind its reveal
+      if (!run) enterHub();
+      try {
+        showFlip(seg.pl.data);
+      } catch (e) {
+        enterHub();
+      }
+      showReveal(cat, seg.pl);
+    } else if (seg.k === "play") {
+      showLevel(seg.pl.data, "event", "ev" + i, null);
+      showLabel(
+        PLACE_NAMES[seg.pl.place] + " IN " + cat.name,
+        seg.pl.name,
+        { creator: seg.pl.creator, difficulty: seg.pl.difficulty },
+      );
+      bigBanner("GO", "", true, 700, true);
+    } else if (seg.k === "end") {
+      // The board has every result now; then back to the menu
+      enterHub();
+    }
+  }
+
+  // The show's name, in one line
+  function showIntro(ms) {
+    bigBanner(evTitle(), "", true, ms, false, "ev intro");
+  }
+
+  // The reveal: the category, the place as a gold, silver or bronze block,
+  // then the level's name and who made it, dropping in one after another
+  function showReveal(cat, pl) {
+    buildHud();
+    if (!hud.reveal) hud.reveal = hud.root.appendChild(el("div", "lv-rev lv-block"));
+    var box = hud.reveal;
+    box.innerHTML = "";
+    box.appendChild(el("div", "lv-rev-cat", cat.name));
+    box.appendChild(el("div", "lv-rev-place p" + pl.place, PLACE_NAMES[pl.place]));
+    box.appendChild(el("div", "lv-rev-name", pl.name));
+    box.appendChild(el("div", "lv-rev-by", "BY " + String(pl.creator).slice(0, 60)));
+    box.classList.remove("on");
+    void box.offsetWidth;
+    box.classList.add("on");
+  }
+  function hideReveal() {
+    if (hud && hud.reveal) hud.reveal.classList.remove("on");
+  }
+
+  // SKIP (a preview or a replay): the part on screen ends now
+  function evSkip() {
+    var ev = room && room.state.ev;
+    if (!ev || ev.m === "live" || !isHost() || !evData) return;
+    var ms = Date.now() - ev.start;
+    var i = segAt(ms);
+    var by = i === -1 ? -ms : i < evData.segs.length ? evData.segs[i].at + evData.segs[i].ms - ms : 0;
+    if (by <= 0) return;
+    hostSetState({ ev: { m: ev.m, start: ev.start - by - 1 } });
+    evTick();
+  }
+
+  // The board in the event: the results so far, category by category
+  function fillEventBoard(b) {
+    b.appendChild(el("div", "lv-board-head", evTitle()));
+    var at = typeof evShown === "number" ? evShown : evShown === "over" ? 1e9 : -1;
+    if (evData && at >= 0) {
+      var nowSeg = evData.segs[at];
+      evData.cats.forEach(function (c, ci) {
+        // Only once its reveal is over, so the board never gives it away
+        var shown = c.places.filter(function (pl) {
+          return pl.revealAt < at;
+        });
+        var current = nowSeg && nowSeg.ci === ci;
+        if (!shown.length && !current) return;
+        b.appendChild(el("div", "lv-ev-cat" + (current ? " now" : ""), c.name));
+        shown.forEach(function (pl) {
+          var row = el("div", "lv-row" + (nowSeg && nowSeg.pl === pl ? " ev-now" : ""));
+          row.appendChild(placeBlock(pl.place));
+          row.appendChild(el("span", "lv-nm", pl.name));
+          b.appendChild(row);
+        });
+      });
+    }
+    var who = el("div", "lv-sub");
+    who.appendChild(seats(room.members.length, roomSize(room)));
+    who.appendChild(
+      document.createTextNode(
+        room.state.ev.m === "live" ? room.members.length + (room.members.length === 1 ? " PLAYER" : " PLAYERS") : room.state.ev.m === "preview" ? "PREVIEW" : "REPLAY",
+      ),
+    );
+    b.appendChild(who);
   }
 
   // ---- HOOKS INTO THE GAME -------------------------------------------------------
@@ -3980,36 +4919,8 @@
     return out;
   };
 
-  // ?live=CODE opens LIVE and that room once the game has loaded
-  function openLinkWhenReady() {
-    var code = null;
-    try {
-      code = new URLSearchParams(location.search).get("live");
-    } catch (e) {}
-    if (code == null) return;
-    code = String(code).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4);
-    var tries = 0;
-    var wait = setInterval(function () {
-      tries++;
-      var loading = document.getElementById("loading-layer");
-      var intro = document.getElementById("intro-layer");
-      var ready =
-        typeof _supabase !== "undefined" &&
-        _supabase &&
-        (!loading || loading.style.display === "none") &&
-        (!intro || intro.style.display === "none") &&
-        currentMenuView === "main" &&
-        !activeLevelDisplay;
-      if (!ready) {
-        if (tries > 240) clearInterval(wait);
-        return;
-      }
-      clearInterval(wait);
-      if (code.length === 4) joinCode(code);
-      else showMenu("live");
-    }, 250);
-  }
-  openLinkWhenReady();
+  // (?live=CODE links were removed: rooms are joined from the LIVE menu
+  // or a friend's invite)
 
   // Opens LIVE and goes into room `code` once the lobby is up
   function joinCode(code) {
@@ -4033,6 +4944,7 @@
 
   window.BoiLive = {
     renderMenu: renderMenu,
+    startEvent: startEvent,
     emote: sendEmote,
     joinCode: joinCode,
     // For testing from the console
