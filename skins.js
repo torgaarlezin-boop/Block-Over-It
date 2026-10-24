@@ -1048,6 +1048,14 @@ window.SKIN_DEFINITIONS = {
     color: "#ff00de",
     tag: "Icons",
 
+  },
+  zombie: {
+    name: "Cool Guy (Zombie)",
+    copies: "1/4",
+    artist: "Jdog",
+    collection: "Cool Guy",
+    color: "#7ed957",
+    blocktober: true,
   }
 
 
