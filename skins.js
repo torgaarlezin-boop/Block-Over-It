@@ -497,6 +497,7 @@ window.SKIN_DEFINITIONS = {
     color: "#000000",
     artist: "Torgaar",
     gameUnlock: true,
+    collection: "Nightmare",
     versions: [
       {
         name: "Demon", img: "demon.png",
@@ -811,6 +812,14 @@ window.SKIN_DEFINITIONS = {
   },
   coolguyorangestripes: {
     name: "Cool Guy (Stripes Orange)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    color: "#ff751f",
+    gameUnlock: true,
+  },
+  coolguybluestripes: {
+    name: "Cool Guy (Stripes Blue)",
     copies: "N/A",
     collection: "Cool Guy",
     artist: "Torgaar",
