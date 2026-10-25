@@ -1056,8 +1056,36 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     color: "#7ed957",
     blocktober: true,
-  }
-
+  },
+  coolguytorgaargold: {
+    name: "Cool Guy (Torgaar Gold)",
+    copies: "1/1",
+    honorary: true,
+    gold: true,
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    tag: "Bigtopia"
+  },
+  coolguytorgaarblue: {
+    name: "Cool Guy (Torgaar Blue)",
+    copies: "1/1",
+    honorary: true,
+    gold: true,
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    tag: "Icons",
+    tag: "Bigtopia"
+  },
+  coolguytorgaargreen: {
+    name: "Cool Guy (Torgaar Green)",
+    copies: "1/1",
+    honorary: true,
+    gold: true,
+    collection: "Cool Guy",
+    artist: "Torgaar",
+    tag: "Icons",
+    tag: "Bigtopia"
+  },
 
 };
 
