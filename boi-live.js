@@ -8,8 +8,12 @@
   var MAX_ONLINE = 20;
   var ROOM_SIZE = 5;
   var EVENT_ROOM_SIZE = 20;
-  var EVENT_ONLY = true;
+  var EVENT_ONLY = false;
   var EVENT_ONLY_TEXT = "LIVE IS ONLY OPEN FOR THE LEVEL AWARDS";
+  // Admins keep the ordinary LIVE (rooms, races) while it is locked
+  function eventOnly() {
+    return EVENT_ONLY && !amAdmin();
+  }
   var LOBBY_TOPIC = "boi-live-lobby";
   var ROOM_TOPIC = "boi-live-room-";
   var SEND_HZ = 30;
@@ -55,51 +59,27 @@
   var CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   var NO_KEYS = { left: false, right: false, up: false, down: false, p: false };
 
-  var HUB_W = 30;
-  var HUB_H = 13;
-  function hubPlan() {
-    var rows = [];
-    for (var y = 0; y < HUB_H; y++) rows.push(new Array(HUB_W + 1).join(" ").split(""));
-    function fill(x0, x1, y) {
-      for (var x = x0; x <= x1; x++) rows[y][x] = "x";
-    }
-    fill(0, HUB_W - 1, 12);
-    fill(11, 19, 11);
-    fill(11, 16, 10);
-    fill(14, 16, 9);
-    fill(2, 5, 8);
-    fill(24, 27, 8);
-    fill(7, 9, 5);
-    fill(20, 22, 5);
-    rows[11][3] = "@";
-    return rows.map(function (r) {
-      return r.join("");
-    });
+  // ---- ENVIRONMENTS ----
+  // The room's lobby is the environment its creator picked on their
+  // profile (the game's ENVIRONMENTS, through window.boiEnvironment). It
+  // rides in the room's state as `env`, so everyone stands in the same one;
+  // an id this game doesn't know is the Default.
+  function roomEnv() {
+    return window.boiEnvironment((room && room.state.env) || "default");
   }
-  var HUB_DATA = {
-    name: "LIVE",
-    music: "skate",
-    plan: hubPlan(),
-    levelType: "custom",
-    customLevelIndex: -1,
-  };
-
-  var PODIUM = [
-    { x: 15.25, y: 8 },
-    { x: 12.25, y: 9 },
-    { x: 18.25, y: 10 },
-  ];
-  var PODIUM_LABELS = [
-    { text: "1", x: 15.5, y: 10.5 },
-    { text: "2", x: 12.5, y: 11 },
-    { text: "3", x: 18.5, y: 11.5 },
-  ];
-  var FLOOR_SPOTS = [2.25, 4.25, 6.25, 8.25, 21.25, 23.25, 25.25, 27.25];
   function floorSpot() {
-    return {
-      x: FLOOR_SPOTS[Math.floor(Math.random() * FLOOR_SPOTS.length)],
-      y: 11,
-    };
+    var spots = roomEnv().spots;
+    var s = spots[Math.floor(Math.random() * spots.length)];
+    return { x: s.x, y: s.y };
+  }
+  // Whether racers bump into and push each other in this room (the host's
+  // COLLISIONS toggle; on unless switched off)
+  function collisionsOn() {
+    return !room || room.state.coll !== false;
+  }
+  function cleanEnv(id) {
+    id = String(id || "").slice(0, 32);
+    return /^[a-z0-9_-]+$/.test(id) ? id : "default";
   }
 
 
@@ -649,7 +629,7 @@
     };
     var evCard = evMenuCard();
     // Only the awards: no making or joining rooms here
-    if (EVENT_ONLY) joinRow.style.display = "none";
+    if (eventOnly()) joinRow.style.display = "none";
     [status, who, evCard, create, joinRow, list, back].forEach(function (n) {
       if (n) container.appendChild(n);
     });
@@ -693,13 +673,13 @@
       s === "full" || s === "offline" ? "TRY AGAIN" : "CREATE ROOM";
     menuEls.create.disabled = !(ok || s === "full" || s === "offline");
     // Only the awards: the button is only there as TRY AGAIN
-    if (EVENT_ONLY)
+    if (eventOnly())
       menuEls.create.style.display = s === "full" || s === "offline" ? "" : "none";
     menuEls.join.disabled = !ok;
 
     var list = menuEls.list;
     list.innerHTML = "";
-    if (EVENT_ONLY) {
+    if (eventOnly()) {
       list.appendChild(el("div", "lv-menu-empty", EVENT_ONLY_TEXT));
       return;
     }
@@ -753,7 +733,7 @@
 
   function createRoom(init) {
     if (lobby.status !== "on") return;
-    if (EVENT_ONLY && !(init && init.ev)) return notify(EVENT_ONLY_TEXT);
+    if (eventOnly() && !(init && init.ev)) return notify(EVENT_ONLY_TEXT);
     var taken = {};
     lobbyRooms().forEach(function (r) {
       taken[r.code] = true;
@@ -787,7 +767,7 @@
       notify("NO ROOM CALLED " + code);
       return;
     }
-    if (EVENT_ONLY && !r.ev) {
+    if (eventOnly() && !r.ev) {
       notify(EVENT_ONLY_TEXT);
       return;
     }
@@ -819,7 +799,20 @@
       hostId: creating ? myId : null,
       hostFlag: !!creating,
       joinedAt: Date.now(),
-      state: Object.assign({ phase: "lobby", round: 0, maxDiff: 5, priv: false, v: 0, ev: null }, init || {}),
+      state: Object.assign(
+        {
+          phase: "lobby",
+          round: 0,
+          maxDiff: 5,
+          priv: false,
+          v: 0,
+          ev: null,
+          // The lobby: the environment of whoever made the room
+          env: creating && window.boiSelectedEnvironment ? window.boiSelectedEnvironment() : "default",
+          coll: true,
+        },
+        init || {},
+      ),
       gotState: !!creating,
       fins: {},
       finDeaths: {},
@@ -1037,6 +1030,8 @@
       priv: st.priv,
       wins: st.wins || {},
       kicked: st.kicked || [],
+      env: st.env || "default",
+      coll: st.coll === false ? 0 : 1,
       // when the show started, as "this long ago" like every other time
       ev: st.ev ? { m: st.ev.m, at: Math.round(st.ev.start - Date.now()) } : null,
     };
@@ -1075,6 +1070,9 @@
       priv: !!w.priv,
       wins: {},
       kicked: readKicked(w.kicked),
+      env: cleanEnv(w.env),
+      // An older copy of LIVE sends none: on
+      coll: w.coll !== 0,
       ev:
         w.ev && /^(live|preview|replay)$/.test(w.ev.m)
           ? { m: w.ev.m, start: Date.now() + num(w.ev.at) }
@@ -1136,6 +1134,9 @@
     }
     var prev = r.state;
     r.state = st;
+    // The room's lobby, learned (joining) or different: stand in that one
+    if (run && run.kind === "hub" && (prev.env || "default") !== (st.env || "default"))
+      enterHub(null, true);
     if (st.phase === "race") {
       if (prev.phase !== "race" || prev.round !== st.round) {
         r.fins = {};
@@ -1463,7 +1464,8 @@
       return r.id === myId;
     });
     var onPodium = rank >= 0 && rank < 3 && st.results[rank].time != null;
-    enterHub(onPodium ? PODIUM[rank] : floorSpot(), true);
+    var podium = roomEnv().podium;
+    enterHub(onPodium && podium && podium[rank] ? podium[rank] : floorSpot(), true);
     renderBoard();
     claimWin(st);
   }
@@ -1477,7 +1479,7 @@
 
   function enterHub(spot, force) {
     if (run && run.kind === "hub" && !force) return;
-    showLevel(HUB_DATA, "hub", "hub", spot || floorSpot());
+    showLevel(roomEnv().data, "hub", "hub", spot || floorSpot());
   }
 
   function newRun(data, kind, token) {
@@ -2027,7 +2029,7 @@
     pl.obstacleAt = function (pos, size, actor) {
       var o = lv.obstacleAt(pos, size);
       if (o) return typeof o === "string" ? o : "wall";
-      var me = predictBlocker;
+      var me = collisionsOn() ? predictBlocker : null;
       // Only a sideways move (moveX keeps y as it was), as in touchOthers
       if (me && actor && pos.y === actor.pos.y) {
         var ox = Math.min(pos.x + size.x, me.pos.x + me.size.x) - Math.max(pos.x, me.pos.x);
@@ -3114,10 +3116,10 @@
     if (L.podiumScale === s) return;
     L.podiumScale = s;
     if (!L.podium)
-      L.podium = PODIUM_LABELS.map(function (p) {
+      L.podium = (roomEnv().podiumLabels || []).map(function (p) {
         return L.tags.appendChild(el("div", "lv-podium", p.text));
       });
-    PODIUM_LABELS.forEach(function (p, i) {
+    (roomEnv().podiumLabels || []).forEach(function (p, i) {
       var n = L.podium[i];
       n.style.translate = Math.round(p.x * s) + "px " + Math.round(p.y * s) + "px";
       n.style.fontSize = Math.round(s * 0.6) + "px";
@@ -3183,6 +3185,8 @@
   function touchOthers(level, t) {
     var p = level.player;
     if (!p || level.status || run.finished) return;
+    // Collisions off: everyone walks through everyone
+    if (!collisionsOn()) return;
     if (typeof emoteFrozen === "function" && emoteFrozen(level)) return;
     Object.keys(room.remotes).forEach(function (id) {
       var rm = room.remotes[id];
@@ -3251,6 +3255,7 @@
     var p = level.player;
     if (!p || level.status || run.finished) return;
     if (run.kind === "race" && now() < run.goAt) return;
+    if (!collisionsOn()) return;
     var vx = clamp(num(msg.vx), -SHOVE_MAX, SHOVE_MAX);
     if (msg.m === "push") {
       pushesOnMe[fromId] = {
@@ -3272,6 +3277,10 @@
   function applyPushes(p, t, step) {
     // An emoting block isn't pushed
     if (typeof emoteFrozen === "function" && run && emoteFrozen(run.level)) return;
+    if (!collisionsOn()) {
+      pushesOnMe = {};
+      return;
+    }
     var sum = 0;
     var any = false;
     Object.keys(pushesOnMe).forEach(function (id) {
@@ -4147,7 +4156,7 @@
     var r = room;
     var st = r.state;
     var host = isHost();
-    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, ""), st.ev ? st.ev.m : ""].join("|");
+    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, ""), st.ev ? st.ev.m : "", st.env, st.coll].join("|");
     if (key === r.barKey) return;
     r.barKey = key;
     var bar = hud.bar;
@@ -4177,6 +4186,27 @@
           if (isHost()) hostSetState({ priv: !room.state.priv });
         }),
       );
+      // The lobby: any environment the host owns (and the one the room is
+      // in, even if it isn't theirs -- a host who took over)
+      var envIds = window.boiOwnedEnvironments ? window.boiOwnedEnvironments() : ["default"];
+      var here = st.env || "default";
+      if (envIds.indexOf(here) === -1) envIds = [here].concat(envIds);
+      bar.appendChild(
+        makeBlockDropdown(
+          envIds.map(function (id) {
+            return { value: id, label: window.boiEnvironment(id).name.toUpperCase() };
+          }),
+          here,
+          function (v) {
+            if (isHost() && room.state.phase !== "race") hostSetState({ env: cleanEnv(v) });
+          },
+        ),
+      );
+      bar.appendChild(
+        barButton(st.coll === false ? "COLLISIONS OFF" : "COLLISIONS ON", "", function () {
+          if (isHost()) hostSetState({ coll: room.state.coll === false });
+        }),
+      );
       var go = barButton(r.starting ? "PICKING..." : "START RACE", "blue", hostStart);
       go.disabled = r.starting;
       bar.appendChild(go);
@@ -4187,7 +4217,8 @@
         el(
           "div",
           "lv-note lv-block",
-          "WAITING FOR " + nameOf(r.hostId, "THE HOST") + " (MAX " + diffName(st.maxDiff) + ")",
+          "WAITING FOR " + nameOf(r.hostId, "THE HOST") + " (MAX " + diffName(st.maxDiff) +
+            (st.coll === false ? ", NO COLLISIONS" : "") + ")",
         ),
       );
     }
