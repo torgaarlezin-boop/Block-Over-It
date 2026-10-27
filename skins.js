@@ -1068,9 +1068,7 @@ window.SKIN_DEFINITIONS = {
   },
   coolguytorgaarblue: {
     name: "Cool Guy (Torgaar Blue)",
-    copies: "1/1",
-    honorary: true,
-    gold: true,
+    copies: "1/5",
     collection: "Cool Guy",
     artist: "Torgaar",
     tag: "Icons",
@@ -1078,14 +1076,13 @@ window.SKIN_DEFINITIONS = {
   },
   coolguytorgaargreen: {
     name: "Cool Guy (Torgaar Green)",
-    copies: "1/1",
-    honorary: true,
-    gold: true,
+    copies: "1/3",
     collection: "Cool Guy",
     artist: "Torgaar",
     tag: "Icons",
     tag: "Bigtopia"
   },
+
 
 };
 
