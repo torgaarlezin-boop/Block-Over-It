@@ -1072,7 +1072,8 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar",
     tag: "Icons",
-    tag: "Bigtopia"
+    tag: "Bigtopia",
+    color: "#87bec7"
   },
   coolguytorgaargreen: {
     name: "Cool Guy (Torgaar Green)",
@@ -1080,7 +1081,8 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar",
     tag: "Icons",
-    tag: "Bigtopia"
+    tag: "Bigtopia",
+    color: "#7ed957"
   },
 
 
