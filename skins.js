@@ -1098,7 +1098,7 @@ window.SKIN_DEFINITIONS = {
     gameUnlock: true,
     color: "#ff3131",
   },
-  coolguystream: {
+  stream: {
     name: "Cool Guy (Stream)",
     copies: "1/5",
     collection: "Cool Guy",
@@ -1106,7 +1106,7 @@ window.SKIN_DEFINITIONS = {
     color: "#38b6ff",
     tag: "Shop S6"
   },
-  coolguystreamwhite: {
+  streamwhite: {
     name: "Cool Guy (White Earth Stream)",
     copies: "1/3",
     collection: "Cool Guy",
@@ -1114,7 +1114,7 @@ window.SKIN_DEFINITIONS = {
     color: "#ffffff",
     tag: "Shop S6"
   },
-  coolguystreamblack: {
+  streamblack: {
     name: "Cool Guy (Black Earth Stream)",
     copies: "1/3",
     collection: "Cool Guy",
@@ -1122,7 +1122,7 @@ window.SKIN_DEFINITIONS = {
     color: "#000000",
     tag: "Shop S6"
   },
-  coolguystreamlava: {
+  streamlava: {
     name: "Cool Guy (Lava Stream)",
     copies: "1/3",
     collection: "Cool Guy",
