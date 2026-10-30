@@ -1084,6 +1084,52 @@ window.SKIN_DEFINITIONS = {
     tag: "Bigtopia",
     color: "#7ed957"
   },
+  surprised: {
+    name: "Surprised",
+    copies: "1/5",
+    artist: "MidgeMidge22 & ejohnson",
+    color: "#476ffa",
+  },
+  earthmagma: {
+    name: "Earth (Magma)",
+    copies: "N/A",
+    collection: "Earth",
+    artist: "MidgeMidge",
+    gameUnlock: true,
+    color: "#ff3131",
+  },
+  coolguystream: {
+    name: "Cool Guy (Stream)",
+    copies: "1/5",
+    collection: "Cool Guy",
+    artist: "MidgeMidge",
+    color: "#38b6ff",
+    tag: "Shop S6"
+  },
+  coolguystreamwhite: {
+    name: "Cool Guy (White Earth Stream)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "MidgeMidge",
+    color: "#ffffff",
+    tag: "Shop S6"
+  },
+  coolguystreamblack: {
+    name: "Cool Guy (Black Earth Stream)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "MidgeMidge",
+    color: "#000000",
+    tag: "Shop S6"
+  },
+  coolguystreamlava: {
+    name: "Cool Guy (Lava Stream)",
+    copies: "1/3",
+    collection: "Cool Guy",
+    artist: "MidgeMidge",
+    color: "#e7191f",
+    tag: "Shop S6"
+  },
 
 
 };
