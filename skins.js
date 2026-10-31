@@ -1160,7 +1160,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   chairlordremastered: "chairlordnormal.png",
   galaxy: "galaxynew.png",
   coolguygalaxy: "coolguygalaxynew.png",
-  midgemidge: "coolguymidgemidge"
+  midgemidge: "coolguymidgemidge.png"
 };
 
 window.SOLID_SKIN_COLORS = {
