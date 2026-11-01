@@ -1229,11 +1229,16 @@ window.SKIN_IMAGE_OVERRIDES = {
   galaxy: "galaxynew.png",
   coolguygalaxy: "coolguygalaxynew.png",
   midgemidge: "coolguymidgemidge.png",
-  largeto: "/skins/bigto/blockoverit.png",
-  fato: "/skins/fato/blockoverit.png",
-  lilto: "/skins/lilto/blockoverit.png",
-  coolguyto: "/skins/coolto/blockoverit.png"
+  // ToBreaker skins: the To's head on its body, in its folder under skins/.
+  // No "/" at the start -- the site is in a folder of its own.
+  largeto: "skins/bigto/blockoverit.png",
+  fato: "skins/fato/blockoverit.png",
+  lilto: "skins/lilto/blockoverit.png",
+  coolguyto: "skins/coolto/blockoverit.png",
 };
+
+// Where the ToBreaker folders are (To Up uses each one's arm.png)
+window.TOBREAKER_SKIN_DIR = "skins/";
 
 window.SOLID_SKIN_COLORS = {
   default: "#335699",

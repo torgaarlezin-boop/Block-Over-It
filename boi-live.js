@@ -51,7 +51,12 @@
     { urls: "stun:stun.cloudflare.com:3478" },
   ];
   var TURN_CREDENTIALS_URL = "";
-  var LIVE_VERSION = 9;
+  var LIVE_VERSION = 10;
+  // Tag in the lobby: how long whoever was just tagged has before they can
+  // tag someone (so nobody is tagged straight back), and how often their
+  // game asks the host to pass it on while they are touching someone
+  var TAG_GRACE_MS = 1500;
+  var TAG_CLAIM_MS = 300;
   var LIVE_COIN_MIN_DIFF = 5;
   var WORLD_STEP = 1 / 60;
   var WORLD_STEPS_MAX = 20;
@@ -222,6 +227,7 @@
     ".lv-place.p3{background:#b06d34;border-color:#6e4320}",
     ".lv-tagblock{display:inline-block;flex:none;background:#335699;border:2px solid #26467e;color:#fff;font-size:10px;font-weight:900;letter-spacing:1px;padding:1px 4px;line-height:1.2}",
     ".lv-tagblock.gold{background:#d4a017;border-color:#8a6a0e;color:#1a1a1a}",
+    ".lv-tagblock.red{background:#8a2a2a;border-color:#5a1616}",
     // The host's KICK beside each other player: a small red block
     ".lv-kick{flex:none;background:#8a2a2a;border:2px solid #5a1616;color:#fff;font:inherit;font-size:10px;font-weight:900;letter-spacing:1px;padding:1px 5px;line-height:1.2;cursor:pointer;text-transform:uppercase}",
     ".lv-kick:hover{border-color:#eee}",
@@ -300,6 +306,9 @@
     ".lv-racer{position:absolute;left:0;top:0;box-sizing:border-box;background-repeat:no-repeat;background-position:center;background-size:contain}",
     ".lv-trail{position:absolute;left:0;top:0;pointer-events:none;background-repeat:no-repeat;background-position:center;background-size:contain}",
     "#game-container.lv-shake{animation:lv-land .3s both}",
+    // Whoever is it, in a game of tag: a red outline and a red name block
+    ".lv-racer.lv-it,.lv-me-it{outline:3px solid #d20f0f;outline-offset:1px}",
+    ".lv-tag.lv-it{background:#d20f0f;border-color:#8a0a0a}",
     ".lv-tag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font:bold 11px 'Courier New',Courier,monospace;color:#fff;background:#444;border:2px solid #333;box-shadow:2px 2px 0 rgba(0,0,0,.35);padding:1px 5px;white-space:nowrap;pointer-events:none;text-transform:uppercase}",
     ".lv-podium{position:absolute;left:0;top:0;transform:translate(-50%,-50%);font-family:'Courier New',Courier,monospace;font-weight:900;color:#6a6a6a;pointer-events:none;line-height:1}",
     // ---- the invite list ----
@@ -684,8 +693,11 @@
       return;
     }
     if (!ok) return;
+    // Admins see every room, private ones too (tagged PRIVATE), and can
+    // join them like any other
+    var admin = amAdmin();
     var rooms = lobbyRooms().filter(function (r) {
-      return !r.priv;
+      return !r.priv || admin;
     });
     if (!rooms.length) {
       list.appendChild(el("div", "lv-menu-empty", "NO OPEN ROOMS, CREATE ONE"));
@@ -705,6 +717,7 @@
           r.ev ? "AWARDS" : r.racing ? "RACING" : "OPEN",
         ),
       );
+      if (r.priv) b.appendChild(el("span", "lv-tagblock red", "PRIVATE"));
       b.disabled = r.count >= sizeOf(r.ev);
       b.onclick = function () {
         joinRoom(r.code);
@@ -837,6 +850,7 @@
     }
     ch.on("broadcast", { event: "state" }, mine(onStateMessage));
     ch.on("broadcast", { event: "fin" }, mine(onFinish));
+    ch.on("broadcast", { event: "tag" }, mine(onTagClaim));
     ch.on("broadcast", { event: "sig" }, mine(onSignal));
     ch.on(
       "broadcast",
@@ -1007,6 +1021,8 @@
     list.forEach(function (m) {
       r.knownIds[m.id] = true;
     });
+    // Whoever was it left: someone else is
+    if (host === myId && tagOn() && !r.knownIds[r.state.tag.it]) hostPickIt();
     Object.keys(r.remotes).forEach(function (id) {
       if (!r.knownIds[id]) removeRemote(id);
     });
@@ -1032,6 +1048,11 @@
       kicked: st.kicked || [],
       env: st.env || "default",
       coll: st.coll === false ? 0 : 1,
+      // Tag in the lobby: who is it, tagged this long ago
+      tag:
+        st.phase === "lobby" && st.tag
+          ? { it: st.tag.it, by: st.tag.by || null, ago: Math.round(t - st.tag.at) }
+          : null,
       // when the show started, as "this long ago" like every other time
       ev: st.ev ? { m: st.ev.m, at: Math.round(st.ev.start - Date.now()) } : null,
     };
@@ -1073,6 +1094,14 @@
       env: cleanEnv(w.env),
       // An older copy of LIVE sends none: on
       coll: w.coll !== 0,
+      tag:
+        w.tag && w.tag.it
+          ? {
+              it: String(w.tag.it).slice(0, 32),
+              by: w.tag.by ? String(w.tag.by).slice(0, 32) : null,
+              at: t - Math.max(0, num(w.tag.ago)),
+            }
+          : null,
       ev:
         w.ev && /^(live|preview|replay)$/.test(w.ev.m)
           ? { m: w.ev.m, start: Date.now() + num(w.ev.at) }
@@ -1134,6 +1163,7 @@
     }
     var prev = r.state;
     r.state = st;
+    noteTagChange(prev.phase === "lobby" ? prev.tag : null, st.phase === "lobby" ? st.tag : null);
     // The room's lobby, learned (joining) or different: stand in that one
     if (run && run.kind === "hub" && (prev.env || "default") !== (st.env || "default"))
       enterHub(null, true);
@@ -1295,6 +1325,7 @@
             return row.id;
           });
         hostSetState({
+          tag: null,
           phase: "race",
           round: r.state.round + 1,
           ids: others.concat([pick]),
@@ -1715,6 +1746,7 @@
     // Where everyone else is this frame, then bumping into them, then drawing
     placeRemotes(t, step);
     if (!counting) touchOthers(level, t);
+    tagCheck(level, t);
     run.display.drawFrame(step);
     drawRemotes(t, step);
     hudTick(t);
@@ -2870,7 +2902,7 @@
     if (!rm.emoteEl) {
       var under = typeof emoteDrawnUnder === "function" && emoteDrawnUnder(e.id);
       var layer = under ? run.layers.racers : run.layers.tags;
-      rm.emoteEl = layer.insertBefore(buildEmote(e.id, e.n, e.at), under ? layer.firstChild : null);
+      rm.emoteEl = layer.insertBefore(buildEmote(e.id, e.n, e.at, rm.skin), under ? layer.firstChild : null);
       rm.emoteKey = key;
       rm.emoteN = e.n;
     }
@@ -2991,6 +3023,12 @@
       }
       var name = cleanName(member.n);
       if (rm.tag.lvName !== name) rm.tag.textContent = rm.tag.lvName = name;
+      var isIt = tagOn() && room.state.tag.it === id;
+      if (rm.lvIt !== isIt) {
+        rm.lvIt = isIt;
+        rm.el.classList.toggle("lv-it", isIt);
+        rm.tag.classList.toggle("lv-it", isIt);
+      }
 
       var at = rm.at;
       var skin = shownSkin(member, rm.skin);
@@ -3180,6 +3218,91 @@
   // at the positions you can see. The pushing itself happens in their game,
   // from your messages: it rides on windSpeedX, which moveX already adds to
   // the player's motion and eases off by itself.
+  // ---- TAG ----------------------------------------------------------------------
+  // A game the host starts in the lobby: one player is it, and touching
+  // someone makes them it. The host keeps who is it in the room's state. The
+  // one who is it sees the touch in their own game and asks the host to pass
+  // it on, so a touch counts as it looked to them. A race ends the game.
+  function tagOn() {
+    return !!(room && room.state.phase === "lobby" && !room.state.ev && room.state.tag);
+  }
+
+  // Someone in the room at random is it (the host too), not whoever was
+  function hostPickIt() {
+    if (!isHost() || room.state.phase !== "lobby") return;
+    var ids = room.members.map(function (m) {
+      return m.id;
+    });
+    if (!ids.length) ids = [myId];
+    var old = room.state.tag ? room.state.tag.it : null;
+    var pool = ids.filter(function (id) {
+      return id !== old;
+    });
+    if (!pool.length) pool = ids;
+    hostSetState({ tag: { it: pool[Math.floor(Math.random() * pool.length)], by: null, at: now() } });
+  }
+
+  // The host passes it on when whoever is it says they touched someone --
+  // and only then: it is theirs to pass, and their grace is over
+  function hostTag(from, to) {
+    if (!isHost() || !tagOn()) return;
+    var tg = room.state.tag;
+    if (tg.it !== from || to === from || !memberOf(to)) return;
+    if (now() - tg.at < TAG_GRACE_MS - 200) return;
+    hostSetState({ tag: { it: to, by: from, at: now() } });
+  }
+  function onTagClaim(p) {
+    if (p && room && room.knownIds[p.from]) hostTag(String(p.from), String(p.to));
+  }
+
+  // While you are it: anyone your block touches is tagged
+  function tagCheck(level, t) {
+    var me = false;
+    if (tagOn() && run.kind === "hub" && room.state.tag.it === myId) {
+      me = true;
+      var p = level.player;
+      if (
+        p &&
+        !level.status &&
+        t - room.state.tag.at >= TAG_GRACE_MS &&
+        t - (run.tagAskAt || 0) >= TAG_CLAIM_MS
+      ) {
+        var m = 0.05;
+        var hit = Object.keys(room.remotes).find(function (id) {
+          var rm = room.remotes[id];
+          var b = rm.box;
+          return (
+            rm.live && b && !b.st &&
+            p.pos.x - m < b.x + b.w && p.pos.x + p.size.x + m > b.x &&
+            p.pos.y - m < b.y + b.h && p.pos.y + p.size.y + m > b.y
+          );
+        });
+        if (hit) {
+          run.tagAskAt = t;
+          if (isHost()) hostTag(myId, hit);
+          else send(room.ch, "tag", { from: myId, to: hit });
+        }
+      }
+    }
+    // Your own block wears the same red outline
+    var mine = run.display && level.player && run.display.actorElements.get(level.player.id);
+    if (mine && mine.classList.contains("lv-me-it") !== me) mine.classList.toggle("lv-me-it", me);
+  }
+
+  // Who is it now, said once when it changes
+  function noteTagChange(was, is) {
+    var a = was ? was.it : null;
+    var b = is ? is.it : null;
+    if (a === b) return;
+    if (!b) {
+      if (a) notify("TAG IS OVER");
+      return;
+    }
+    if (b === myId) bigBanner("YOU'RE IT", "", true, 1500, true);
+    else if (a === myId) notify("YOU TAGGED " + nameOf(b, "SOMEONE"));
+    else notify(nameOf(b, "SOMEONE") + " IS IT");
+  }
+
   var pushesOnMe = {};
 
   function touchOthers(level, t) {
@@ -3913,6 +4036,8 @@
     var note = "";
     var st = room.state;
     if (st.ev) note = evNote;
+    else if (tagOn())
+      note = st.tag.it === myId ? "YOU'RE IT" : nameOf(st.tag.it, "SOMEONE") + " IS IT";
     else if (st.phase === "race" && room.firstFinAt && t >= st.goAt) {
       var left = Math.ceil((AFTER_FIRST_MS - (t - room.firstFinAt)) / 1000);
       if (left > 0) note = "RACE ENDS IN " + left;
@@ -4156,7 +4281,7 @@
     var r = room;
     var st = r.state;
     var host = isHost();
-    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, ""), st.ev ? st.ev.m : "", st.env, st.coll].join("|");
+    var key = [host, st.phase, st.maxDiff, st.priv, r.starting, r.hostId, nameOf(r.hostId, ""), st.ev ? st.ev.m : "", st.env, st.coll, !!st.tag].join("|");
     if (key === r.barKey) return;
     r.barKey = key;
     var bar = hud.bar;
@@ -4205,6 +4330,13 @@
       bar.appendChild(
         barButton(st.coll === false ? "COLLISIONS OFF" : "COLLISIONS ON", "", function () {
           if (isHost()) hostSetState({ coll: room.state.coll === false });
+        }),
+      );
+      bar.appendChild(
+        barButton(st.tag ? "STOP TAG" : "PLAY TAG", "", function () {
+          if (!isHost() || room.state.phase !== "lobby") return;
+          if (room.state.tag) hostSetState({ tag: null });
+          else hostPickIt();
         }),
       );
       var go = barButton(r.starting ? "PICKING..." : "START RACE", "blue", hostStart);
@@ -4931,6 +5063,8 @@
     if (room && run) {
       if (run.kind === "flip") return;
       if (run.kind === "race" && (run.finished || now() < run.goAt)) return;
+      // No jumping back to a spawn to get away (or to someone) in tag
+      if (run.kind === "hub" && tagOn()) return;
       respawn();
       return;
     }

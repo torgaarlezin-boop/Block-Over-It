@@ -376,6 +376,24 @@
         border: 2px solid #eaf8ff;
         box-shadow: inset 0 0 8px rgba(120, 190, 230, 0.7);
       }
+      /* A "v3" level (body.ice-v3) gets the game's blocky ice: frosted top
+         band, pixel glint, darker rim. iceBackground() builds the same
+         layers for paint and part colours. */
+      body.ice-v3 .t-ice {
+        background:
+          linear-gradient(var(--ice-glint, #fff), var(--ice-glint, #fff))
+            21% 16% / 34% 12% no-repeat,
+          linear-gradient(var(--ice-glint, #fff), var(--ice-glint, #fff))
+            16% 30% / 12% 12% no-repeat,
+          linear-gradient(
+              var(--ice-glint-dot, rgba(255, 255, 255, 0.6)),
+              var(--ice-glint-dot, rgba(255, 255, 255, 0.6))
+            )
+            80% 80% / 10% 10% no-repeat,
+          linear-gradient(to bottom, #cfefff 0 35%, #8ec9ee 35% 100%);
+        border: 3px solid #5a9cc8;
+        box-shadow: none;
+      }
       .t-water {
         background: rgba(56, 152, 255, 0.32);
         border: none;
@@ -9459,9 +9477,10 @@
         width: 40,
         height: 20,
         // Labels stored in the level as `tags`. A level made in this editor
-        // from now on is "v2", which is what lets the game shine its metallic
-        // paint; one loaded from before keeps whatever it was saved with.
-        levelTags: ["v2"],
+        // from now on is "v2" (the game shines its metallic paint) and "v3"
+        // (blocky ice); one loaded from before keeps whatever it was saved
+        // with.
+        levelTags: ["v2", "v3"],
         grid: [],
         colors: {}, // Map "x,y" -> hex
         tool: "pencil",
@@ -9906,8 +9925,8 @@
         // Editor-only: lets the editor place more than one spawn. The game
         // makes a player from every @ either way.
         "mirrorLevel",
-        // How the level is drawn ("v2": metallic paint shines), never how
-        // it plays
+        // How the level is drawn ("v2": metallic paint shines, "v3": blocky
+        // ice), never how it plays
         "tags",
         "fmt",
       ]);
@@ -13147,7 +13166,11 @@
         // stacked fills so the rim follows the clipped edge instead of being
         // sliced away by it, and adjacent lava meets with no gap.
         if (textures.includes("lava") && isLavaSurface(x, y, flipped)) {
-          const customColor = state.colors[`${x},${y}`];
+          // The Lava part wins over paint, as in game
+          const lavaPart = solidHex(
+            state.blockConfigs[`${x},${y}`]?.parts?.fill || "",
+          );
+          const customColor = lavaPart || state.colors[`${x},${y}`];
           const baseColor =
             state.grid[y][x] === "!" &&
             customColor &&
@@ -13275,7 +13298,7 @@
         const bleed =
           LAVA_CHARS.includes(cellChar) || cellChar === "^"
             ? 0
-            : cellChar === "I"
+            : cellChar === "I" && !isBlockyIce()
               ? 2
               : 3;
 
@@ -13752,12 +13775,26 @@
         },
         I: {
           name: "Ice",
-          parts: [
-            { id: "top", label: "Top", def: "#cfefff" },
-            { id: "bottom", label: "Bottom", def: "#8ec9ee" },
-            { id: "border", label: "Border", def: "#eaf8ff" },
-          ],
+          // The blocky ice of a "v3" level has a glint and a darker rim
+          get parts() {
+            return isBlockyIce()
+              ? [
+                  { id: "top", label: "Top", def: "#cfefff" },
+                  { id: "bottom", label: "Bottom", def: "#8ec9ee" },
+                  { id: "border", label: "Border", def: "#5a9cc8" },
+                  { id: "glint", label: "Glint", def: "#ffffff" },
+                ]
+              : [
+                  { id: "top", label: "Top", def: "#cfefff" },
+                  { id: "bottom", label: "Bottom", def: "#8ec9ee" },
+                  { id: "border", label: "Border", def: "#eaf8ff" },
+                ];
+          },
         },
+        G: { name: "Breakable Block", parts: FILL_BORDER("#ffffff", "#555555") },
+        S: { name: "Spike", kind: "spike", parts: [{ id: "spike", label: "Spike", def: "#aaaaaa" }] },
+        ">": { name: "Slope", kind: "slope", parts: [{ id: "fill", label: "Fill", def: "#444444" }] },
+        "!": { name: "Lava", kind: "lava", parts: [{ id: "fill", label: "Lava", def: "#de2511" }] },
         "^": {
           name: "Rising Lava",
           parts: [
@@ -13777,6 +13814,9 @@
       PART_DEFS.k = PART_DEFS.K;
       PART_DEFS["{"] = PART_DEFS.K;
       PART_DEFS["}"] = PART_DEFS.K;
+      PART_DEFS.s = PART_DEFS["["] = PART_DEFS["]"] = PART_DEFS.S;
+      PART_DEFS["<"] = PART_DEFS[">"];
+      PART_DEFS["="] = PART_DEFS["|"] = PART_DEFS.v = PART_DEFS["!"];
 
       // The character a cell is drawn as: its illusion when it wears one
       function visualCharAt(x, y) {
@@ -13819,9 +13859,21 @@
               {
                 top: adjustColor(hex, 60),
                 bottom: hex,
-                border: adjustColor(hex, 90),
+                border: adjustColor(hex, isBlockyIce() ? -50 : 90),
               }[partId] || null
             );
+          case "S":
+          case "s":
+          case "[":
+          case "]":
+            return partId === "spike" ? hex : null;
+          case ">":
+          case "<":
+          case "!":
+          case "=":
+          case "|":
+          case "v":
+            return partId === "fill" ? hex : null;
           case "^":
             return { light: hex, dark: adjustColor(hex, -40) }[partId] || null;
           default:
@@ -13926,13 +13978,15 @@
                 .join("")
             );
           }
-          case "lavaSurface":
+          case "lavaSurface": {
+            const lava = (parts && parts.fill && solidHex(parts.fill)) || paint;
             return (
               adjustColor(
-                state.grid[y][x] === "!" && paint ? paint : "#de2511",
+                state.grid[y][x] === "!" && lava ? lava : "#de2511",
                 50,
               ) || "#ff7700"
             );
+          }
           case "crest": {
             const c = paint && cssColorChannels(paint);
             if (!c) return "#d6f2ff";
@@ -14080,6 +14134,33 @@
         );
       }
 
+      // Blocky ice is for "v3" levels only, as in the game; older levels keep
+      // the glossy ice they were made with.
+      function isBlockyIce() {
+        return state.levelTags.indexOf("v3") !== -1;
+      }
+      function syncIceLook() {
+        document.body.classList.toggle("ice-v3", isBlockyIce());
+      }
+      syncIceLook();
+
+      // The .t-ice look with its two bands in other colours (the game's
+      // iceBackground)
+      function iceBackground(top, bottom) {
+        if (!isBlockyIce())
+          return (
+            "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 62%, rgba(255,255,255,0.35) 100%), linear-gradient(to bottom, " +
+            top + ", " + bottom + ")"
+          );
+        // The glint reads the Glint part (--ice-glint), set on the cell
+        return (
+          "linear-gradient(var(--ice-glint,#fff),var(--ice-glint,#fff)) 21% 16% / 34% 12% no-repeat, " +
+          "linear-gradient(var(--ice-glint,#fff),var(--ice-glint,#fff)) 16% 30% / 12% 12% no-repeat, " +
+          "linear-gradient(var(--ice-glint-dot,rgba(255,255,255,0.6)),var(--ice-glint-dot,rgba(255,255,255,0.6))) 80% 80% / 10% 10% no-repeat, " +
+          "linear-gradient(to bottom, " + top + " 0 35%, " + bottom + " 35% 100%)"
+        );
+      }
+
       // Draws a cell's part colours over its paint -- the editor's copy of
       // the game's applyActorParts.
       function applyCellParts(cell, ch, parts) {
@@ -14119,10 +14200,41 @@
           }
         } else if (ch === "I") {
           if (p("top") || p("bottom"))
-            cell.style.background =
-              "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 62%, rgba(255,255,255,0.35) 100%), linear-gradient(to bottom, " +
-              (p("top") || "#cfefff") + ", " + (p("bottom") || "#8ec9ee") + ")";
+            cell.style.background = iceBackground(
+              p("top") || "#cfefff",
+              p("bottom") || "#8ec9ee",
+            );
           set(cell, "borderColor", p("border"));
+          if (p("glint")) {
+            cell.style.setProperty("--ice-glint", p("glint"));
+            cell.style.setProperty("--ice-glint-dot", p("glint") + "99");
+          }
+        } else if (ch === "G") {
+          // The stone pattern tinted, as Paint tints it
+          if (p("fill")) {
+            cell.style.backgroundColor = p("fill");
+            cell.style.backgroundBlendMode = "multiply";
+            cell.style.backgroundSize = "contain";
+          }
+          set(cell, "borderColor", p("border"));
+        } else if (ch === "S" || ch === "s" || ch === "[" || ch === "]") {
+          const spike = cell.querySelector(
+            ".spike-visual, .spike-left-visual, .spike-right-visual",
+          );
+          const side =
+            ch === "S"
+              ? "borderBottomColor"
+              : ch === "s"
+                ? "borderTopColor"
+                : ch === "["
+                  ? "borderRightColor"
+                  : "borderLeftColor";
+          set(spike, side, p("spike"));
+        } else if (ch === ">" || ch === "<") {
+          if (p("fill"))
+            cell.style.background = `linear-gradient(to top ${ch === ">" ? "left" : "right"}, ${p("fill")} 50%, transparent 0)`;
+        } else if ("!=|v".includes(ch)) {
+          set(cell, "backgroundColor", p("fill"));
         } else if (ch === "^") {
           set(cell, "backgroundColor", p("light"));
           set(cell, "borderColor", p("dark"));
@@ -14728,24 +14840,14 @@
 
         // Two blocks keep their colour somewhere a plain fill cannot reach,
         // and draw it the way the game's paintActorElement does: ice under
-        // its sheen, and a teleporter inside its ring -- the ring keeps its
+        // its glint, and a teleporter inside its ring -- the ring keeps its
         // group's colour, which is what says which pads are linked.
         const paintHex = solidHex(paintOf(color));
         if (visualChar === "I" && paintHex) {
-          cell.style.background =
-            "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 62%, rgba(255,255,255,0.35) 100%), linear-gradient(to bottom, " +
-            adjustColor(paintHex, 60) +
-            ", " +
-            paintHex +
-            ")";
-          cell.style.borderColor = adjustColor(paintHex, 90);
+          cell.style.background = iceBackground(adjustColor(paintHex, 60), paintHex);
+          cell.style.borderColor = adjustColor(paintHex, isBlockyIce() ? -50 : 90);
         }
         if (visualChar === "T") cell.style.borderColor = "";
-
-        // Part colours win over paint, as in game
-        const partsCfg = state.blockConfigs[`${x},${y}`];
-        if (partsCfg && partsCfg.parts)
-          applyCellParts(cell, visualChar, partsCfg.parts);
 
         if (visualChar === ">") {
           const c = color || ("#444444");
@@ -14778,6 +14880,13 @@
           if (color) spike.style.borderLeftColor = color;
           cell.appendChild(spike);
         }
+
+        // Part colours win over paint, as in game -- after the slopes and
+        // spikes are drawn, so theirs can be coloured too
+        const partsCfg = state.blockConfigs[`${x},${y}`];
+        if (partsCfg && partsCfg.parts)
+          applyCellParts(cell, visualChar, partsCfg.parts);
+
         if (visualChar === "Z") {
           const config = state.blockConfigs[`${x},${y}`];
           cell.innerText = config ? config.deco || "" : "";
@@ -22805,7 +22914,8 @@
             state.notes = [];
             state.publishedLegendary = false;
             state.visualTitleColor = "white";
-            state.levelTags = ["v2"];
+            state.levelTags = ["v2", "v3"];
+            syncIceLook();
             invalidateAllCells();
 
             state.musicSpeed = 1.0;
@@ -22912,6 +23022,7 @@
                 d.forceZoom || false;
               loadMirrorLevel(d);
               state.levelTags = levelTagsFrom(d);
+              syncIceLook();
               invalidateAllCells();
               document.getElementById("prop-disable-zoom").value =
                 d.disableZoom || false;
@@ -23176,6 +23287,7 @@
               data.forceZoom || false;
             loadMirrorLevel(data);
             state.levelTags = levelTagsFrom(data);
+            syncIceLook();
             invalidateAllCells();
             document.getElementById("prop-disable-zoom").value =
               data.disableZoom || false;
