@@ -1036,9 +1036,8 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     collection: "Cool Guy",
     artist: "Torgaar, Bode H, Mcdongos",
-    tag: "Icons",
     color: "#fff1c0",
-    tag: "Blockpass S1"
+    tag: ["Icons", "Blockpass S1"]
   },
   mrolsenpink: {
     name: "Cool Guy (Mr Olsen Pink House)",
@@ -1131,6 +1130,75 @@ window.SKIN_DEFINITIONS = {
     tag: "Shop S6"
   },
 
+  largeto: {
+    name: "Large To",
+    copies: "N/A",
+    color: "#fbd93f",
+    artist: "Torgaar",
+    tag: "ToBreaker"
+  },
+  ticklor: {
+    name: "Ticklor",
+    copies: "N/A",
+    color: "#fff1c0",
+    artist: "Benjuhman1 & Torgaar",
+    tag: "Peanut Man"
+  },
+  catstreetborn: {
+    name: "Cat (Street Born)",
+    copies: "N/A",
+    collection: "Cat",
+    color: "#545454",
+    artist: "Torgaar & Deacon",
+    theCity: true,
+    tag: "The City Series"
+  },
+  fato: {
+    name: "Fato",
+    copies: "N/A",
+    color: "#fbd97a",
+    artist: "Torgaar",
+    tag: "ToBreaker"
+  },
+  coolguycartelleader: {
+    name: "Cool Guy (Cartel Leader)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    color: "#000000",
+    artist: "Benjuhman1 & Torgaar",
+    tag: "Peanut Man"
+  },
+  lilto: {
+    name: "Lil To",
+    copies: "N/A",
+    color: "#ff3b30",
+    artist: "Torgaar",
+    tag: "ToBreaker"
+  },
+  coolguyto: {
+    name: "Cool Guy (To)",
+    copies: "N/A",
+    collection: "Cool Guy",
+    color: "#00a2e8",
+    artist: "Torgaar",
+    tag: "ToBreaker"
+  },
+  peanutmanmask: {
+    name: "Peanut Man (Mask)",
+    copies: "N/A",
+    collection: "Peanut Man",
+    color: "#b08f6b",
+    artist: "Benjuhman1 & Torgaar",
+    tag: "Peanut Man"
+  },
+  peanutmanink: {
+    name: "Peanut Man (Ink)",
+    copies: "N/A",
+    collection: "Peanut Man",
+    color: "#ffffff",
+    artist: "Benjuhman1 & Torgaar",
+    tag: "Peanut Man"
+  },
 
 };
 
@@ -1160,7 +1228,11 @@ window.SKIN_IMAGE_OVERRIDES = {
   chairlordremastered: "chairlordnormal.png",
   galaxy: "galaxynew.png",
   coolguygalaxy: "coolguygalaxynew.png",
-  midgemidge: "coolguymidgemidge.png"
+  midgemidge: "coolguymidgemidge.png",
+  largeto: "/skins/bigto/blockoverit.png",
+  fato: "/skins/fato/blockoverit.png",
+  lilto: "/skins/lilto/blockoverit.png",
+  coolguyto: "/skins/coolto/blockoverit.png"
 };
 
 window.SOLID_SKIN_COLORS = {
