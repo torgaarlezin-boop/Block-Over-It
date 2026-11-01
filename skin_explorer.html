@@ -312,6 +312,12 @@
                 border-color: #ff7a18;
                 color: #ffc48c;
             }
+            /* Season 3, The City: taxi yellow */
+            .skin-tag.the-city {
+                background-color: #3a2f0a;
+                border-color: #f1c40f;
+                color: #ffe680;
+            }
             /* Anything a skin puts in its own `tag` field. No meaning attached, so
          it reads as plain as it is: the panel colours with a pale border. */
             .skin-tag.custom {
@@ -847,6 +853,12 @@
                     <button class="filter-btn" data-tag="blocktober">
                         Blocktober
                     </button>
+                    <button class="filter-btn" data-tag="theCity">
+                        The City
+                    </button>
+                    <button class="filter-btn" data-tag="tag:ToBreaker">
+                        ToBreaker
+                    </button>
                 </div>
                 <select id="sort-select">
                     <option value="name_asc">Sort: Name (A-Z)</option>
@@ -949,6 +961,7 @@
                     def.blockySummer = false;
                 if (typeof def.blocktober === "undefined")
                     def.blocktober = false;
+                if (typeof def.theCity === "undefined") def.theCity = false;
                 if (typeof def.forPlayer === "undefined") def.forPlayer = "";
                 if (typeof def.copies === "undefined") def.copies = "";
                 if (typeof def.color === "undefined") def.color = "";
@@ -1062,6 +1075,7 @@
                     label: "Blocky Summer",
                 },
                 { key: "blocktober", cls: "blocktober", label: "Blocktober" },
+                { key: "theCity", cls: "the-city", label: "The City" },
             ];
 
             // A skin's own `tag`, which can say anything: one string, or several.
