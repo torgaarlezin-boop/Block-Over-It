@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Block Over It News - Game</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #111; color: #aaa; font-family: "Courier New", Courier, monospace; }
+      #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; letter-spacing: 2px; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <div id="boot">LOADING...</div>
+
+    <!--
+      The game, for Block Over It News (news.html). Shows one emote or one
+      environment the way the game does, and lets you walk around in an
+      environment. Like the bot copy it loads the real game file next to it
+      and keeps it apart from the real game:
+      - It never talks to the database (every request to Supabase is refused).
+      - Local saves go under their own "boi-news:" prefix.
+      - No music.
+      ?mode=emote&id=<emote>&skin=<skin>   the emote, on that skin
+      ?mode=env&id=<environment>&skin=<skin>   the environment, and
+          news.html sends {boiNews:"enter"} to walk in it, {boiNews:"exit"} to leave
+      ?mode=level&id=<level>   a picture of a published level
+      ?mode=list   tells news.html every emote and environment there is
+    -->
+    <script id="boi-news-guard" type="text/plain">
+      (function () {
+        "use strict";
+        window.BOI_NEWS_EMBED = true;
+        var PREFIX = "boi-news:";
+        var real = null;
+        try { real = window.localStorage; } catch (e) {}
+        function ownKeys() {
+          var out = [];
+          if (!real) return out;
+          for (var i = 0; i < real.length; i++) {
+            var k = real.key(i);
+            if (k && k.indexOf(PREFIX) === 0) out.push(k.slice(PREFIX.length));
+          }
+          return out;
+        }
+        var store = {
+          getItem: function (k) { return real ? real.getItem(PREFIX + k) : null; },
+          setItem: function (k, v) { if (real) try { real.setItem(PREFIX + k, String(v)); } catch (e) {} },
+          removeItem: function (k) { if (real) real.removeItem(PREFIX + k); },
+          clear: function () { ownKeys().forEach(function (k) { real.removeItem(PREFIX + k); }); },
+          key: function (i) { var keys = ownKeys(); return i < keys.length ? keys[i] : null; },
+        };
+        Object.defineProperty(store, "length", { get: function () { return ownKeys().length; } });
+        try {
+          Object.defineProperty(window, "localStorage", { configurable: true, enumerable: true, get: function () { return store; } });
+        } catch (e) {}
+        store.setItem("hasSeenIntro", "true");
+        store.removeItem("blockoverit_username");
+
+        // No database, except reading one published level (?mode=level)
+        function isDatabase(url) { return /\.supabase\.co\//i.test(String(url)); }
+        var BODY = JSON.stringify({ code: "NEWS_COPY", message: "Block Over It News copy: no database.", details: null, hint: null });
+        var realFetch = window.fetch;
+        window.BOI_NEWS_READ_LEVEL = function (url, init) { return realFetch.call(window, url, init); };
+        window.fetch = function (input, init) {
+          var url = typeof input === "string" ? input : input && input.url ? input.url : String(input);
+          if (isDatabase(url))
+            return Promise.resolve(new Response(BODY, { status: 403, headers: { "Content-Type": "application/json" } }));
+          return realFetch.call(window, input, init);
+        };
+        var xhrOpen = XMLHttpRequest.prototype.open;
+        var xhrSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.open = function (method, url) {
+          this.boiRefused = isDatabase(url);
+          return xhrOpen.apply(this, arguments);
+        };
+        XMLHttpRequest.prototype.send = function () {
+          if (this.boiRefused) { try { this.abort(); } catch (e) {} return; }
+          return xhrSend.apply(this, arguments);
+        };
+        if (navigator.sendBeacon) {
+          var beacon = navigator.sendBeacon.bind(navigator);
+          navigator.sendBeacon = function (url, data) { return isDatabase(url) ? true : beacon(url, data); };
+        }
+        // Realtime (LIVE, friends) stays off too
+        var RealWS = window.WebSocket;
+        window.WebSocket = function (url, p) {
+          if (isDatabase(url)) throw new Error("Block Over It News copy: no realtime");
+          return p === undefined ? new RealWS(url) : new RealWS(url, p);
+        };
+        window.WebSocket.prototype = RealWS.prototype;
+
+        // Skin pictures live in the GitHub repo; a local copy reads them from there
+        // (Not when the game came from the live site: its own files are found there)
+        if (!/github\.io$/i.test(location.hostname) && !window.BOI_NEWS_REMOTE) {
+          var RAW = "https://raw.githubusercontent.com/torgaarlezin-boop/Block-Over-It/main/";
+          var wrapped;
+          Object.defineProperty(window, "skinImageFile", {
+            configurable: true,
+            get: function () { return wrapped; },
+            set: function (fn) {
+              wrapped = function (id) {
+                var f = fn(id);
+                return /^(https?:|data:)/.test(f) ? f : RAW + f;
+              };
+            },
+          });
+        }
+      })();
+    </script>
+
+    <script id="boi-news-hook" type="text/plain">
+      (function () {
+        "use strict";
+        var P = new URLSearchParams(location.search);
+        var mode = P.get("mode") || "";
+        var id = P.get("id") || "";
+        var skin = P.get("skin") || "default";
+        // A page opened from a folder has no origin to name (its
+        // location.origin says "file://", which matches nothing)
+        var TARGET = /^https?:$/.test(location.protocol) ? location.origin : "*";
+        var tell = function (msg) {
+          msg.boiNews = msg.boiNews || "event";
+          try { parent.postMessage(msg, TARGET); } catch (e) {}
+        };
+
+        try { playMusic = function () {}; } catch (e) {}
+        try { gameSettings.lastReadNews = LATEST_NEWS_VERSION; } catch (e) {}
+        // The skin is worn as if it were owned (this copy is never signed in)
+        function wear(s) {
+          try {
+            if (!currentUserSkins.includes(s)) currentUserSkins.push(s);
+            gameSettings.currentSkin = s;
+          } catch (e) {}
+        }
+        wear(skin);
+
+        var css = document.createElement("style");
+        css.textContent =
+          "html.boi-news-preview,html.boi-news-preview body{overflow:hidden}" +
+          "html.boi-news-preview body{visibility:hidden}" +
+          "html.boi-news-preview #skin-viewer,html.boi-news-preview #boi-news-stage{visibility:visible}" +
+          "#skin-viewer .sv-hint{display:none!important}" +
+          "html.boi-news-preview #skin-viewer{overflow:hidden!important}" +
+          "#boi-news-stage{position:fixed;inset:0;z-index:100000;background:#222;overflow:hidden}" +
+          "#boi-news-stage.can-enter{cursor:pointer}" +
+          "#boi-news-stage .env-thumb,#boi-news-stage .boi-news-pic{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}" +
+          "#boi-news-stage .boi-news-name{position:absolute;left:10px;bottom:10px;background:#111;border:3px solid #333;" +
+          "color:#fff;font:bold 14px 'Courier New',monospace;padding:4px 8px;text-transform:uppercase;max-width:60%;" +
+          "overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+          "#boi-news-stage .boi-news-go{position:absolute;right:10px;bottom:10px;background:#444;border:4px solid #333;" +
+          "color:#fff;font:bold 14px 'Courier New',monospace;padding:6px 14px;text-transform:uppercase}" +
+          "#boi-news-stage.can-enter:hover .boi-news-go{background:#335699;border-color:#eee}" +
+          "#boi-news-stage .boi-news-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" +
+          "color:#aaa;font:bold 14px 'Courier New',monospace;text-transform:uppercase;text-align:center;padding:10px}" +
+          "#loading-layer{display:none!important}";
+        document.head.appendChild(css);
+        var root = document.documentElement;
+        root.classList.add("boi-news-preview");
+
+        var ready = false;
+        function whenLoaded(fn) {
+          var t0 = Date.now();
+          (function wait() {
+            var menu = document.getElementById("main-menu");
+            var shown = menu && getComputedStyle(menu).display !== "none" && menu.children.length;
+            if (shown || Date.now() - t0 > 15000) fn();
+            else setTimeout(wait, 50);
+          })();
+        }
+
+        // ---- a published level (?mode=level) ----
+        // Read straight from the database (the only thing this copy may read)
+        var levelRow = null;
+        function readLevel() {
+          var url = supabaseUrl + "/rest/v1/published_levels_latest?select=*&id=eq." + encodeURIComponent(id);
+          return window.BOI_NEWS_READ_LEVEL(url, {
+            headers: { apikey: supabaseKey, Authorization: "Bearer " + supabaseKey },
+          }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+            var row = rows && rows[0];
+            if (!row) return null;
+            var data = row.data;
+            if (typeof data === "string") { try { data = JSON.parse(data); } catch (e) { data = null; } }
+            if (!data) return null;
+            row.levelData = data;
+            return row;
+          });
+        }
+        // The level's whole room, zoomed out, the way an environment's picture is drawn
+        function levelPicture(data) {
+          var host = document.createElement("div");
+          host.style.cssText = "position:fixed;left:-20000px;top:0;width:640px;height:360px;overflow:hidden;visibility:hidden;pointer-events:none";
+          document.body.appendChild(host);
+          var shine = metallicShineOn, ice = blockyIceOn, measure = lastViewMeasure;
+          var box = document.createElement("div");
+          box.className = "boi-news-pic";
+          try {
+            var level = new Level(Object.assign({}, data, {
+              levelType: "custom", customLevelIndex: -1, disableZoom: true, forceZoom: false, inTheDark: false,
+            }));
+            var display = new DOMDisplay(host, level);
+            window.removeEventListener("resize", display.resizeHandler);
+            var world = display.world.cloneNode(true);
+            world.querySelectorAll("[id]").forEach(function (el) { el.removeAttribute("id"); });
+            world.style.position = "absolute";
+            world.style.left = "0";
+            world.style.top = "0";
+            world.style.margin = "0";
+            world.style.transformOrigin = "0 0";
+            world.style.willChange = "";
+            var w = level.width * display.scale, h = level.height * display.scale;
+            box.style.background = display.wrap.style.background || "#222";
+            box.appendChild(world);
+            var fit = function () {
+              var bw = box.clientWidth, bh = box.clientHeight;
+              if (!bw || !bh) return;
+              var k = Math.min(bw / w, bh / h) * 0.9;
+              world.style.transform = "translate(" + (bw - w * k) / 2 + "px," + (bh - h * k) / 2 + "px) scale(" + k + ")";
+            };
+            new ResizeObserver(fit).observe(box);
+          } catch (e) {
+            console.warn("Level picture could not be drawn:", e);
+          } finally {
+            metallicShineOn = shine; blockyIceOn = ice; lastViewMeasure = measure;
+            host.remove();
+          }
+          return box;
+        }
+
+        var playing = false;
+        var stage = null;
+        function stageMessage(text) {
+          stage = document.createElement("div");
+          stage.id = "boi-news-stage";
+          stage.innerHTML = '<div class="boi-news-msg"></div>';
+          stage.firstChild.textContent = text;
+          document.body.appendChild(stage);
+        }
+        function showPreview() {
+          root.classList.add("boi-news-preview");
+          if (stage) { stage.style.display = ""; return; }
+          var name, pic;
+          if (mode === "env") {
+            var def = environmentById(id);
+            if (!def) return stageMessage("Unknown environment");
+            pic = environmentThumb(def);
+            name = def.name;
+          } else {
+            if (!levelRow) return stageMessage("Level not found");
+            pic = levelPicture(levelRow.levelData);
+            name = levelRow.name || "Level " + id;
+          }
+          stage = document.createElement("div");
+          stage.id = "boi-news-stage";
+          stage.appendChild(pic);
+          var label = document.createElement("div");
+          label.className = "boi-news-name";
+          label.textContent = name;
+          stage.appendChild(label);
+          if (mode === "env") {
+            var go = document.createElement("div");
+            go.className = "boi-news-go";
+            go.textContent = "Enter";
+            stage.appendChild(go);
+            stage.classList.add("can-enter");
+            stage.addEventListener("click", function () { tell({ boiNews: "enter-request" }); });
+          }
+          document.body.appendChild(stage);
+        }
+        function canPlay() {
+          return mode === "env" && !!environmentById(id);
+        }
+        function enter(withSkin) {
+          if (playing || !canPlay()) return;
+          playing = true;
+          if (withSkin) wear(withSkin);
+          if (stage) stage.style.display = "none";
+          root.classList.remove("boi-news-preview");
+          try { closeSkinViewer(); } catch (e) {}
+          openEnvironment(id);
+          try { window.focus(); } catch (e) {}
+        }
+        // ESC (or the game's own way out) comes back to the picture
+        var gameExit = exitToMenu;
+        exitToMenu = function () {
+          var r = gameExit.apply(this, arguments);
+          if (playing) {
+            playing = false;
+            try { closeSkinViewer(); } catch (e) {}
+            showPreview();
+            tell({ boiNews: "exited" });
+          }
+          return r;
+        };
+
+        window.addEventListener("message", function (e) {
+          if (!e.data || e.source !== parent) return;
+          if (e.data.boiNews === "enter" && ready) enter(e.data.skin);
+          if (e.data.boiNews === "exit" && playing) exitToMenu();
+        });
+
+        whenLoaded(function () {
+          var boot = document.getElementById("boot");
+          if (boot) boot.remove();
+          var done = function () { ready = true; tell({ boiNews: "ready" }); };
+          if (mode === "list") {
+            tell({
+              boiNews: "list",
+              emotes: Object.keys(EMOTE_DEFINITIONS).map(function (k) {
+                var d = EMOTE_DEFINITIONS[k] || {};
+                return { id: k, name: d.name || k, color: d.color || "#444" };
+              }),
+              environments: ENVIRONMENTS.map(function (d) {
+                return { id: d.id, name: d.name || d.id };
+              }),
+            });
+            done();
+          } else if (mode === "emote") {
+            if (EMOTE_DEFINITIONS[id]) {
+              openEmoteViewer(id, skin);
+              var view = document.getElementById("skin-viewer");
+              // It stays: a tap would close it in the game
+              if (view)
+                ["click", "pointerdown", "pointerup", "keydown"].forEach(function (t) {
+                  view.addEventListener(t, function (ev) { ev.stopPropagation(); ev.preventDefault(); }, true);
+                });
+            } else {
+              stageMessage("Unknown emote");
+            }
+            done();
+          } else if (mode === "env") {
+            showPreview();
+            done();
+          } else if (mode === "level") {
+            readLevel().then(function (row) { levelRow = row; }, function () {}).then(function () {
+              showPreview();
+              done();
+            });
+          }
+        });
+      })();
+    </script>
+
+    <script>
+      (async function () {
+        var msg = document.getElementById("boot");
+        var LIVE = "https://torgaarlezin-boop.github.io/Block-Over-It/";
+        var onSite = /github\.io$/i.test(location.hostname);
+        // The game file next to this page (blockoverit.html in the project
+        // folder, index.html on the live site); if there is none, or this page
+        // was opened straight from a folder, the live game from the site
+        var sources = location.protocol === "file:" ? [] : onSite ? ["index.html", "blockoverit.html"] : ["blockoverit.html", "index.html"];
+        if (/[?&]remote\b/.test(location.search)) sources = [];
+        var html = null, remote = false;
+        for (var i = 0; i < sources.length && !html; i++) {
+          try {
+            var res = await fetch(sources[i], { cache: "no-cache" });
+            if (!res.ok) continue;
+            var text = await res.text();
+            if (/function\s+openEnvironment\s*\(/.test(text)) html = text;
+          } catch (e) {}
+        }
+        if (!html) {
+          try {
+            var live = await fetch(LIVE + "index.html", { cache: "no-cache" });
+            if (live.ok) {
+              var t = await live.text();
+              if (/function\s+openEnvironment\s*\(/.test(t)) { html = t; remote = true; }
+            }
+          } catch (e) {}
+        }
+        if (!html) { msg.textContent = "COULDN'T LOAD THE GAME"; return; }
+        var guard = document.getElementById("boi-news-guard").textContent;
+        var hook = document.getElementById("boi-news-hook").textContent;
+        html = html.replace(/<head[^>]*>/i, function (tag) {
+          return tag + "\n" +
+            // The live game's own files (skins.js, pictures) come from the site
+            (remote ? '<base href="' + LIVE + '">\n<script>window.BOI_NEWS_REMOTE = true;<\/script>\n' : "") +
+            "<script>" + guard + "<\/script>\n";
+        });
+        // The loading screen's three-second wait is for people, not for this
+        html = html.replace("setTimeout(r, 3000)", "setTimeout(r, 0)");
+        // After the game's own script, before LIVE's
+        var at = html.indexOf('<script src="boi-live.js');
+        if (at < 0) at = html.lastIndexOf("</body>");
+        var tag = "<script>" + hook + "<\/script>\n";
+        html = at >= 0 ? html.slice(0, at) + tag + html.slice(at) : html + tag;
+        document.open();
+        document.write(html);
+        document.close();
+      })();
+    </script>
+  </body>
+</html>
