@@ -265,13 +265,14 @@ window.SKIN_DEFINITIONS = {
     honorary: true,
   },
   deacy: {
-    name: "Deacy",
+    name: "Cool Guy (Deacy)",
     copies: "1/1",
-    color: "#0cb964",
+    color: "#0000000",
     desc: "Honorary",
     gold: true,
     artist: "Dbumgarner",
     honorary: true,
+    collection: "Cool Guy"
   },
   triplet: {
     name: "Tung Tung Tung Sahur",
@@ -563,7 +564,7 @@ window.SKIN_DEFINITIONS = {
   alien: {
     name: "Alien",
     collection: "Alien",
-    copies: "1/10",
+    copies: "1/21",
     color: "#7ed957",
     artist: "Torgaar",
     blocktober: true,
@@ -640,7 +641,7 @@ window.SKIN_DEFINITIONS = {
   },
   ghost: {
     name: "Ghost",
-    copies: "1/5",
+    copies: "1/18",
     color: "#FFFFFF",
     artist: "Torgaar",
     blocktober: true,
@@ -1012,7 +1013,7 @@ window.SKIN_DEFINITIONS = {
     copies: "N/A",
     collection: "Cool Guy",
     artist: "Torgaar",
-    color: "#0879bf",
+    color: "#cb6ce6",
     gameUnlock: true,
   },
   coolguyyellowstripes: {
@@ -1200,6 +1201,15 @@ window.SKIN_DEFINITIONS = {
     tag: "Peanut Man"
   },
 
+  mrolsenrobot: {
+    name: "Cool Guy (Mr. Olsen Robot)",
+    copies: "1/3",
+    color: "#e7191f",
+    artist: "Charliekirkedger41",
+    collection: "Cool Guy"
+  }
+
+
 };
 
 window.ANIMATED_SKINS = [
@@ -1229,15 +1239,13 @@ window.SKIN_IMAGE_OVERRIDES = {
   galaxy: "galaxynew.png",
   coolguygalaxy: "coolguygalaxynew.png",
   midgemidge: "coolguymidgemidge.png",
-  // ToBreaker skins: the To's head on its body, in its folder under skins/.
-  // No "/" at the start -- the site is in a folder of its own.
   largeto: "skins/bigto/blockoverit.png",
   fato: "skins/fato/blockoverit.png",
   lilto: "skins/lilto/blockoverit.png",
   coolguyto: "skins/coolto/blockoverit.png",
+  deacy: "coolguydeacy.png"
 };
 
-// Where the ToBreaker folders are (To Up uses each one's arm.png)
 window.TOBREAKER_SKIN_DIR = "skins/";
 
 window.SOLID_SKIN_COLORS = {
