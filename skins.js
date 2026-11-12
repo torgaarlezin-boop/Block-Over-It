@@ -1007,6 +1007,7 @@ window.SKIN_DEFINITIONS = {
     color: "#38b6ff",
     artist: "Jdog",
     collection: 'Cool Guy',
+    tag: "Shop S5"
   },
   coolguypurplestripes: {
     name: "Cool Guy (Stripes Purple)",
@@ -1089,6 +1090,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     artist: "MidgeMidge22 & ejohnson",
     color: "#476ffa",
+    tag: "Shop S5"
   },
   earthmagma: {
     name: "Earth (Magma)",
