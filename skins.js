@@ -1100,38 +1100,6 @@ window.SKIN_DEFINITIONS = {
     gameUnlock: true,
     color: "#ff3131",
   },
-  stream: {
-    name: "Cool Guy (Stream)",
-    copies: "1/5",
-    collection: "Cool Guy",
-    artist: "MidgeMidge",
-    color: "#38b6ff",
-    tag: "Shop S6"
-  },
-  streamwhite: {
-    name: "Cool Guy (White Earth Stream)",
-    copies: "1/3",
-    collection: "Cool Guy",
-    artist: "MidgeMidge",
-    color: "#ffffff",
-    tag: "Shop S6"
-  },
-  streamblack: {
-    name: "Cool Guy (Black Earth Stream)",
-    copies: "1/3",
-    collection: "Cool Guy",
-    artist: "MidgeMidge",
-    color: "#000000",
-    tag: "Shop S6"
-  },
-  streamlava: {
-    name: "Cool Guy (Lava Stream)",
-    copies: "1/3",
-    collection: "Cool Guy",
-    artist: "MidgeMidge",
-    color: "#e7191f",
-    tag: "Shop S6"
-  },
 
   largeto: {
     name: "Large To",
@@ -1209,8 +1177,151 @@ window.SKIN_DEFINITIONS = {
     color: "#e7191f",
     artist: "Charliekirkedger41",
     collection: "Cool Guy"
-  }
-
+  },
+  mrolsenbeanie: {
+    name: "Cool Guy (Mr. Olsen Beanie)",
+    copies: "1/3",
+    color: "#e7191f",
+    artist: "Deacon",
+    collection: "Cool Guy"
+  },
+  mrolsenking: {
+    name: "Cool Guy (Mr. Olsen King)",
+    copies: "1/3",
+    color: "#ffde59",
+    artist: "Deacon",
+    collection: "Cool Guy",
+    tag: "Medieval"
+  },
+  blockygold: {
+    name: "Blocky (Gold)",
+    collection: "Blocky",
+    copies: "1/1",
+    color: "#d4af37",
+    artist: "Block Over It Dimension",
+    tag: "Blockydays"
+  },
+  blockysilver: {
+    name: "Blocky (Silver)",
+    collection: "Blocky",
+    copies: "1/3",
+    color: "#c0c0c0",
+    artist: "Block Over It Dimension",
+    tag: "Blockydays"
+  },
+  blockybronze: {
+    name: "Blocky (Bronze)",
+    collection: "Blocky",
+    copies: "1/5",
+    color: "#cd7f32",
+    artist: "Block Over It Dimension",
+    tag: "Blockydays"
+  },
+  dinowarrior: {
+    name: "Dino (Warrior)",
+    collection: "Dino",
+    copies: "1/4",
+    color: "",
+    artist: "Crosby",
+  },
+  pixels: {
+    name: "Pixels",
+    copies: "1/5",
+    color: "#000000",
+    tag: "Pixelated",
+    artist: "Deacon"
+  },
+  pixelmonster: {
+    name: "Pixel Monster",
+    tag: "Pixelated",
+    artist: "Deacon",
+    copies: "1/3",
+    color: "#000000"
+  },
+  dinopixelated: {
+    name: "Dino (Pixelated)",
+    collection: "Dino",
+    tag: "Pixelated",
+    artist: "Crosby",
+    copies: "1/4",
+    color: "#c1ff72"
+  },
+  coolguybrokenglasses: {
+    name: "Cool Guy (Broken Glasses)",
+    collection: "Cool Guy",
+    artist: "Crosby",
+    copies: "1/3",
+    color: "#38b6ff"
+  },
+  dinoforehead: {
+    name: "Dino (Forehead)",
+    collection: "Dino",
+    artist: "Crosby",
+    tag: "Foreheads",
+    copies: "1/4",
+    color: "#c1ff72"
+  },
+  coolguyforehead: {
+    name: "Cool Guy (Forehead)",
+    collection: "Cool Guy",
+    artist: "Crosby",
+    tag: "Foreheads",
+    copies: "1/4",
+    color: "#38b6ff"
+  },
+  coolguyking: {
+    name: "Cool Guy (King)",
+    collection: "Cool Guy",
+    artist: "Crosby",
+    tag: "Medieval",
+    copies: "1/3",
+    color: "#ffde59"
+  },
+  gingerbreadman: { //put these two in bundle
+    name: "Gingerbread Man",
+    artist: "Deacon",
+    tag: "Blockydays",
+    copies: "1/4",
+    color: "#8D5732"
+  },
+  snowman: {
+    name: "Snowman",
+    artist: "Deacon",
+    tag: "Blockydays",
+    copies: "1/4",
+    color: "#ffffff"
+  },
+  caroler: {
+    name: "Caroler",
+    artist: "Deacon",
+    tag: "Blockydays",
+    copies: "1/4",
+    color: "#14ae5c"
+  },
+  coolguybackrooms: {
+    name: "Cool Guy (Backrooms)",
+    artist: "Torgaar & MidgeMidge22",
+    tag: "Backrooms",
+    collection: "Cool Guy",
+    copies: "1/5",
+    color: "#535335"
+  },
+  hazmat: {
+    name: "Hazmat",
+    artist: "Torgaar",
+    tag: "Backrooms",
+    copies: "1/5",
+    color: "#ffff00",
+    collection: "Hazmat"
+  },
+  hazmatinfected: { //for buying anything backrooms on black friday
+    name: "Hazmat (Atomic Infection)",
+    artist: "Torgaar",
+    tag: "Backrooms",
+    copies: "1/3",
+    color: "#ffff00",
+    collection: "Hazmat"
+  },
 
 };
 
@@ -1245,7 +1356,10 @@ window.SKIN_IMAGE_OVERRIDES = {
   fato: "skins/fato/blockoverit.png",
   lilto: "skins/lilto/blockoverit.png",
   coolguyto: "skins/coolto/blockoverit.png",
-  deacy: "coolguydeacy.png"
+  deacy: "coolguydeacy.png",
+  dinowarrior: "dinowarrior2.png",
+  dinoforehead: "dinoforehead2.png",
+  mrolsenking: "mrolsenking2.png",
 };
 
 window.TOBREAKER_SKIN_DIR = "skins/";
@@ -1258,7 +1372,10 @@ window.SOLID_SKIN_COLORS = {
   blockypurple: "#6f4aa8",
   blockypink: "#d0618f",
   blockywhite: "#e6e6e6",
-  blockyrectangular: "#335699"
+  blockyrectangular: "#335699",
+  blockygold: "#D4AF37",
+  blockysilver: "#C0C0C0",
+  blockybronze: "#CD7F32"
 };
 
 window.skinFileExtension = function (id) {
