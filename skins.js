@@ -1039,7 +1039,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     artist: "Torgaar, Bode H, Mcdongos",
     color: "#fff1c0",
-    tag: ["Icons", "Blockpass S1"]
+    tag: "Icons",
   },
   mrolsenpink: {
     name: "Cool Guy (Mr Olsen Pink House)",
@@ -1176,22 +1176,25 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#e7191f",
     artist: "Charliekirkedger41",
-    collection: "Cool Guy"
+    collection: "Cool Guy",
+    tag: "Icons"
   },
   mrolsenbeanie: {
     name: "Cool Guy (Mr. Olsen Beanie)",
     copies: "1/3",
     color: "#e7191f",
     artist: "Deacon",
-    collection: "Cool Guy"
+    collection: "Cool Guy",
+    tag: "Icons"
   },
   mrolsenking: {
     name: "Cool Guy (Mr. Olsen King)",
     copies: "1/3",
     color: "#ffde59",
-    artist: "Deacon",
+    artist: "Crosby & Deacon",
     collection: "Cool Guy",
-    tag: "Medieval"
+    tag: "Medieval",
+    tag: "Icons"
   },
   blockygold: {
     name: "Blocky (Gold)",
@@ -1314,14 +1317,56 @@ window.SKIN_DEFINITIONS = {
     color: "#ffff00",
     collection: "Hazmat"
   },
-  hazmatinfected: { //for buying anything backrooms on black friday
+  hazmatinfected: {
     name: "Hazmat (Atomic Infection)",
     artist: "Torgaar",
     tag: "Backrooms",
     copies: "1/3",
     color: "#ffff00",
-    collection: "Hazmat"
+    collection: "Hazmat",
+    tag: "SEC Styles"
   },
+  blockypixelated: {
+    name: "Blocky (Pixelated)",
+    artist: "Deacon",
+    tag: "Pixelated",
+    copies: "1/5",
+    color: "#fadb43",
+    collection: "Blocky"
+  },
+  coolguypixelated: {
+    name: "Cool Guy (Pixelated)",
+    artist: "Crosby & Deacon",
+    tag: "Pixelated",
+    copies: "1/5",
+    color: "#38b6ff",
+    collection: "Cool Guy"
+  },
+  cubemouthpixelated: {
+    name: "Cubemouth (Pixelated)",
+    artist: "Crosby & Deacon",
+    tag: "Pixelated",
+    copies: "1/4",
+    color: "#0571d3",
+    collection: "Cubemouth"
+  },
+  zombiepixelated: {
+    name: "Cool Guy (Zombie Pixelated)",
+    artist: "Crosby & Deacon",
+    tag: "Pixelated",
+    copies: "1/3",
+    color: "#7ed957",
+    collection: "Cool Guy"
+  },
+  mrolsenpixelated: {
+    name: "Cool Guy (Mr. Olsen Pixelated)",
+    artist: "Crosby & Deacon",
+    tag: "Pixelated",
+    copies: "1/3",
+    color: "#fff1c0",
+    collection: "Cool Guy",
+    tag: "Icons"
+  }
 
 };
 
@@ -1329,6 +1374,7 @@ window.ANIMATED_SKINS = [
   "smiley",
   "deathfire",
   "WINSTONTHEGREAT",
+  "pixelmonster"
 ];
 
 window.SKIN_IMAGE_OVERRIDES = {
@@ -1375,7 +1421,7 @@ window.SOLID_SKIN_COLORS = {
   blockyrectangular: "#335699",
   blockygold: "#D4AF37",
   blockysilver: "#C0C0C0",
-  blockybronze: "#CD7F32"
+  blockybronze: "#CD7F32",
 };
 
 window.skinFileExtension = function (id) {

@@ -209,6 +209,58 @@
                 margin-bottom: 6px;
                 pointer-events: none;
             }
+            /* Metallic skins (Blockydays Gold/Silver/Bronze) shine like a block
+               painted a metallic colour in the game: still light/shade bands,
+               and a glint that sweeps across every 4.5s */
+            .skin-shine {
+                position: absolute;
+                inset: 0;
+                overflow: hidden;
+                pointer-events: none;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.5) 0 16%,
+                    rgba(255, 255, 255, 0.16) 16% 44%,
+                    rgba(255, 255, 255, 0) 44% 70%,
+                    rgba(0, 0, 0, 0.2) 70%
+                );
+            }
+            .skin-shine::after {
+                content: "";
+                position: absolute;
+                top: -25%;
+                bottom: -25%;
+                left: 0;
+                width: 70%;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0 16%,
+                    rgba(255, 255, 255, 0.8) 16% 52%,
+                    transparent 52% 66%,
+                    rgba(255, 255, 255, 0.6) 66% 80%,
+                    transparent 80%
+                );
+                transform: translateX(-160%) skewX(-25deg);
+                animation: metal-glint 4.5s linear infinite;
+                animation-delay: var(--metal-delay, 0s);
+            }
+            @keyframes metal-glint {
+                0% {
+                    transform: translateX(-160%) skewX(-25deg);
+                }
+                14.2% {
+                    transform: translateX(230%) skewX(-25deg);
+                }
+                100% {
+                    transform: translateX(230%) skewX(-25deg);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .skin-shine::after {
+                    animation: none;
+                    display: none;
+                }
+            }
             .skin-item-preview {
                 width: 56px;
                 height: 112px;
@@ -1045,8 +1097,55 @@
 
             // The picture on a preview box, or a flat colour for the two skins that
             // are drawn as plain blocks.
+            // The editor's metallic swatches: a plain skin in one of these
+            // shines like a block painted that colour in the game
+            const METALLIC_COLORS = [
+                "#C0C0C0",
+                "#D4AF37",
+                "#B87333",
+                "#CD7F32",
+                "#71797E",
+            ];
+            function isMetalSkin(id) {
+                const c = SOLID_SKIN_PREVIEW[id];
+                return (
+                    typeof c === "string" &&
+                    METALLIC_COLORS.indexOf(c.trim().toUpperCase()) !== -1
+                );
+            }
+            // A plain skin's moving effect: "metal" or null
+            function skinFx(id) {
+                return isMetalSkin(id) ? "metal" : null;
+            }
+            // Adds or removes a skin's effect on a preview (`kind` from
+            // skinFx; true = "metal"). Every effect runs on the page's one
+            // clock, so they all move together.
+            function syncSkinShine(el, kind) {
+                if (kind === true) kind = "metal";
+                let s = el.querySelector(":scope > .skin-shine");
+                if (s && (!kind || s.dataset.fx !== kind)) {
+                    s.remove();
+                    s = null;
+                }
+                if (!kind) return;
+                if (!s) {
+                    s = document.createElement("div");
+                    s.className = "skin-shine";
+                    s.style.setProperty(
+                        "--metal-delay",
+                        -((performance.now() / 1000) % 4.5) + "s",
+                    );
+                    s.dataset.fx = kind;
+                    el.appendChild(s);
+                }
+                // Previews are not on the page yet when painted, so this is
+                // set outright rather than read from the computed style
+                if (!el.style.position) el.style.position = "relative";
+            }
+
             function paintPreview(el, id, customImg) {
                 const solid = SOLID_SKIN_PREVIEW[id];
+                syncSkinShine(el, !!solid && !customImg && skinFx(id));
                 if (solid && !customImg) {
                     el.style.backgroundImage = "none";
                     el.style.backgroundColor = solid;
