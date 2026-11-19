@@ -1224,7 +1224,7 @@ window.SKIN_DEFINITIONS = {
     name: "Dino (Warrior)",
     collection: "Dino",
     copies: "1/4",
-    color: "",
+    color: "#000000",
     artist: "Crosby",
   },
   pixels: {
@@ -1372,7 +1372,31 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#7ed957",
     collection: "Dino"
+  },
+  catsanta: {
+    name: "Cat (Santa)",
+    artist: "Shadow & Torgaar",
+    copies: "1/3",
+    color: "#e7191f",
+    collection: "Cat"
+  },
+  shadow: {
+    name: "Cat (Santa Shadow)",
+    artist: "Shadow & Torgaar",
+    copies: "1/1",
+    color: "#cb6ce6",
+    collection: "Cat",
+    honorary: true
+  },
+  coolguybuilding: {
+    name: "Cool Guy (Building)",
+    artist: "Torgaar",
+    copies: "1/4",
+    color: "#fadb43",
+    collection: "Cool Guy",
+    tag: "The City"
   }
+
 
 };
 
