@@ -12866,10 +12866,11 @@
 
       // ---- AUCTIONS -------------------------------------------------------
       // A shop item sold by bidding (shop_auctions): each bid has to beat
-      // the top one and you need the Blue Coins for it when you bid. Nothing
-      // is taken then; when it ends the highest bidder who can still pay
-      // does, and gets the item (boi_settle_auction, run by the first shop
-      // visit after the end). Shown for 3 days after it ends.
+      // the top one, and its Blue Coins are held as soon as it is placed --
+      // given back the moment someone outbids it (raising your own top bid
+      // takes only the difference). When it ends the holder gets the item
+      // (boi_settle_auction, run by the first shop visit after the end).
+      // Shown for 3 days after it ends.
       async function fetchAuctions() {
         if (!_supabase) return [];
         try {
@@ -13019,7 +13020,6 @@
       }
       async function placeBid(a, value) {
         const amount = Math.floor(Number(value) || 0);
-        const name = skinDisplayName(a.item);
         let res;
         try {
           const { data, error } = await _supabase.rpc("boi_place_bid", {
@@ -13035,7 +13035,9 @@
           return;
         }
         if (res.ok) {
-          showTopNotification("You're the top bidder on " + name + " at " + amount + " Blue Coins.");
+          // The bid's coins are held now (the bid it beat got its back)
+          if (typeof res.balance === "number") blueCoinWallet.balance = res.balance;
+          updateBlueCoinDisplays();
           showMenu("shop");
           return;
         }
@@ -13045,7 +13047,8 @@
             (res.top ? " (someone has bid " + res.top + ")." : "."),
           "too-high": "That bid is too high.",
           short:
-            "You need " + amount + " Blue Coins to bid that and you have " +
+            "You need " + (res.need != null ? res.need : amount) +
+            " Blue Coins to bid that and you have " +
             (res.balance != null ? res.balance : blueCoinWallet.balance) + ".",
           ended: "This auction has ended.",
           banned: "You can't bid.",
