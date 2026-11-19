@@ -677,19 +677,19 @@ window.SKIN_DEFINITIONS = {
     blocktober: true
   },
   dinoclordconcept: {
-    name: "Dino (Clord 'Dragon' Concept)",
+    name: "Dino (Dragon)",
     copies: "1/1",
     collection: "Dino",
     color: "#aefe61",
     artist: "Torgaar, Chairlord, & Mcdongos",
-    tag: "Clord Concept S1"
+    tag: "Clord Concept"
   },
   pinnochio: {
     name: "Pinnochio",
     copies: "1/3",
     color: "#dba465",
     artist: "Torgaar",
-    tag: "Clord Concept S1"
+    tag: "Clord Concept"
   },
   coolguysignatureconcept: {
     name: "Cool Guy (Signature Logo-Clord Concept)",
@@ -697,7 +697,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy",
     color: "#7fb8e0",
     artist: "Torgaar",
-    tag: "Clord Concept S3"
+    tag: "Clord Concept"
   },
   chicken: {
     name: "Chicken",
@@ -1343,12 +1343,12 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy"
   },
   cubemouthpixelated: {
-    name: "Cubemouth (Pixelated)",
+    name: "Cube Mouth (Pixelated)",
     artist: "Crosby & Deacon",
     tag: "Pixelated",
     copies: "1/4",
     color: "#0571d3",
-    collection: "Cubemouth"
+    collection: "Cube Mouth"
   },
   zombiepixelated: {
     name: "Cool Guy (Zombie Pixelated)",
@@ -1361,11 +1361,17 @@ window.SKIN_DEFINITIONS = {
   mrolsenpixelated: {
     name: "Cool Guy (Mr. Olsen Pixelated)",
     artist: "Crosby & Deacon",
-    tag: "Pixelated",
+    tag: ["Pixelated", "Icons"],
     copies: "1/3",
     color: "#fff1c0",
-    collection: "Cool Guy",
-    tag: "Icons"
+    collection: "Cool Guy"
+  },
+  dinozombie: {
+    name: "Dino (Zombie)",
+    artist: "Crosby & Jdog",
+    copies: "1/3",
+    color: "#7ed957",
+    collection: "Dino"
   }
 
 };
@@ -1405,6 +1411,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   deacy: "coolguydeacy.png",
   dinowarrior: "dinowarrior2.png",
   dinoforehead: "dinoforehead2.png",
+  dinopixelated: "dinopixelated2.png",
   mrolsenking: "mrolsenking2.png",
 };
 
