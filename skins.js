@@ -375,6 +375,7 @@ window.SKIN_DEFINITIONS = {
     gold: true,
     artist: "Torgaar",
     firstPlace: true,
+    tag: "Animated",
   },
   deathfire: {
     name: "Death Fire",
@@ -384,6 +385,7 @@ window.SKIN_DEFINITIONS = {
     gold: true,
     artist: "Jude",
     firstPlace: true,
+    tag: "Animated",
   },
   earth: {
     name: "Earth",
@@ -409,6 +411,7 @@ window.SKIN_DEFINITIONS = {
     gold: true,
     artist: "Torgaar & WINSTONISTHEBEST",
     honorary: true,
+    tag: "Animated",
   },
   coolguygalaxy: {
     name: "Cool Guy (Galaxy)",
@@ -1237,6 +1240,7 @@ window.SKIN_DEFINITIONS = {
   pixelmonster: {
     name: "Pixel Monster",
     tag: "Pixelated",
+    tag: "Animated",
     artist: "Deacon",
     copies: "1/3",
     color: "#000000"
@@ -1395,6 +1399,37 @@ window.SKIN_DEFINITIONS = {
     color: "#fadb43",
     collection: "Cool Guy",
     tag: "The City"
+  },
+  redgreenblue: {
+    name: "Cool Guy (Red Green Blue)",
+    artist: "Torgaar",
+    copies: "1/3",
+    color: "#7ed957",
+    collection: "Cool Guy",
+    tag: "Bigtopia"
+  },
+  midas: {
+    name: "Cool Guy (Midas)",
+    artist: "seppe",
+    copies: "1/3",
+    color: "#ffde67",
+    collection: "Cool Guy",
+    tag: ["Bigtopia", "Seppe Collection"]
+  },
+  bigtopia: {
+    name: "Bigtopia",
+    artist: "seppe & Torgaar",
+    copies: "1/5",
+    color: "#5d9210",
+    tag: ["Bigtopia", "Seppe Collection"]
+  },
+  blockytransformed: {
+    name: "Blocky (Transformed)",
+    artist: "Torgaar",
+    copies: "1/7",
+    color: "#444444",
+    collection: "Blocky",
+    tag: "Bigtopia"
   }
 
 
