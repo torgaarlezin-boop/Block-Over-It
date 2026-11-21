@@ -174,6 +174,7 @@
       .msg-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
       .author { font-weight: bold; }
       .stamp { color: var(--faint); font-size: 0.75rem; }
+      .views { color: var(--faint); font-size: 0.75rem; margin-top: 4px; }
       .body { white-space: pre-wrap; word-wrap: break-word; line-height: 1.45; margin-top: 2px; }
       .body a { color: #7ea6ef; }
       .atts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: flex-start; }
@@ -617,6 +618,7 @@
         const list = $(ch + "-list");
         list.scrollTop = list.scrollHeight;
         updateUnread();
+        if (ch === "news") requestAnimationFrame(recheckViews);
       }
       document.querySelectorAll("[data-ch]").forEach((b) => (b.onclick = () => setChannel(b.dataset.ch)));
 
@@ -760,6 +762,56 @@
         renderNews();
         updateUnread();
         if (scrollDown || nearBottom) stickToBottom(box);
+        loadViewCounts();
+      }
+
+      // ---------- views ----------
+      // Each signed-in account counts once per post, when the post is on
+      // screen in News. Only admins can read the counts.
+      let viewCounts = {};
+      const viewsSent = new Set();
+      let viewQueue = [];
+      let viewTimer = 0;
+      const viewObserver = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) queueView(Number(en.target.dataset.id)); });
+      }, { threshold: 0.5 });
+      function queueView(id) {
+        if (!me || !id || viewsSent.has(id) || document.hidden || channel !== "news") return;
+        const p = posts.find((x) => x.id === id);
+        if (!p || p.author === me.user) return;
+        viewsSent.add(id);
+        viewQueue.push(id);
+        clearTimeout(viewTimer);
+        viewTimer = setTimeout(sendViews, 1500);
+      }
+      async function sendViews() {
+        const ids = viewQueue.splice(0, 200);
+        if (!ids.length || !db || !token) return;
+        const { error } = await db.rpc("boi_news_view", { p_ids: ids });
+        if (error) ids.forEach((id) => viewsSent.delete(id));
+      }
+      // Posts already on screen when the tab or channel comes back
+      function recheckViews() {
+        if (document.hidden || channel !== "news") return;
+        const box = $("news-list").getBoundingClientRect();
+        $("news-list").querySelectorAll(".msg[data-id]").forEach((m) => {
+          const r = m.getBoundingClientRect();
+          if (r.bottom > box.top && r.top < box.bottom) queueView(Number(m.dataset.id));
+        });
+      }
+      document.addEventListener("visibilitychange", recheckViews);
+      async function loadViewCounts() {
+        if (!db || !me || !me.admin) return;
+        const { data, error } = await db.rpc("boi_news_view_counts");
+        if (error) return;
+        viewCounts = data || {};
+        showViewCounts();
+      }
+      function showViewCounts() {
+        document.querySelectorAll("#news-list .views[data-views]").forEach((v) => {
+          const n = viewCounts[v.dataset.views] || 0;
+          v.textContent = n + (n === 1 ? " view" : " views");
+        });
       }
 
       function stickToBottom(box) {
@@ -823,14 +875,17 @@
         }
         posts.slice(shownPosts.length).forEach((p) => {
           const atts = (p.images || []).map((r) => attachmentHTML(r, p.author)).join("");
-          newsWriter(
+          const node = newsWriter(
             p,
             (p.body ? '<div class="body">' + formatBody(p.body) + "</div>" : "") +
-              (atts ? '<div class="atts">' + atts + "</div>" : ""),
+              (atts ? '<div class="atts">' + atts + "</div>" : "") +
+              (me && me.admin ? '<div class="views" data-views="' + p.id + '"></div>' : ""),
             "data-del",
           );
+          viewObserver.observe(node);
           shownPosts.push(p.id);
         });
+        showViewCounts();
       }
 
       $("news-list").addEventListener("click", async (e) => {

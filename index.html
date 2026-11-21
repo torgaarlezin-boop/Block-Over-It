@@ -3079,6 +3079,15 @@
       .shop-section-title:not(:first-child) {
         margin-top: 18px;
       }
+      /* A section inside another (Bigtopia x Seppe Collection under
+         Bigtopia): smaller, and set in under its parent */
+      .shop-section-title.sub {
+        font-size: 0.85rem;
+        color: #bbb;
+        border-bottom: 2px dashed #333;
+        padding-left: 14px;
+        margin-top: 10px;
+      }
       .shop-empty {
         grid-column: 1 / -1;
         text-align: center;
@@ -12668,6 +12677,9 @@
         if (n && n !== shopSeasonNumber()) return "Shop Season " + n;
         return null;
       }
+      // A section drawn inside another, right under it: child -> parent
+      const SHOP_BIGTOPIA_SEPPE = "Bigtopia x Seppe Collection";
+      const SHOP_SUBSECTIONS = { [SHOP_BIGTOPIA_SEPPE]: "Bigtopia" };
       const SHOP_SKIN_SECTIONS = {
         jdog: "Jdog",
         pixels: "Pixelated",
@@ -12679,6 +12691,10 @@
         mrolsenpixelated: "Pixelated",
         dinowarrior: "Dinos",
         dinozombie: "Dinos",
+        redgreenblue: "Bigtopia",
+        blockytransformed: "Bigtopia",
+        bigtopia: SHOP_BIGTOPIA_SEPPE,
+        midas: SHOP_BIGTOPIA_SEPPE,
         coolguyforehead: "Forehead",
         dinoforehead: "Forehead",
       };
@@ -12689,7 +12705,14 @@
       const SHOP_TOP_SECTION = "Pixelated";
       // The sections drawn at the top of the Main Shop, in this order (a
       // newer shop season comes after them)
-      const SHOP_TOP_ORDER = [SHOP_TOP_SECTION, "Dinos", "Environments", SHOP_EMOTE_SECTION];
+      const SHOP_TOP_ORDER = [
+        "Bigtopia",
+        SHOP_BIGTOPIA_SEPPE,
+        SHOP_TOP_SECTION,
+        "Dinos",
+        "Environments",
+        SHOP_EMOTE_SECTION,
+      ];
       function shopSeasonNumber() {
         return Number(String(SHOP_SEASON).replace(/\D/g, "")) || 0;
       }
@@ -15871,9 +15894,9 @@
       const SHOP_SEASON = "Season 4";
       // ...and how a listing names it: "S4"
       const SHOP_SEASON_SHORT = "S" + SHOP_SEASON.replace(/\D/g, "");
-      function shopSectionHTML(label, signature) {
+      function shopSectionHTML(label, signature, sub) {
         return (
-          '<div class="shop-section-title">' +
+          '<div class="shop-section-title' + (sub ? " sub" : "") + '">' +
           (signature && /^[\w.-]+$/.test(signature)
             ? '<img class="shop-tab-sig" src="' + signature + '" alt="">'
             : "") +
@@ -16094,8 +16117,15 @@
               return i < 0 ? SHOP_TOP_ORDER.length : i;
             };
             newer.sort((a, b) => topRank(a) - topRank(b));
+            // A sub-section (SHOP_SUBSECTIONS) gets the smaller title when
+            // its parent is shown above it
+            const shownLabels = new Set(bundleSections.map((s) => s.label));
             const sectionHTML = (sec) =>
-              shopSectionHTML(sec.label) +
+              shopSectionHTML(
+                sec.label,
+                null,
+                shownLabels.has(SHOP_SUBSECTIONS[sec.label]),
+              ) +
               sec.listings.map((listing) => shopCardHTML(listing, isMobile)).join("");
             newer.forEach((s) => bundleSections.splice(bundleSections.indexOf(s), 1));
             grid.innerHTML =
