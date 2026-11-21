@@ -1430,6 +1430,14 @@ window.SKIN_DEFINITIONS = {
     color: "#444444",
     collection: "Blocky",
     tag: "Bigtopia"
+  },
+  peanutmangold: {
+    name: "Peanut Man (Gold)",
+    artist: "Benjuhman1 & Torgaar",
+    copies: "1/1",
+    color: "#eeba2b",
+    collection: "Peanut Man",
+    tag: "Peanut Man"
   }
 
 
