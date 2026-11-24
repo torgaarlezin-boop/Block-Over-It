@@ -2198,7 +2198,8 @@
     <iframe id="game" title="Block Over It" allow="autoplay; fullscreen"></iframe>
     <div id="wait">
       <div class="jumper"><div class="cube"></div><div class="ground"></div></div>
-      LOADING
+      <span id="wait-text">LOADING</span>
+      <button class="btn" id="wait-retry" style="display: none">TRY AGAIN</button>
       <button class="btn cancel" id="wait-cancel">CANCEL</button>
     </div>
     <div id="toast"></div>
@@ -2689,11 +2690,26 @@
         } catch (e) {}
       }
 
-      function loadFrame() {
+      // The game says it's ready within a few seconds. If it never does
+      // (an old or broken copy of the game on the site), the wait says so
+      // and offers another go, instead of LOADING forever
+      let readyTimer = null;
+      function loadFrame(fresh) {
         if (frameLoading) return;
         frameLoading = true;
-        frame.src = "index.html?embed=1";
+        frame.src = "index.html?embed=1" + (fresh ? "&r=" + Date.now() : "");
+        clearTimeout(readyTimer);
+        readyTimer = setTimeout(gameDidNotLoad, 25000);
+        $("wait-text").textContent = "LOADING";
+        $("wait-retry").style.display = "none";
       }
+      function gameDidNotLoad() {
+        if (frameReady) return;
+        frameLoading = false;
+        $("wait-text").textContent = "THE GAME DID NOT LOAD";
+        $("wait-retry").style.display = "";
+      }
+      $("wait-retry").onclick = () => loadFrame(true);
       // A copy opened from a folder (file://) has no real origin: messages
       // addressed to "file://" are dropped, so there it has to be "*"
       const MSG_ORIGIN = /^https?:$/.test(location.protocol) ? location.origin : "*";
@@ -2793,6 +2809,7 @@
         const m = e.data || {};
         if (m.type === "boi-ready") {
           frameReady = true;
+          clearTimeout(readyTimer);
           // A reloaded game (signed out, say) has nothing docked any more
           docked = false;
           dockReady = false;
@@ -3541,7 +3558,10 @@
             "</div>";
           const textBox = el.querySelector(".ctext");
           // /jumppad, /lava, skin names... drawn the game's way
-          if (textBox) gameBits(textBox, c.deleted ? esc(text) : tokensIn(text));
+          // (Blocky Emojis only for SEC members' comments)
+          const api0 = gameApi();
+          const secAuthor = !api0 || !api0.isSecName || api0.isSecName(c.username);
+          if (textBox) gameBits(textBox, c.deleted || !secAuthor ? esc(text) : tokensIn(text));
           const emoteBox = el.querySelector(".cemote");
           if (emoteBox) {
             const api = gameApi();
@@ -3646,7 +3666,8 @@
         if (!input || !extra || !api) return;
         if (extra.dataset.kind === "emotes") return;
         const upTo = input.value.slice(0, input.selectionStart == null ? input.value.length : input.selectionStart);
-        const m = upTo.match(/\/([A-Za-z0-9_]*)$/);
+        // Blocky Emojis are an SEC benefit
+        const m = api.isSec && api.isSec() ? upTo.match(/\/([A-Za-z0-9_]*)$/) : null;
         if (!m) {
           if (extra.dataset.kind === "tokens") {
             extra.innerHTML = "";
@@ -5075,7 +5096,7 @@
         }
         startMainFeed("foryou");
         // The game loads behind the feed, so PLAY is quick when it comes
-        setTimeout(loadFrame, 600);
+        setTimeout(() => loadFrame(), 0);
         // Links meant for the game itself
         const user = (params.get("user") || "").trim();
         if (user) openProfile(user.slice(0, 64));

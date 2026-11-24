@@ -136,7 +136,9 @@
   // LIVE shows no pop-up messages. What it has to say goes on the LIVE
   // menu's status line, or in the room's bar, for a few seconds.
   var flashTimer = null;
+  var lastNoteText = "";
   function notify(text) {
+    lastNoteText = String(text || "");
     clearTimeout(flashTimer);
     var box = null;
     if (room && hud && hud.flash && document.body.contains(hud.flash)) box = hud.flash;
@@ -1501,11 +1503,30 @@
     claimWin(st);
   }
 
+  // Every racer's own game gives the race level one play at GO, so a race
+  // of four is four plays. Once per round per game (run is new each round).
+  function countRacePlay() {
+    if (!run || run.kind !== "race" || run.playCounted || !room) return;
+    run.playCounted = true;
+    var id = parseInt(room.state.pick, 10);
+    if (!isFinite(id) || id <= 0) return;
+    if (typeof _supabase === "undefined" || !_supabase || !_supabase.rpc) return;
+    try {
+      _supabase.rpc("increment_plays", { row_id: id }).then(
+        function (res) {
+          if (res && res.error) console.error("LIVE play count failed:", res.error);
+        },
+        function () {},
+      );
+    } catch (e) {}
+  }
+
   // ---- PLAYING A LEVEL ----------------------------------------------------------
   // The hub and each race level run in a loop of LIVE's own rather than the
   // game's startGameLevel: a death respawns you at the start without ending
   // anything, a finish leaves you in the level watching the others, and
-  // nothing a community level would record (plays, beats, verifications) is.
+  // nothing a community level would record (beats, verifications) is --
+  // except a play, counted once per racer at GO (countRacePlay).
   var run = null;
 
   function enterHub(spot, force) {
@@ -1807,10 +1828,13 @@
       Math.round(t),
       Math.round(p.pos.x * 1000) / 1000,
       Math.round(p.pos.y * 1000) / 1000,
-      Math.round(p.size.y * 1000) / 1000,
+      // On a wall (sideways gravity) the height is the hitbox's x size,
+      // and the gravity is sent as 2, signed the way it pulls. Older copies
+      // read anything past 1 as plain up or down.
+      Math.round((p.gravityAxis === "x" ? p.size.x : p.size.y) * 1000) / 1000,
       Math.round(run.vx * 100) / 100,
       Math.round(run.vy * 100) / 100,
-      p.gravityDirection < 0 ? -1 : 1,
+      (p.gravityDirection < 0 ? -1 : 1) * (p.gravityAxis === "x" ? 2 : 1),
       Math.round(p.rotation || 0),
       level.status === "lost" ? 1 : level.status === "won" ? 2 : 0,
       run.inBits,
@@ -1951,7 +1975,7 @@
         h: clamp(num(a[3], 1), 0, 1),
         vx: clamp(num(a[4]), -60, 60),
         vy: clamp(num(a[5]), -60, 60),
-        g: num(a[6]) < 0 ? -1 : 1,
+        g: (num(a[6]) < 0 ? -1 : 1) * (Math.abs(num(a[6])) === 2 ? 2 : 1),
         r: clamp(num(a[7]), -360, 360),
         st: Math.floor(num(a[8])),
         keys: Math.floor(num(a[9])) & 15,
@@ -2105,11 +2129,16 @@
     o.keys = s.keys;
     if (pr.broken || s.st) return;
     var p = pr.p;
+    var side = Math.abs(s.g) === 2;
     p.pos = new Vector(s.x, s.y);
-    p.size = new Vector(0.5, Math.max(0.05, s.h));
+    p.size = side
+      ? new Vector(Math.max(0.05, s.h), 0.5)
+      : new Vector(0.5, Math.max(0.05, s.h));
     p.speed = new Vector(s.vx, s.vy);
-    p.gravityDirection = s.g;
-    p.baseGravityDirection = s.g;
+    p.gravityDirection = s.g < 0 ? -1 : 1;
+    p.baseGravityDirection = p.gravityDirection;
+    p.gravityAxis = p.baseGravityAxis = side ? "x" : "y";
+    p.windSpeedY = 0;
     p.windSpeedX = 0;
     p.dashDir = 0;
     p.onIce = false;
@@ -2169,7 +2198,7 @@
     o.y = pr.py + (p.pos.y - pr.py) * f;
     o.vx = p.speed.x;
     o.vy = p.speed.y;
-    o.g = p.gravityDirection < 0 ? -1 : 1;
+    o.g = (p.gravityDirection < 0 ? -1 : 1) * (p.gravityAxis === "x" ? 2 : 1);
   }
 
   // A snapshot moved on by its own speed, stopping at walls (both players
@@ -2966,6 +2995,9 @@
     node.lvKey = key;
     if (typeof syncSkinCrown === "function")
       syncSkinCrown(node, frame && SKIN_FRAMES[skin].crown);
+    // A metallic Blocky shines while it is still racing
+    if (typeof syncSkinShine === "function")
+      syncSkinShine(node, !st && skinFx(skin));
     var s = node.style;
     s.backgroundImage = "";
     s.filter = "";
@@ -3036,6 +3068,13 @@
       var w = isImageSkin(skin) ? 1 : 0.5;
       var x = rm.disp.x - (w - 0.5) / 2;
       var y = rm.disp.y;
+      // On a wall: laid out upright around the middle of their 1 x 0.5
+      // hitbox, then turned a quarter (below) so their feet face the wall
+      var side = Math.abs(at.g) === 2;
+      if (side) {
+        x = rm.disp.x + at.h / 2 - w / 2;
+        y = rm.disp.y + 0.25 - at.h / 2;
+      }
       if (skin === GHOST_SKIN) y -= at.g < 0 ? -GHOST_FLOAT : GHOST_FLOAT;
       // An emote's pose: lifted, or toppled over its back corner
       var pose = remotePose(rm, t);
@@ -3068,7 +3107,8 @@
       var spin = pose && pose.spin ? pose.spin : 0;
       // Its turn as a number first, so the string is only built on a change
       var deg = turned ? (at.g < 0 ? -pose.rot : pose.rot) : spin ? (at.g < 0 ? -spin : spin) : at.r;
-      var flipY = !turned && at.g < 0;
+      if (side && !turned && !spin) deg += at.g > 0 ? -90 : 90;
+      var flipY = !turned && !side && at.g < 0;
       if (n.lvDeg !== deg || n.lvFlipY !== flipY) {
         n.lvDeg = deg;
         n.lvFlipY = flipY;
@@ -3890,6 +3930,8 @@
     } else if (colorSkin(skin)) {
       s.className += " plain";
       s.style.background = colorSkin(skin);
+      if (typeof skinFx === "function" && skinFx(skin))
+        s.style.cssText += ";" + skinFxCSS(skin);
     } else
       s.style.backgroundImage =
         "url('" + (EMO_FACES[skin] ? EMO_FACES[skin][0] : skinImageFile(skin)) + "')";
@@ -4029,6 +4071,7 @@
         run.wentGo = true;
         bigBanner("GO", "", true, 700, true);
         hideLabel();
+        countRacePlay();
       }
     }
     if (hud.bigUntil && t > hud.bigUntil) clearBanner();
@@ -5107,7 +5150,70 @@
     }, 250);
   }
 
+  // ---- for the phone app's own LIVE screen (mobile.html) ----------------
+  // It draws the lobby itself, from lobbyInfo(), and keeps the lobby up
+  // with watchLobby(true) while that screen is open.
+  function watchLobby(on) {
+    if (on) {
+      if (currentUser) connectLobby();
+    } else if (!room && lobby.ch) dropLobby("off");
+  }
+  function lobbyInfo() {
+    var admin = amAdmin();
+    var rooms = lobby.status === "on"
+      ? lobbyRooms()
+          .filter(function (r) {
+            return !r.priv || admin;
+          })
+          .map(function (r) {
+            return {
+              code: r.code,
+              host: r.host,
+              count: r.count,
+              size: sizeOf(r.ev),
+              racing: r.racing,
+              ev: r.ev,
+              priv: r.priv,
+              sameVersion: !r.host || r.v === LIVE_VERSION,
+            };
+          })
+      : [];
+    return {
+      status: lobby.status,
+      rooms: rooms,
+      eventOnly: eventOnly(),
+      eventText: EVENT_ONLY_TEXT,
+      name: myName(),
+      inRoom: !!room,
+    };
+  }
+  // CREATE ROOM, once the lobby is up
+  function createWhenReady() {
+    if (room) return;
+    showMenu("live");
+    var waited = 0;
+    var go = setInterval(function () {
+      waited++;
+      if (room) return clearInterval(go);
+      if (lobby.status === "on" && (lobby.synced || waited > 8)) {
+        clearInterval(go);
+        createRoom(null);
+      } else if (lobby.status === "full" || lobby.status === "offline" || waited > 60) {
+        clearInterval(go);
+      }
+    }, 250);
+  }
+
   window.BoiLive = {
+    watchLobby: watchLobby,
+    lobbyInfo: lobbyInfo,
+    createWhenReady: createWhenReady,
+    inRoom: function () {
+      return !!room;
+    },
+    lastNote: function () {
+      return lastNoteText;
+    },
     renderMenu: renderMenu,
     startEvent: startEvent,
     emote: sendEmote,
