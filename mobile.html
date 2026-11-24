@@ -1,0 +1,5087 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#111111" />
+    <title>Block Over It</title>
+    <link rel="icon" href="blockoverit.png" />
+    <script>
+      // An Xbox gets the full game: its browser reads as a phone to some
+      // checks, but it plays with a controller on a TV.
+      (function () {
+        try {
+          if (/Xbox/i.test(navigator.userAgent || ""))
+            location.replace("index.html" + location.search + location.hash);
+        } catch (e) {}
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+    <script>
+      window.supabase ||
+        document.write(
+          '<script src="https://unpkg.com/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"><\/script>',
+        );
+    </script>
+    <style>
+      :root {
+        --bg: #111;
+        --panel: #1a1a1a;
+        --block: #444;
+        --edge: #333;
+        --blue: #335699;
+        --blue-edge: #2a4a7a;
+        --text: #fff;
+        --dim: #888;
+        --tabs-h: 64px;
+        --head-h: 52px;
+        --safe-t: env(safe-area-inset-top, 0px);
+        --safe-b: env(safe-area-inset-bottom, 0px);
+      }
+      * {
+        box-sizing: border-box;
+        border-radius: 0 !important;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Courier New", Courier, monospace;
+        overflow: hidden;
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      button {
+        font-family: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      /* ---- screens ---- */
+      .screen {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: calc(var(--tabs-h) + var(--safe-b));
+        display: none;
+      }
+      .screen.on {
+        display: block;
+      }
+
+      /* ---- the vertical feed (levels and chapters) ---- */
+      .feed {
+        position: absolute;
+        inset: 0;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+        overscroll-behavior: contain;
+        /* Cards are added above the "LOADING" row; without this the
+           browser keeps that row in view and skips past them */
+        overflow-anchor: none;
+      }
+      .feed::-webkit-scrollbar {
+        display: none;
+      }
+      .card {
+        position: relative;
+        height: 100%;
+        width: 100%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        overflow: hidden;
+        background: #222 center / cover no-repeat;
+      }
+      .card {
+        touch-action: pan-y;
+      }
+      .swipe-hint {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        z-index: 3;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        white-space: nowrap;
+        font-weight: 900;
+        font-size: 20px;
+        letter-spacing: 3px;
+        color: #fff;
+        text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+        opacity: 0.75;
+        pointer-events: none;
+      }
+      .swipe-hint.on {
+        display: flex;
+      }
+      .swipe-hint.go {
+        opacity: 1;
+      }
+      .swipe-hint.speed {
+        right: 0;
+        background: #e67e22;
+        border-left: 6px solid #d35400;
+      }
+      .swipe-hint.death {
+        left: 0;
+        background: #a04040;
+        border-right: 6px solid #802020;
+      }
+      .card canvas.preview {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .shade {
+        text-shadow: 2px 2px 0 #000;
+      }
+      .feed-msg {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: var(--dim);
+        font-weight: bold;
+        text-align: center;
+        padding: 24px;
+        scroll-snap-align: start;
+      }
+      /* While more are loading the row must not be a snap point: the feed
+         would re-snap to it every time cards are added above it */
+      .feed-msg.loading {
+        scroll-snap-align: none;
+      }
+
+      /* ---- feed header: FOR YOU / NEW / TOP ---- */
+      .feed-head {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: calc(var(--head-h) + var(--safe-t));
+        padding-top: var(--safe-t);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 13px;
+        padding-left: 58px;
+        padding-right: 58px;
+        z-index: 5;
+        pointer-events: none;
+      }
+      .feed-head > * {
+        pointer-events: auto;
+      }
+      /* Over LIVE and LEADERBOARDS the header is a solid bar */
+      .feed-head.solid {
+        background: var(--panel);
+        border-bottom: 3px solid var(--edge);
+      }
+      /* The tabs scroll sideways when they don't fit, centred when they do */
+      .sorts {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 0 2px;
+      }
+      .sorts::-webkit-scrollbar {
+        display: none;
+      }
+      .sorts > :first-child {
+        margin-left: auto;
+      }
+      .sorts > :last-child {
+        margin-right: auto;
+      }
+      .sort {
+        flex-shrink: 0;
+      }
+
+      /* ---- LIVE and LEADERBOARDS: tabs of the levels screen ---- */
+      .panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: calc(var(--head-h) + var(--safe-t));
+        overflow-y: auto;
+        background: var(--bg);
+        display: none;
+        z-index: 4;
+        padding: 14px 16px 28px;
+        overscroll-behavior: contain;
+      }
+      .panel.on {
+        display: block;
+      }
+      .panel-in {
+        max-width: 480px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .panel-in .panel-in {
+        width: 100%;
+        margin: 0;
+      }
+      .label {
+        font-weight: bold;
+        font-size: 13px;
+        color: var(--dim);
+        letter-spacing: 2px;
+        margin-top: 6px;
+      }
+      .note {
+        color: var(--dim);
+        font-weight: bold;
+        text-align: center;
+        padding: 14px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .note.bad {
+        color: #e74c3c;
+      }
+      .live-who {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        padding: 10px 12px;
+        font-weight: bold;
+        font-size: 14px;
+        text-transform: uppercase;
+      }
+      .live-who .sw {
+        flex-shrink: 0;
+        width: 22px;
+        height: 40px;
+        background: var(--blue) center bottom / contain no-repeat;
+      }
+      .live-who .sw.img {
+        background-color: transparent;
+      }
+      .live-who .sub {
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 2px;
+      }
+      .live-create {
+        font-size: 20px;
+        letter-spacing: 3px;
+        padding: 18px 12px;
+        border-bottom-width: 8px;
+      }
+      .live-join {
+        display: flex;
+        gap: 8px;
+      }
+      .live-join input {
+        flex: 1;
+        min-width: 0;
+        height: 56px;
+        background: #222;
+        border: 4px solid var(--edge);
+        color: #fff;
+        font-family: inherit;
+        font-size: 24px;
+        font-weight: bold;
+        letter-spacing: 10px;
+        text-align: center;
+        text-transform: uppercase;
+        outline: none;
+      }
+      .live-join input:focus {
+        border-color: var(--blue);
+      }
+      .live-join .btn {
+        width: 110px;
+      }
+      .room {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        background: var(--block);
+        border: 4px solid var(--edge);
+        padding: 10px 12px;
+        font-weight: bold;
+        text-align: left;
+        text-transform: uppercase;
+      }
+      .room:active:not(:disabled) {
+        border-color: #eee;
+      }
+      .room:disabled {
+        opacity: 0.5;
+      }
+      .room .rc {
+        flex-shrink: 0;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        text-shadow: 3px 3px 0 var(--blue);
+      }
+      .room .rh {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #ddd;
+        font-size: 14px;
+      }
+      .room .rs {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+      }
+      .slots {
+        display: flex;
+        gap: 3px;
+      }
+      .slots i {
+        width: 10px;
+        height: 10px;
+        background: #2a2a2a;
+        border: 2px solid var(--edge);
+      }
+      .slots i.on {
+        background: var(--blue);
+        border-color: var(--blue-edge);
+      }
+      .tagb {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        padding: 1px 5px;
+        background: var(--blue);
+        color: #fff;
+      }
+      .tagb.gold {
+        background: #d4a017;
+        color: #1a1a1a;
+      }
+      .tagb.red {
+        background: #8a2a2a;
+      }
+      /* ---- the leaderboard: two pickers, a podium, then the rest ---- */
+      .lb-pick {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr;
+        gap: 8px;
+      }
+      .lb-sel {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        min-width: 0;
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        padding: 8px 30px 8px 10px;
+        text-align: left;
+        font-weight: bold;
+      }
+      .lb-sel:active {
+        border-color: #eee;
+      }
+      .lb-sel::after {
+        content: "";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        margin-top: -3px;
+        border: 6px solid transparent;
+        border-top-color: #aaa;
+        border-bottom: 0;
+      }
+      .lb-sel .k {
+        font-size: 10px;
+        color: var(--dim);
+        letter-spacing: 2px;
+      }
+      .lb-sel .v {
+        font-size: 14px;
+        letter-spacing: 1px;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .lb-seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 3px solid var(--edge);
+        background: var(--panel);
+      }
+      .lb-seg button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        padding: 9px 6px;
+        font-weight: bold;
+        font-size: 13px;
+        letter-spacing: 1px;
+        color: #888;
+      }
+      .lb-seg button.on {
+        background: var(--blue);
+        color: #fff;
+      }
+      .podium {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: end;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .pod {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: bold;
+      }
+      .pod-who {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        padding: 0 2px;
+      }
+      .pod-time {
+        font-size: 12px;
+        color: #aaa;
+      }
+      .pod-step {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 8px;
+        margin-top: 4px;
+        font-size: 26px;
+        font-weight: 900;
+        border: 3px solid;
+      }
+      .pod.p1 .pod-step {
+        height: 92px;
+        background: #d4a017;
+        border-color: #8a6a0e;
+        color: #1a1a1a;
+      }
+      .pod.p2 .pod-step {
+        height: 68px;
+        background: #a3acb5;
+        border-color: #646c74;
+        color: #1a1a1a;
+      }
+      .pod.p3 .pod-step {
+        height: 52px;
+        background: #b06d34;
+        border-color: #6e4320;
+        color: #fff;
+      }
+      .pod.p1 .pod-who {
+        font-size: 15px;
+      }
+      .pod.me .pod-who {
+        color: #8fb4ff;
+      }
+      .pod:active .pod-step {
+        border-color: #eee;
+      }
+      .lb-list {
+        display: flex;
+        flex-direction: column;
+        border-top: 3px solid var(--edge);
+      }
+      .lb-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        background: none;
+        border: none;
+        border-bottom: 2px solid var(--edge);
+        padding: 12px 6px;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: left;
+      }
+      .lb-row:active {
+        background: var(--panel);
+      }
+      .lb-row .n {
+        flex-shrink: 0;
+        width: 28px;
+        color: var(--dim);
+        text-align: right;
+      }
+      .lb-row .who {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .lb-row .time {
+        flex-shrink: 0;
+        color: #ddd;
+      }
+      .lb-row.me {
+        background: #1d2533;
+        box-shadow: inset 4px 0 0 var(--blue);
+      }
+      .lb-row.lb-you {
+        position: sticky;
+        bottom: -28px;
+        margin-top: 10px;
+        background: var(--blue);
+        border: 3px solid var(--blue-edge);
+        color: #fff;
+      }
+      .lb-row.lb-you .n,
+      .lb-row.lb-you .time {
+        color: #fff;
+      }
+      /* MORE INFO */
+      #info-dim {
+        position: fixed;
+        inset: 0;
+        z-index: 32;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+      #info-dim.on {
+        display: block;
+      }
+      .sheet.info {
+        z-index: 33;
+        height: auto;
+        max-height: 86%;
+      }
+      .info .sheet-list {
+        padding: 14px 16px calc(18px + var(--safe-b));
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .info-view {
+        display: block;
+        width: 100%;
+        height: 150px;
+        background: #222;
+        border: 3px solid var(--edge);
+        margin-bottom: 12px;
+      }
+      .info-name {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+      .info-by {
+        background: none;
+        border: none;
+        padding: 4px 0 10px;
+        font-weight: bold;
+        font-size: 13px;
+        color: var(--dim);
+        letter-spacing: 1px;
+      }
+      .info-by span {
+        color: #fff;
+        text-decoration: underline;
+      }
+      .info .tags {
+        margin-bottom: 12px;
+      }
+      .info-desc {
+        font-size: 14px;
+        line-height: 1.45;
+        color: #ddd;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        padding: 12px;
+        background: var(--bg);
+        border: 3px solid var(--edge);
+      }
+      .info-desc .dim {
+        color: var(--dim);
+      }
+      .istats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .istat {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 10px 12px;
+        background: var(--bg);
+        border: 3px solid var(--edge);
+        font-weight: bold;
+      }
+      .istat .k {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: var(--dim);
+      }
+      .istat .v {
+        font-size: 16px;
+      }
+      .vtags {
+        margin-top: -4px;
+      }
+      .tag.vtag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(0, 0, 0, 0.4);
+        border-color: #444;
+        color: #aaa;
+      }
+      .tag.vtag.ok {
+        background: #1d3324;
+        border-color: #2ecc71;
+        color: #2ecc71;
+      }
+      .tag.vtag.blue {
+        background: #1d2533;
+        border-color: #4aa3ff;
+        color: #4aa3ff;
+      }
+      .tag.vtag.blue.no {
+        border-color: #3f6fa8;
+        color: #7c9cc4;
+      }
+      .tag.vtag.blue.no .bc {
+        opacity: 0.5;
+      }
+      .tag.vtag.imp {
+        background: #3a1520;
+        border-color: #b8364f;
+        color: #ff8095;
+      }
+      .tag.vtag .bc {
+        width: 9px;
+        height: 9px;
+        border-width: 1px;
+      }
+      .vwho {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-decoration: underline;
+        text-transform: none;
+      }
+      .info-music {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        padding: 12px;
+        background: var(--bg);
+        border: 3px solid var(--edge);
+        font-weight: bold;
+      }
+      .info-music svg {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        fill: #335699;
+      }
+      .im-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .im-text .k {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: var(--dim);
+      }
+      .im-text .t,
+      .im-text .a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .im-text .a {
+        font-size: 12px;
+        color: var(--dim);
+      }
+      .im-speed {
+        flex-shrink: 0;
+        background: #335699;
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+      .info-sec {
+        margin: 18px 0 8px;
+        font-weight: bold;
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--dim);
+      }
+      #info-times {
+        margin-top: 4px;
+      }
+      .info-btns {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .info-btns .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+      }
+      .info-btns .btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+      /* A sheet sized by what's in it: its list takes its own height (a
+         flex:1 list in an auto-height sheet is 0 tall on some phones) */
+      .sheet.pick .sheet-list,
+      .sheet.info .sheet-list {
+        flex: 0 1 auto;
+      }
+      /* the game's leaderboard cards */
+      .lb-cards {
+        display: flex;
+        flex-direction: column;
+      }
+      .lb-host {
+        display: block;
+        cursor: pointer;
+      }
+      .lb-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #222;
+        padding: 15px;
+        margin-bottom: 8px;
+        border: 1px solid #333;
+        font-weight: bold;
+      }
+      .lb-card.me {
+        background: #1a2a40;
+        border-color: #335699;
+      }
+      .lb-card .l {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .lb-card .n {
+        font-size: 1.2rem;
+        color: #666;
+        width: 25px;
+      }
+      .lb-card .who {
+        color: #ccc;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .lb-card .time {
+        font-family: monospace;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+      }
+      /* comments drawn by the game, as on the level page */
+      .sheet-list.desk {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 12px;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .dcmt {
+        display: block;
+        font-size: 16px;
+      }
+      .cmt-progress {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #ccc;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px 12px;
+        border: 1px solid #333;
+      }
+      .sheet-input .cmt-progress input {
+        flex: none;
+        accent-color: #335699;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        padding: 0;
+      }
+      .sheet-input .cmt-row input {
+        background: #333;
+        border: 1px solid #555;
+      }
+      .creator.plain,
+      .info-by.plain {
+        cursor: default;
+      }
+      .info-by.plain span {
+        text-decoration: none;
+      }
+      /* the picking sheet */
+      #pick-dim {
+        position: fixed;
+        inset: 0;
+        z-index: 32;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+      #pick-dim.on {
+        display: block;
+      }
+      .sheet.pick {
+        z-index: 33;
+        height: auto;
+        max-height: 72%;
+      }
+      .pick .sheet-list {
+        padding: 8px 14px calc(16px + var(--safe-b));
+      }
+      .pick-row {
+        display: block;
+        width: 100%;
+        background: var(--bg);
+        border: 3px solid var(--edge);
+        margin-top: 8px;
+        padding: 13px 12px;
+        font-weight: bold;
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-align: left;
+      }
+      .pick-row.on {
+        background: var(--blue);
+        border-color: var(--blue-edge);
+      }
+      .pick-head {
+        margin: 16px 0 0;
+        font-weight: bold;
+        font-size: 12px;
+        color: var(--dim);
+        letter-spacing: 2px;
+      }
+      .pick-head:first-child {
+        margin-top: 6px;
+      }
+      .pick-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+      .pick-grid .pick-row {
+        text-align: center;
+        padding: 12px 0;
+      }
+      .pick-grid:has(> :nth-child(3):last-child) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      /* ---- a confirm box ---- */
+      #ask {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      #ask.on {
+        display: flex;
+      }
+      .ask-box {
+        width: min(360px, 100%);
+        background: var(--panel);
+        border: 4px solid var(--edge);
+        padding: 18px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+      .ask-box h3 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 2px;
+        text-shadow: 3px 3px 0 var(--blue);
+      }
+      .ask-box p {
+        margin: 0;
+        color: #ccc;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .ask-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .sort {
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-size: 14px;
+        font-weight: bold;
+        color: #bbb;
+        padding: 6px 1px;
+        white-space: nowrap;
+        text-shadow: 2px 2px 0 #000;
+        letter-spacing: 1px;
+      }
+      .sort.on {
+        color: #fff;
+        border-bottom-color: #fff;
+      }
+      .corner {
+        position: absolute;
+        top: calc(var(--safe-t) + 8px);
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(17, 17, 17, 0.55);
+        border: 3px solid var(--edge);
+      }
+      .corner svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+      }
+      .corner.left {
+        left: 12px;
+      }
+      .corner.right {
+        right: 12px;
+      }
+      .corner:active {
+        border-color: #eee;
+      }
+
+      /* ---- one level card ---- */
+      .info {
+        position: absolute;
+        left: 14px;
+        right: 84px;
+        bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 2;
+      }
+      .creator {
+        font-weight: bold;
+        font-size: 15px;
+        background: none;
+        border: none;
+        padding: 0;
+        text-align: left;
+        align-self: flex-start;
+      }
+      .lvl-name {
+        background: none;
+        border: none;
+        padding: 0;
+        text-align: left;
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: bold;
+        padding: 3px 6px;
+        border: 2px solid rgba(0, 0, 0, 0.35);
+        color: #fff;
+        text-shadow: none;
+        text-transform: uppercase;
+      }
+      /* the player's own BEATEN / BLUE COIN, beside the level's tags */
+      .tags:not(:has(.tag)) {
+        display: none;
+      }
+      /* the desktop's tags, drawn by the game */
+      .tags.gtags {
+        display: block;
+      }
+      .tags.gtags.empty {
+        display: none;
+      }
+      .dver {
+        display: block;
+        margin-top: -4px;
+      }
+      .st-tags {
+        display: contents;
+      }
+      .tag.st-beaten {
+        background: #2ecc71;
+        color: #10331d;
+      }
+      .tag.st-blue {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(0, 0, 0, 0.55);
+        border-color: #4d8ce0;
+        color: #9ec0f0;
+      }
+      .tag.st-blue .bc {
+        width: 9px;
+        height: 9px;
+        border-width: 1px;
+        opacity: 0.5;
+      }
+      .tag.st-blue.got {
+        background: #335699;
+        border-color: #1f3a6e;
+        color: #fff;
+      }
+      .tag.st-blue.got .bc {
+        opacity: 1;
+      }
+      .desc {
+        font-size: 13px;
+        color: #ddd;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+      }
+      .play {
+        margin-top: 4px;
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--blue);
+        border: 4px solid var(--blue-edge);
+        border-bottom-width: 7px;
+        color: #fff;
+        font-weight: bold;
+        font-size: 18px;
+        letter-spacing: 2px;
+        padding: 10px 26px 8px 20px;
+      }
+      .play svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+      }
+      .play:active {
+        border-color: #eee;
+        border-bottom-width: 4px;
+        transform: translateY(3px);
+      }
+      .rail {
+        position: absolute;
+        right: 10px;
+        bottom: 22px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        z-index: 2;
+      }
+      .rail button {
+        background: none;
+        border: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        min-width: 56px;
+      }
+      .rail .ico {
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(17, 17, 17, 0.6);
+        border: 3px solid var(--edge);
+      }
+      .rail button:active .ico {
+        border-color: #eee;
+      }
+      /* The vote you gave stays lit: up in the player's blue, down in lava */
+      .rail .ico.voted-up {
+        background: var(--blue);
+        border-color: #fff;
+      }
+      .rail .ico.voted-down {
+        background: #de2511;
+        border-color: #fff;
+      }
+      .rail .ico svg {
+        width: 24px;
+        height: 24px;
+        fill: #fff;
+      }
+
+      /* ---- bottom tabs ---- */
+      .tabs {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(var(--tabs-h) + var(--safe-b));
+        padding-bottom: var(--safe-b);
+        background: var(--panel);
+        border-top: 3px solid var(--edge);
+        display: flex;
+        z-index: 20;
+      }
+      .tab {
+        flex: 1;
+        background: none;
+        border: none;
+        border-top: 4px solid transparent;
+        margin-top: -3px;
+        color: var(--dim);
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+      }
+      .tab svg {
+        width: 24px;
+        height: 24px;
+        fill: currentColor;
+      }
+      .tab.on {
+        color: #fff;
+        border-top-color: var(--blue);
+      }
+      .tab.main .sq {
+        width: 50px;
+        height: 30px;
+        background: var(--block);
+        border: 3px solid var(--edge);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+      }
+      .tab.main.on {
+        border-top-color: transparent;
+      }
+      .tab.main.on .sq {
+        background: var(--blue);
+        border-color: var(--blue-edge);
+      }
+
+      /* ---- campaign chapter cards ---- */
+      .chapter {
+        background: #222;
+      }
+      .chapter .veil {
+        position: absolute;
+        inset: 0;
+        background: rgba(17, 17, 17, 0.55);
+      }
+      .chapter .body {
+        position: absolute;
+        inset: 0;
+        padding: calc(var(--safe-t) + 28px) 18px 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        z-index: 2;
+      }
+      .ch-num {
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+        letter-spacing: 3px;
+      }
+      .ch-title {
+        font-size: 40px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-shadow: 4px 4px 0 var(--blue);
+        text-align: center;
+        margin: 0;
+      }
+      .ch-stat {
+        font-size: 14px;
+        font-weight: bold;
+        color: #ddd;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .bc {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background: var(--blue);
+        border: 2px solid #fff;
+      }
+      .lvl-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 56px);
+        gap: 10px;
+        justify-content: center;
+        margin-top: 6px;
+      }
+      .lvl {
+        position: relative;
+        width: 56px;
+        height: 56px;
+        background: var(--block);
+        border: 4px solid var(--edge);
+        font-size: 22px;
+        font-weight: bold;
+      }
+      .lvl:active:not(:disabled) {
+        border-color: #eee;
+      }
+      .lvl.beaten {
+        background: var(--blue);
+        border-color: var(--blue-edge);
+      }
+      .lvl:disabled {
+        opacity: 0.4;
+      }
+      .lvl .bc {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 14px;
+        height: 14px;
+      }
+      .locked-note {
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+        text-align: center;
+        border: 3px solid var(--edge);
+        background: rgba(17, 17, 17, 0.7);
+        padding: 10px 14px;
+      }
+
+      /* ---- plain block buttons (menus stay plain) ---- */
+      .btn {
+        background: var(--block);
+        border: 4px solid var(--edge);
+        color: #fff;
+        font-weight: bold;
+        font-size: 15px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 13px 12px;
+        min-width: 0;
+      }
+      .btn:active {
+        border-color: #eee;
+      }
+      .btn.blue {
+        background: var(--blue);
+        border-color: var(--blue-edge);
+      }
+      .btn-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(320px, 100%);
+      }
+
+      /* ---- ME ---- */
+      .me {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        padding: calc(var(--safe-t) + 22px) 16px 24px;
+      }
+      /* The profile tab is drawn like the game's Account screen: your name,
+         the stats boxes, your crates, your locker, the account buttons */
+      .acct {
+        max-width: 420px;
+        margin: 0 auto;
+      }
+      .me-name {
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-shadow: 3px 3px 0 var(--blue);
+        overflow-wrap: anywhere;
+        text-align: center;
+        text-transform: uppercase;
+        margin: 4px 0 18px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .stat {
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        padding: 14px 8px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-weight: bold;
+        min-width: 0;
+      }
+      button.stat:active {
+        border-color: #eee;
+      }
+      .stat.wide {
+        grid-column: 1 / -1;
+      }
+      .stat .k {
+        font-size: 12px;
+        color: #aaa;
+        letter-spacing: 1px;
+      }
+      .stat .v {
+        font-size: 24px;
+      }
+      .stat .t {
+        font-size: 11px;
+        color: var(--dim);
+        letter-spacing: 1px;
+      }
+      .sec-head {
+        margin: 22px 0 12px;
+        padding: 0 2px 8px;
+        border-bottom: 2px solid var(--edge);
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: 2px;
+      }
+      .locker-tabs {
+        position: relative;
+        display: flex;
+        gap: 18px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: 22px 0 12px;
+        border-bottom: 2px solid var(--edge);
+      }
+      .locker-tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .locker-tab {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        padding: 0 0 8px;
+        font-size: 15px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--dim);
+        white-space: nowrap;
+      }
+      .locker-tab.on {
+        color: #fff;
+        border-bottom-color: #fff;
+      }
+      .acct-btns {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 28px;
+      }
+      .btn.red {
+        background: #a44;
+        border-color: #822;
+      }
+      .skin .art .pic {
+        width: 100%;
+        height: 100%;
+        background: center / cover no-repeat;
+      }
+      .skin .art canvas {
+        width: 100%;
+        height: 100%;
+      }
+      .skins.wide .art {
+        width: 100%;
+        height: 64px;
+      }
+      .tab-name {
+        max-width: 100%;
+        padding: 0 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-transform: uppercase;
+      }
+      .me-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        max-width: 420px;
+        margin: 18px auto 0;
+      }
+      .me-btns .wide {
+        grid-column: 1 / -1;
+      }
+      .me-label {
+        max-width: 420px;
+        margin: 24px auto 10px;
+        font-weight: bold;
+        font-size: 14px;
+        color: var(--dim);
+        letter-spacing: 2px;
+      }
+      .skins {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+      .skin {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 4px 8px;
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        min-width: 0;
+      }
+      .skin:active {
+        border-color: #eee;
+      }
+      .skin.using {
+        border-color: var(--blue);
+        background: #1d2533;
+      }
+      .skin .art {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .skin .art img {
+        max-width: 100%;
+        max-height: 100%;
+        image-rendering: pixelated;
+      }
+      .skin .art .block {
+        width: 30px;
+        height: 56px;
+        background: var(--blue);
+      }
+      .skin .sname {
+        width: 100%;
+        font-size: 11px;
+        font-weight: bold;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .skin .flag,
+      .skin .count {
+        position: absolute;
+        top: -3px;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 5px;
+      }
+      .skin .flag {
+        left: -3px;
+        background: var(--blue);
+      }
+      .skin .count {
+        right: -3px;
+        background: var(--block);
+        border: 2px solid var(--edge);
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+      .thumb {
+        position: relative;
+        aspect-ratio: 3 / 4;
+        background: #222 center / cover no-repeat;
+        border: none;
+        padding: 0;
+        overflow: hidden;
+      }
+      .thumb canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .thumb span {
+        position: absolute;
+        left: 5px;
+        bottom: 4px;
+        right: 5px;
+        font-size: 11px;
+        font-weight: bold;
+        text-align: left;
+        text-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .empty {
+        color: var(--dim);
+        text-align: center;
+        font-weight: bold;
+        padding: 18px;
+        border: 3px dashed var(--edge);
+        max-width: 420px;
+        margin: 0 auto;
+        font-size: 13px;
+      }
+
+      /* ---- a feed opened from a profile grid or search ---- */
+      .layer {
+        position: fixed;
+        inset: 0;
+        bottom: calc(var(--tabs-h) + var(--safe-b));
+        z-index: 15;
+        background: var(--bg);
+        display: none;
+      }
+      .layer.on {
+        display: block;
+      }
+      /* ---- search page ---- */
+      .page {
+        position: fixed;
+        inset: 0;
+        bottom: calc(var(--tabs-h) + var(--safe-b));
+        z-index: 14;
+        background: var(--bg);
+        display: none;
+        flex-direction: column;
+      }
+      .page.on {
+        display: flex;
+      }
+      .search-bar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: calc(var(--safe-t) + 8px) 12px 8px;
+        background: var(--panel);
+        border-bottom: 3px solid var(--edge);
+      }
+      .sq-btn {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--block);
+        border: 3px solid var(--edge);
+      }
+      .sq-btn:active {
+        border-color: #eee;
+      }
+      .sq-btn svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+      }
+      .search-bar input {
+        flex: 1;
+        min-width: 0;
+        height: 40px;
+        background: #222;
+        border: 3px solid var(--edge);
+        color: #fff;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 0 10px;
+        outline: none;
+      }
+      .search-bar input:focus {
+        border-color: var(--blue);
+      }
+      .results {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 6px 12px 24px;
+      }
+      .res-label {
+        max-width: 420px;
+        margin: 16px auto 8px;
+        font-weight: bold;
+        font-size: 13px;
+        color: var(--dim);
+        letter-spacing: 2px;
+      }
+      .players {
+        max-width: 420px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        padding: 8px 10px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: left;
+      }
+      .player:active {
+        border-color: #eee;
+      }
+      .player .pfp {
+        flex-shrink: 0;
+        width: 34px;
+        height: 34px;
+        background: var(--blue);
+        border: 3px solid var(--blue-edge);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+      .player .pname {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .more-btn {
+        display: block;
+        width: 100%;
+        max-width: 420px;
+        margin: 10px auto 0;
+      }
+
+      /* ---- comments: a sheet that slides up over the feed ---- */
+      #sheet-dim {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+      #sheet-dim.on {
+        display: block;
+      }
+      .sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 72%;
+        z-index: 31;
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        border-top: 4px solid var(--edge);
+        transform: translateY(105%);
+        transition: transform 0.18s ease-out;
+      }
+      .sheet.on {
+        transform: none;
+      }
+      @media (min-width: 700px) {
+        .sheet {
+          left: 50%;
+          width: min(480px, 100%);
+          margin-left: max(-240px, -50%);
+          border-left: 3px solid var(--edge);
+          border-right: 3px solid var(--edge);
+        }
+      }
+      .sheet-head {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 3px solid var(--edge);
+      }
+      .sheet-head .sheet-title {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        font-weight: bold;
+        font-size: 15px;
+        letter-spacing: 2px;
+        padding-left: 50px;
+      }
+      .sheet-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 6px 14px 14px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .cmt {
+        display: flex;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 2px solid #222;
+      }
+      .cmt .cbody {
+        flex: 1;
+        min-width: 0;
+      }
+      .cmt .cwho {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--dim);
+        font-weight: bold;
+      }
+      .cmt .cname {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #ddd;
+        font-weight: bold;
+        font-size: 13px;
+      }
+      .cmt .badge {
+        font-size: 10px;
+        padding: 1px 5px;
+        color: #fff;
+        background: #3c8d5a;
+      }
+      .cmt .badge.blue {
+        background: var(--blue);
+      }
+      .cmt .ctext {
+        margin-top: 3px;
+        font-size: 15px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      .cmt .ctext.gone {
+        color: var(--dim);
+        font-style: italic;
+      }
+      .sheet-input {
+        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px calc(10px + var(--safe-b));
+        border-top: 3px solid var(--edge);
+        background: var(--bg);
+      }
+      .sheet-input input {
+        flex: 1;
+        min-width: 0;
+        height: 44px;
+        background: #222;
+        border: 3px solid var(--edge);
+        color: #fff;
+        font-family: inherit;
+        font-size: 16px;
+        padding: 0 10px;
+        outline: none;
+      }
+      .sheet-input input:focus {
+        border-color: var(--blue);
+      }
+      .sheet-input .btn {
+        padding: 0 16px;
+        height: 44px;
+      }
+      .sheet-input .btn.wide {
+        flex: 1;
+      }
+      .sheet-input {
+        flex-direction: column;
+      }
+      .cmt-row {
+        display: flex;
+        gap: 8px;
+      }
+      .sheet-input #comment-emote {
+        padding: 0 10px;
+        font-size: 12px;
+      }
+      .cmt .cemote {
+        display: block;
+      }
+      /* what /word could be, your emotes, the emote picked */
+      .cmt-extra {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: 0 -12px;
+        padding: 0 12px;
+      }
+      .cmt-extra:empty {
+        display: none;
+      }
+      .cmt-extra::-webkit-scrollbar {
+        display: none;
+      }
+      .cx-chip,
+      .cx-emote {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #222;
+        border: 3px solid var(--edge);
+        padding: 6px 10px;
+        font-weight: bold;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .cx-emote {
+        padding: 0;
+        background: none;
+        border: 3px solid transparent;
+      }
+      .cx-emote.on {
+        border-color: var(--blue);
+      }
+      .cx-pic {
+        font-size: 18px;
+        line-height: 1;
+      }
+      .cx-epv {
+        display: inline-block;
+      }
+      .cx-none {
+        color: var(--dim);
+        font-weight: bold;
+        font-size: 12px;
+        padding: 6px 0;
+      }
+      .cx-picked {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: bold;
+        font-size: 13px;
+      }
+      .cx-picked .btn {
+        height: 34px;
+        padding: 0 10px;
+        font-size: 11px;
+        margin-left: auto;
+      }
+
+      /* ---- the game, over everything ---- */
+      #game {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        z-index: 50;
+        background: #111;
+        /* Not visibility:hidden -- the game sets visibility on some of its
+           own parts, and those would show through. Not display:none either:
+           the game must measure the screen while it loads. */
+        opacity: 0;
+        z-index: -1;
+        pointer-events: none;
+      }
+      #game.on {
+        opacity: 1;
+        z-index: 50;
+        pointer-events: auto;
+      }
+      /* The ME tab: the game's own Account screen, above the tab bar */
+      #game.docked:not(.on) {
+        opacity: 1;
+        z-index: 15;
+        pointer-events: auto;
+        /* clear of the phone's status bar: a frame gets no safe areas */
+        top: var(--safe-t);
+        height: calc(100% - var(--tabs-h) - var(--safe-b) - var(--safe-t));
+      }
+      #wait {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: #111;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #ccc;
+      }
+      #wait.on {
+        display: flex;
+      }
+      .jumper {
+        position: relative;
+        width: 120px;
+        height: 90px;
+      }
+      .jumper .cube {
+        position: absolute;
+        left: 45px;
+        bottom: 22px;
+        width: 30px;
+        height: 30px;
+        background: var(--blue);
+        animation: loading-jump 0.7s ease-in-out infinite;
+      }
+      .jumper .ground {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 22px;
+        background: var(--block);
+        border: 3px solid var(--edge);
+      }
+      @keyframes loading-jump {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-40px);
+        }
+      }
+      #wait .cancel {
+        margin-top: 6px;
+      }
+      #toast {
+        position: fixed;
+        left: 50%;
+        top: calc(var(--safe-t) + 64px);
+        transform: translateX(-50%);
+        background: var(--panel);
+        border: 3px solid var(--edge);
+        padding: 8px 14px;
+        font-weight: bold;
+        font-size: 13px;
+        z-index: 70;
+        display: none;
+        white-space: nowrap;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .jumper .cube {
+          animation: none;
+        }
+      }
+      @media (min-width: 700px) {
+        /* A tablet or desktop window: the feed stays phone-shaped */
+        #levels .feed,
+        #campaign .feed,
+        .layer .feed {
+          left: 50%;
+          width: min(480px, 100%);
+          transform: translateX(-50%);
+          border-left: 3px solid var(--edge);
+          border-right: 3px solid var(--edge);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LEVELS: the scrolling feed -->
+    <section class="screen on" id="levels">
+      <div class="feed" id="feed"></div>
+      <div class="panel" id="live-panel"><div class="panel-in" id="live-body"></div></div>
+      <div class="panel" id="boards-panel"><div class="panel-in" id="boards-body"></div></div>
+      <div class="feed-head" id="feed-head">
+        <button class="corner left" id="shop-btn" aria-label="Shop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="fill: none">
+            <path d="M6 2h12l1.5 4H4.5L6 2zm-3 6h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8zm6 3v2a3 3 0 0 0 6 0v-2" />
+          </svg>
+        </button>
+        <div class="sorts" id="sorts">
+          <button class="sort on" data-sort="foryou">FOR YOU</button>
+          <button class="sort" data-sort="new">RECENT</button>
+          <button class="sort" data-sort="popular">POPULAR</button>
+          <button class="sort" data-panel="live">LIVE</button>
+          <button class="sort" data-panel="boards">LEADERBOARDS</button>
+        </div>
+        <button class="corner right" id="search-btn" aria-label="Search">
+          <svg viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- CAMPAIGN: one card per chapter -->
+    <section class="screen" id="campaign">
+      <div class="feed" id="chapters"></div>
+    </section>
+
+    <!-- ME -->
+    <section class="screen" id="me">
+      <div class="me" id="me-body"></div>
+    </section>
+
+    <!-- SEARCH: players and levels found -->
+    <div class="page" id="search">
+      <div class="search-bar">
+        <button class="sq-btn" id="search-back" aria-label="Back">
+          <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
+        </button>
+        <input id="search-input" type="search" placeholder="Search for a level" enterkeyhint="search" autocomplete="off" />
+        <button class="sq-btn" id="search-go" aria-label="Search">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
+        </button>
+      </div>
+      <div class="results" id="results"></div>
+    </div>
+
+    <!-- a feed opened from a grid of levels -->
+    <div class="layer" id="layer">
+      <div class="feed" id="layer-feed"></div>
+      <button class="corner left" id="layer-back" aria-label="Back" style="z-index: 7">
+        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
+      </button>
+    </div>
+
+    <nav class="tabs">
+      <button class="tab on" data-tab="levels">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v7H4zm0 9h16v7H4z" /></svg>
+        LEVELS
+      </button>
+      <button class="tab main" data-tab="campaign">
+        <span class="sq"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
+        CAMPAIGN
+      </button>
+      <button class="tab" data-tab="me">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+        <span class="tab-name" id="me-tab-name">ME</span>
+      </button>
+    </nav>
+
+    <!-- COMMENTS -->
+    <div id="sheet-dim"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-label="Comments">
+      <div class="sheet-head">
+        <div class="sheet-title" id="sheet-title">COMMENTS</div>
+        <button class="sq-btn" id="sheet-close" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+        </button>
+      </div>
+      <div class="sheet-list" id="sheet-list"></div>
+      <div class="sheet-input" id="sheet-input"></div>
+    </div>
+
+    <!-- MORE INFO: a level's details, from tapping its name -->
+    <div id="info-dim"></div>
+    <div class="sheet info" id="info" role="dialog" aria-label="Level info">
+      <div class="sheet-head">
+        <div class="sheet-title">MORE INFO</div>
+        <button class="sq-btn" id="info-close" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+        </button>
+      </div>
+      <div class="sheet-list" id="info-body"></div>
+    </div>
+
+    <!-- A list to pick from (leaderboard mode, level...) -->
+    <div id="pick-dim"></div>
+    <div class="sheet pick" id="pick" role="dialog">
+      <div class="sheet-head">
+        <div class="sheet-title" id="pick-title"></div>
+        <button class="sq-btn" id="pick-close" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+        </button>
+      </div>
+      <div class="sheet-list" id="pick-list"></div>
+    </div>
+
+    <iframe id="game" title="Block Over It" allow="autoplay; fullscreen"></iframe>
+    <div id="wait">
+      <div class="jumper"><div class="cube"></div><div class="ground"></div></div>
+      LOADING
+      <button class="btn cancel" id="wait-cancel">CANCEL</button>
+    </div>
+    <div id="toast"></div>
+    <div id="ask" role="dialog" aria-modal="true">
+      <div class="ask-box">
+        <h3 id="ask-title"></h3>
+        <p id="ask-text"></p>
+        <div class="ask-btns">
+          <button class="btn" id="ask-no">CANCEL</button>
+          <button class="btn red" id="ask-yes">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      // =====================================================================
+      // Block Over It -- mobile app
+      //
+      // Phones are sent here from index.html. Levels scroll one per screen;
+      // the real game runs in a hidden iframe (index.html?embed) that comes
+      // up to play a level or show the shop, profile, settings and the rest,
+      // and goes away again when the player backs out (see the MOBILE APP
+      // BRIDGE in index.html). Both pages share one origin, so they share the
+      // account and saves in localStorage.
+      // =====================================================================
+
+      const SUPABASE_URL = "https://heqmnluegbbglmhtublu.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_tOOikmqOrVhpJAjLuyeqaA_nzF6CkOA";
+      const LEVELS_VIEW = "published_levels_latest";
+      const PAGE = 8;
+
+      const db =
+        window.supabase &&
+        window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          global: { headers: { "x-boi-client": "mobile-2026-11-21" } },
+        });
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s == null ? "" : s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const store = {
+        get(k) {
+          try {
+            return localStorage.getItem(k);
+          } catch (e) {
+            return null;
+          }
+        },
+      };
+      function fmtCount(n) {
+        n = Number(n) || 0;
+        if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M";
+        if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, "") + "K";
+        return String(n);
+      }
+      let toastTimer = null;
+      function toast(text) {
+        const t = $("toast");
+        t.textContent = text;
+        t.style.display = "block";
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => (t.style.display = "none"), 1800);
+      }
+
+      const DIFFICULTY_LABELS = {
+        1: "No Skill", 2: "Very Easy", 3: "Easy", 4: "Medium", 5: "Hard",
+        6: "Very Hard", 7: "Ultra Hard", 8: "Nightmare", 9: "Extreme", 10: "Insane",
+      };
+      const DIFFICULTY_COLORS = {
+        1: "#2ecc71", 2: "#27ae60", 3: "#f1c40f", 4: "#f39c12", 5: "#e67e22",
+        6: "#d35400", 7: "#e74c3c", 8: "#c0392b", 9: "#8e44ad", 10: "#ffffff",
+      };
+
+      const ICONS = {
+        play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+        like: '<svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>',
+        dislike: '<svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>',
+        comment: '<svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/></svg>',
+        plays: '<svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm3 3v12h12V6H6zm3 2.5l7 3.5-7 3.5v-7z"/></svg>',
+      };
+
+      // ---------------------------------------------------------------------
+      // LEVEL PREVIEWS
+      // A level drawn flat on a canvas with the game's own colours: walls
+      // #444 edged #333, lava #de2511, coins #e2e838, the player and Blue
+      // Coins #335699, spikes #aaa. Painted walls take their paint.
+      // ---------------------------------------------------------------------
+
+      function rleDecodeRow(encoded) {
+        let out = "";
+        let i = 0;
+        while (i < encoded.length) {
+          let digits = "";
+          while (i < encoded.length && encoded[i] >= "0" && encoded[i] <= "9") digits += encoded[i++];
+          if (i >= encoded.length) break;
+          const ch = encoded[i++];
+          out += ch.repeat(digits ? parseInt(digits, 10) : 1);
+        }
+        return out;
+      }
+      // { "#f00": "3,4 4,4" } (packed) or { "3,4": "#f00" } (plain) -> plain
+      function cellValues(field, packed) {
+        if (!field || typeof field !== "object") return {};
+        if (!packed) return field;
+        const out = {};
+        Object.keys(field).forEach((value) => {
+          String(field[value]).split(" ").forEach((k) => k && (out[k] = value));
+        });
+        return out;
+      }
+      function cellConfigs(field, packed) {
+        if (!field) return {};
+        if (Array.isArray(field)) {
+          const out = {};
+          field.forEach(([cfg, cells]) =>
+            String(cells).split(" ").forEach((k) => k && (out[k] = cfg)),
+          );
+          return out;
+        }
+        return typeof field === "object" ? field : {};
+      }
+      function cellSet(field) {
+        if (!field) return new Set();
+        if (typeof field === "string") return new Set(field.split(" ").filter(Boolean));
+        return new Set(Array.isArray(field) ? field : []);
+      }
+      const isColour = (v) =>
+        typeof v === "string" && /^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(v.trim());
+      // A picture, by the game's rule (a web or data address, or a file
+      // name like sunset.png), or written as url(...)
+      const isImage = (v) =>
+        typeof v === "string" &&
+        (/^(https?:\/\/|data:image|url\()/i.test(v.trim()) || /\.(png|jpg|jpeg|gif|webp)$/i.test(v.trim()));
+      const imageUrl = (v) => v.trim().replace(/^url\(["']?|["']?\)$/g, "");
+      // Any CSS colour the game would show: hex, rgb(), named ("white")
+      const isPaint = (v) => {
+        if (typeof v !== "string" || !v.trim()) return false;
+        if (isColour(v)) return true;
+        try {
+          return CSS.supports("color", v.trim());
+        } catch (e) {
+          return false;
+        }
+      };
+      // A gradient or other CSS background a canvas can't paint itself
+      const isCssBackground = (v) => {
+        if (typeof v !== "string" || !v.trim() || isImage(v) || isPaint(v)) return false;
+        try {
+          return CSS.supports("background", v.trim());
+        } catch (e) {
+          return false;
+        }
+      };
+      // The background the game shows first: an animated one's first frame
+      function levelBackground(data) {
+        const anim = data.bgAnimation;
+        if (anim && Array.isArray(anim.values) && anim.values.length && anim.values[0]) return anim.values[0];
+        return data.background;
+      }
+      // Pictures for previews, loaded once; every canvas waiting on one is
+      // drawn again when it arrives
+      const previewImages = new Map();
+      function previewImage(url, redraw) {
+        let e = previewImages.get(url);
+        if (!e) {
+          e = { img: new Image(), ok: false, bad: false, waiting: new Set() };
+          e.img.decoding = "async";
+          e.img.onload = () => {
+            e.ok = true;
+            const w = [...e.waiting];
+            e.waiting.clear();
+            w.forEach((f) => f());
+          };
+          e.img.onerror = () => {
+            e.bad = true;
+            e.waiting.clear();
+          };
+          e.img.src = url;
+          previewImages.set(url, e);
+        }
+        if (!e.ok && !e.bad && redraw) e.waiting.add(redraw);
+        return e.ok ? e.img : null;
+      }
+      // A picture over a rectangle the way CSS "cover" does, cut to it
+      function drawCover(g, img, x, y, w, h) {
+        const iw = img.naturalWidth || img.width;
+        const ih = img.naturalHeight || img.height;
+        if (!iw || !ih || w <= 0 || h <= 0) return;
+        const k = Math.max(w / iw, h / ih);
+        const dw = iw * k;
+        const dh = ih * k;
+        g.save();
+        g.beginPath();
+        g.rect(x, y, w, h);
+        g.clip();
+        try {
+          g.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        } catch (e) {}
+        g.restore();
+      }
+
+      function shadeHex(hex, f) {
+        const m = /^#([0-9a-f]{3}|[0-9a-f]{6})/i.exec(hex || "");
+        if (!m) return "#333";
+        let h = m[1];
+        if (h.length === 3) h = h.replace(/./g, "$&$&");
+        const n = parseInt(h, 16);
+        const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * f));
+        return "rgb(" + c.join(",") + ")";
+      }
+
+      // Everything the drawing needs, worked out once per level
+      function parseLevel(data) {
+        if (!data || !Array.isArray(data.plan)) return null;
+        const packed = data.fmt === "boi1";
+        const plan = packed ? data.plan.map(rleDecodeRow) : data.plan.slice();
+        const rows = plan.length;
+        let cols = 0;
+        plan.forEach((r) => (cols = Math.max(cols, r.length)));
+        let player = null;
+        plan.forEach((r, y) => {
+          const x = r.indexOf("@");
+          if (x >= 0 && !player) player = { x, y };
+        });
+        const bg = levelBackground(data);
+        return {
+          // FORCE ZOOM: the game always shows it zoomed in on the player
+          zoom: !!(data.forceZoom || data.force_zoom),
+          plan,
+          rows,
+          cols,
+          player: player || { x: cols / 2, y: rows - 2 },
+          colors: cellValues(data.colors, packed),
+          configs: cellConfigs(data.blockConfigs, packed),
+          hidden: cellSet(data.invisibles),
+          areas: Array.isArray(data.areaBackgrounds) ? data.areaBackgrounds : [],
+          bg: isPaint(bg) ? bg.trim() : isImage(bg) ? "#111" : "#222",
+          bgImage: isImage(bg) ? imageUrl(bg) : null,
+          bgCss: isCssBackground(bg) ? bg.trim() : null,
+        };
+      }
+
+      let mySkinImage = null;
+      let mySkinColor = null;
+
+      function drawCell(g, ch, x, y, s, paint) {
+        const bw = Math.max(1, Math.round(s * 0.075));
+        const block = (fill, edge) => {
+          g.fillStyle = edge;
+          g.fillRect(x, y, s, s);
+          g.fillStyle = fill;
+          g.fillRect(x + bw, y + bw, s - 2 * bw, s - 2 * bw);
+        };
+        const tri = (pts) => {
+          g.fillStyle = paint || "#aaa";
+          g.beginPath();
+          g.moveTo(x + pts[0] * s, y + pts[1] * s);
+          for (let i = 2; i < pts.length; i += 2) g.lineTo(x + pts[i] * s, y + pts[i + 1] * s);
+          g.closePath();
+          g.fill();
+        };
+        const circle = (r, fill) => {
+          g.fillStyle = fill;
+          g.beginPath();
+          g.arc(x + s / 2, y + s / 2, r * s, 0, Math.PI * 2);
+          g.fill();
+        };
+        switch (ch) {
+          case "x":
+          case "W":
+          case "F":
+            if (paint) block(paint, shadeHex(paint, 0.72));
+            else block("#444", "#333");
+            return;
+          case "K":
+          case "k":
+          case "{":
+          case "}":
+            block(paint || "#444", paint ? shadeHex(paint, 0.72) : "#333");
+            return;
+          case "G":
+            block("#4a4a4a", "#555");
+            g.fillStyle = "#3a3a3a";
+            g.fillRect(x + s * 0.3, y + s * 0.3, s * 0.15, s * 0.15);
+            g.fillRect(x + s * 0.6, y + s * 0.55, s * 0.15, s * 0.15);
+            return;
+          case "!":
+          case "=":
+          case "|":
+          case "v":
+          case "^":
+            g.fillStyle = paint || "#de2511";
+            g.fillRect(x, y, s, s);
+            return;
+          case "H":
+          case "V":
+            block(paint || "#777", paint ? shadeHex(paint, 0.72) : "#555");
+            return;
+          case "I":
+            block("#8ec9ee", "#eaf8ff");
+            return;
+          case "o":
+            circle(0.3, "#e2e838");
+            return;
+          case "B":
+            circle(0.3, "#335699");
+            g.strokeStyle = "#fff";
+            g.lineWidth = Math.max(1, s * 0.05);
+            g.stroke();
+            return;
+          case "S":
+            return tri([0, 1, 0.5, 0.35, 1, 1]);
+          case "s":
+            return tri([0, 0, 0.5, 0.65, 1, 0]);
+          case "[":
+            return tri([1, 0, 0.35, 0.5, 1, 1]);
+          case "]":
+            return tri([0, 0, 0.65, 0.5, 0, 1]);
+          case ">":
+            g.fillStyle = paint || "#444";
+            g.beginPath();
+            g.moveTo(x, y + s);
+            g.lineTo(x + s, y);
+            g.lineTo(x + s, y + s);
+            g.fill();
+            return;
+          case "<":
+            g.fillStyle = paint || "#444";
+            g.beginPath();
+            g.moveTo(x, y);
+            g.lineTo(x + s, y + s);
+            g.lineTo(x, y + s);
+            g.fill();
+            return;
+          case "J":
+            g.fillStyle = "#ea80fc";
+            g.fillRect(x, y + s * 0.5, s, s * 0.5);
+            g.fillStyle = "#4a148c";
+            g.fillRect(x + bw, y + s * 0.5 + bw, s - 2 * bw, s * 0.5 - 2 * bw);
+            return;
+          case "R":
+          case "A":
+          case "E":
+            g.fillStyle = ch === "R" ? "#2563eb" : ch === "A" ? "#ea580c" : "#0d9488";
+            g.fillRect(x, y + s * 0.65, s, s * 0.35);
+            return;
+          case "D":
+          case "d":
+            block("#7a3b06", "#5a2a04");
+            return;
+          case "C":
+            block("#666", "#444");
+            return;
+          case "P":
+            g.fillStyle = "#1f3d2b";
+            g.fillRect(x + s * 0.3, y + s * 0.2, s * 0.4, s * 0.8);
+            return;
+          case "T":
+            block("#1a1a2e", "#9b6bff");
+            return;
+          case "@": {
+            const w = s * 0.5;
+            const h = s;
+            const px = x + (s - w) / 2;
+            const py = y + s - h;
+            if (mySkinImage && mySkinImage.complete && mySkinImage.naturalWidth) {
+              const iw = h * (mySkinImage.naturalWidth / mySkinImage.naturalHeight);
+              g.drawImage(mySkinImage, x + (s - iw) / 2, py, iw, h);
+            } else {
+              g.fillStyle = mySkinColor || "#335699";
+              g.fillRect(px, py, w, h);
+            }
+            return;
+          }
+        }
+      }
+
+      // Draws the level into a canvas the size of `box`. The level fills
+      // the space above the card's text by height (blocks 16-34px), centred
+      // on the player, and sits on the ground like it does in the game.
+      function drawLevel(canvas, lvl, box) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const W = Math.max(1, Math.round(box.w));
+        const H = Math.max(1, Math.round(box.h));
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        const g = canvas.getContext("2d");
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, W, H);
+        if (!lvl) return;
+        const top = box.top || 0;
+        const bottom = box.bottom || 0;
+        const areaH = Math.max(60, H - top - bottom);
+        // Forced zoom: as the game's zoomed camera, 15 blocks across the
+        // screen with the player in the middle
+        const s = lvl.zoom
+          ? W / 15
+          : Math.max(box.min || 16, Math.min(box.max || 34, areaH / lvl.rows, (W * 1.0) / Math.min(lvl.cols, 8)));
+        const levelW = lvl.cols * s;
+        const levelH = lvl.rows * s;
+        let ox, oy;
+        if (levelW <= W) ox = (W - levelW) / 2;
+        else ox = Math.min(0, Math.max(W - levelW, W / 2 - (lvl.player.x + 0.5) * s));
+        if (levelH <= areaH) oy = top + areaH - levelH;
+        else oy = Math.min(top, Math.max(top + areaH - levelH, top + areaH / 2 - (lvl.player.y + 0.5) * s));
+        ox = Math.round(ox);
+        oy = Math.round(oy);
+        // Drawn again when a picture it needs arrives
+        const again = () => canvas.isConnected && drawLevel(canvas, lvl, box);
+        // The level's background as the game shows it: a colour fills the
+        // whole screen; a picture covers the level, plain dark around it; a
+        // gradient sits behind the canvas
+        canvas.style.background = lvl.bgCss || "";
+        if (!lvl.bgCss) {
+          g.fillStyle = lvl.bg;
+          g.fillRect(0, 0, W, H);
+        }
+        if (lvl.bgImage) {
+          const img = previewImage(lvl.bgImage, again);
+          if (img) drawCover(g, img, ox, oy, levelW, levelH);
+        }
+        lvl.areas.forEach((a) => {
+          if (!a) return;
+          let bg = a.bg;
+          if (bg && typeof bg === "object" && Array.isArray(bg.values)) bg = bg.values[0];
+          const x1 = Math.min(a.x1, a.x2), x2 = Math.max(a.x1, a.x2);
+          const y1 = Math.min(a.y1, a.y2), y2 = Math.max(a.y1, a.y2);
+          if (![x1, x2, y1, y2].every((n) => isFinite(n))) return;
+          const rx = ox + x1 * s, ry = oy + y1 * s, rw = (x2 - x1 + 1) * s, rh = (y2 - y1 + 1) * s;
+          if (isImage(bg)) {
+            const img = previewImage(imageUrl(bg), again);
+            if (img) drawCover(g, img, rx, ry, rw, rh);
+          } else if (isPaint(bg)) {
+            g.fillStyle = bg.trim();
+            g.fillRect(rx, ry, rw, rh);
+          }
+        });
+        const c0 = Math.max(0, Math.floor(-ox / s));
+        const c1 = Math.min(lvl.cols, Math.ceil((W - ox) / s));
+        const r0 = Math.max(0, Math.floor(-oy / s));
+        const r1 = Math.min(lvl.rows, Math.ceil((H - oy) / s));
+        for (let y = r0; y < r1; y++) {
+          const row = lvl.plan[y];
+          for (let x = c0; x < c1; x++) {
+            let ch = row[x];
+            if (!ch || ch === " " || ch === "Z") continue;
+            const key = x + "," + y;
+            if (lvl.hidden.has(key)) continue;
+            const cfg = lvl.configs[key];
+            if (cfg && cfg.opacity === 0) continue;
+            if (cfg && typeof cfg.illusion === "string" && cfg.illusion.length === 1) ch = cfg.illusion;
+            const paint = lvl.colors[key];
+            if (paint === "invisible") continue;
+            drawCell(g, ch, ox + x * s, oy + y * s, s, isColour(paint) ? paint : null);
+          }
+        }
+      }
+
+      // ---------------------------------------------------------------------
+      // THE GAME FRAME
+      // ---------------------------------------------------------------------
+      const frame = $("game");
+      let frameReady = false;
+      let frameLoading = false;
+      let frameOpen = false;
+      let pending = null;
+      let ignorePop = false;
+      // Our own history.back() fires a popstate that is not the player's;
+      // the flag clears itself so it can never swallow a real Back later
+      let ignorePopTimer = null;
+      function skipNextPop() {
+        ignorePop = true;
+        clearTimeout(ignorePopTimer);
+        ignorePopTimer = setTimeout(() => (ignorePop = false), 700);
+      }
+      let gameState = null;
+      // A back-button entry for something opening. Opened from MORE INFO,
+      // it takes over the sheet's entry, so Back never lands on a closed sheet
+      function pushEntry(state) {
+        try {
+          if (history.state && history.state.boiInfo && !$("info").classList.contains("on"))
+            history.replaceState(state, "");
+          else history.pushState(state, "");
+        } catch (e) {}
+      }
+
+      function loadFrame() {
+        if (frameLoading) return;
+        frameLoading = true;
+        frame.src = "index.html?embed=1";
+      }
+      // A copy opened from a folder (file://) has no real origin: messages
+      // addressed to "file://" are dropped, so there it has to be "*"
+      const MSG_ORIGIN = /^https?:$/.test(location.protocol) ? location.origin : "*";
+      function tellGame(msg) {
+        try {
+          frame.contentWindow.postMessage(msg, MSG_ORIGIN);
+        } catch (e) {}
+      }
+      // The ME tab shows the game's own Account screen, docked above the
+      // tab bar, whenever someone is signed in and nothing else of the game
+      // is open; the app's drawing of it is only the guest / loading view
+      let docked = false;
+      let dockReady = false;
+      function syncDock() {
+        const want = currentTab === "me" && frameReady && !frameOpen && !signingOut && !!(gameState && gameState.user);
+        if (want === docked) return;
+        docked = want;
+        if (!want) {
+          dockReady = false;
+          frame.classList.remove("docked");
+        }
+        tellGame({ type: "boi-dock", on: want });
+      }
+      // Shows the game and hands it what to open; waits for it to load first
+      function openGame(msg) {
+        // Whatever opens replaces the docked Account screen
+        docked = false;
+        dockReady = false;
+        frame.classList.remove("docked");
+        loadFrame();
+        if (!frameOpen) {
+          frameOpen = true;
+          pushEntry({ boiGame: true });
+        }
+        if (frameReady) {
+          frame.classList.add("on");
+          tellGame(msg);
+          setTimeout(() => {
+            try {
+              frame.focus();
+            } catch (e) {}
+          }, 0);
+        } else {
+          pending = msg;
+          $("wait").classList.add("on");
+        }
+      }
+      function hideGame() {
+        document.querySelectorAll(".card").forEach((c) => c._row && c.querySelector(".rail") && paintVotes(c));
+        frameOpen = false;
+        pending = null;
+        frame.classList.remove("on");
+        $("wait").classList.remove("on");
+        // A Blue Coin may have been picked up: read them again with the state
+        blueStale = true;
+        tellGame({ type: "boi-state", full: currentTab === "me" });
+        syncDock();
+      }
+      // The game says the player is done
+      function gameClosed() {
+        if (!frameOpen) return;
+        hideGame();
+        if (history.state && history.state.boiGame) {
+          skipNextPop();
+          history.back();
+        }
+      }
+      // The phone's back button / gesture
+      window.addEventListener("popstate", () => {
+        if (ignorePop) {
+          ignorePop = false;
+          return;
+        }
+        if ($("sheet").classList.contains("on")) closeComments(true);
+        else if ($("info").classList.contains("on")) closeInfo(true);
+        else if (frameOpen) {
+          if (!frameReady) {
+            hideGame();
+            tellGame({ type: "boi-stop" });
+            return;
+          }
+          // The game goes back one screen (or closes itself when there is
+          // nothing left to go back to), so the entry is put back
+          try {
+            history.pushState({ boiGame: true }, "");
+          } catch (e) {}
+          tellGame({ type: "boi-back" });
+        } else if ($("layer").classList.contains("on")) closeLayer(true);
+        else if ($("search").classList.contains("on")) closeSearch(true);
+      });
+      $("wait-cancel").onclick = () => {
+        if (frameOpen) history.back();
+      };
+      window.addEventListener("message", (e) => {
+        if (e.source !== frame.contentWindow) return;
+        if (MSG_ORIGIN !== "*" && e.origin !== location.origin) return;
+        const m = e.data || {};
+        if (m.type === "boi-ready") {
+          frameReady = true;
+          // A reloaded game (signed out, say) has nothing docked any more
+          docked = false;
+          dockReady = false;
+          frame.classList.remove("docked");
+          tellGame({ type: "boi-state", full: currentTab === "me" });
+          if (pending && frameOpen) {
+            const msg = pending;
+            pending = null;
+            $("wait").classList.remove("on");
+            frame.classList.add("on");
+            tellGame(msg);
+          }
+          if (livePanelOn()) tellGame({ type: "boi-live-watch", on: true });
+        } else if (m.type === "boi-close") gameClosed();
+        else if (m.type === "boi-commented") commentDone(m);
+        else if (m.type === "boi-state") onGameState(m);
+        else if (m.type === "boi-voted") voteDone(m);
+        else if (m.type === "boi-docked") {
+          // Shown only once the Account screen is up, so the main menu
+          // never flashes in the tab
+          if (m.ok && docked) {
+            dockReady = true;
+            setTimeout(() => docked && dockReady && frame.classList.add("docked"), 60);
+          } else if (!m.ok) docked = false;
+        }
+        else if (m.type === "boi-played") {
+          // The game counted a play: every card of that level shows it
+          const id = Number(m.levelId);
+          const bumped = new Set();
+          document.querySelectorAll(".card").forEach((c) => {
+            if (!c._row || Number(c._row.id) !== id) return;
+            if (!bumped.has(c._row)) {
+              bumped.add(c._row);
+              c._row.plays = (Number(c._row.plays) || 0) + 1;
+            }
+            paintVotes(c);
+          });
+        }
+        else if (m.type === "boi-live") onLive(m);
+        else if (m.type === "boi-live-failed") toast(m.reason ? String(m.reason).slice(0, 40) : "COULD NOT JOIN");
+      });
+
+      // mode: "speedrun" / "deathrun" (swiped), or a normal play
+      const playRow = (row, mode) => {
+        taste.played(row);
+        openGame({ type: "boi-play", row, mode: mode || null });
+      };
+      const openView = (view, extra) => openGame(Object.assign({ type: "boi-open", view }, extra || {}));
+      const openProfile = (name) => name && openGame({ type: "boi-open", view: "profile", name });
+      const openLevelPage = (row) => openGame({ type: "boi-open", view: "link", search: "?level=" + row.id });
+
+      function onGameState(st) {
+        const userChanged = !gameState || gameState.user !== st.user;
+        gameState = st;
+        syncDock();
+        mySkinColor = st.skinColor || null;
+        if (st.skinUrl) {
+          if (!mySkinImage || mySkinImage.dataset.src !== st.skinUrl) {
+            mySkinImage = new Image();
+            mySkinImage.dataset.src = st.skinUrl;
+            mySkinImage.onload = () => redrawVisible();
+            mySkinImage.src = st.skinUrl;
+          }
+        } else mySkinImage = null;
+        renderChapters();
+        nameMeTab();
+        if (userChanged || currentTab === "me") renderMe();
+        if (userChanged) {
+          signingOut = false;
+          liveRoomsSig = "";
+        }
+        if (livePanelOn()) renderLive();
+        if (userChanged || blueStale) loadMyBlue();
+        else paintAllStatus();
+      }
+
+      // ---- BEATEN / BLUE COIN on each card ----
+      // Beaten comes from the game's state; the Blue Coins you have from
+      // community levels are bluecoin_claims rows "custom:<level id>"
+      let myBlue = new Set();
+      let blueFor = null;
+      let blueStale = false;
+      async function loadMyBlue() {
+        blueStale = false;
+        const user = gameState && gameState.user;
+        if (!user || !db) {
+          myBlue = new Set();
+          blueFor = null;
+          return paintAllStatus();
+        }
+        try {
+          const { data, error } = await db
+            .from("bluecoin_claims")
+            .select("level_key")
+            .eq("username", user)
+            .like("level_key", "custom:%")
+            .limit(5000);
+          if (error || !gameState || gameState.user !== user) return;
+          myBlue = new Set((data || []).map((r) => String(r.level_key).slice(7)));
+          blueFor = user;
+        } catch (e) {}
+        paintAllStatus();
+      }
+      const planText = (data) => {
+        const p = data && data.plan;
+        return Array.isArray(p) ? p.join("\n") : String(p || "");
+      };
+      const hasBlueCoin = (row) => planText((row && row.data) || {}).includes("B");
+      const beatenLevel = (row) =>
+        !!(gameState && gameState.beaten && gameState.beaten.includes(String(row.id)));
+      // A level's tags as desktop draws them. Before the game is up, the
+      // same look from the level's own columns (no BEATEN / BLUE COIN yet)
+      function levelTagsNow(row) {
+        const api = gameApi();
+        if (api && api.levelTags) {
+          try {
+            return api.levelTags(row);
+          } catch (e) {}
+        }
+        const t = (bg, color, text, extra) =>
+          '<span style="background:' + bg + "; color:" + color + "; font-size:0.7rem; padding:2px 10px; font-weight:900; letter-spacing:1px;" +
+          (extra || "") + '">' + text + "</span>";
+        let tags = "";
+        if (row.legendary) tags += t("#1e3a8a", "white", "LEGENDARY", " box-shadow: 0 0 10px #3b82f6;");
+        if (row.ultra) tags += t("#e11d48", "#fff", "ULTRA");
+        if (row.impossible) tags += t("#e74c3c", "white", "IMPOSSIBLE");
+        if (row.featured) tags += t("#3b82f6", "white", "FEATURED");
+        if (row.awards) tags += t("linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c)", "black", "LEVEL AWARDS");
+        const d = parseInt(row.difficulty, 10);
+        const diff = DIFFICULTY_LABELS[d]
+          ? 'Difficulty: <span style="color:' + DIFFICULTY_COLORS[d] + '; font-weight:bold;">' + esc(DIFFICULTY_LABELS[d]) +
+            '</span> <span style="color:#888; font-size:0.85em;">(' + d + "/10)</span>"
+          : "";
+        return { tags, diff };
+      }
+      function paintTags(box, row) {
+        if (!box || !row) return;
+        const t = levelTagsNow(row);
+        const html =
+          (t.tags ? '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; text-shadow:none; white-space:normal;">' + t.tags + "</div>" : "") +
+          (t.diff ? '<div style="margin-top:' + (t.tags ? 8 : 0) + 'px; font-size:13px; font-weight:bold; color:#ddd; white-space:normal;">' + t.diff + "</div>" : "");
+        const api = gameApi();
+        const key = (api ? "g" : "l") + html;
+        if (box._key === key) return;
+        box._key = key;
+        box.classList.toggle("empty", !html);
+        if (api) gameBits(box, html);
+        else box.innerHTML = html;
+      }
+      function paintStatus(card) {
+        paintTags(card.querySelector(".tags"), card._row);
+      }
+      const paintAllStatus = () => document.querySelectorAll(".card").forEach((c) => c._row && paintStatus(c));
+
+      // ---------------------------------------------------------------------
+      // FEEDS
+      // A feed is a scroll-snapped column of full-screen cards. `next()`
+      // gives the next page of level rows (or [] when there are no more).
+      // Cards draw their level only while they are near the screen.
+      // ---------------------------------------------------------------------
+      const feeds = [];
+      function makeFeed(el, next, opts) {
+        opts = opts || {};
+        const feed = { el, next, done: false, busy: false, seen: new Set(), cards: [], current: null };
+        el.innerHTML = "";
+        el.scrollTop = 0;
+        const tail = document.createElement("div");
+        tail.className = "feed-msg loading";
+        tail.textContent = "LOADING...";
+        el.appendChild(tail);
+
+        const drawer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((en) => {
+              const card = en.target;
+              if (en.isIntersecting) drawCard(card);
+              else if (card._drawn) {
+                card._drawn = false;
+                const cv = card.querySelector("canvas");
+                if (cv) cv.width = cv.height = 0;
+              }
+            });
+          },
+          { root: el, rootMargin: "150% 0px" },
+        );
+        const watcher = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((en) => {
+              if (!en.isIntersecting) return;
+              const card = en.target;
+              if (feed.current === card) return;
+              if (feed.current && feed.current._row && feed.shownAt)
+                taste.view(feed.current._row, Date.now() - feed.shownAt);
+              feed.shownAt = Date.now();
+              feed.current = card;
+              fillCommentCount(card);
+              if (opts.onCurrent) opts.onCurrent(card._row);
+              const i = feed.cards.indexOf(card);
+              if (i >= feed.cards.length - 3) more();
+            });
+          },
+          { root: el, threshold: 0.6 },
+        );
+        const tailWatch = new IntersectionObserver(
+          (entries) => entries.forEach((en) => en.isIntersecting && more()),
+          { root: el, rootMargin: "200% 0px" },
+        );
+        tailWatch.observe(tail);
+
+        async function more() {
+          if (feed.busy || feed.done) return;
+          feed.busy = true;
+          let rows = [];
+          try {
+            rows = (await next()) || [];
+          } catch (e) {
+            console.error(e);
+            tail.classList.remove("loading");
+            tail.innerHTML = 'COULD NOT LOAD LEVELS<button class="btn">TRY AGAIN</button>';
+            tail.querySelector("button").onclick = () => {
+              tail.classList.add("loading");
+              tail.textContent = "LOADING...";
+              more();
+            };
+            feed.busy = false;
+            return;
+          }
+          rows = rows.filter((r) => r && r.id != null && !feed.seen.has(r.id));
+          rows.forEach((r) => {
+            feed.seen.add(r.id);
+            const card = levelCard(r);
+            feed.cards.push(card);
+            el.insertBefore(card, tail);
+            drawer.observe(card);
+            watcher.observe(card);
+          });
+          feed.busy = false;
+          if (!rows.length && feed.lastEmpty) {
+            feed.done = true;
+            tail.classList.remove("loading");
+            tail.textContent = feed.cards.length ? "THAT'S ALL OF THEM" : opts.empty || "NO LEVELS HERE";
+          } else {
+            feed.lastEmpty = !rows.length;
+            if (!rows.length || feed.cards.length < 2) setTimeout(more, 0);
+          }
+        }
+        feed.more = more;
+        feed.redraw = () => feed.cards.forEach((c) => c._drawn && ((c._drawn = false), drawCard(c)));
+        feed.dispose = () => {
+          drawer.disconnect();
+          watcher.disconnect();
+          tailWatch.disconnect();
+          const i = feeds.indexOf(feed);
+          if (i >= 0) feeds.splice(i, 1);
+        };
+        feeds.push(feed);
+        more();
+        return feed;
+      }
+      function redrawVisible() {
+        feeds.forEach((f) => f.redraw());
+        drawChapterPreviews();
+      }
+
+      function levelCard(row) {
+        const data = (row && row.data) || {};
+        const card = document.createElement("div");
+        card.className = "card";
+        card._row = row;
+        if (row.difficulty == null && data.difficulty != null) row.difficulty = data.difficulty;
+        const creator = row.creator || data.creator || "unknown";
+        card.innerHTML =
+          '<canvas class="preview"></canvas>' +
+          '<div class="info shade">' +
+          '<button class="creator shade">' + esc(creator) + "</button>" +
+          '<button class="lvl-name shade">' + esc(row.name || data.name || "Untitled") + "</button>" +
+          '<div class="tags gtags"></div>' +
+          (row.description ? '<div class="desc">' + esc(row.description) + "</div>" : "") +
+          '<button class="play">' + ICONS.play + "PLAY</button>" +
+          "</div>" +
+          '<div class="rail shade">' +
+          '<button data-act="up" aria-label="Upvote"><span class="ico">' + ICONS.like + '</span><span class="n"></span></button>' +
+          '<button data-act="down" aria-label="Downvote"><span class="ico">' + ICONS.dislike + "</span></button>" +
+          '<button data-act="comments" aria-label="Comments"><span class="ico">' + ICONS.comment + '</span><span class="n">-</span></button>' +
+          '<button data-act="plays" disabled style="cursor:default"><span class="ico">' + ICONS.plays + '</span><span class="n">' + fmtCount(row.plays) + "</span></button>" +
+          "</div>";
+        const lvl = parseLevel(data);
+        card._lvl = lvl;
+        card.querySelector(".play").onclick = () => playRow(row);
+        card.querySelector("canvas").onclick = () => !card._swiped && playRow(row);
+        // A link only when the level is linked to an account (the
+        // game's rule), and to that account, not the credit's spelling
+        const account = creatorAccount(row);
+        const by = card.querySelector(".creator");
+        if (account) by.onclick = () => openProfile(account);
+        else by.classList.add("plain");
+        // The level's name opens MORE INFO (everything about it)
+        card.querySelector(".lvl-name").onclick = () => openInfo(card);
+        card.querySelector('[data-act="up"]').onclick = () => castVote(card, 1);
+        card.querySelector('[data-act="down"]').onclick = () => castVote(card, -1);
+        card.querySelector('[data-act="comments"]').onclick = () => openComments(card);
+        paintVotes(card);
+        paintStatus(card);
+        swipeModes(card, row);
+        return card;
+      }
+
+      // The account a level's credit links to, or null (as the game's
+      // levelCreatorAccount: the row's creator_user wins, "" means no link)
+      function creatorAccount(row) {
+        if (!row) return null;
+        if (row.creator_user != null) return String(row.creator_user).trim() || null;
+        const d = row.data && typeof row.data === "object" ? row.data : null;
+        if (d && d.linkAccount !== false && d.creatorAccount) return String(d.creatorAccount);
+        return null;
+      }
+
+      // ---- SWIPE: left = SPEEDRUN, right = DEATHRUN ----
+      // Only sideways drags: the feed still scrolls up and down (touch-action
+      // pan-y leaves vertical moves to the browser). A coloured panel follows
+      // the finger and says what letting go will do.
+      const SWIPE_GO = 90;
+      let swipeTold = false;
+      function swipeModes(card, row) {
+        // Said once per device, the first time a level shows
+        if (!swipeTold) {
+          swipeTold = true;
+          if (!store.get("boi_swipe_told"))
+            setTimeout(() => {
+              toast("SWIPE LEFT: SPEEDRUN · RIGHT: DEATHRUN");
+              try {
+                localStorage.setItem("boi_swipe_told", "1");
+              } catch (e) {}
+            }, 2500);
+        }
+        const hint = document.createElement("div");
+        hint.className = "swipe-hint";
+        card.appendChild(hint);
+        let start = null;
+        let dx = 0;
+        let sideways = null;
+        const paint = () => {
+          const left = dx < 0;
+          const w = Math.min(Math.abs(dx), card.clientWidth * 0.7);
+          hint.className = "swipe-hint on " + (left ? "speed" : "death") + (Math.abs(dx) >= SWIPE_GO ? " go" : "");
+          hint.style.width = w + "px";
+          hint.textContent = left ? "SPEEDRUN" : "DEATHRUN";
+        };
+        const reset = () => {
+          start = null;
+          sideways = null;
+          dx = 0;
+          hint.className = "swipe-hint";
+          hint.style.width = "0";
+        };
+        card.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          if (e.target.closest(".rail, .info button")) return;
+          start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+          sideways = null;
+          dx = 0;
+        });
+        card.addEventListener("pointermove", (e) => {
+          if (!start || e.pointerId !== start.id) return;
+          const mx = e.clientX - start.x;
+          const my = e.clientY - start.y;
+          if (sideways === null && (Math.abs(mx) > 12 || Math.abs(my) > 12)) sideways = Math.abs(mx) > Math.abs(my) * 1.3;
+          if (!sideways) return;
+          dx = mx;
+          card._swiped = true;
+          paint();
+        });
+        const end = (e) => {
+          if (!start || (e && e.pointerId !== start.id)) return;
+          const go = sideways && Math.abs(dx) >= SWIPE_GO;
+          const mode = dx < 0 ? "speedrun" : "deathrun";
+          reset();
+          if (go) playRow(row, mode);
+          // The tap that ends a swipe is not a PLAY
+          setTimeout(() => (card._swiped = false), 0);
+        };
+        card.addEventListener("pointerup", end);
+        card.addEventListener("pointercancel", reset);
+        card.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && reset());
+      }
+
+      // ---- MORE INFO ----
+      // The game itself, when it's loaded (same origin): its /word pictures,
+      // emotes, track names and verification rules
+      const gameApi = () => {
+        try {
+          return (frameReady && frame.contentWindow && frame.contentWindow.boiApp) || null;
+        } catch (e) {
+          return null;
+        }
+      };
+      // Who verified a level and its Blue Coin (the game's rules when it's
+      // up; the same columns read here otherwise)
+      function verificationOf(row) {
+        const api = gameApi();
+        const v = api && api.verification(row);
+        if (v)
+          return {
+            clear: v.clear.verified ? v.clear.verifier : null,
+            coin: v.coin.verified ? v.coin.verifier : null,
+            impossible: !!v.coinImpossible,
+            hasBlue: v.hasBlue,
+          };
+        const named = (ok, who) => (ok && typeof who === "string" && who.trim() ? who : null);
+        return {
+          clear: named(row.ever_verified, row.ever_verifier) || named(row.verified, row.verifier),
+          coin: named(row.ever_bluecoin_verified, row.ever_bluecoin_verifier) || named(row.bluecoin_verified, row.bluecoin_verifier),
+          impossible: !!row.bluecoin_impossible,
+          hasBlue: hasBlueCoin(row),
+        };
+      }
+      const TIMES_MODES = [
+        ["speedrun", "SPEEDRUN", "speedrun_"],
+        ["blue", "BLUE COIN", "speedrun_blue_"],
+        ["deathrun", "DEATHRUN", "deathrun_"],
+      ];
+      // Everything about a level in a sheet: a bigger look at it, its tags,
+      // who verified it, the description, plays and score, the soundtrack
+      // and its times
+      let infoRun = 0;
+      function openInfo(card) {
+        const row = card._row;
+        const data = row.data || {};
+        const creator = row.creator || data.creator || "unknown";
+        const score = (Number(row.upvotes) || 0) - (Number(row.downvotes) || 0);
+        const stat = (k, v, style) =>
+          '<div class="istat"><span class="k">' + k + '</span><span class="v"' + (style ? ' style="' + style + '"' : "") + ">" + v + "</span></div>";
+        const ver = verificationOf(row);
+        const vtag = (cls, text, who) =>
+          '<span class="tag vtag ' + cls + '">' + text + (who ? ' <button class="vwho" data-who="' + esc(who) + '">' + esc(who) + "</button>" : "") + "</span>";
+        let vtags = ver.clear ? vtag("ok", "✓ VERIFIED BY", ver.clear) : vtag("no", "UNVERIFIED");
+        if (ver.hasBlue)
+          vtags += ver.impossible
+            ? vtag("imp", '<span class="bc"></span>IMPOSSIBLE BLUE COIN')
+            : ver.coin
+              ? vtag("blue", '<span class="bc"></span>BLUE COIN VERIFIED BY', ver.coin)
+              : vtag("blue no", '<span class="bc"></span>UNVERIFIED BLUE COIN');
+        const api = gameApi();
+        const music = api && api.music(data);
+        const modes = TIMES_MODES.filter(([k]) => k !== "blue" || ver.hasBlue);
+        const body = $("info-body");
+        body.innerHTML =
+          '<canvas class="info-view"></canvas>' +
+          '<h2 class="info-name">' + esc(row.name || data.name || "Untitled") + "</h2>" +
+          (creatorAccount(row)
+            ? '<button class="info-by">BY <span>' + esc(creator) + "</span></button>"
+            : '<div class="info-by plain">BY <span>' + esc(creator) + "</span></div>") +
+          '<div class="tags gtags" id="info-tags"></div>' +
+          (api && api.verificationLines ? '<div class="dver" id="info-ver"></div>' : '<div class="tags vtags">' + vtags + "</div>") +
+          '<div class="info-desc">' + (row.description ? esc(row.description) : '<span class="dim">No description.</span>') + "</div>" +
+          '<div class="istats">' +
+          stat("PLAYS", fmtCount(row.plays), "color:#6a9bd8") +
+          stat("SCORE", (score > 0 ? "+" : "") + score, "color:" + (score >= 0 ? "#2ecc71" : "#e74c3c")) +
+          stat("VERSION", "V" + (row.version || 1), "color:#9b8cff") +
+          "</div>" +
+          '<div class="info-music"><svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg><div class="im-text">' +
+          '<span class="k">SOUNDTRACK</span><span class="t">' + esc(music ? music.title : data.music ? "Custom Track" : "Synth") + "</span>" +
+          (music && music.artist ? '<span class="a">' + esc(music.artist) + "</span>" : "") +
+          "</div>" + (music && music.speed ? '<span class="im-speed">' + music.speed + "x SPEED</span>" : "") + "</div>" +
+          '<div class="info-sec">TIMES</div>' +
+          '<div class="lb-seg" style="grid-template-columns:repeat(' + modes.length + ',1fr)">' +
+          modes.map(([k, label], i) => '<button data-tm="' + k + '"' + (i ? "" : ' class="on"') + ">" + (k === "blue" ? '<span class="bc"></span>' : "") + label + "</button>").join("") +
+          "</div>" +
+          '<div id="info-times"></div>' +
+          '<div class="info-btns"><button class="btn blue" data-i="play">' + ICONS.play + " PLAY</button></div>";
+        const run = ++infoRun;
+        const times = (mode) => {
+          body.querySelectorAll("[data-tm]").forEach((b) => b.classList.toggle("on", b.dataset.tm === mode));
+          const m = TIMES_MODES.find(([k]) => k === mode);
+          const mine = ++infoRun;
+          drawTimes($("info-times"), m[2] + "custom_comm_" + row.id, () => mine === infoRun && $("info").classList.contains("on"),
+            () => times(mode), "NO " + m[1] + " TIMES YET");
+        };
+        body.querySelectorAll("[data-tm]").forEach((b) => (b.onclick = () => times(b.dataset.tm)));
+        times(modes[0][0]);
+        // What opens next takes the sheet's place in the back history
+        body.querySelector('[data-i="play"]').onclick = () => (closeInfo(true), playRow(row));
+        const acct = creatorAccount(row);
+        if (acct) body.querySelector(".info-by").onclick = () => (closeInfo(true), openProfile(acct));
+        body.querySelectorAll(".vwho").forEach((b) => (b.onclick = () => (closeInfo(true), openProfile(b.dataset.who))));
+        paintTags($("info-tags"), row);
+        const verBox = $("info-ver");
+        if (verBox) {
+          const vroot = gameBits(verBox, api.verificationLines(row));
+          // The verifiers' names open their profiles here
+          const who = { "verifier-link": ver.clear, "coin-verifier-link": ver.coin };
+          Object.keys(who).forEach((id) => {
+            const el = vroot.getElementById(id);
+            if (el && who[id]) el.onclick = () => (closeInfo(true), openProfile(who[id]));
+          });
+        }
+        if (!$("info").classList.contains("on")) {
+          try {
+            history.pushState({ boiInfo: true }, "");
+          } catch (e) {}
+        }
+        $("info-dim").classList.add("on");
+        $("info").classList.add("on");
+        body.scrollTop = 0;
+        const cv = body.querySelector(".info-view");
+        if (card._lvl)
+          requestAnimationFrame(() =>
+            drawLevel(cv, card._lvl, { w: cv.clientWidth, h: cv.clientHeight, top: 4, bottom: 4, min: 4, max: 14 }),
+          );
+        else cv.remove();
+      }
+      function closeInfo(fromPop) {
+        if (!$("info").classList.contains("on")) return;
+        $("info").classList.remove("on");
+        $("info-dim").classList.remove("on");
+        if (!fromPop && history.state && history.state.boiInfo) {
+          skipNextPop();
+          history.back();
+        }
+      }
+      $("info-dim").onclick = () => closeInfo(false);
+      $("info-close").onclick = () => closeInfo(false);
+
+      // ---- VOTES ----
+      // Remembered on this device under the same key the game uses
+      // (voted_level_<id>), and sent with the game's upvote/downvote calls,
+      // so a vote here shows up there and the other way round.
+      const voteKey = (id) => "voted_level_" + id;
+      function myVote(id) {
+        const v = parseInt(store.get(voteKey(id)), 10);
+        return v === 1 || v === -1 ? v : 0;
+      }
+      function paintVotes(card) {
+        const row = card._row;
+        const v = myVote(row.id);
+        const up = card.querySelector('[data-act="up"]');
+        const down = card.querySelector('[data-act="down"]');
+        up.querySelector(".ico").classList.toggle("voted-up", v === 1);
+        down.querySelector(".ico").classList.toggle("voted-down", v === -1);
+        // The level's score (up minus down), as desktop shows it
+        const score = (Number(row.upvotes) || 0) - (Number(row.downvotes) || 0);
+        up.querySelector(".n").textContent = (score < 0 ? "-" : "") + fmtCount(Math.abs(score));
+        const plays = card.querySelector('[data-act="plays"] .n');
+        if (plays) plays.textContent = fmtCount(row.plays);
+        up.setAttribute("aria-pressed", String(v === 1));
+        down.setAttribute("aria-pressed", String(v === -1));
+      }
+      function setMyVote(id, v) {
+        try {
+          if (v) localStorage.setItem(voteKey(id), String(v));
+          else localStorage.removeItem(voteKey(id));
+        } catch (e) {}
+      }
+      // Moves the counts on every copy of the row from vote `from` to `to`
+      function shiftCounts(row, from, to) {
+        const up = (Number(row.upvotes) || 0) + (to === 1) - (from === 1);
+        const down = (Number(row.downvotes) || 0) + (to === -1) - (from === -1);
+        row.upvotes = Math.max(0, up);
+        row.downvotes = Math.max(0, down);
+      }
+      const repaintLevel = (id) =>
+        document.querySelectorAll(".card").forEach((c) => c._row && c._row.id === id && paintVotes(c));
+      // Tapping the vote you gave takes it back; tapping the other one
+      // moves it across. The game sends it (it holds the sign-in) with
+      // boi_set_level_vote, which keeps one vote per account.
+      const voteWaits = new Map();
+      function castVote(card, val) {
+        const row = card._row;
+        if (!signedInAs()) return openView("login");
+        if (!frameReady) {
+          loadFrame();
+          return toast("STILL LOADING, TRY AGAIN");
+        }
+        if (voteWaits.has(row.id)) return;
+        const before = myVote(row.id);
+        const next = before === val ? 0 : val;
+        setMyVote(row.id, next);
+        shiftCounts(row, before, next);
+        repaintLevel(row.id);
+        if (next) taste.vote(row, next);
+        const nonce = Date.now() + ":" + Math.random();
+        const wait = { nonce, row, before, next };
+        wait.timer = setTimeout(() => voteDone({ nonce, levelId: row.id, ok: false, reason: "timeout" }), 10000);
+        voteWaits.set(row.id, wait);
+        tellGame({ type: "boi-vote", levelId: row.id, vote: next, prev: before, nonce });
+      }
+      function voteDone(m) {
+        const wait = voteWaits.get(m.levelId);
+        if (!wait || wait.nonce !== m.nonce) return;
+        clearTimeout(wait.timer);
+        voteWaits.delete(m.levelId);
+        const row = wait.row;
+        if (m.ok) {
+          if (!m.legacy && m.up != null) {
+            row.upvotes = m.up;
+            row.downvotes = m.down;
+          }
+          return repaintLevel(row.id);
+        }
+        // Not saved: back as it was
+        setMyVote(row.id, wait.before);
+        shiftCounts(row, wait.next, wait.before);
+        repaintLevel(row.id);
+        if (m.reason === "signin") openView("login");
+        else if (m.reason === "session") toast("SIGN OUT AND IN AGAIN TO CHANGE VOTES");
+        else toast("COULD NOT SAVE YOUR VOTE");
+      }
+
+      // ---- COMMENTS ----
+      const commentCounts = new Map();
+      async function fillCommentCount(card) {
+        const id = card._row.id;
+        const n = card.querySelector('[data-act="comments"] .n');
+        if (commentCounts.has(id)) return void (n.textContent = fmtCount(commentCounts.get(id)));
+        if (!db || card._counting) return;
+        card._counting = true;
+        const { count, error } = await db
+          .from("level_comments")
+          .select("id", { count: "exact", head: true })
+          .eq("level_id", id);
+        card._counting = false;
+        if (error) return;
+        commentCounts.set(id, count || 0);
+        document.querySelectorAll(".card").forEach((c) => {
+          if (c._row && c._row.id === id) c.querySelector('[data-act="comments"] .n').textContent = fmtCount(count || 0);
+        });
+      }
+      function timeAgo(iso) {
+        const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+        if (!isFinite(s)) return "";
+        if (s < 60) return "NOW";
+        if (s < 3600) return Math.floor(s / 60) + "M";
+        if (s < 86400) return Math.floor(s / 3600) + "H";
+        if (s < 86400 * 30) return Math.floor(s / 86400) + "D";
+        if (s < 86400 * 365) return Math.floor(s / (86400 * 30)) + "MO";
+        return Math.floor(s / (86400 * 365)) + "Y";
+      }
+      let sheetCard = null;
+      let sheetRun = 0;
+      function openComments(card) {
+        sheetCard = card;
+        if (!$("sheet").classList.contains("on")) pushEntry({ boiSheet: true });
+        $("sheet-dim").classList.add("on");
+        $("sheet").classList.add("on");
+        renderCommentInput();
+        loadSheetComments();
+      }
+      function closeComments(fromPop) {
+        if (!$("sheet").classList.contains("on")) return;
+        $("sheet").classList.remove("on");
+        $("sheet-dim").classList.remove("on");
+        const input = $("comment-text");
+        if (input) input.blur();
+        sheetCard = null;
+        if (!fromPop && history.state && history.state.boiSheet) {
+          skipNextPop();
+          history.back();
+        }
+      }
+      $("sheet-close").onclick = () => closeComments(false);
+      $("sheet-dim").onclick = () => closeComments(false);
+      function sheetTitle(n) {
+        $("sheet-title").textContent = n == null ? "COMMENTS" : fmtCount(n) + (n === 1 ? " COMMENT" : " COMMENTS");
+      }
+      async function loadSheetComments() {
+        if (!sheetCard) return;
+        const run = ++sheetRun;
+        const id = sheetCard._row.id;
+        const list = $("sheet-list");
+        sheetTitle(commentCounts.has(id) ? commentCounts.get(id) : null);
+        list.innerHTML = '<div class="feed-msg" style="height:auto;padding-top:40px">LOADING...</div>';
+        if (!db) return void (list.innerHTML = '<div class="feed-msg" style="height:auto">NOT CONNECTED</div>');
+        const { data, error } = await db
+          .from("level_comments")
+          .select("*")
+          .eq("level_id", id)
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if (run !== sheetRun) return;
+        if (error) {
+          list.innerHTML = '<div class="feed-msg" style="height:auto;padding-top:40px">COULD NOT LOAD COMMENTS<button class="btn">TRY AGAIN</button></div>';
+          list.querySelector("button").onclick = loadSheetComments;
+          return;
+        }
+        const rows = data || [];
+        if (rows.length < 100) {
+          commentCounts.set(id, rows.length);
+          sheetTitle(rows.length);
+          document.querySelectorAll(".card").forEach((c) => {
+            if (c._row && c._row.id === id) c.querySelector('[data-act="comments"] .n').textContent = fmtCount(rows.length);
+          });
+        }
+        if (!rows.length) {
+          list.innerHTML = '<div class="feed-msg" style="height:auto;padding-top:40px">NO COMMENTS YET<br>BE THE FIRST</div>';
+          return;
+        }
+        list.innerHTML = "";
+        // The game is up: each comment exactly as the level page draws it
+        // (badges, emote, Edit / Delete), with its profile links and
+        // questions answered here instead of in the hidden game
+        const api = gameApi();
+        if (api && api.commentRows) {
+          const card = sheetCard;
+          const level = { id, appReload: () => sheetCard === card && loadSheetComments() };
+          const nodes = await api.commentRows(rows, level, {
+            profile: (name) => {
+              closeComments(false);
+              openProfile(name);
+            },
+            confirm: (title, text, yes) => ask(title, text, "OK", yes),
+            moderate: () => {
+              closeComments(false);
+              openLevelPage(card._row);
+            },
+          });
+          if (run !== sheetRun) return;
+          list.innerHTML = "";
+          list.classList.add("desk");
+          nodes.forEach((node) => {
+            if (!node) return;
+            const host = document.createElement("div");
+            host.className = "dcmt";
+            const root = gameBits(host, node);
+            // An emote's press opens its viewer in the hidden game: not here
+            ["click", "pointerdown", "pointerup", "keydown"].forEach((t) =>
+              root.addEventListener(t, (e) => e.target.closest && e.target.closest(".comment-emote") && e.stopPropagation(), true),
+            );
+            list.appendChild(host);
+          });
+          return;
+        }
+        list.classList.remove("desk");
+        rows.forEach((c) => {
+          const el = document.createElement("div");
+          el.className = "cmt";
+          const name = c.username || "unknown";
+          const badges =
+            (c.show_progress && c.beaten ? '<span class="badge">BEATEN</span>' : "") +
+            (c.show_progress && c.blue_coin ? '<span class="badge blue">BLUE COIN</span>' : "");
+          const text = c.deleted ? "Comment Deleted" : c.content || "";
+          el.innerHTML =
+            '<div class="cbody"><div class="cwho"><button class="cname">' + esc(name) + "</button>" +
+            badges + "<span>" + timeAgo(c.created_at) + (c.edited && !c.deleted ? " &middot; EDITED" : "") + "</span></div>" +
+            (text ? '<div class="ctext' + (c.deleted ? " gone" : "") + '"></div>' : "") +
+            (!c.deleted && c.emote ? '<div class="cemote"></div>' : "") +
+            "</div>";
+          const textBox = el.querySelector(".ctext");
+          // /jumppad, /lava, skin names... drawn the game's way
+          if (textBox) gameBits(textBox, c.deleted ? esc(text) : tokensIn(text));
+          const emoteBox = el.querySelector(".cemote");
+          if (emoteBox) {
+            const api = gameApi();
+            const pv = api && api.commentEmote(c);
+            if (pv) {
+              gameBits(emoteBox, pv);
+              // Its press opens a viewer in the (hidden) game: not here
+              ["click", "pointerdown", "pointerup", "keydown"].forEach((t) =>
+                emoteBox.addEventListener(t, (e) => e.stopPropagation(), true),
+              );
+            } else emoteBox.remove();
+          }
+          const open = () => {
+            closeComments(false);
+            openProfile(name);
+          };
+          el.querySelector(".cname").onclick = open;
+          list.appendChild(el);
+        });
+      }
+      function renderCommentInput() {
+        const box = $("sheet-input");
+        if (!signedInAs()) {
+          box.innerHTML = '<button class="btn blue wide">SIGN IN TO COMMENT</button>';
+          box.firstChild.onclick = () => {
+            closeComments(false);
+            openView("login");
+          };
+          return;
+        }
+        const api = gameApi();
+        const emotes = api ? api.myEmotes() : [];
+        commentEmote = null;
+        box.innerHTML =
+          '<label class="cmt-progress"><input type="checkbox" id="comment-progress" /> SHOW MY PROGRESS</label>' +
+          '<div class="cmt-extra" id="cmt-extra"></div>' +
+          '<div class="cmt-row">' +
+          '<input id="comment-text" type="text" maxlength="500" placeholder="Comment" enterkeyhint="send" autocomplete="off" />' +
+          '<button class="btn" id="comment-emote" aria-label="Emote">EMOTE</button>' +
+          '<button class="btn" id="comment-post">POST</button></div>';
+        $("comment-post").onclick = sendComment;
+        const input = $("comment-text");
+        input.addEventListener("keydown", (e) => e.key === "Enter" && sendComment());
+        input.addEventListener("input", suggestTokens);
+        input.addEventListener("click", suggestTokens);
+        // Your emotes as they are now (the game may have loaded since)
+        $("comment-emote").onclick = () => {
+          const now = gameApi();
+          if (!now) {
+            loadFrame();
+            return toast("STILL LOADING, TRY AGAIN");
+          }
+          showEmotePicker(now.myEmotes());
+        };
+      }
+
+      // ---- the game's drawing, inside the app ----
+      // The game frame is same-origin: its stylesheet is loaded once into a
+      // shared sheet, and anything the game draws (a /word picture, an
+      // emote) goes in a small shadow root that has it, so it looks exactly
+      // as it does in the game and the game's CSS touches nothing else here.
+      let gameSheet = null;
+      function gameSheetNow() {
+        if (gameSheet) return gameSheet;
+        const api = gameApi();
+        if (!api) return null;
+        try {
+          gameSheet = new CSSStyleSheet();
+          gameSheet.replaceSync(api.css());
+        } catch (e) {
+          gameSheet = { text: api.css() };
+        }
+        return gameSheet;
+      }
+      function gameBits(host, content) {
+        const root = host.shadowRoot || host.attachShadow({ mode: "open" });
+        root.innerHTML = "";
+        const sheet = gameSheetNow();
+        if (sheet && sheet.text != null) {
+          const st = document.createElement("style");
+          st.textContent = sheet.text;
+          root.appendChild(st);
+        } else if (sheet) root.adoptedStyleSheets = [sheet];
+        const wrap = document.createElement("span");
+        wrap.style.cssText = "font:inherit;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere";
+        if (typeof content === "string") wrap.innerHTML = content;
+        else wrap.appendChild(content);
+        root.appendChild(wrap);
+        return root;
+      }
+      const tokensIn = (text) => {
+        const api = gameApi();
+        const safe = esc(text);
+        return api ? api.tokens(safe) : safe;
+      };
+
+      // Typing /something: the pictures it could be, tap one to put it in
+      function suggestTokens() {
+        const input = $("comment-text");
+        const extra = $("cmt-extra");
+        const api = gameApi();
+        if (!input || !extra || !api) return;
+        if (extra.dataset.kind === "emotes") return;
+        const upTo = input.value.slice(0, input.selectionStart == null ? input.value.length : input.selectionStart);
+        const m = upTo.match(/\/([A-Za-z0-9_]*)$/);
+        if (!m) {
+          if (extra.dataset.kind === "tokens") {
+            extra.innerHTML = "";
+            extra.dataset.kind = "";
+            paintPicked();
+          }
+          return;
+        }
+        const hits = api.tokenMatches(m[1], 30);
+        extra.dataset.kind = "tokens";
+        extra.innerHTML = hits.length ? "" : '<span class="cx-none">NO PICTURE CALLED /' + esc(m[1]) + "</span>";
+        hits.forEach((h) => {
+          const b = document.createElement("button");
+          b.className = "cx-chip";
+          const pic = document.createElement("span");
+          pic.className = "cx-pic";
+          gameBits(pic, h.html);
+          const label = document.createElement("span");
+          label.textContent = "/" + h.key;
+          b.append(pic, label);
+          b.onclick = () => {
+            const start = upTo.length - m[0].length;
+            const after = input.value.slice(upTo.length);
+            input.value = input.value.slice(0, start) + "/" + h.key + " " + after.replace(/^\s+/, "");
+            const at = start + h.key.length + 2;
+            input.focus();
+            input.setSelectionRange(at, at);
+            suggestTokens();
+          };
+          extra.appendChild(b);
+        });
+      }
+
+      // One emote can go with a comment (one per level, like the game)
+      let commentEmote = null;
+      function showEmotePicker(emotes) {
+        const extra = $("cmt-extra");
+        const api = gameApi();
+        if (!extra || !api) return;
+        if (extra.dataset.kind === "emotes") {
+          extra.dataset.kind = "";
+          return paintPicked();
+        }
+        extra.dataset.kind = "emotes";
+        extra.innerHTML = emotes.length ? "" : '<span class="cx-none">NO EMOTES YET - GET THEM IN THE SHOP OR FROM CRATES</span>';
+        emotes.forEach((id) => {
+          const b = document.createElement("button");
+          b.className = "cx-emote" + (id === commentEmote ? " on" : "");
+          b.setAttribute("aria-label", api.emoteName(id));
+          // (a button can't hold a shadow root: a span inside it does)
+          const tile = document.createElement("span");
+          tile.className = "cx-epv";
+          b.appendChild(tile);
+          gameBits(tile, api.emoteTile(id));
+          b.onclick = () => {
+            commentEmote = id === commentEmote ? null : id;
+            extra.dataset.kind = "";
+            paintPicked();
+          };
+          extra.appendChild(b);
+        });
+      }
+      // The emote waiting to go with the comment
+      function paintPicked() {
+        const extra = $("cmt-extra");
+        const api = gameApi();
+        if (!extra || extra.dataset.kind) return;
+        extra.innerHTML = "";
+        if (!commentEmote || !api) return;
+        const box = document.createElement("div");
+        box.className = "cx-picked";
+        const pv = document.createElement("span");
+        pv.className = "cx-epv";
+        gameBits(pv, api.commentEmote({ emote: commentEmote, emote_skin: api.mySkin(), username: signedInAs() }));
+        ["click", "pointerdown", "pointerup", "keydown"].forEach((t) => pv.addEventListener(t, (e) => e.stopPropagation(), true));
+        const name = document.createElement("span");
+        name.textContent = api.emoteName(commentEmote);
+        const off = document.createElement("button");
+        off.className = "btn";
+        off.textContent = "REMOVE";
+        off.onclick = () => {
+          commentEmote = null;
+          paintPicked();
+        };
+        box.append(pv, name, off);
+        extra.appendChild(box);
+      }
+      let commentWait = null;
+      // Posting goes through the game: it knows who is signed in
+      function sendComment() {
+        const input = $("comment-text");
+        const text = input ? input.value.trim() : "";
+        if ((!text && !commentEmote) || !sheetCard || commentWait) return;
+        if (!frameReady) {
+          loadFrame();
+          return toast("STILL LOADING, TRY AGAIN");
+        }
+        const nonce = Date.now() + ":" + Math.random();
+        commentWait = { nonce, levelId: sheetCard._row.id };
+        $("comment-post").disabled = true;
+        $("comment-post").textContent = "...";
+        const progress = $("comment-progress");
+        tellGame({ type: "boi-comment", levelId: sheetCard._row.id, text, emote: commentEmote, showProgress: !!(progress && progress.checked), nonce });
+        setTimeout(() => commentWait && commentWait.nonce === nonce && commentDone({ ok: false, nonce }), 10000);
+      }
+      // The game's answer to a posted comment
+      function commentDone(m) {
+        if (!commentWait || m.nonce !== commentWait.nonce) return;
+        const levelId = commentWait.levelId;
+        commentWait = null;
+        const btn = $("comment-post");
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "POST";
+        }
+        if (!m.ok) {
+          if (m.reason === "signin") return renderCommentInput();
+          if (m.reason === "emote-used") {
+            commentEmote = null;
+            paintPicked();
+            return toast("YOU'VE ALREADY USED AN EMOTE ON THIS LEVEL");
+          }
+          return toast("COULD NOT POST THE COMMENT");
+        }
+        const input = $("comment-text");
+        if (input) input.value = "";
+        commentEmote = null;
+        const extra = $("cmt-extra");
+        if (extra) {
+          extra.dataset.kind = "";
+          extra.innerHTML = "";
+        }
+        commentCounts.delete(levelId);
+        if (sheetCard && sheetCard._row.id === levelId) loadSheetComments();
+      }
+
+      function drawCard(card) {
+        if (card._drawn) return;
+        card._drawn = true;
+        const r = card.getBoundingClientRect();
+        const info = card.querySelector(".info");
+        const infoH = info ? info.offsetHeight + 24 : 200;
+        drawLevel(card.querySelector("canvas"), card._lvl, {
+          w: r.width || card.clientWidth,
+          h: r.height || card.clientHeight,
+          top: 56,
+          bottom: infoH,
+        });
+      }
+
+      // ---- where rows come from ----
+      const base = () => db.from(LEVELS_VIEW).select("*");
+      async function rowsOrThrow(q) {
+        const { data, error } = await q;
+        if (error) throw error;
+        return data || [];
+      }
+      function pagedLoader(build) {
+        let offset = 0;
+        return async () => {
+          const rows = await rowsOrThrow(build().range(offset, offset + PAGE - 1));
+          offset += PAGE;
+          return rows;
+        };
+      }
+      // ---- TASTE: what this player seems to like ----
+      // Learnt on this device from what they do in the feed and the game:
+      //  - creators: watching a level to the end of its card, playing it,
+      //    upvoting it and beating it count for its creator; a quick swipe
+      //    away and a downvote count against
+      //  - difficulty: a spread over the ten difficulties of the levels they
+      //    stay on, play, like and beat, plus how far they are in the
+      //    campaign (their skill), so the feed sits near what they can do
+      //  - rating: how the people who voted liked a level (smoothed), plays
+      //    per day, and the game's own marks (verified, featured...)
+      // Old evidence fades, so the taste can move.
+      const TASTE_KEY = "boi_mobile_taste_v2";
+      const taste = (() => {
+        let t = null;
+        try {
+          t = JSON.parse(store.get(TASTE_KEY) || "null");
+        } catch (e) {}
+        if (!t || typeof t !== "object") {
+          // What v1 learnt is kept
+          let old = null;
+          try {
+            old = JSON.parse(store.get("boi_mobile_taste_v1") || "null");
+          } catch (e) {}
+          t = old && typeof old === "object" ? { seen: old.seen, played: old.played, creators: old.creators } : {};
+        }
+        t.seen = t.seen || {}; // level id -> times shown
+        t.played = t.played || {}; // level id -> 1
+        t.creators = t.creators || {}; // creator (lower case) -> affinity
+        t.names = t.names || {}; // creator (lower case) -> as written
+        t.hist = Array.isArray(t.hist) && t.hist.length === 11 ? t.hist : new Array(11).fill(0);
+        t.beatenSeen = t.beatenSeen || {}; // beaten level ids already learnt from
+        let saveTimer = null;
+        function save() {
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(() => {
+            // Kept small: the newest 1500 levels seen, 300 creators
+            const trim = (o, max) => {
+              const k = Object.keys(o);
+              if (k.length > max) k.slice(0, k.length - max).forEach((x) => delete o[x]);
+            };
+            trim(t.seen, 1500);
+            trim(t.played, 1500);
+            trim(t.beatenSeen, 1500);
+            trim(t.creators, 300);
+            trim(t.names, 300);
+            try {
+              localStorage.setItem(TASTE_KEY, JSON.stringify(t));
+            } catch (e) {}
+          }, 400);
+        }
+        const creatorName = (row) => String(row.creator || (row.data && row.data.creator) || "");
+        const creatorOf = (row) => creatorName(row).toLowerCase();
+        const diffOf = (row) => {
+          const d = parseInt(row.difficulty != null ? row.difficulty : row.data && row.data.difficulty, 10);
+          return d >= 1 && d <= 10 ? d : 0;
+        };
+        function nudge(row, by) {
+          const c = creatorOf(row);
+          if (!c) return;
+          t.creators[c] = Math.max(-6, Math.min(8, (t.creators[c] || 0) + by));
+          t.names[c] = creatorName(row);
+        }
+        function learnDifficulty(row, weight) {
+          const d = diffOf(row);
+          if (!d) return;
+          for (let i = 1; i <= 10; i++) t.hist[i] *= 0.97;
+          t.hist[d] += weight;
+          // A little for the difficulties either side
+          if (d > 1) t.hist[d - 1] += weight * 0.35;
+          if (d < 10) t.hist[d + 1] += weight * 0.35;
+        }
+        // How far they are in the campaign, as a difficulty they can manage
+        function skill() {
+          const chapters = (gameState && gameState.chapters) || [];
+          let s = 2;
+          chapters.forEach((ch) => {
+            if (ch.beaten) s += 1.2;
+            else if (ch.open) {
+              const done = ch.levels.filter((l) => !l.locked).length;
+              s += (1.2 * Math.max(0, done - 1)) / Math.max(1, ch.levels.length);
+            }
+          });
+          return Math.min(9, s);
+        }
+        // The difficulty they seem to want, and how sure that is
+        function wanted() {
+          let sum = 0;
+          let n = 0;
+          for (let i = 1; i <= 10; i++) {
+            sum += i * t.hist[i];
+            n += t.hist[i];
+          }
+          const sk = skill();
+          if (n < 1) return { d: sk, sure: 0.2 };
+          const k = Math.min(1, n / 8);
+          return { d: (sum / n) * k + sk * (1 - k), sure: 0.3 + 0.7 * k };
+        }
+        // Beaten levels teach difficulty and creator once each
+        function learnBeaten(row, beaten) {
+          if (!beaten || !beaten.has(String(row.id)) || t.beatenSeen[row.id]) return;
+          t.beatenSeen[row.id] = 1;
+          learnDifficulty(row, 1.5);
+          nudge(row, 1);
+          save();
+        }
+        return {
+          // A level left after `ms` on screen
+          view(row, ms) {
+            t.seen[row.id] = (t.seen[row.id] || 0) + 1;
+            if (ms < 1200) {
+              nudge(row, -0.3);
+              learnDifficulty(row, -0.15);
+            } else if (ms > 6000) {
+              nudge(row, 0.5);
+              learnDifficulty(row, 0.5);
+            }
+            for (let i = 1; i <= 10; i++) t.hist[i] = Math.max(0, t.hist[i]);
+            save();
+          },
+          played(row) {
+            t.played[row.id] = 1;
+            nudge(row, 2);
+            learnDifficulty(row, 2);
+            save();
+          },
+          vote(row, val) {
+            nudge(row, val > 0 ? 2 : -3);
+            if (val > 0) learnDifficulty(row, 1.5);
+            save();
+          },
+          // Creators they like most, as written, for the pool
+          favourites(n) {
+            return Object.keys(t.creators)
+              .filter((c) => t.creators[c] >= 1.5 && t.names[c])
+              .sort((a, b) => t.creators[b] - t.creators[a])
+              .slice(0, n)
+              .map((c) => t.names[c]);
+          },
+          // How much this player should see a level now (higher = sooner)
+          score(row, beaten) {
+            learnBeaten(row, beaten);
+            const up = Number(row.upvotes) || 0;
+            const down = Number(row.downvotes) || 0;
+            const plays = Number(row.plays) || 0;
+            let s = 0;
+            // RATING: liked by the people who voted (smoothed toward 70%,
+            // so a 1-0 level is not 100%) and how sure that is
+            const liked = (up + 7) / (up + down + 10);
+            s += 4 * (liked - 0.5) * Math.min(1, (up + down) / 6 + 0.4);
+            // POPULAR: lots of plays and upvotes count for a lot, and so do
+            // plays a day since it came out (popular right now)
+            s += Math.min(3.5, 1.1 * Math.log10(plays + 1));
+            s += Math.min(2, 0.9 * Math.log10(up + 1));
+            const born = Date.parse(row.first_created_at || row.created_at);
+            const days = born ? Math.max(1, (Date.now() - born) / 864e5) : 60;
+            s += Math.min(2.5, 1.0 * Math.log10(plays / days + 1));
+            if (popularIds.has(row.id)) s += 1.5;
+            if (row.verified || row.ever_verified) s += 1;
+            if (row.featured) s += 1.5;
+            if (row.legendary) s += 1;
+            if (row.official_rating) s += 0.5;
+            // IMPOSSIBLE levels are rare: pushed far down, with only a small
+            // chance each time of being let through
+            if (row.impossible && Math.random() > 0.05) s -= 10;
+            // New levels get a lift for their first couple of weeks
+            if (born) s += 1.5 * Math.exp(-(days - 1) / 14);
+            // CREATOR: ones they like, ones they skip
+            s += 0.7 * (t.creators[creatorOf(row)] || 0);
+            // DIFFICULTY: near what they want; much harder is worse than
+            // a bit easier
+            const d = diffOf(row);
+            if (d) {
+              const w = wanted();
+              const off = d - w.d;
+              s -= w.sure * (off > 0 ? 0.75 * off : 0.45 * -off);
+              let top = 0;
+              for (let i = 1; i <= 10; i++) top = Math.max(top, t.hist[i]);
+              if (top > 0) s += 1.2 * w.sure * (t.hist[d] / top);
+            }
+            // Already seen, played, rated or beaten: much later
+            s -= 2.5 * Math.min(3, t.seen[row.id] || 0);
+            if (t.played[row.id]) s -= 4;
+            if (myVote(row.id)) s -= 3;
+            if (beaten && beaten.has(String(row.id))) s -= 6;
+            // A little luck, so the feed is never the same twice
+            return s + Math.random() * 1.5;
+          },
+          creatorOf,
+        };
+      })();
+
+      // For You: a pool of levels from random places in the whole catalogue,
+      // some of the newest, and some by creators this player likes, ranked
+      // by taste.score; each page is the best few, with no creator twice in
+      // a row and at most two per page.
+      function forYouLoader() {
+        let total = null;
+        const usedPages = new Set();
+        const inPool = new Set();
+        let pool = [];
+        let lastCreator = null;
+        let exhausted = false;
+        let favPage = 0;
+        let popPage = 0;
+        let topPage = 0;
+        async function refill() {
+          if (total == null) {
+            const { count, error } = await db.from(LEVELS_VIEW).select("id", { count: "exact", head: true });
+            if (error) throw error;
+            total = count || 0;
+          }
+          const pages = Math.max(1, Math.ceil(total / PAGE));
+          const pick = () => {
+            if (usedPages.size >= pages) return null;
+            let p;
+            do p = Math.floor(Math.random() * pages);
+            while (usedPages.has(p));
+            usedPages.add(p);
+            return p;
+          };
+          const want = [pick(), pick()].filter((p) => p != null);
+          const asks = want.map((p) => base().order("id", { ascending: true }).range(p * PAGE, p * PAGE + PAGE - 1));
+          // One page from the newest 80 levels each time
+          const fresh = Math.floor(Math.random() * 10);
+          asks.push(base().order("id", { ascending: false }).range(fresh * PAGE, fresh * PAGE + PAGE - 1));
+          // ...a page of what's POPULAR now (the POPULAR tab's list) and
+          // of the most played ever, so popular levels come round often
+          let popAsk = -1;
+          if (popPage < 4) {
+            popAsk = asks.length;
+            asks.push(popularQuery().range(popPage * PAGE, popPage * PAGE + PAGE - 1));
+            popPage++;
+          }
+          if (topPage < 8) {
+            asks.push(base().order("plays", { ascending: false }).order("id", { ascending: false }).range(topPage * PAGE, topPage * PAGE + PAGE - 1));
+            topPage++;
+          }
+          // ...and the best-liked levels of their favourite creators
+          const favs = taste.favourites(4);
+          if (favs.length && favPage < 6) {
+            asks.push(
+              base()
+                .in("creator", favs)
+                .order("upvotes", { ascending: false })
+                .order("id", { ascending: false })
+                .range(favPage * PAGE, favPage * PAGE + PAGE - 1),
+            );
+            favPage++;
+          }
+          const results = await Promise.all(asks.map((q) => rowsOrThrow(q).catch(() => [])));
+          if (popAsk >= 0) (results[popAsk] || []).forEach((r) => r && popularIds.add(r.id));
+          let added = 0;
+          results.flat().forEach((r) => {
+            if (!r || r.id == null || inPool.has(r.id)) return;
+            inPool.add(r.id);
+            pool.push(r);
+            added++;
+          });
+          if (!want.length && !added) exhausted = true;
+        }
+        return async () => {
+          if (pool.length < PAGE * 2 && !exhausted) await refill();
+          if (!pool.length) return [];
+          const beaten = new Set(((gameState && gameState.beaten) || []).map(String));
+          pool.forEach((r) => (r._score = taste.score(r, beaten)));
+          pool.sort((a, b) => b._score - a._score);
+          const out = [];
+          const perCreator = {};
+          const rest = [];
+          for (const r of pool) {
+            const c = taste.creatorOf(r);
+            if (out.length < PAGE && c !== lastCreator && (perCreator[c] || 0) < 2) {
+              out.push(r);
+              perCreator[c] = (perCreator[c] || 0) + 1;
+              lastCreator = c;
+            } else rest.push(r);
+          }
+          // Only one creator left in the pool: let them through
+          if (!out.length) out.push(...rest.splice(0, PAGE));
+          pool = rest;
+          return out;
+        };
+      }
+      // POPULAR, the way the game's Popular is: the most upvoted of the
+      // levels first put up in the last 20 days, newest first on a tie
+      const POPULAR_DAYS = 20;
+      function popularQuery() {
+        const since = new Date(Date.now() - POPULAR_DAYS * 864e5).toISOString();
+        return base()
+          .gte("first_created_at", since)
+          .order("upvotes", { ascending: false })
+          .order("created_at", { ascending: false });
+      }
+      // Levels on the POPULAR list right now (For You lifts them)
+      const popularIds = new Set();
+      const LOADERS = {
+        foryou: forYouLoader,
+        new: () => pagedLoader(() => base().order("id", { ascending: false })),
+        popular: () => pagedLoader(popularQuery),
+      };
+
+      // The address follows the level on screen, so a copied link is it
+      function followLevel(row) {
+        if (!row) return;
+        try {
+          history.replaceState(history.state, "", location.pathname + "?level=" + row.id);
+        } catch (e) {}
+      }
+
+      let mainFeed = null;
+      let firstRow = null; // a ?level= link goes first
+      function startMainFeed(sort) {
+        feedSort = sort;
+        document.querySelectorAll(".sort[data-sort]").forEach((b) => b.classList.toggle("on", b.dataset.sort === sort));
+        if (mainFeed) mainFeed.dispose();
+        if (!db) {
+          $("feed").innerHTML = '<div class="feed-msg">NOT CONNECTED<button class="btn" onclick="location.reload()">RELOAD</button></div>';
+          return;
+        }
+        const load = LOADERS[sort]();
+        let lead = firstRow ? [firstRow] : null;
+        firstRow = null;
+        mainFeed = makeFeed(
+          $("feed"),
+          async () => {
+            if (lead) {
+              const rows = lead.concat(await load());
+              lead = null;
+              return rows;
+            }
+            return load();
+          },
+          { onCurrent: (row) => currentTab === "levels" && !panel && followLevel(row) },
+        );
+      }
+      document.querySelectorAll(".sort[data-sort]").forEach((b) => {
+        b.onclick = () => {
+          const wasPanel = !!panel;
+          showPanel(null);
+          if (b.classList.contains("on") && mainFeed) {
+            if (!wasPanel) mainFeed.el.scrollTo({ top: 0 });
+            return;
+          }
+          startMainFeed(b.dataset.sort);
+        };
+      });
+      document.querySelectorAll(".sort[data-panel]").forEach((b) => {
+        b.onclick = () => showPanel(b.dataset.panel);
+      });
+      $("shop-btn").onclick = () => openView("shop");
+
+      // ---- LIVE and LEADERBOARDS: tabs of the levels screen ----
+      // The feed stays where it was underneath; the header goes solid and
+      // the tab is lit instead of the feed's sort.
+      let panel = null;
+      let feedSort = "foryou";
+      function showPanel(name) {
+        if (panel === name) return;
+        const was = panel;
+        panel = name;
+        $("live-panel").classList.toggle("on", name === "live");
+        $("boards-panel").classList.toggle("on", name === "boards");
+        $("feed-head").classList.toggle("solid", !!name);
+        document.querySelectorAll(".sort").forEach((b) =>
+          b.classList.toggle("on", name ? b.dataset.panel === name : b.dataset.sort === feedSort),
+        );
+        const lit = document.querySelector(".sort.on");
+        if (lit) lit.scrollIntoView({ inline: "nearest", block: "nearest" });
+        if (was === "live") stopLiveWatch();
+        if (name === "live") startLiveWatch();
+        if (name === "boards") renderBoards();
+        if (name) {
+          try {
+            history.replaceState(history.state, "", location.pathname);
+          } catch (e) {}
+        } else if (mainFeed && mainFeed.current) followLevel(mainFeed.current._row);
+      }
+
+      // ---- LIVE ----
+      // The game keeps the lobby up while this is open and sends what is in
+      // it every second (boi-live); making or joining a room opens the game.
+      let liveInfo = null;
+      const livePanelOn = () => currentTab === "levels" && panel === "live";
+      function startLiveWatch() {
+        buildLive();
+        renderLive();
+        if (frameReady) tellGame({ type: "boi-live-watch", on: true });
+        else loadFrame();
+      }
+      function stopLiveWatch() {
+        if (frameReady && !frameOpen) tellGame({ type: "boi-live-watch", on: false });
+      }
+      function onLive(m) {
+        liveInfo = m;
+        if (livePanelOn()) renderLive();
+      }
+      function buildLive() {
+        const el = $("live-body");
+        if (el._built) return;
+        el._built = true;
+        el.innerHTML =
+          '<div id="live-guest" class="panel-in" style="display:none;padding-top:40px">' +
+          '<div class="note">SIGN IN TO PLAY LIVE</div><button class="btn blue" id="live-signin">SIGN IN</button></div>' +
+          '<div id="live-main" class="panel-in">' +
+          '<div class="live-who"><div class="sw" id="live-sw"></div><div style="min-width:0"><div class="sub">PLAYING AS</div><div id="live-name" style="overflow-wrap:anywhere"></div></div></div>' +
+          '<div class="note" id="live-status"></div>' +
+          '<button class="btn blue live-create" id="live-create">CREATE ROOM</button>' +
+          '<div class="live-join" id="live-join-row"><input id="live-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code" enterkeyhint="go" />' +
+          '<button class="btn" id="live-join">JOIN</button></div>' +
+          '<div class="label">OPEN ROOMS</div><div class="board" id="live-rooms"></div></div>';
+        $("live-signin").onclick = () => openView("login");
+        $("live-create").onclick = () => {
+          const s = liveInfo && liveInfo.status;
+          if (s === "full" || s === "offline") {
+            tellGame({ type: "boi-live-watch", on: false });
+            tellGame({ type: "boi-live-watch", on: true });
+            return;
+          }
+          openGame({ type: "boi-live-go", create: true });
+        };
+        const input = $("live-code");
+        input.oninput = () => (input.value = input.value.toUpperCase().replace(/[^A-Z]/g, ""));
+        input.onkeydown = (e) => e.key === "Enter" && $("live-join").click();
+        $("live-join").onclick = () => joinLive(input.value);
+      }
+      function joinLive(code) {
+        code = String(code || "").toUpperCase().replace(/[^A-Z]/g, "");
+        if (code.length !== 4) return toast("ROOM CODES ARE 4 LETTERS");
+        const rooms = (liveInfo && liveInfo.rooms) || [];
+        const r = rooms.find((x) => x.code === code);
+        if (!liveInfo || liveInfo.status !== "on") return toast("NOT CONNECTED YET");
+        if (!r) return toast("NO ROOM CALLED " + code);
+        if (r.count >= r.size) return toast("ROOM " + code + " IS FULL");
+        if (!r.sameVersion) return toast("THAT ROOM IS ON ANOTHER VERSION");
+        $("live-code").blur();
+        openGame({ type: "boi-live-go", code });
+      }
+      const LIVE_STATUS = {
+        on: "",
+        full: "SERVERS FULL, TRY AGAIN SOON",
+        offline: "CAN'T REACH THE SERVERS",
+        reconnecting: "RECONNECTING...",
+        missing: "LIVE DIDN'T LOAD, RELOAD THE APP",
+      };
+      let liveRoomsSig = "";
+      function renderLive() {
+        buildLive();
+        const user = signedInAs();
+        $("live-guest").style.display = user ? "none" : "";
+        $("live-main").style.display = user ? "" : "none";
+        if (!user) return;
+        const info = liveInfo || { status: "joining", rooms: [] };
+        const s = info.status;
+        const ok = s === "on";
+        const status = $("live-status");
+        status.textContent = s in LIVE_STATUS ? LIVE_STATUS[s] : "CONNECTING...";
+        status.classList.toggle("bad", s === "full" || s === "offline" || s === "missing");
+        status.style.display = status.textContent ? "" : "none";
+        $("live-name").textContent = String(info.name || user).toUpperCase();
+        const sw = $("live-sw");
+        const url = gameState && gameState.skinUrl;
+        sw.classList.toggle("img", !!url);
+        sw.style.backgroundImage = url ? 'url("' + url.replace(/"/g, "%22") + '")' : "none";
+        sw.style.backgroundColor = url ? "transparent" : (gameState && gameState.skinColor) || "";
+        const create = $("live-create");
+        create.textContent = s === "full" || s === "offline" ? "TRY AGAIN" : "CREATE ROOM";
+        create.disabled = !(ok || s === "full" || s === "offline");
+        create.style.display = info.eventOnly && ok ? "none" : "";
+        $("live-join-row").style.display = info.eventOnly ? "none" : "";
+        $("live-join").disabled = !ok;
+        const rooms = info.rooms || [];
+        const sig = JSON.stringify([ok, info.eventOnly, rooms]);
+        if (sig === liveRoomsSig) return;
+        liveRoomsSig = sig;
+        const list = $("live-rooms");
+        list.innerHTML = "";
+        if (!ok) return void (list.innerHTML = '<div class="empty">' + (s in LIVE_STATUS ? "NOT CONNECTED" : "CONNECTING...") + "</div>");
+        const shown = info.eventOnly ? rooms.filter((r) => r.ev) : rooms;
+        if (!shown.length) {
+          list.innerHTML = '<div class="empty">' + esc(info.eventOnly ? info.eventText : "NO OPEN ROOMS, CREATE ONE") + "</div>";
+          return;
+        }
+        shown.forEach((r) => {
+          const b = document.createElement("button");
+          b.className = "room";
+          const slots = Array.from({ length: Math.min(r.size, 10) }, (_, i) =>
+            '<i class="' + (i < r.count ? "on" : "") + '"></i>',
+          ).join("");
+          b.innerHTML =
+            '<span class="rc">' + esc(r.code) + '</span><span class="rh">' + esc(r.host || "...") + "</span>" +
+            '<span class="rs"><span class="slots">' + slots + "</span><span>" +
+            '<span class="tagb' + (r.racing || r.ev ? " gold" : "") + '">' + (r.ev ? "AWARDS" : r.racing ? "RACING" : "OPEN") + "</span>" +
+            (r.priv ? ' <span class="tagb red">PRIVATE</span>' : "") + "</span></span>";
+          b.disabled = r.count >= r.size || !r.sameVersion;
+          b.onclick = () => joinLive(r.code);
+          list.appendChild(b);
+        });
+      }
+
+      // ---- LEADERBOARDS ----
+      // Read straight from the leaderboard table, with the game's keys
+      const LB_MODES = [
+        ["speedrun", "SPEEDRUN"],
+        ["deathrun", "DEATHRUN"],
+        ["chapter_speedrun", "CHAPTER SPEEDRUN"],
+        ["impossible", "IMPOSSIBLE"],
+        ["level_awards", "LEVEL AWARDS"],
+      ];
+      const lb = { mode: "speedrun", ch: 1, lvl: 0, cat: "any", award: null, place: 1 };
+      let awardsList = null;
+      let boardRun = 0;
+      function lbKey() {
+        if (lb.mode === "chapter_speedrun") return "chapter_speedrun_" + lb.ch;
+        if (lb.mode === "impossible") return "impossible_chapter_" + lb.ch;
+        if (lb.mode === "level_awards") {
+          if (lb.award == null) return null;
+          return "speedrun_award_" + lb.award + "_" + lb.place + (lb.cat === "blue" ? "_blue" : "");
+        }
+        const prefix = lb.mode === "deathrun" ? "deathrun_" : "speedrun_" + (lb.cat === "blue" ? "blue_" : "");
+        return prefix + "campaign_" + lb.ch + "_" + lb.lvl;
+      }
+      const ROMAN = ["I", "II", "III", "IV", "V"];
+      const lbTime = (ms) => {
+        const t = Number(ms) || 0;
+        return (
+          String(Math.floor(t / 60000)).padStart(2, "0") + ":" +
+          String(Math.floor(t / 1000) % 60).padStart(2, "0") + "." +
+          String(t % 1000).padStart(3, "0")
+        );
+      };
+      const levelCount = (ch) => {
+        const c = gameState && gameState.chapters && gameState.chapters[ch - 1];
+        return c ? c.levels.length : 0;
+      };
+      // What the second picker says
+      function lbWhere() {
+        if (lb.mode === "level_awards") {
+          const a = (awardsList || []).find((x) => x.id === lb.award);
+          return { k: "AWARD", v: (a ? a.title : "-") + " · " + ["1ST", "2ND", "3RD"][lb.place - 1] };
+        }
+        if (lb.mode === "chapter_speedrun" || lb.mode === "impossible") return { k: "CHAPTER", v: "CHAPTER " + ROMAN[lb.ch - 1] };
+        return { k: "LEVEL", v: "CHAPTER " + ROMAN[lb.ch - 1] + " · " + (lb.lvl + 1) };
+      }
+
+      // A list that slides up to pick from
+      function openPick(title, build) {
+        $("pick-title").textContent = title;
+        const list = $("pick-list");
+        list.innerHTML = "";
+        build(list, closePick);
+        $("pick-dim").classList.add("on");
+        $("pick").classList.add("on");
+        const on = list.querySelector(".on");
+        if (on) on.scrollIntoView({ block: "center" });
+      }
+      function closePick() {
+        $("pick-dim").classList.remove("on");
+        $("pick").classList.remove("on");
+      }
+      $("pick-dim").onclick = closePick;
+      $("pick-close").onclick = closePick;
+      const pickRow = (label, on, onTap) => {
+        const b = document.createElement("button");
+        b.className = "pick-row" + (on ? " on" : "");
+        b.textContent = label;
+        b.onclick = onTap;
+        return b;
+      };
+
+      function pickMode() {
+        openPick("MODE", (list, close) =>
+          LB_MODES.forEach(([v, label]) =>
+            list.appendChild(
+              pickRow(label, v === lb.mode, () => {
+                close();
+                if (v === lb.mode) return;
+                lb.mode = v;
+                lb.lvl = 0;
+                renderBoards();
+              }),
+            ),
+          ),
+        );
+      }
+      function pickWhere() {
+        if (lb.mode === "level_awards") {
+          openPick("LEVEL AWARDS", (list, close) =>
+            (awardsList || []).forEach((a) => {
+              const head = document.createElement("div");
+              head.className = "pick-head";
+              head.textContent = a.title;
+              list.appendChild(head);
+              const grid = document.createElement("div");
+              grid.className = "pick-grid";
+              [1, 2, 3].forEach((p) =>
+                grid.appendChild(
+                  pickRow(["1ST", "2ND", "3RD"][p - 1], a.id === lb.award && p === lb.place, () => {
+                    close();
+                    lb.award = a.id;
+                    lb.place = p;
+                    renderBoards();
+                  }),
+                ),
+              );
+              list.appendChild(grid);
+            }),
+          );
+          return;
+        }
+        if (lb.mode === "chapter_speedrun" || lb.mode === "impossible") {
+          openPick("CHAPTER", (list, close) =>
+            [1, 2, 3, 4, 5].forEach((n) =>
+              list.appendChild(
+                pickRow("CHAPTER " + ROMAN[n - 1], n === lb.ch, () => {
+                  close();
+                  lb.ch = n;
+                  renderBoards();
+                }),
+              ),
+            ),
+          );
+          return;
+        }
+        if (!gameState || !gameState.chapters) {
+          loadFrame();
+          return toast("STILL LOADING, TRY AGAIN");
+        }
+        openPick("LEVEL", (list, close) =>
+          [1, 2, 3, 4, 5].forEach((n) => {
+            const head = document.createElement("div");
+            head.className = "pick-head";
+            head.textContent = "CHAPTER " + ROMAN[n - 1];
+            list.appendChild(head);
+            const grid = document.createElement("div");
+            grid.className = "pick-grid";
+            for (let i = 0; i < levelCount(n); i++)
+              grid.appendChild(
+                pickRow(String(i + 1), n === lb.ch && i === lb.lvl, () => {
+                  close();
+                  lb.ch = n;
+                  lb.lvl = i;
+                  renderBoards();
+                }),
+              );
+            list.appendChild(grid);
+          }),
+        );
+      }
+
+      async function renderBoards() {
+        const el = $("boards-body");
+        if (lb.mode === "level_awards" && !awardsList && db) {
+          el.innerHTML = '<div class="note">LOADING...</div>';
+          const { data } = await db.from("level_awards").select("id, title").order("created_at", { ascending: false });
+          awardsList = data || [];
+          if (lb.award == null && awardsList[0]) lb.award = awardsList[0].id;
+        }
+        const modeName = (LB_MODES.find(([v]) => v === lb.mode) || [, ""])[1];
+        const where = lbWhere();
+        el.innerHTML =
+          '<div class="lb-pick">' +
+          '<button class="lb-sel" id="lb-mode"><span class="k">MODE</span><span class="v">' + esc(modeName) + "</span></button>" +
+          '<button class="lb-sel" id="lb-where"><span class="k">' + where.k + '</span><span class="v">' + esc(where.v) + "</span></button>" +
+          "</div>" +
+          (lb.mode === "speedrun" || lb.mode === "level_awards"
+            ? '<div class="lb-seg"><button data-cat="any"' + (lb.cat === "any" ? ' class="on"' : "") + ">ANY</button>" +
+              '<button data-cat="blue"' + (lb.cat === "blue" ? ' class="on"' : "") + '><span class="bc"></span>BLUE COIN</button></div>'
+            : "") +
+          '<div id="lb-out"><div class="note">LOADING...</div></div>';
+        $("lb-mode").onclick = pickMode;
+        $("lb-where").onclick = pickWhere;
+        el.querySelectorAll("[data-cat]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              if (lb.cat === b.dataset.cat) return;
+              lb.cat = b.dataset.cat;
+              renderBoards();
+            }),
+        );
+        const out = $("lb-out");
+        if (lb.mode === "level_awards" && (!awardsList || !awardsList.length))
+          return void (out.innerHTML = '<div class="empty">NO AWARDS YET</div>');
+        const key = lbKey();
+        const run = ++boardRun;
+        drawTimes(out, key, () => run === boardRun, renderBoards);
+      }
+
+      // A leaderboard's times: the top three on a podium, then the rest, and
+      // a YOU bar when you're further down. Shared by LEADERBOARDS and a
+      // level's MORE INFO. `live()` says the result is still wanted.
+      async function drawTimes(out, key, live, retry, empty) {
+        if (!key || !db) return void (out.innerHTML = '<div class="empty">NOT CONNECTED</div>');
+        out.innerHTML = '<div class="note">LOADING...</div>';
+        const { data, error } = await db
+          .from("leaderboard")
+          .select("username, time_ms")
+          .eq("level_key", key)
+          .order("time_ms", { ascending: true })
+          .limit(50);
+        if (live && !live()) return;
+        if (error) {
+          out.innerHTML = '<div class="empty">COULD NOT LOAD<br><button class="btn" style="margin-top:10px">TRY AGAIN</button></div>';
+          out.querySelector("button").onclick = retry;
+          return;
+        }
+        const rows = data || [];
+        if (!rows.length) return void (out.innerHTML = '<div class="empty">' + (empty || "NO RECORDS YET") + "</div>");
+        out.innerHTML = "";
+        const list = document.createElement("div");
+        list.className = "lb-cards";
+        const api = gameApi();
+        const me = signedInAs();
+        rows.forEach((sc, i) => {
+          const host = document.createElement("div");
+          host.className = "lb-host";
+          const node = api && api.lbRow && api.lbRow(sc, i + 1);
+          if (node) gameBits(host, node);
+          else {
+            // Before the game is up: the same card, drawn here
+            host.className = "lb-host lb-card" + (sc.username === me ? " me" : "");
+            host.innerHTML =
+              '<span class="l"><span class="n">' + (i + 1) + '</span><span class="who">' + esc(sc.username) + "</span></span>" +
+              '<span class="time">' + lbTime(sc.time_ms) + "</span>";
+          }
+          host.onclick = () => openProfile(sc.username);
+          list.appendChild(host);
+        });
+        out.appendChild(list);
+      }
+
+      // ---- the layer: a feed opened from a grid of levels ----
+      let layerFeed = null;
+      function openLayer(next, opts) {
+        opts = opts || {};
+        const layer = $("layer");
+        if (!layer.classList.contains("on")) {
+          try {
+            history.pushState({ boiLayer: true }, "");
+          } catch (e) {}
+        }
+        layer.classList.add("on");
+        if (layerFeed) layerFeed.dispose();
+        layerFeed = makeFeed($("layer-feed"), next, { empty: opts.empty });
+      }
+      function closeLayer(fromPop) {
+        if (!$("layer").classList.contains("on")) return;
+        $("layer").classList.remove("on");
+        if (layerFeed) layerFeed.dispose();
+        layerFeed = null;
+        $("layer-feed").innerHTML = "";
+        if (!fromPop && history.state && history.state.boiLayer) {
+          skipNextPop();
+          history.back();
+        }
+      }
+      $("layer-back").onclick = () => closeLayer(false);
+      // A grid of levels opened as a feed starting at the tapped one
+      function openRowsAsFeed(rows, start) {
+        let given = false;
+        openLayer(async () => {
+          if (given) return [];
+          given = true;
+          return rows.slice(start).concat(rows.slice(0, start));
+        });
+      }
+
+      // ---- SEARCH: a results page, players first, then levels ----
+      const SEARCH_PAGE = 24;
+      let searchRun = 0;
+      function openSearch() {
+        const page = $("search");
+        if (!page.classList.contains("on")) {
+          try {
+            history.pushState({ boiSearch: true }, "");
+          } catch (e) {}
+        }
+        page.classList.add("on");
+        if (!$("search-input").value) searchHint();
+        setTimeout(() => $("search-input").focus(), 0);
+      }
+      function closeSearch(fromPop) {
+        if (!$("search").classList.contains("on")) return;
+        closeLayer(fromPop);
+        $("search").classList.remove("on");
+        $("search-input").blur();
+        if (!fromPop && history.state && history.state.boiSearch) {
+          skipNextPop();
+          history.back();
+        }
+      }
+      function searchHint() {
+        $("results").innerHTML = '<div class="feed-msg" style="height:auto;padding-top:60px">TYPE A LEVEL NAME OR A PLAYER</div>';
+      }
+      $("search-btn").onclick = openSearch;
+      $("search-back").onclick = () => closeSearch(false);
+      $("search-go").onclick = () => runSearch();
+      $("search-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") runSearch();
+      });
+      async function runSearch() {
+        // Characters that mean something to the filter syntax are dropped
+        const q = $("search-input").value.replace(/[%,()*\_]/g, " ").replace(/\s+/g, " ").trim();
+        $("search-input").blur();
+        if (!q) return searchHint();
+        if (!db) {
+          $("results").innerHTML = '<div class="feed-msg" style="height:auto">NOT CONNECTED</div>';
+          return;
+        }
+        const run = ++searchRun;
+        const box = $("results");
+        box.innerHTML = '<div class="feed-msg" style="height:auto;padding-top:60px">SEARCHING...</div>';
+        const like = "%" + q + "%";
+        const levelsQuery = (from) =>
+          base()
+            .or("name.ilike.*" + q + "*,creator.ilike.*" + q + "*")
+            .order("plays", { ascending: false })
+            .order("id", { ascending: false })
+            .range(from, from + SEARCH_PAGE - 1);
+        const [players, levels] = await Promise.all([
+          db.from("users").select("username").ilike("username", like).limit(12)
+            .then((r) => (r.error ? [] : r.data || []), () => []),
+          levelsQuery(0).then((r) => (r.error ? null : r.data || []), () => null),
+        ]);
+        if (run !== searchRun) return;
+        box.innerHTML = "";
+        // Exact name first, then shortest (closest) names
+        const lower = q.toLowerCase();
+        players.sort((a, b) =>
+          (b.username.toLowerCase() === lower) - (a.username.toLowerCase() === lower) ||
+          a.username.length - b.username.length,
+        );
+        if (players.length) {
+          box.insertAdjacentHTML("beforeend", '<div class="res-label">PLAYERS</div><div class="players"></div>');
+          const list = box.querySelector(".players");
+          players.forEach((p) => {
+            const b = document.createElement("button");
+            b.className = "player";
+            b.innerHTML = '<span class="pfp">' + esc(p.username.charAt(0).toUpperCase()) + '</span><span class="pname">' + esc(p.username) + "</span>";
+            b.onclick = () => openProfile(p.username);
+            list.appendChild(b);
+          });
+        }
+        box.insertAdjacentHTML("beforeend", '<div class="res-label">LEVELS</div>');
+        if (levels === null) {
+          box.insertAdjacentHTML("beforeend", '<div class="empty">COULD NOT LOAD LEVELS</div>');
+          return;
+        }
+        if (!levels.length) {
+          box.insertAdjacentHTML("beforeend", '<div class="empty">NO LEVELS FOUND FOR ' + esc(q.toUpperCase()) + "</div>");
+          return;
+        }
+        const grid = document.createElement("div");
+        grid.className = "grid3";
+        box.appendChild(grid);
+        const found = [];
+        const addLevels = (rows) =>
+          rows.forEach((row) => {
+            const i = found.push(row) - 1;
+            grid.appendChild(levelThumb(row, () => openRowsAsFeed(found, i)));
+          });
+        addLevels(levels);
+        if (levels.length === SEARCH_PAGE) {
+          const more = document.createElement("button");
+          more.className = "btn more-btn";
+          more.textContent = "MORE LEVELS";
+          box.appendChild(more);
+          more.onclick = async () => {
+            more.disabled = true;
+            more.textContent = "LOADING...";
+            const r = await levelsQuery(found.length).catch(() => ({ error: true }));
+            if (run !== searchRun) return;
+            const rows = (!r.error && r.data) || [];
+            addLevels(rows);
+            more.disabled = false;
+            more.textContent = "MORE LEVELS";
+            if (r.error) more.textContent = "TRY AGAIN";
+            else if (rows.length < SEARCH_PAGE) more.remove();
+          };
+        }
+      }
+      // A small picture of a level with its name, for grids
+      function levelThumb(row, onTap) {
+        const b = document.createElement("button");
+        b.className = "thumb";
+        b.innerHTML = "<canvas></canvas><span>" + esc(row.name || "Untitled") + "</span>";
+        b.onclick = onTap;
+        const lvl = parseLevel(row.data);
+        requestAnimationFrame(() =>
+          drawLevel(b.querySelector("canvas"), lvl, { w: b.clientWidth, h: b.clientHeight, top: 4, bottom: 4, min: 5, max: 12 }),
+        );
+        return b;
+      }
+
+      // ---------------------------------------------------------------------
+      // CAMPAIGN
+      // ---------------------------------------------------------------------
+      function renderChapters() {
+        const el = $("chapters");
+        if (!gameState || !gameState.chapters) {
+          el.innerHTML = '<div class="feed-msg"><div class="jumper"><div class="cube"></div><div class="ground"></div></div>LOADING</div>';
+          return;
+        }
+        const keep = el.scrollTop;
+        el.innerHTML = "";
+        gameState.chapters.forEach((ch) => {
+          const card = document.createElement("div");
+          card.className = "card chapter";
+          const done = ch.levels.filter((l) => !l.locked).length;
+          const beatenCount = ch.beaten ? ch.levels.length : Math.max(0, done - 1);
+          const blues = ch.levels.filter((l) => l.blue).length;
+          // The preview is the level the player is up to
+          const at = ch.beaten ? 0 : Math.min(beatenCount, ch.levels.length - 1);
+          card._plan = (ch.levels[at] || ch.levels[0] || {}).plan;
+          let body =
+            '<canvas class="preview"></canvas><div class="veil"></div><div class="body">' +
+            '<div class="ch-num shade">CAMPAIGN</div>' +
+            '<h2 class="ch-title">' + esc(ch.name.toUpperCase()) + "</h2>";
+          if (!ch.open) {
+            body += '<div class="locked-note">BEAT CHAPTER ' + ["I", "II", "III", "IV"][ch.number - 2] + " TO UNLOCK</div>";
+          } else {
+            body +=
+              '<div class="ch-stat shade">' + beatenCount + " / " + ch.levels.length + " BEATEN" +
+              (blues ? ' &nbsp;<span class="bc"></span> ' + blues : "") + "</div>" +
+              '<div class="lvl-grid">' +
+              ch.levels
+                .map((l, i) => {
+                  const beat = ch.beaten || i < beatenCount;
+                  return (
+                    '<button class="lvl' + (beat ? " beaten" : "") + '" data-i="' + i + '"' +
+                    (l.locked ? " disabled" : "") + ">" + (i + 1) +
+                    (l.blue ? '<span class="bc"></span>' : "") + "</button>"
+                  );
+                })
+                .join("") +
+              "</div>" +
+              // A beaten chapter has no button: its levels are picked above
+              (ch.beaten
+                ? ""
+                : '<div class="btn-col" style="margin-top:10px"><button class="btn blue" data-go="' + at + '">' +
+                  (beatenCount ? "CONTINUE" : "START") + "</button></div>");
+          }
+          body += "</div>";
+          card.innerHTML = body;
+          card.querySelectorAll(".lvl").forEach((b) => {
+            b.onclick = () => openGame({ type: "boi-campaign", chapter: ch.number, index: +b.dataset.i });
+          });
+          const go = card.querySelector("[data-go]");
+          if (go) go.onclick = () => openGame({ type: "boi-campaign", chapter: ch.number, index: +go.dataset.go });
+          el.appendChild(card);
+        });
+        // The last card: the other ways to play
+        const more = document.createElement("div");
+        more.className = "card chapter";
+        more.innerHTML =
+          '<div class="body"><h2 class="ch-title">MORE</h2><div class="btn-col">' +
+          '<button class="btn" data-v="other-modes">OTHER MODES</button>' +
+          '<button class="btn" data-v="live">LIVE</button>' +
+          '<button class="btn" data-v="leaderboards-new">LEADERBOARDS</button>' +
+          '<button class="btn" data-v="custom">CUSTOM LEVELS</button>' +
+          "</div></div>";
+        more.querySelectorAll("[data-v]").forEach((b) => {
+          b.onclick = () => {
+            const v = b.dataset.v;
+            // LIVE and LEADERBOARDS are tabs of the levels screen
+            if (v === "live" || v === "leaderboards-new") {
+              showTab("levels");
+              showPanel(v === "live" ? "live" : "boards");
+            } else openView(v);
+          };
+        });
+        el.appendChild(more);
+        el.scrollTop = keep;
+        drawChapterPreviews();
+      }
+      function drawChapterPreviews() {
+        if (currentTab !== "campaign") return;
+        $("chapters")
+          .querySelectorAll(".card")
+          .forEach((card) => {
+            const cv = card.querySelector("canvas");
+            if (!cv || !card._plan) return;
+            drawLevel(cv, parseLevel({ plan: card._plan }), {
+              w: card.clientWidth,
+              h: card.clientHeight,
+              top: 0,
+              bottom: 0,
+              max: 40,
+            });
+          });
+      }
+
+      // ---------------------------------------------------------------------
+      // ME
+      // ---------------------------------------------------------------------
+      function signedInAs() {
+        return (gameState && gameState.user) || store.get("blockoverit_username") || null;
+      }
+      // The tab is named after you once you are signed in
+      function nameMeTab() {
+        $("me-tab-name").textContent = signedInAs() || "ME";
+      }
+      // A skin's picture, or its plain colour, or the plain blue block
+      function skinArt(box, skin) {
+        box.innerHTML = "";
+        const block = () => {
+          box.innerHTML = '<div class="block"></div>';
+          if (skin.color) box.firstChild.style.background = skin.color;
+        };
+        if (!skin.image) return block();
+        const img = new Image();
+        img.alt = "";
+        img.onerror = block;
+        img.src = skin.image;
+        box.appendChild(img);
+      }
+      // The profile tab, laid out like the game's Account screen: your name,
+      // BLUE COINS / COMMUNITY / STREAK, your crates, your locker (skins,
+      // emotes, loading screens, environments), then the account buttons.
+      let lockerTab = "skins";
+      let signingOut = false;
+      const doAction = (name, extra) => openGame(Object.assign({ type: "boi-action", name }, extra || {}));
+      function renderMe() {
+        nameMeTab();
+        const el = $("me-body");
+        const user = signedInAs();
+        const acct = (gameState && gameState.user === user && gameState.account) || null;
+        // Signed in, the tab is the game's own Account screen (syncDock);
+        // this only covers the moment before it is up
+        if (user && !signingOut) {
+          el.innerHTML = '<div class="feed-msg"><div class="jumper"><div class="cube"></div><div class="ground"></div></div>LOADING</div>';
+          return;
+        }
+        const keep = el.scrollTop;
+        let html = '<div class="acct"><div class="me-name">' + esc(signingOut ? "SIGNING OUT..." : user || "GUEST") + "</div>";
+        if (user) {
+          html +=
+            '<div class="stats">' +
+            '<div class="stat"><span class="k">BLUE COINS</span><span class="v" style="color:#4d8ce0">' +
+            (acct ? acct.blue + " / " + acct.bluePossible : "-") + "</span></div>" +
+            '<button class="stat" data-act="beaten"><span class="k">COMMUNITY</span><span class="v" style="color:#2ecc71">' +
+            (acct ? acct.community : "-") + '</span><span class="t">VIEW LIST</span></button>' +
+            '<button class="stat wide" data-act="streak"><span class="k">STREAK</span><span class="v" style="color:#e67e22">' +
+            esc(acct ? acct.streakText : "-") + '</span><span class="t">REWARDS</span></button>' +
+            "</div>";
+          if (acct && acct.crates.length) html += '<div class="sec-head">MY CRATES</div><div class="skins" id="my-crates"></div>';
+          const tabs = [
+            ["skins", "MY SKINS", (gameState && gameState.skins) || []],
+            ["emotes", "MY EMOTES", (acct && acct.emotes) || []],
+            ["loading", "LOADING SCREENS", (acct && acct.loading) || []],
+            ["environments", "ENVIRONMENTS", (acct && acct.environments) || []],
+          ].filter(([k, , list]) => k === "skins" || k === "loading" || k === "environments" || list.length);
+          if (!tabs.some(([k]) => k === lockerTab)) lockerTab = "skins";
+          html +=
+            '<div class="locker-tabs">' +
+            tabs
+              .map(([k, label, list]) => {
+                const n = k === "skins" ? list.reduce((a, s) => a + (s.count || 1), 0) : list.length;
+                return '<button class="locker-tab' + (k === lockerTab ? " on" : "") + '" data-locker="' + k + '">' +
+                  label + (k === lockerTab && n ? " (" + n + ")" : "") + "</button>";
+              })
+              .join("") +
+            '</div><div class="skins' + (lockerTab === "loading" || lockerTab === "environments" ? " wide" : "") + '" id="my-locker"></div>';
+        } else {
+          html += '<div class="acct-btns" style="margin-top:0"><button class="btn blue" data-v="login">SIGN IN</button></div>';
+        }
+        html +=
+          '<div class="acct-btns">' +
+          '<button class="btn" data-v="friends">FRIENDS</button>' +
+          '<button class="btn" data-v="news">NEWS</button>' +
+          '<button class="btn" data-v="mobile-settings">SETTINGS</button>' +
+          (user
+            ? '<button class="btn" data-act="password" style="margin-top:14px">CHANGE PASSWORD</button>' +
+              '<button class="btn" data-act="signout-all">SIGN OUT OF ALL DEVICES</button>' +
+              '<button class="btn red" data-logout>LOG OUT</button>'
+            : "") +
+          "</div></div>";
+        el.innerHTML = html;
+        el.scrollTop = keep;
+        const lit = el.querySelector(".locker-tab.on");
+        if (lit) lit.parentNode.scrollLeft = lit.offsetLeft - 16;
+        el.querySelectorAll("[data-v]").forEach((b) => {
+          b.onclick = () => {
+            const v = b.dataset.v;
+            if (v === "friends" && !user) openView("login");
+            else openView(v);
+          };
+        });
+        el.querySelectorAll("[data-act]").forEach((b) => (b.onclick = () => doAction(b.dataset.act)));
+        el.querySelectorAll("[data-locker]").forEach((b) => {
+          b.onclick = () => {
+            lockerTab = b.dataset.locker;
+            renderMe();
+          };
+        });
+        const logout = el.querySelector("[data-logout]");
+        if (logout)
+          logout.onclick = () =>
+            ask("LOG OUT", "Are you sure you want to log out?", "LOG OUT", () => {
+              if (!frameReady) return toast("STILL LOADING, TRY AGAIN");
+              signingOut = true;
+              renderMe();
+              tellGame({ type: "boi-logout" });
+              // The game forgets the account and reloads; it says hello again
+              setTimeout(() => {
+                signingOut = false;
+                if (currentTab === "me") renderMe();
+              }, 6000);
+            });
+        if (!user) return;
+        const crates = $("my-crates");
+        if (crates)
+          acct.crates.forEach((c) => {
+            const b = document.createElement("button");
+            b.className = "skin";
+            b.innerHTML =
+              '<div class="art"><div class="block" style="width:44px;height:44px;background:#8a5a2b;border:4px solid #5e3c1c"></div></div>' +
+              '<div class="sname">' + esc(c.name) + "</div>" + (c.count > 1 ? '<span class="count">x' + c.count + "</span>" : "") +
+              '<span class="flag">OPEN</span>';
+            b.onclick = () => doAction("crate", { id: c.id });
+            crates.appendChild(b);
+          });
+        renderLocker($("my-locker"), acct);
+      }
+      function renderLocker(grid, acct) {
+        const using = (gameState && gameState.skin) || "default";
+        const empty = (text) => (grid.innerHTML = '<div class="empty" style="grid-column:1/-1">' + text + "</div>");
+        if (lockerTab === "skins") {
+          const skins = gameState && gameState.skins;
+          if (!skins) return empty("LOADING...");
+          skins.forEach((skin) => {
+            const b = document.createElement("button");
+            b.className = "skin" + (skin.id === using ? " using" : "");
+            b.innerHTML =
+              '<div class="art"></div><div class="sname">' + esc(skin.name) + "</div>" +
+              (skin.id === using ? '<span class="flag">USING</span>' : "") +
+              (skin.count > 1 ? '<span class="count">x' + skin.count + "</span>" : "");
+            skinArt(b.querySelector(".art"), skin);
+            // Tapping a skin puts it on
+            b.onclick = () => {
+              if (skin.id === using || !frameReady) return;
+              tellGame({ type: "boi-equip", skin: skin.id });
+              toast("NOW USING " + String(skin.name).toUpperCase());
+            };
+            grid.appendChild(b);
+          });
+          return;
+        }
+        if (!acct) return empty("LOADING...");
+        if (lockerTab === "emotes") {
+          if (!acct.emotes.length) return empty("NO EMOTES YET");
+          acct.emotes.forEach((em) => {
+            const b = document.createElement("div");
+            b.className = "skin";
+            b.innerHTML =
+              '<div class="art"><div class="block" style="width:30px;height:56px"></div></div><div class="sname">' + esc(em.name) + "</div>";
+            b.querySelector(".block").style.background = em.color || "var(--blue)";
+            grid.appendChild(b);
+          });
+          return;
+        }
+        const kind = lockerTab === "loading" ? "loading" : "environment";
+        const list = kind === "loading" ? acct.loading : acct.environments;
+        const on = kind === "loading" ? acct.usingLoading : acct.usingEnv;
+        if (!list.length) return empty("NONE YET");
+        list.forEach((item, i) => {
+          const isOn = item.id === on || (!on && i === 0);
+          const b = document.createElement("button");
+          b.className = "skin" + (isOn ? " using" : "");
+          b.innerHTML =
+            '<div class="art"></div><div class="sname">' + esc(item.name) + "</div>" + (isOn ? '<span class="flag">USING</span>' : "");
+          const art = b.querySelector(".art");
+          if (kind === "loading" && item.img) {
+            art.innerHTML = '<div class="pic"></div>';
+            art.firstChild.style.backgroundImage = 'url("' + encodeURI(item.img).replace(/"/g, "%22") + '")';
+          } else if (item.plan) {
+            const cv = document.createElement("canvas");
+            art.appendChild(cv);
+            requestAnimationFrame(() =>
+              drawLevel(cv, parseLevel({ plan: item.plan, background: item.bg }), { w: art.clientWidth, h: art.clientHeight, top: 2, bottom: 2, min: 3, max: 8 }),
+            );
+          }
+          b.onclick = () => {
+            if (isOn || !frameReady) return;
+            tellGame({ type: "boi-use", kind, id: item.id });
+            toast("NOW USING " + String(item.name).toUpperCase());
+          };
+          grid.appendChild(b);
+        });
+      }
+      // A yes / no box
+      function ask(title, text, yes, onYes) {
+        $("ask-title").textContent = title;
+        $("ask-text").textContent = text;
+        $("ask-yes").textContent = yes || "OK";
+        $("ask").classList.add("on");
+        const close = () => $("ask").classList.remove("on");
+        $("ask-no").onclick = close;
+        $("ask").onclick = (e) => e.target === $("ask") && close();
+        $("ask-yes").onclick = () => {
+          close();
+          onYes();
+        };
+      }
+
+      // ---------------------------------------------------------------------
+      // TABS
+      // ---------------------------------------------------------------------
+      let currentTab = "levels";
+      function showTab(name) {
+        closeComments(false);
+        closeLayer(false);
+        closeSearch(false);
+        if (currentTab === "levels" && name !== "levels" && panel === "live") stopLiveWatch();
+        if (name === "levels" && currentTab !== "levels" && panel === "live") startLiveWatch();
+        currentTab = name;
+        document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === name));
+        document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === name));
+        if (name === "campaign") {
+          if (!gameState) loadFrame();
+          drawChapterPreviews();
+        }
+        if (name === "me") {
+          renderMe();
+          // Skins may have changed since (bought, traded, signed in)
+          if (frameReady) tellGame({ type: "boi-state", full: currentTab === "me" });
+          else loadFrame();
+        }
+        syncDock();
+        if (name === "levels" && !panel && mainFeed && mainFeed.current) followLevel(mainFeed.current._row);
+        else
+          try {
+            history.replaceState(history.state, "", location.pathname);
+          } catch (e) {}
+      }
+      document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => showTab(t.dataset.tab)));
+
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(redrawVisible, 150);
+      });
+
+      // ---------------------------------------------------------------------
+      // START
+      // ---------------------------------------------------------------------
+      (async function start() {
+        renderChapters();
+        nameMeTab();
+        let params;
+        try {
+          params = new URLSearchParams(location.search);
+        } catch (e) {
+          params = new URLSearchParams();
+        }
+        const levelId = (params.get("level") || "").trim();
+        if (db && /^\d+$/.test(levelId)) {
+          try {
+            const { data } = await base().eq("id", parseInt(levelId, 10)).limit(1).maybeSingle();
+            if (data) firstRow = data;
+          } catch (e) {}
+        }
+        startMainFeed("foryou");
+        // The game loads behind the feed, so PLAY is quick when it comes
+        setTimeout(loadFrame, 600);
+        // Links meant for the game itself
+        const user = (params.get("user") || "").trim();
+        if (user) openProfile(user.slice(0, 64));
+        else if (params.has("code") || params.has("leaderboard"))
+          openGame({ type: "boi-open", view: "link", search: location.search });
+      })();
+    </script>
+  </body>
+</html>
