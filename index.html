@@ -25911,6 +25911,17 @@
       // every skin exactly the way the game does.
       const ANIMATED_SKINS = window.ANIMATED_SKINS || [];
       const SKIN_IMAGE_OVERRIDES = window.SKIN_IMAGE_OVERRIDES || {};
+      // Skins with a win and a death picture of their own (the Emotions
+      // skins). More can be added in skins.js (window.SKIN_END_FACES).
+      const SKIN_END_FACES = Object.assign(
+        {
+          emo: { win: "emowin.png", dead: "emodeath.png" },
+          emo2: { win: "emo2win.png", dead: "emo2death.png" },
+          emo3: { win: "emo3win.png", dead: "emo3death.png" },
+          vintageemo: { win: "vintageemowin.png", dead: "vintageemodeath.png" },
+        },
+        window.SKIN_END_FACES || {},
+      );
       const skinFileExtension =
         window.skinFileExtension || ((id) => "png");
       const skinImageFile =
@@ -33615,47 +33626,25 @@
                 );
                 el.style.backgroundImage = "url('" + file + "')";
                 el.style.filter = "";
+              } else if (SKIN_END_FACES[skin] && this.level.status) {
+                // The Emotions skins: a win / death picture of their own
+                // (SKIN_END_FACES), never tinted
+                el.style.backgroundImage = `url('${
+                  this.level.status === "won"
+                    ? SKIN_END_FACES[skin].win
+                    : SKIN_END_FACES[skin].dead
+                }')`;
+                el.style.filter = "";
               } else if (this.level.status === "won") {
-                if (skin === "emo") {
-                  el.style.backgroundImage = `url('emowin.png')`;
-                } else if (skin === "emo2") {
-                  el.style.backgroundImage = `url('emo2win.png')`;
-                } else if (skin === "emo3") {
-                  el.style.backgroundImage = `url('emo3win.png')`;
-                } else if (skin === "vintageemo") {
-                  el.style.backgroundImage = `url('vintageemowin.png')`;
-                } else if (skin === "rainbownoir" || skin === "coolguynoir") {
-                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
-                } else {
-                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
+                el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
+                if (skin === "rainbownoir" || skin === "coolguynoir")
+                  el.style.filter = "";
+                else
                   el.style.filter =
                     "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)";
-                }
               } else {
                 // Default state (playing or lost)
-                if (skin === "emo") {
-                  el.style.backgroundImage =
-                    this.level.status === "lost"
-                      ? `url('emodeath.png')`
-                      : `url('emo.png')`;
-                } else if (skin === "emo2") {
-                  el.style.backgroundImage =
-                    this.level.status === "lost"
-                      ? `url('emo2death.png')`
-                      : `url('emo2.png')`;
-                } else if (skin === "emo3") {
-                  el.style.backgroundImage =
-                    this.level.status === "lost"
-                      ? `url('emo3death.png')`
-                      : `url('emo3.png')`;
-                } else if (skin === "vintageemo") {
-                  el.style.backgroundImage =
-                    this.level.status === "lost"
-                      ? `url('vintageemodeath.png')`
-                      : `url('vintageemo.png')`;
-                } else {
-                  el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
-                }
+                el.style.backgroundImage = `url('${skinImageFile(skin)}')`;
                 el.style.filter = "";
               }
               el.style.backgroundSize = "contain";
@@ -53363,6 +53352,7 @@
         ...Object.values(SKIN_FRAMES).map((d) =>
           Object.values(d.frames).concat(d.crown ? [d.crown] : []),
         ),
+        ...Object.values(SKIN_END_FACES).map((d) => [d.win, d.dead]),
       );
 
       function skinFilesForOffline() {
@@ -54900,6 +54890,6 @@
         });
       })();
     </script>
-    <script src="boi-live.js?v=40"></script>
+    <script src="boi-live.js?v=41"></script>
   </body>
 </html>

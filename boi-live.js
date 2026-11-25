@@ -2961,12 +2961,12 @@
   }
 
   // The skins that change picture when you win or die, as the game draws them
-  var EMO_FACES = {
-    emo: ["emo.png", "emowin.png", "emodeath.png"],
-    emo2: ["emo2.png", "emo2win.png", "emo2death.png"],
-    emo3: ["emo3.png", "emo3win.png", "emo3death.png"],
-    vintageemo: ["vintageemo.png", "vintageemowin.png", "vintageemodeath.png"],
-  };
+  // (the game's SKIN_END_FACES: the Emotions skins) -> [normal, win, death]
+  var EMO_FACES = {};
+  var endFaces = typeof SKIN_END_FACES === "object" ? SKIN_END_FACES : {};
+  Object.keys(endFaces).forEach(function (id) {
+    EMO_FACES[id] = [skinImageFile(id), endFaces[id].win, endFaces[id].dead];
+  });
   // Skins that keep their own picture through a win instead of turning green
   var PLAIN_WIN = { rainbownoir: true, coolguynoir: true };
   var WIN_FILTER =

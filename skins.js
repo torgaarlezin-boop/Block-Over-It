@@ -1550,7 +1550,41 @@ window.SKIN_DEFINITIONS = {
     collection: "Pig",
     theCity: true,
     tag: "Animal Gangsters"
+  },
+  blockysanta: {
+    name: "Blocky (Santa)",
+    artist: "Shadow",
+    copies: "1/5",
+    color: "#e7191f",
+    collection: "Blocky",
+    tag: "Blockydays",
+  },
+  emotionssanta: {
+    name: "Emotions (Santa)",
+    artist: "Shadow, Ejohnson, & Torgaar",
+    copies: "1/5",
+    color: "#e7191f",
+    collection: "Emotions",
+    tag: "Blockydays",
+    tag: "SEC Styles"
+  },
+  clownsanta: {
+    name: "Clown (Santa)",
+    artist: "Shadow & Torgaar",
+    copies: "1/5",
+    color: "#e7191f",
+    collection: "Clown",
+    tag: "Blockydays",
+  },
+  coolguysanta: {
+    name: "Cool Guy (Santa)",
+    artist: "Shadow & Torgaar",
+    copies: "1/5",
+    color: "#e7191f",
+    collection: "Cool Guy",
+    tag: "Blockydays",
   }
+
 
 
 };
@@ -1595,6 +1629,13 @@ window.SKIN_IMAGE_OVERRIDES = {
   shadow: "catshadow.png"
 };
 
+// Skins that change picture in a level when you win or die (like the
+// Emotions skins): id -> { win, dead }. Their normal picture is the usual one.
+// The game and LIVE both read this, so adding one here is all it takes.
+window.SKIN_END_FACES = {
+  emotionssanta: { win: "emotionssantawin.png", dead: "emotionssantadead.png" },
+};
+
 window.TOBREAKER_SKIN_DIR = "skins/";
 
 window.SOLID_SKIN_COLORS = {
@@ -1621,12 +1662,6 @@ window.skinImageFile = function (id) {
   return id + "." + window.skinFileExtension(id);
 };
 
-// ---- AGE CHECK (13+) ----
-// Skins with a tag in AGE_GATED_TAGS (or `ageGate: true` on their entry) are
-// drawn blurred on every page that loads this file. Clicking one asks if the
-// viewer is 13 or older; YES is kept on this device for good (and, in the
-// game, in the account's settings), and nothing is blurred from then on.
-// NO leaves them blurred. To gate more skins, tag them -- no other change.
 window.AGE_GATED_TAGS = ["Animal Gangsters"];
 (function () {
   var KEY = "boi-age-13";
