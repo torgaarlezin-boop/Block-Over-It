@@ -1075,8 +1075,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     collection: "Cool Guy",
     artist: "Torgaar",
-    tag: "Icons",
-    tag: "Bigtopia",
+    tag: ["Icons", "Bigtopia"],
     color: "#87bec7"
   },
   coolguytorgaargreen: {
@@ -1084,8 +1083,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     collection: "Cool Guy",
     artist: "Torgaar",
-    tag: "Icons",
-    tag: "Bigtopia",
+    tag: ["Icons", "Bigtopia"],
     color: "#7ed957"
   },
   surprised: {
@@ -1195,8 +1193,7 @@ window.SKIN_DEFINITIONS = {
     color: "#ffde59",
     artist: "Crosby & Deacon",
     collection: "Cool Guy",
-    tag: "Medieval",
-    tag: "Icons"
+    tag: ["Medieval", "Icons"],
   },
   blockygold: {
     name: "Blocky (Gold)",
@@ -1238,8 +1235,7 @@ window.SKIN_DEFINITIONS = {
   },
   pixelmonster: {
     name: "Pixel Monster",
-    tag: "Pixelated",
-    tag: "Animated",
+    tag: ["Pixelated", "Animated"],
     artist: "Deacon",
     copies: "1/3",
     color: "#000000"
@@ -1323,11 +1319,10 @@ window.SKIN_DEFINITIONS = {
   hazmatinfected: {
     name: "Hazmat (Atomic Infection)",
     artist: "Torgaar",
-    tag: "Backrooms",
+    tag: ["Backrooms", "SEC Styles"],
     copies: "1/3",
     color: "#ffff00",
     collection: "Hazmat",
-    tag: "SEC Styles"
   },
   blockypixelated: {
     name: "Blocky (Pixelated)",
@@ -1444,8 +1439,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/1",
     color: "#ffe03b",
     collection: "Cool Guy",
-    tag: "Scribbled",
-    tag: "Color Scribbles"
+    tag: ["Scribbled", "Color Scribbles"],
   },
   dinocolorscribbled: {
     name: "Dino (Color Scribbles)",
@@ -1453,8 +1447,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/3",
     color: "#ffe03b",
     collection: "Dino",
-    tag: "Scribbled",
-    tag: "Color Scribbles"
+    tag: ["Scribbled", "Color Scribbles"],
   },
   dinoscribbled: {
     name: "Dino (Scribbles)",
@@ -1478,8 +1471,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#38b6ff",
     collection: "Cool Guy",
-    tag: "Scribbled",
-    tag: "Notebook Scribbles"
+    tag: ["Scribbled", "Notebook Scribbles"],
   },
   nightmarenotebook: {
     name: "Nightmare (Notebook Scribbles)",
@@ -1487,8 +1479,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/4",
     color: "#e7191f",
     collection: "Nightmare",
-    tag: "Scribbled",
-    tag: "Notebook Scribbles"
+    tag: ["Scribbled", "Notebook Scribbles"],
   },
   catnotebook: {
     name: "Cat (Notebook Scribbles)",
@@ -1496,8 +1487,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#ff751f",
     collection: "Cat",
-    tag: "Scribbled",
-    tag: "Notebook Scribbles"
+    tag: ["Scribbled", "Notebook Scribbles"],
   },
   galaxynotebook: {
     name: "Galaxy (Notebook Scribbles)",
@@ -1505,8 +1495,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#ac2ed0",
     collection: "Galaxy",
-    tag: "Scribbled",
-    tag: "Notebook Scribbles"
+    tag: ["Scribbled", "Notebook Scribbles"],
   },
   blockyscribbled: {
     name: "Blocky (Scribbles)",
@@ -1565,8 +1554,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/5",
     color: "#e7191f",
     collection: "Emotions",
-    tag: "Blockydays",
-    tag: "SEC Styles"
+    tag: ["Blockydays", "SEC Styles"],
   },
   clownsanta: {
     name: "Clown (Santa)",
