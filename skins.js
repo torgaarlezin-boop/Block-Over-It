@@ -915,7 +915,7 @@ window.SKIN_DEFINITIONS = {
     tag: "In The Dark Blocktober"
   },
   coolguyscribbled: {
-    name: "Cool Guy (Scribbled)",
+    name: "Cool Guy (Scribbles)",
     copies: "1/4",
     artist: "Torgaar",
     color: "#009fe3",
@@ -923,7 +923,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cool Guy"
   },
   cubemouthscribbled: {
-    name: "Cubemouth (Scribbled)",
+    name: "Cubemouth (Scribbles)",
     copies: "1/3",
     artist: "Torgaar",
     color: "#1101d1",
@@ -931,7 +931,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Cube Mouth"
   },
   rainbowscribbled: {
-    name: "Rainbow Monster (Scribbled)",
+    name: "Rainbow Monster (Scribbles)",
     copies: "1/3",
     artist: "Torgaar",
     color: "#f51600",
@@ -939,7 +939,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Rainbow Monster"
   },
   nightmarescribbled: {
-    name: "Nightmare (Scribbled)",
+    name: "Nightmare (Scribbles)",
     copies: "1/1",
     artist: "Torgaar",
     color: "#000000",
@@ -947,7 +947,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Nightmare",
   },
   galaxyscribbled: {
-    name: "Galaxy (Scribbled)",
+    name: "Galaxy (Scribbles)",
     copies: "1/2",
     artist: "Torgaar",
     color: "#243175",
@@ -955,7 +955,7 @@ window.SKIN_DEFINITIONS = {
     collection: "Galaxy",
   },
   clownscribbled: {
-    name: "Clown (Scribbled)",
+    name: "Clown (Scribbles)",
     copies: "1/3",
     artist: "Torgaar",
     color: "#e0383e",
@@ -1438,6 +1438,84 @@ window.SKIN_DEFINITIONS = {
     color: "#eeba2b",
     collection: "Peanut Man",
     tag: "Peanut Man"
+  },
+  coolguycolorscribbled: {
+    name: "Cool Guy (Color Scribbles)",
+    artist: "Torgaar",
+    copies: "1/1",
+    color: "#ffe03b",
+    collection: "Cool Guy",
+    tag: "Scribbled",
+    tag: "Color Scribbles"
+  },
+  dinocolorscribbled: {
+    name: "Dino (Color Scribbles)",
+    artist: "Torgaar & Mcdongos",
+    copies: "1/3",
+    color: "#ffe03b",
+    collection: "Dino",
+    tag: "Scribbled",
+    tag: "Color Scribbles"
+  },
+  dinoscribbled: {
+    name: "Dino (Scribbles)",
+    artist: "Torgaar & Mcdongos",
+    copies: "1/7",
+    color: "#aeff61",
+    collection: "Dino",
+    tag: "Scribbled"
+  },
+  catscribbled: {
+    name: "Cat (Scribbles)",
+    artist: "Torgaar & Mcdongos",
+    copies: "1/7",
+    color: "#fff1c0",
+    collection: "Cat",
+    tag: "Scribbled"
+  },
+  coolguynotebook: {
+    name: "Cool Guy (Notebook Scribbles)",
+    artist: "Torgaar",
+    copies: "1/5",
+    color: "#38b6ff",
+    collection: "Cool Guy",
+    tag: "Scribbled",
+    tag: "Notebook Scribbles"
+  },
+  nightmarenotebook: {
+    name: "Nightmare (Notebook Scribbles)",
+    artist: "Torgaar",
+    copies: "1/4",
+    color: "#e7191f",
+    collection: "Nightmare",
+    tag: "Scribbled",
+    tag: "Notebook Scribbles"
+  },
+  catnotebook: {
+    name: "Cat (Notebook Scribbles)",
+    artist: "Torgaar & Deacon",
+    copies: "1/5",
+    color: "#ff751f",
+    collection: "Cat",
+    tag: "Scribbled",
+    tag: "Notebook Scribbles"
+  },
+  galaxynotebook: {
+    name: "Galaxy (Notebook Scribbles)",
+    artist: "Torgaar",
+    copies: "1/5",
+    color: "#ac2ed0",
+    collection: "Galaxy",
+    tag: "Scribbled",
+    tag: "Notebook Scribbles"
+  },
+  blockyscribbled: {
+    name: "Blocky (Scribbles)",
+    artist: "Torgaar",
+    copies: "1/7",
+    color: "#335699",
+    collection: "Blocky",
+    tag: "Scribbled",
   }
 
 
@@ -1480,6 +1558,7 @@ window.SKIN_IMAGE_OVERRIDES = {
   dinoforehead: "dinoforehead2.png",
   dinopixelated: "dinopixelated2.png",
   mrolsenking: "mrolsenking2.png",
+  shadow: "catshadow.png"
 };
 
 window.TOBREAKER_SKIN_DIR = "skins/";
