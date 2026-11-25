@@ -16834,7 +16834,12 @@
               ) +
               sec.listings.map((listing) => shopCardHTML(listing, isMobile)).join("");
             newer.forEach((s) => bundleSections.splice(bundleSections.indexOf(s), 1));
+            // Crate collections come first (user, 2026-11-24: the
+            // Scribbled 2 crate at the top of the shop)
             grid.innerHTML =
+              ARTIST_COLLECTIONS.map(
+                (col) => shopSectionHTML(col.label, col.signature) + collectionGridHTML(col),
+              ).join("") +
               newer.map(sectionHTML).join("") +
               // An empty season under a newer one isn't shown at all
               (season.length || !newer.length
@@ -16849,10 +16854,7 @@
                     shopSectionHTML(sec.label) +
                     sec.listings.map((listing) => shopCardHTML(listing, isMobile)).join(""),
                 )
-                .join("") +
-              ARTIST_COLLECTIONS.map(
-                (col) => shopSectionHTML(col.label, col.signature) + collectionGridHTML(col),
-              ).join("");
+                .join("");
             wireShopGrid();
             return;
           }

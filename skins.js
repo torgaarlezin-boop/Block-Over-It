@@ -1516,6 +1516,14 @@ window.SKIN_DEFINITIONS = {
     color: "#335699",
     collection: "Blocky",
     tag: "Scribbled",
+  },
+  rainbowsanta: {
+    name: "Rainbow Monster (Santa)",
+    artist: "Shadow & Chairlord",
+    copies: "1/5",
+    color: "#e7191f",
+    collection: "Rainbow Monster",
+    tag: "Blockydays"
   }
 
 
