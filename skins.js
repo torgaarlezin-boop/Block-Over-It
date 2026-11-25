@@ -1713,18 +1713,21 @@ window.AGE_GATED_TAGS = ["Animal Gangsters"];
     if (document.getElementById("boi-age-pop")) return;
     var wrap = document.createElement("div");
     wrap.id = "boi-age-pop";
+    // The game's own popup (index.html .popup): its look is copied below so
+    // every page that loads this file shows it the same
     wrap.innerHTML =
       '<div class="boi-age-box">' +
+      '<button type="button" class="boi-age-x" aria-label="Close">&times;</button>' +
       '<div class="boi-age-title">AGE CHECK</div>' +
       '<div class="boi-age-text">This skin is for players 13 or older. Are you 13 or older?</div>' +
       '<div class="boi-age-btns">' +
-      '<button type="button" class="btn boi-age-yes">YES, I AM 13+</button>' +
-      '<button type="button" class="btn boi-age-no">NO</button>' +
+      '<button type="button" class="boi-age-btn boi-age-yes">YES</button>' +
+      '<button type="button" class="boi-age-btn boi-age-no">NO</button>' +
       "</div></div>";
     wrap.addEventListener("click", function (e) {
       e.stopPropagation();
       if (e.target.closest(".boi-age-yes")) gate.confirm(false);
-      else if (e.target.closest(".boi-age-no") || e.target === wrap) wrap.remove();
+      else if (e.target.closest(".boi-age-no") || e.target.closest(".boi-age-x") || e.target === wrap) wrap.remove();
     });
     document.body.appendChild(wrap);
   }
@@ -1749,13 +1752,18 @@ window.AGE_GATED_TAGS = ["Animal Gangsters"];
     var css = document.createElement("style");
     css.textContent =
       ".boi-age-blur{filter:blur(9px)!important;cursor:pointer}" +
-      "#boi-age-pop{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}" +
-      "#boi-age-pop .boi-age-box{background:#fff;color:#111;border:4px solid #111;box-shadow:6px 6px 0 #111;max-width:360px;width:100%;padding:20px;text-align:center;font-family:inherit}" +
-      "#boi-age-pop .boi-age-title{font-size:22px;font-weight:bold;margin-bottom:10px}" +
-      "#boi-age-pop .boi-age-text{font-size:15px;margin-bottom:16px;line-height:1.35}" +
-      "#boi-age-pop .boi-age-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}" +
-      "#boi-age-pop button{font:inherit;font-weight:bold;padding:10px 14px;border:3px solid #111;background:#f1c40f;color:#111;cursor:pointer}" +
-      "#boi-age-pop .boi-age-no{background:#ddd}";
+      "#boi-age-pop{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:'Courier New',Courier,monospace}" +
+      "#boi-age-pop .boi-age-box{position:relative;background:linear-gradient(135deg,#1a1a1a 0%,#222 100%);border:3px solid #333;border-radius:0;padding:36px;max-width:min(500px,100%);box-sizing:border-box;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}" +
+      "#boi-age-pop .boi-age-title{font-size:clamp(1.2rem,4.5vw,1.8rem);color:#335699;margin-bottom:15px;padding:0 24px;text-transform:uppercase;font-weight:bold;letter-spacing:2px}" +
+      "#boi-age-pop .boi-age-text{font-size:1.1rem;color:#ccc;margin-bottom:30px;line-height:1.5}" +
+      "#boi-age-pop .boi-age-btns{display:flex;gap:15px;justify-content:center;flex-wrap:wrap}" +
+      "#boi-age-pop .boi-age-btn{background:#335699;border:2px solid #2a4a7a;color:#fff;padding:12px 30px;font-size:1rem;cursor:pointer;border-radius:0;text-transform:uppercase;font-weight:bold;font-family:inherit;box-shadow:none}" +
+      "#boi-age-pop .boi-age-btn:hover{background:#3d6ab8;border-color:#eee}" +
+      "#boi-age-pop .boi-age-no{background:#555;border-color:#777}" +
+      "#boi-age-pop .boi-age-no:hover{background:#666;border-color:#eee}" +
+      "#boi-age-pop .boi-age-x{position:absolute;top:10px;right:10px;background:transparent;border:none;color:#666;font-size:1.5rem;cursor:pointer;line-height:1;padding:0;font-family:inherit}" +
+      "#boi-age-pop .boi-age-x:hover{color:#fff}" +
+      "@media (max-width:560px){#boi-age-pop{padding:12px}#boi-age-pop .boi-age-box{padding:24px 18px}#boi-age-pop .boi-age-text{font-size:1rem;margin-bottom:20px}#boi-age-pop .boi-age-btn{padding:12px 20px;font-size:.9rem}}";
     document.head.appendChild(css);
     window.addEventListener("click", onClick, true);
     scan();
