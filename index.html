@@ -12986,7 +12986,7 @@
         if (!blackFridayPreviewing()) return false;
         showPopup(
           "PREVIEW",
-          "These are the Black Friday prices. Turn the preview off to buy.",
+          "These are the Block Friday prices. Turn the preview off to buy.",
           () => {},
         );
         return true;
@@ -13019,7 +13019,7 @@
         el.innerHTML =
           "<div>" +
           '<div class="bf-title">' +
-          (on ? "BLACK FRIDAY" : previewing ? "BLACK FRIDAY PREVIEW" : "BLACK FRIDAY IN") +
+          (on ? "BLOCK FRIDAY" : previewing ? "BLOCK FRIDAY PREVIEW" : "BLOCK FRIDAY IN") +
           "</div>" +
           '<div class="bf-sub">' +
           (on ? "HALF PRICE &middot; ENDS IN" : "EVERYTHING HALF PRICE") +
@@ -13261,6 +13261,10 @@
         if (cosmeticKind(l.skin_id) === "emote") return SHOP_EMOTE_SECTION;
         // Skins sold in a section named for them
         if (SHOP_SKIN_SECTIONS[l.skin_id]) return SHOP_SKIN_SECTIONS[l.skin_id];
+        // ...or a skins.js tag that names a section (SHOP_TAG_SECTIONS), so a
+        // shop row for any skin with that tag files itself there
+        const tagSec = shopTagSectionOf(l.skin_id);
+        if (tagSec) return tagSec;
         // A skin skins.js tags as a later shop season than this one gets that
         // season's own section ("Shop S5" -> "Shop Season 5")
         const n = shopSeasonOfSkin(l.skin_id);
@@ -13288,6 +13292,16 @@
         coolguyforehead: "Forehead",
         dinoforehead: "Forehead",
       };
+      // skins.js tags that are a Main Shop section of their own. Selling one
+      // is just a shop row (no code change): Animal Gangsters rows 947-949
+      // sit inactive until they are switched on.
+      const SHOP_TAG_SECTIONS = ["Animal Gangsters"];
+      function shopTagSectionOf(id) {
+        const def = skin_definitions[id];
+        if (!def || !def.tag) return null;
+        const tags = Array.isArray(def.tag) ? def.tag : [def.tag];
+        return SHOP_TAG_SECTIONS.find((t) => tags.includes(t)) || null;
+      }
       // The Environments section's order: these first, the rest after
       const SHOP_ENVIRONMENT_ORDER = ["environment:frogcrown"];
       const SHOP_EMOTE_SECTION = "Get Your Emotes";
@@ -13296,6 +13310,7 @@
       // The sections drawn at the top of the Main Shop, in this order (a
       // newer shop season comes after them)
       const SHOP_TOP_ORDER = [
+        "Animal Gangsters",
         "Bigtopia",
         SHOP_BIGTOPIA_SEPPE,
         SHOP_TOP_SECTION,
@@ -19432,6 +19447,8 @@
           if (cloudData.gameSettings) {
             const cloudMods = cloudData.gameSettings.mods;
             gameSettings = Object.assign(gameSettings, cloudData.gameSettings);
+            // Said 13+ on another device: no blur here either (skins.js)
+            if (gameSettings.age13 && window.boiAgeGate) window.boiAgeGate.confirm(true);
             // Every mod reads and writes modSettings, so that object has to
             // stay the one that is saved. Taking the cloud's mods object
             // whole left the Mods screen writing to a copy nothing saved
@@ -23904,6 +23921,16 @@
       function saveSettings(skipCloud = false) {
         safeStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
         if (!skipCloud) syncDataToCloud();
+      }
+      // The 13+ age check (skins.js): YES is kept in the account's settings
+      // too, so it follows the player to every device
+      if (window.boiAgeGate) {
+        if (gameSettings.age13) window.boiAgeGate.confirm(true);
+        window.boiAgeGate.onConfirm(() => {
+          if (gameSettings.age13) return;
+          gameSettings.age13 = true;
+          saveSettings();
+        });
       }
 
       function saveHighscores(skipCloud = false) {

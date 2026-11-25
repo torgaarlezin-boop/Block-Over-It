@@ -1125,7 +1125,6 @@ window.SKIN_DEFINITIONS = {
     color: "#545454",
     artist: "Torgaar & Deacon",
     theCity: true,
-    tag: "The City Series"
   },
   fato: {
     name: "Fato",
@@ -1398,7 +1397,7 @@ window.SKIN_DEFINITIONS = {
     copies: "1/4",
     color: "#fadb43",
     collection: "Cool Guy",
-    tag: "The City"
+    theCity: true,
   },
   redgreenblue: {
     name: "Cool Guy (Red Green Blue)",
@@ -1524,6 +1523,33 @@ window.SKIN_DEFINITIONS = {
     color: "#e7191f",
     collection: "Rainbow Monster",
     tag: "Blockydays"
+  },
+  catgangster: {
+    name: "Cat (Gangster)",
+    artist: "Torgaar, Deacon, & TOBYISBETTER",
+    copies: "1/4",
+    color: "#675a5a",
+    collection: "Cat",
+    theCity: true,
+    tag: "Animal Gangsters"
+  },
+  chickengangster: {
+    name: "Chicken (Gangster)",
+    artist: "Torgaar, Deacon, & TOBYISBETTER",
+    copies: "1/4",
+    color: "#fadb43",
+    collection: "Chicken",
+    theCity: true,
+    tag: "Animal Gangsters"
+  },
+  piggangster: {
+    name: "Pig (Gangster)",
+    artist: "Torgaar, Deacon, & TOBYISBETTER",
+    copies: "1/4",
+    color: "#ea75c9",
+    collection: "Pig",
+    theCity: true,
+    tag: "Animal Gangsters"
   }
 
 
@@ -1594,3 +1620,150 @@ window.skinImageFile = function (id) {
   if (window.SKIN_IMAGE_OVERRIDES[id]) return window.SKIN_IMAGE_OVERRIDES[id];
   return id + "." + window.skinFileExtension(id);
 };
+
+// ---- AGE CHECK (13+) ----
+// Skins with a tag in AGE_GATED_TAGS (or `ageGate: true` on their entry) are
+// drawn blurred on every page that loads this file. Clicking one asks if the
+// viewer is 13 or older; YES is kept on this device for good (and, in the
+// game, in the account's settings), and nothing is blurred from then on.
+// NO leaves them blurred. To gate more skins, tag them -- no other change.
+window.AGE_GATED_TAGS = ["Animal Gangsters"];
+(function () {
+  var KEY = "boi-age-13";
+  var ok = false;
+  try { ok = localStorage.getItem(KEY) === "yes"; } catch (e) {}
+  var listeners = [];
+  var gate = (window.boiAgeGate = {
+    ok: function () { return ok; },
+    // silent: from saved settings, no popup
+    confirm: function (silent) {
+      if (ok) return;
+      ok = true;
+      try { localStorage.setItem(KEY, "yes"); } catch (e) {}
+      unblurAll();
+      stop();
+      if (!silent) listeners.forEach(function (f) { try { f(); } catch (e) {} });
+    },
+    onConfirm: function (f) { listeners.push(f); if (ok) try { f(); } catch (e) {} },
+    ids: gatedIds,
+  });
+  if (ok) return;
+
+  function gatedIds() {
+    var defs = window.SKIN_DEFINITIONS || {};
+    var out = [];
+    Object.keys(defs).forEach(function (id) {
+      var d = defs[id] || {};
+      var tags = d.tag ? (Array.isArray(d.tag) ? d.tag : [d.tag]) : [];
+      if (d.ageGate || tags.some(function (t) { return window.AGE_GATED_TAGS.indexOf(t) >= 0; }))
+        out.push(id);
+    });
+    return out;
+  }
+  // What a page's markup holds for each gated skin: its id and its file
+  function needles() {
+    var set = {};
+    gatedIds().forEach(function (id) {
+      set[id] = 1;
+      try { set[String(window.skinImageFile(id)).split("/").pop()] = 1; } catch (e) {}
+    });
+    return Object.keys(set);
+  }
+  var selector = null;
+  function sel() {
+    if (selector === null) {
+      selector = needles()
+        .map(function (n) {
+          var q = n.replace(/["\\]/g, "");
+          return '[src*="' + q + '"],[style*="' + q + '"]';
+        })
+        .join(",");
+    }
+    return selector;
+  }
+  function scan() {
+    if (ok || !document.body || !sel()) return;
+    var els = document.querySelectorAll(sel());
+    for (var i = 0; i < els.length; i++) els[i].classList.add("boi-age-blur");
+    // A picture changed to another skin loses the blur
+    var old = document.querySelectorAll(".boi-age-blur");
+    for (var j = 0; j < old.length; j++) if (!old[j].matches(sel())) old[j].classList.remove("boi-age-blur");
+  }
+  function unblurAll() {
+    var old = document.querySelectorAll(".boi-age-blur");
+    for (var j = 0; j < old.length; j++) old[j].classList.remove("boi-age-blur");
+    var p = document.getElementById("boi-age-pop");
+    if (p) p.remove();
+  }
+
+  var queued = false;
+  function queue() {
+    if (queued) return;
+    queued = true;
+    setTimeout(function () { queued = false; scan(); }, 60);
+  }
+  var observer = null, timer = null;
+  function stop() {
+    if (observer) observer.disconnect();
+    if (timer) clearInterval(timer);
+    window.removeEventListener("click", onClick, true);
+  }
+
+  function popup() {
+    if (document.getElementById("boi-age-pop")) return;
+    var wrap = document.createElement("div");
+    wrap.id = "boi-age-pop";
+    wrap.innerHTML =
+      '<div class="boi-age-box">' +
+      '<div class="boi-age-title">AGE CHECK</div>' +
+      '<div class="boi-age-text">This skin is for players 13 or older. Are you 13 or older?</div>' +
+      '<div class="boi-age-btns">' +
+      '<button type="button" class="btn boi-age-yes">YES, I AM 13+</button>' +
+      '<button type="button" class="btn boi-age-no">NO</button>' +
+      "</div></div>";
+    wrap.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (e.target.closest(".boi-age-yes")) gate.confirm(false);
+      else if (e.target.closest(".boi-age-no") || e.target === wrap) wrap.remove();
+    });
+    document.body.appendChild(wrap);
+  }
+  function onClick(e) {
+    if (ok) return;
+    if (e.target.closest && e.target.closest("#boi-age-pop")) return;
+    var hit = e.target.closest && e.target.closest(".boi-age-blur");
+    if (!hit && document.elementsFromPoint && e.clientX + e.clientY > 0) {
+      var under = document.elementsFromPoint(e.clientX, e.clientY);
+      for (var i = 0; i < under.length; i++)
+        if (under[i].classList && under[i].classList.contains("boi-age-blur")) { hit = under[i]; break; }
+    }
+    if (!hit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    popup();
+  }
+
+  function start() {
+    if (ok) return;
+    var css = document.createElement("style");
+    css.textContent =
+      ".boi-age-blur{filter:blur(9px)!important;cursor:pointer}" +
+      "#boi-age-pop{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}" +
+      "#boi-age-pop .boi-age-box{background:#fff;color:#111;border:4px solid #111;box-shadow:6px 6px 0 #111;max-width:360px;width:100%;padding:20px;text-align:center;font-family:inherit}" +
+      "#boi-age-pop .boi-age-title{font-size:22px;font-weight:bold;margin-bottom:10px}" +
+      "#boi-age-pop .boi-age-text{font-size:15px;margin-bottom:16px;line-height:1.35}" +
+      "#boi-age-pop .boi-age-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}" +
+      "#boi-age-pop button{font:inherit;font-weight:bold;padding:10px 14px;border:3px solid #111;background:#f1c40f;color:#111;cursor:pointer}" +
+      "#boi-age-pop .boi-age-no{background:#ddd}";
+    document.head.appendChild(css);
+    window.addEventListener("click", onClick, true);
+    scan();
+    observer = new MutationObserver(queue);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
+    // Pictures swapped by style alone (no new element) are caught here
+    timer = setInterval(scan, 1500);
+  }
+  if (document.body) start();
+  else document.addEventListener("DOMContentLoaded", start);
+})();
