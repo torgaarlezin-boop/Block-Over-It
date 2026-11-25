@@ -23399,6 +23399,21 @@
             done: claimed.has("style"),
             none: !secStatus.style,
           });
+        // For a while (2026-11-24): one free Scribbled 2 Crate each, Ruby
+        // and up, while the crates last (boi_sec_claim_crate). Gone from the
+        // page once they are all gone, unless you already have yours.
+        if (
+          secAtLeast("ruby") &&
+          (secStatus.crateClaimed || secStatus.crateLeft > 0)
+        )
+          rows.push({
+            key: "crate",
+            name: "Free Scribbled 2 Crate",
+            sub: secStatus.crateClaimed
+              ? "One per member"
+              : "While stock lasts - " + secStatus.crateLeft + " left",
+            done: !!secStatus.crateClaimed,
+          });
         rows.push({ name: "Blocky Emojis", sub: "Type / in a comment" });
         rows.push({ name: "Mods", sub: "In Settings" });
 
@@ -23507,10 +23522,13 @@
         drawSecPage();
         let res;
         try {
-          const { data, error } = await _supabase.rpc("boi_sec_claim", {
-            p_username: user,
-            p_reward: key,
-          });
+          const { data, error } =
+            key === "crate"
+              ? await _supabase.rpc("boi_sec_claim_crate", { p_username: user })
+              : await _supabase.rpc("boi_sec_claim", {
+                  p_username: user,
+                  p_reward: key,
+                });
           if (error) checkSessionError(error);
           res = error ? { ok: false, reason: "error" } : data || { ok: false, reason: "error" };
         } catch (e) {
@@ -23537,9 +23555,27 @@
               await ensureOwnSkin(res.skin);
             } catch (e) {}
             showSkinUnlock(res.skin, "Your SEC Style for this month.", { title: "SEC" });
+          } else if (key === "crate") {
+            // The server put it on the account; read the list back
+            try {
+              await loadCrates();
+            } catch (e) {}
+            showPopup(
+              "SEC",
+              "A Scribbled 2 Crate is yours. Open it from the shop.",
+              () => {},
+            );
           }
         } else if (res.reason === "already") {
-          showPopup("SEC", "You already claimed this one this month.", () => {});
+          showPopup(
+            "SEC",
+            key === "crate"
+              ? "You already claimed your free crate."
+              : "You already claimed this one this month.",
+            () => {},
+          );
+        } else if (res.reason === "gone") {
+          showPopup("SEC", "The free crates have all gone.", () => {});
         } else if (res.reason === "have-pass") {
           showPopup("SEC", "You already have the Blockpass.", () => {});
         } else if (res.reason === "not-member" || res.reason === "rank") {
