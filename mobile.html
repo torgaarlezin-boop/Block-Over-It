@@ -3667,7 +3667,7 @@
         if (extra.dataset.kind === "emotes") return;
         const upTo = input.value.slice(0, input.selectionStart == null ? input.value.length : input.selectionStart);
         // Blocky Emojis are an SEC benefit
-        const m = api.isSec && api.isSec() ? upTo.match(/\/([A-Za-z0-9_]*)$/) : null;
+        const m = !api.isSec || api.isSec() !== false ? upTo.match(/\/([A-Za-z0-9_]*)$/) : null;
         if (!m) {
           if (extra.dataset.kind === "tokens") {
             extra.innerHTML = "";
