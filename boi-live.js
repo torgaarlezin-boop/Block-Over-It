@@ -213,6 +213,11 @@
     if (getAvailableSkins().indexOf(skin) === -1) return "default";
     return skin;
   }
+  // Whether this player has TV (Remastered) on over that skin (the game's
+  // tvOverlayOn; see TV_OVERLAY in skins.js)
+  function wornTv() {
+    return typeof tvOverlayOn === "function" && tvOverlayOn();
+  }
 
   var STYLE = [
     // ---- the block kit ----
@@ -674,7 +679,7 @@
       s === "full" || s === "offline" || menuEls.status.classList.contains("flash"),
     );
     menuEls.who.innerHTML = "";
-    menuEls.who.appendChild(swatch(wornSkin()));
+    menuEls.who.appendChild(swatch(wornSkin(), wornTv()));
     menuEls.who.appendChild(
       document.createTextNode(
         "PLAYING AS " + myName() + (currentUser ? "" : " (SIGN IN TO WEAR YOUR SKINS)"),
@@ -1840,6 +1845,7 @@
       run.inBits,
     ];
     var skin = wornSkin();
+    var tv = wornTv() ? 1 : 0;
     // The grinders ride along from whichever game moves them
     var gr =
       run.grinders && run.grinders.length && grinderBoss() === myId ? grinderStates() : undefined;
@@ -1850,7 +1856,7 @@
     var dt = race ? run.deaths : undefined;
     // The skin and the board's numbers only when they changed, and once a
     // second in case a packet with them was lost
-    var extras = skin + "|" + cl + "|" + ct + "|" + dt;
+    var extras = skin + "|" + tv + "|" + cl + "|" + ct + "|" + dt;
     var withExtras = extras !== run.sentExtras || t - run.extrasAt >= EXTRAS_EVERY_MS;
     if (withExtras) {
       run.sentExtras = extras;
@@ -1861,6 +1867,7 @@
       lv: run.token,
       sp: run.spawnId,
       sk: withExtras ? skin : undefined,
+      tv: withExtras ? tv : undefined,
       s: [snap],
       gr: gr,
       cl: withExtras ? cl : undefined,
@@ -1894,6 +1901,7 @@
           lv: run.token,
           sp: run.spawnId,
           sk: skin,
+          tv: tv,
           s: relayBuf,
           gr: gr,
           cl: cl,
@@ -1983,8 +1991,11 @@
     }
     if (rm.buf.length > 60) rm.buf.splice(0, rm.buf.length - 60);
     // Packets without the skin keep the one before
-    if (typeof pkt.sk === "string") rm.skin = pkt.sk.slice(0, 64);
-    else if (!rm.skin) rm.skin = "default";
+    if (typeof pkt.sk === "string") {
+      rm.skin = pkt.sk.slice(0, 64);
+      // The TV rides with the skin; a game from before it sends none
+      rm.tv = pkt.tv === 1;
+    } else if (!rm.skin) rm.skin = "default";
     if (pkt.ct != null) {
       rm.ct = Math.max(0, Math.floor(num(pkt.ct)));
       rm.cl = clamp(Math.floor(num(pkt.cl)), 0, rm.ct);
@@ -2988,16 +2999,18 @@
   // Drawn the way syncActors draws the player: green when through, red when
   // down, the emo faces, the ghost's float, a framed skin's frames and crown.
   // `e` is the emote they are doing, if any.
-  function paintRacer(node, skin, st, e) {
+  // `tv`: TV (Remastered) on over the skin, the skin in its screen; `box`
+  // is the block's width / height, for where the screen goes.
+  function paintRacer(node, skin, st, e, tv, box) {
     var frame = racerFrame(skin, st, e);
-    var key = skin + "|" + st + "|" + (frame || "");
+    var key = skin + "|" + st + "|" + (frame || "") + "|" + (tv ? box.toFixed(3) : "");
     if (node.lvKey === key) return;
     node.lvKey = key;
     if (typeof syncSkinCrown === "function")
-      syncSkinCrown(node, frame && SKIN_FRAMES[skin].crown);
+      syncSkinCrown(node, !tv && frame && SKIN_FRAMES[skin].crown);
     // A metallic Blocky shines while it is still racing
     if (typeof syncSkinShine === "function")
-      syncSkinShine(node, !st && skinFx(skin));
+      syncSkinShine(node, !tv && !st && skinFx(skin));
     var s = node.style;
     s.backgroundImage = "";
     s.filter = "";
@@ -3020,7 +3033,19 @@
     } else {
       s.backgroundColor = st === 1 ? "#a04040" : st === 2 ? "#2ecc71" : "#335699";
     }
-    if (skin === GHOST_SKIN) s.opacity = String(GHOST_OPACITY);
+    if (skin === GHOST_SKIN && !tv) s.opacity = String(GHOST_OPACITY);
+    if (typeof syncTvScreen === "function")
+      syncTvScreen(node, !!tv, box, st === 1 ? "lost" : st === 2 ? "won" : null, skin);
+  }
+  // Whether to draw a racer's TV: they say it is on, their account owns it,
+  // and the skin under it fits in it
+  function racerTv(member, rm, skin) {
+    return (
+      !!rm.tv &&
+      typeof TV_SKIN === "string" &&
+      shownSkin(member, TV_SKIN) === TV_SKIN &&
+      tvSupports(skin)
+    );
   }
 
   function hideRemote(rm) {
@@ -3064,18 +3089,29 @@
 
       var at = rm.at;
       var skin = shownSkin(member, rm.skin);
-      paintRacer(rm.el, skin, at.st, remoteEmote(rm));
+      var tv = racerTv(member, rm, skin);
       var w = isImageSkin(skin) ? 1 : 0.5;
+      // How tall the block is drawn: the hitbox, or the TV's whole picture
+      // with its body covering the hitbox (the game's tvBox)
+      var hh = at.h;
+      var tb = tv ? tvBox(at.h) : null;
+      if (tb) {
+        w = tb.w;
+        hh = tb.h;
+      }
+      paintRacer(rm.el, skin, at.st, remoteEmote(rm), tv, w / Math.max(0.01, hh));
       var x = rm.disp.x - (w - 0.5) / 2;
-      var y = rm.disp.y;
+      var y = tb && at.g > 0 ? rm.disp.y + at.h - hh : rm.disp.y;
       // On a wall: laid out upright around the middle of their 1 x 0.5
-      // hitbox, then turned a quarter (below) so their feet face the wall
+      // hitbox, then turned a quarter (below) so their feet face the wall.
+      // The TV's middle sits off the hitbox's, away from the wall.
       var side = Math.abs(at.g) === 2;
       if (side) {
-        x = rm.disp.x + at.h / 2 - w / 2;
-        y = rm.disp.y + 0.25 - at.h / 2;
+        var off = tb ? ((at.g > 0 ? 1 : -1) * (hh - at.h)) / 2 : 0;
+        x = rm.disp.x + at.h / 2 - off - w / 2;
+        y = rm.disp.y + 0.25 - hh / 2;
       }
-      if (skin === GHOST_SKIN) y -= at.g < 0 ? -GHOST_FLOAT : GHOST_FLOAT;
+      if (skin === GHOST_SKIN && !tv) y -= at.g < 0 ? -GHOST_FLOAT : GHOST_FLOAT;
       // An emote's pose: lifted, or toppled over its back corner
       var pose = remotePose(rm, t);
       if (pose && pose.lift) y += at.g < 0 ? pose.lift : -pose.lift;
@@ -3089,7 +3125,7 @@
       var px = Math.round(x * s);
       var py = Math.round(y * s);
       var pw = Math.round(w * s);
-      var ph = Math.max(1, Math.round(at.h * s));
+      var ph = Math.max(1, Math.round(hh * s));
       var n = rm.el;
       if (n.lvX !== px || n.lvY !== py) {
         n.lvX = px;
@@ -3128,7 +3164,7 @@
       }
 
       // The reflection skin's mirrors show this level, a few times a second
-      if (skin === REFLECTION_SKIN) {
+      if (skin === REFLECTION_SKIN && !tv) {
         if (t - (rm.reflAt || 0) > 90) {
           rm.reflAt = t;
           run.display.syncSkinReflection(n, null);
@@ -3144,7 +3180,10 @@
       var tx = Math.round(
         clamp((rm.disp.x + 0.25) * s, half, Math.max(half, run.level.width * s - half)),
       );
-      var ty = Math.round((at.g < 0 ? rm.disp.y + at.h + 0.6 : rm.disp.y) * s) - 4 - lift;
+      // Clear of the TV's antennae too
+      var over = tb ? hh - at.h : 0;
+      var ty =
+        Math.round((at.g < 0 ? rm.disp.y + at.h + 0.6 + over : rm.disp.y - over) * s) - 4 - lift;
       if (rm.tag.lvX !== tx || rm.tag.lvY !== ty) {
         rm.tag.lvX = tx;
         rm.tag.lvY = ty;
@@ -3918,10 +3957,11 @@
   // ---- small blocks ----
   // A player as a block: their skin's picture, or the plain block a default
   // or a colour-trail skin is
-  function swatch(skin) {
+  function swatch(skin, tv) {
     var s = el("span", "lv-sw");
     var trail = TRAIL_SKINS[skin];
-    if (!skin || skin === "default" || !knownSkin(skin)) {
+    if (tv) s.style.backgroundImage = "url('" + skinImageFile(TV_SKIN) + "')";
+    else if (!skin || skin === "default" || !knownSkin(skin)) {
       s.className += " plain";
       s.style.background = "#335699";
     } else if (trail && trail.color) {
@@ -3936,6 +3976,12 @@
       s.style.backgroundImage =
         "url('" + (EMO_FACES[skin] ? EMO_FACES[skin][0] : skinImageFile(skin)) + "')";
     return s;
+  }
+  function memberTv(m) {
+    if (!m) return false;
+    if (m.id === myId) return wornTv();
+    var rm = room.remotes[m.id];
+    return !!rm && racerTv(m, rm, shownSkin(m, rm.skin));
   }
   function memberSkin(m) {
     if (m.id === myId) return wornSkin();
@@ -4158,7 +4204,7 @@
         if (res.time != null) place++;
         row.appendChild(placeBlock(res.time != null ? place : 0));
         var m = memberOf(res.id);
-        row.appendChild(swatch(m ? memberSkin(m) : "default"));
+        row.appendChild(swatch(m ? memberSkin(m) : "default", memberTv(m)));
         row.appendChild(el("span", "lv-nm", cleanName(res.n)));
         if (coin && i === 0 && res.time != null) {
           var bc = el("span", "lv-tagblock", "+1");
@@ -4175,7 +4221,7 @@
       r.members.forEach(function (m) {
         if (shown[m.id]) return;
         var row = el("div", "lv-row" + (m.id === myId ? " me" : ""));
-        row.appendChild(swatch(memberSkin(m)));
+        row.appendChild(swatch(memberSkin(m), memberTv(m)));
         row.appendChild(el("span", "lv-nm", cleanName(m.n)));
         if (canKick(m)) row.appendChild(kickButton(m));
         b.appendChild(row);
@@ -4205,7 +4251,7 @@
       var row = el("div", "lv-row" + (m.id === myId ? " me" : ""));
       var fin = racing ? r.fins[m.id] : null;
       if (fin != null) row.appendChild(placeBlock(finishPlace(m.id)));
-      row.appendChild(swatch(memberSkin(m)));
+      row.appendChild(swatch(memberSkin(m), memberTv(m)));
       row.appendChild(el("span", "lv-nm", cleanName(m.n)));
       if (wins[m.id]) {
         var w = el("span", "lv-tagblock gold", wins[m.id] + "W");

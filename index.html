@@ -250,6 +250,25 @@
         background-repeat: no-repeat;
         pointer-events: none;
       }
+      /* TV (Remastered): the skin under it, shown in its screen */
+      .tv-screen {
+        position: absolute;
+        pointer-events: none;
+      }
+      .tv-inner {
+        position: absolute;
+        inset: 0;
+        background-position: center;
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+      .tv-inner.tv-plain {
+        inset: auto 0;
+        top: 50%;
+        width: 100%;
+        aspect-ratio: 1 / 2;
+        transform: translateY(-50%);
+      }
       .lost .player {
         background: #a04040;
       }
@@ -15913,7 +15932,7 @@
             '<div class="shop-card-stage"' +
             viewSkinAttr(skin) +
             '><div class="shop-card-preview" style="' +
-            skinPreviewCSS(skin) +
+            shopSkinPreviewCSS(skin) +
             '"></div><div class="skin-platform"></div></div>' +
             '<div class="shop-card-name">' +
             escapeHtml(skinDisplayName(skin)) +
@@ -15947,7 +15966,7 @@
               '<div class="shop-card-stage"' +
               viewSkinAttr(item.skin) +
               '><div class="shop-card-preview" style="' +
-              skinPreviewCSS(item.skin) +
+              shopSkinPreviewCSS(item.skin) +
               '"></div><div class="skin-platform"></div></div>' +
               '<div class="shop-card-name">' +
               escapeHtml(skinDisplayName(item.skin)) +
@@ -15973,7 +15992,7 @@
             '<div class="shop-card-stage"' +
             viewSkinAttr(item.skin) +
             '><div class="shop-card-preview" style="' +
-            skinPreviewCSS(item.skin) +
+            shopSkinPreviewCSS(item.skin) +
             '"></div><div class="skin-platform"></div></div>' +
             '<div class="shop-card-name">' +
             escapeHtml(skinDisplayName(item.skin)) +
@@ -17278,7 +17297,7 @@
                 ? '<div class="shop-card-stage bt-stage"' +
                   viewSkinAttr(r.skin) +
                   '><div class="shop-card-preview" style="' +
-                  skinPreviewCSS(r.skin) +
+                  shopSkinPreviewCSS(r.skin) +
                   '"></div><div class="skin-platform"></div></div>'
                 : '<div class="shop-card-stage bt-stage"><div class="bt-coin">' +
                   r.coins +
@@ -17844,7 +17863,7 @@
               '<div class="shop-card-stage bt-stage"' +
               viewSkinAttr(r.skin) +
               '><div class="shop-card-preview" style="' +
-              skinPreviewCSS(r.skin) +
+              shopSkinPreviewCSS(r.skin) +
               '"></div><div class="skin-platform"></div></div>';
           else if (r.item)
             // As the shop shows it: an emote on your block, a loading screen
@@ -18293,7 +18312,7 @@
           '<div class="shop-card-stage bt-stage"' +
             viewSkinAttr(DARK_SKIN) +
             '><div class="shop-card-preview" style="' +
-            skinPreviewCSS(DARK_SKIN) +
+            shopSkinPreviewCSS(DARK_SKIN) +
             '"></div><div class="skin-platform"></div></div>',
           skinDisplayName(DARK_SKIN),
           !signedIn ? "Locked" : skinPaid ? "Claimed" : "Beat all levels",
@@ -20010,7 +20029,7 @@
             '<div class="sr-stage"' +
             viewSkinAttr(r.skin) +
             '><div class="shop-card-preview" style="' +
-            skinPreviewCSS(r.skin) +
+            shopSkinPreviewCSS(r.skin) +
             '"></div><div class="skin-platform"></div></div>' +
             '<div class="sr-name">' +
             escapeHtml(skinDisplayName(r.skin)) +
@@ -26231,6 +26250,214 @@
       const GHOST_SKIN = "ghost";
       const GHOST_FLOAT = 0.15; // blocks, in a level
       const GHOST_OPACITY = 0.55;
+
+      // ---- TV (Remastered) ----
+      // Worn over the skin you have on instead of replacing it (TV_OVERLAY in
+      // skins.js): gameSettings.tvOverlay says it is switched on, and
+      // currentSkin stays the skin shown in its screen.
+      const TV_OVERLAY = window.TV_OVERLAY || null;
+      const TV_SKIN = TV_OVERLAY ? TV_OVERLAY.id : null;
+      function tvSupports(id) {
+        return !!TV_OVERLAY && !!window.tvSupportsSkin && window.tvSupportsSkin(id);
+      }
+      function tvOverlayOn() {
+        return (
+          !!TV_SKIN &&
+          !!gameSettings.tvOverlay &&
+          currentUserSkins.includes(TV_SKIN) &&
+          tvSupports(gameSettings.currentSkin || "default")
+        );
+      }
+      // The TV's whole picture, in blocks, for a hitbox `hb` tall: its body
+      // (TV_OVERLAY.bodyTop down) exactly that tall
+      function tvBox(hb) {
+        const h = hb / (1 - TV_OVERLAY.bodyTop);
+        return { w: h * TV_OVERLAY.aspect, h };
+      }
+      // Whether a skin's card / viewer should say it is being worn
+      function skinIsWorn(id) {
+        return id === TV_SKIN ? tvOverlayOn() : gameSettings.currentSkin === id;
+      }
+      // Picking the TV. Over a skin it doesn't fit it simply does nothing.
+      function toggleTvOverlay() {
+        if (!TV_SKIN) return false;
+        const on = tvOverlayOn();
+        if (!on && !tvSupports(gameSettings.currentSkin || "default")) return false;
+        gameSettings.tvOverlay = !on;
+        saveSettings();
+        repaintWornSkinCards();
+        if (typeof activeLevelDisplay !== "undefined" && activeLevelDisplay)
+          activeLevelDisplay.syncActors();
+        showTopNotification(
+          skinDisplayName(TV_SKIN) + (gameSettings.tvOverlay ? " on" : " off"),
+        );
+        return true;
+      }
+      // The TV on the player's block in a level: the block's own picture (or
+      // colour) moves into a screen child, and the block shows the TV.
+      // `box` is the block's width / height, so the screen lands on the blue
+      // area wherever `contain` puts the TV.
+      function syncTvScreen(el, on, box, status, skin) {
+        let scr = el.boiTv;
+        if (!on) {
+          if (scr) {
+            scr.remove();
+            el.boiTv = null;
+          }
+          return;
+        }
+        if (!scr) {
+          scr = el.appendChild(document.createElement("div"));
+          scr.className = "tv-screen";
+          scr.appendChild(document.createElement("div")).className = "tv-inner";
+          el.boiTv = scr;
+        }
+        const inner = scr.firstChild;
+        const img = el.style.backgroundImage;
+        const plain = !img || img === "none";
+        inner.classList.toggle("tv-plain", plain);
+        inner.style.backgroundImage = plain ? "none" : img;
+        inner.style.backgroundColor = plain
+          ? status === "lost"
+            ? "#a04040"
+            : plainSkinColor(skin) ||
+              (TRAIL_SKINS[skin] && TRAIL_SKINS[skin].color) ||
+              "#335699"
+          : "transparent";
+
+        el.style.backgroundImage = "url('" + skinImageFile(TV_SKIN) + "')";
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
+        el.style.backgroundPosition = "center";
+        el.style.backgroundColor = "transparent";
+        el.style.filter =
+          status === "won"
+            ? "grayscale(100%) sepia(100%) hue-rotate(100deg) saturate(600%) contrast(0.8)"
+            : "";
+
+        // Where `contain` draws the TV in this box, then its screen in that
+        const a = TV_OVERLAY.aspect;
+        let tvX = 0, tvY = 0, tvW = 1, tvH = 1;
+        if (box > a) {
+          tvW = a / box;
+          tvX = (1 - tvW) / 2;
+        } else {
+          tvH = box / a;
+          tvY = (1 - tvH) / 2;
+        }
+        const sc = TV_OVERLAY.screen;
+        const pct = (n) => (n * 100).toFixed(3) + "%";
+        const key = box.toFixed(4);
+        if (scr.boiBox !== key) {
+          scr.boiBox = key;
+          scr.style.left = pct(tvX + sc.left * tvW);
+          scr.style.top = pct(tvY + sc.top * tvH);
+          scr.style.width = pct(sc.width * tvW);
+          scr.style.height = pct(sc.height * tvH);
+        }
+      }
+
+      // ---- the TV in previews ----
+      // Drawn as it is in a level: the TV, and in its screen the skin you
+      // have on -- or, in the shop and wherever that isn't yours to show,
+      // the showcase skins in turn (TV_OVERLAY.showcase).
+      function tvShowcaseSkin() {
+        const list = (TV_OVERLAY && TV_OVERLAY.showcase) || [];
+        const known = list.filter((id) => skin_definitions[id]);
+        if (!known.length) return "default";
+        const ms = TV_OVERLAY.showcaseMs || 1600;
+        return known[Math.floor(Date.now() / ms) % known.length];
+      }
+      // `cycle`: always the showcase, as the shop shows it
+      function tvPreviewInner(cycle) {
+        const mine = gameSettings.currentSkin || "default";
+        if (
+          !cycle &&
+          currentUserSkins.includes(TV_SKIN) &&
+          tvSupports(mine)
+        )
+          return { id: mine, cycle: false };
+        return { id: tvShowcaseSkin(), cycle: true };
+      }
+      // Two background layers: the skin, sized and placed on the TV's
+      // screen, over the TV itself. The TV stands the full height of the
+      // box, as `contain` puts it in any box wider than it is.
+      function tvPreviewCSS(cycle) {
+        const inner = tvPreviewInner(cycle);
+        const id = inner.id;
+        const sc = TV_OVERLAY.screen;
+        const plain =
+          plainSkinColor(id) ||
+          (TRAIL_SKINS[id] && TRAIL_SKINS[id].color) ||
+          (id === "default" ? "#335699" : null);
+        let pic, h;
+        if (plain) {
+          // The plain block: the screen's width across, twice as tall
+          pic =
+            "url('data:image/svg+xml," +
+            encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 2">' +
+                '<rect width="1" height="2" fill="' +
+                plain +
+                '"/></svg>',
+            ).replace(/'/g, "%27") +
+            "')";
+          h = sc.width * TV_OVERLAY.aspect * 2;
+        } else {
+          pic = "url('" + skinImageFile(id) + "')";
+          h = sc.height;
+        }
+        const mid = sc.top + sc.height / 2;
+        const y = ((mid - h / 2) / (1 - h)) * 100;
+        if (inner.cycle) preloadTvShowcase();
+        return (
+          "background-image:" +
+          pic +
+          ",url('" +
+          skinImageFile(TV_SKIN) +
+          "');background-size:auto " +
+          (h * 100).toFixed(2) +
+          "%,auto 100%;background-position:50% " +
+          y.toFixed(2) +
+          "%,50% 50%;background-repeat:no-repeat;background-color:transparent;" +
+          (inner.cycle ? "--tv-cycle:1;" : "")
+        );
+      }
+      // A preview of any skin as the shop shows it: the TV's turns through
+      // the showcase even when you own it
+      function shopSkinPreviewCSS(id) {
+        return id === TV_SKIN ? tvPreviewCSS(true) : skinPreviewCSS(id);
+      }
+      let tvShowcaseLoaded = false;
+      function preloadTvShowcase() {
+        if (tvShowcaseLoaded) return;
+        tvShowcaseLoaded = true;
+        ((TV_OVERLAY && TV_OVERLAY.showcase) || []).forEach((id) => {
+          if (skin_definitions[id]) new Image().src = skinImageFile(id);
+        });
+        // Every showcasing preview on screen moves on to the next skin
+        setInterval(() => {
+          const els = document.querySelectorAll('[style*="--tv-cycle"]');
+          if (!els.length) return;
+          const css = tvPreviewCSS(true);
+          els.forEach((el) => {
+            const keep = el.style.cssText
+              .split(";")
+              .filter((d) => d.trim() && !/^\s*(background|--tv-cycle)/.test(d))
+              .join(";");
+            el.style.cssText = (keep ? keep + ";" : "") + css;
+          });
+        }, (TV_OVERLAY && TV_OVERLAY.showcaseMs) || 1600);
+      }
+      // Your own TV cards after changing skin or switching it: the new skin
+      // in the screen
+      function repaintTvPreviews() {
+        document
+          .querySelectorAll(
+            '.skin-item[data-owner="self"][data-skin="' + TV_SKIN + '"] .skin-item-preview',
+          )
+          .forEach((el) => (el.style.cssText = tvPreviewCSS(false)));
+      }
 
       function getAvailableSkins() {
         return currentUserSkins;
@@ -33602,8 +33829,17 @@
             el.style.borderRadius = "";
             el.style.border = "";
             el.style.backgroundColor = actor.color || "";
+            // TV (Remastered) over the skin -- your own, never a friend's
+            // you are watching
+            const tvOn =
+              !this.level.forceDefaultSkin &&
+              !this.level.watchSkin &&
+              tvOverlayOn();
             // Metallic Blockies shine until they go red or green
-            syncSkinShine(el, this.level.status == null && skinFx(skin));
+            syncSkinShine(
+              el,
+              !tvOn && this.level.status == null && skinFx(skin),
+            );
 
             if (TRAIL_SKINS[skin] && TRAIL_SKINS[skin].color) {
               el.style.backgroundColor = TRAIL_SKINS[skin].color;
@@ -33681,7 +33917,32 @@
             // block's half-width -- around the middle of the hitbox, and
             // turned a quarter so its feet face the way gravity pulls.
             const sideways = actor.gravityAxis === "x";
-            if (sideways) {
+            if (tvOn) {
+              // The TV's body covers the hitbox, feet on the ground (or
+              // ceiling, or wall), antennae above it -- whatever is in its
+              // screen
+              const hb = sideways ? actor.size.x : actor.size.y;
+              const tv = tvBox(hb);
+              visualW = tv.w;
+              visualH = tv.h;
+              skinFullBox = true;
+              if (sideways) {
+                // Laid out upright, then turned a quarter so its feet face
+                // the wall: its middle sits off the hitbox's, away from it
+                const dir = actor.gravityDirection > 0 ? 1 : -1;
+                const cx =
+                  actor.pos.x + actor.size.x / 2 - (dir * (tv.h - hb)) / 2;
+                const cy = actor.pos.y + actor.size.y / 2;
+                visualX = cx - tv.w / 2;
+                visualY = cy - tv.h / 2;
+              } else {
+                visualX = actor.pos.x + actor.size.x / 2 - tv.w / 2;
+                visualY =
+                  actor.gravityDirection < 0
+                    ? actor.pos.y
+                    : actor.pos.y + actor.size.y - tv.h;
+              }
+            } else if (sideways) {
               const uprightW = skinFullBox ? 1 : actor.size.y;
               const uprightH = actor.size.x;
               visualX = actor.pos.x + actor.size.x / 2 - uprightW / 2;
@@ -33698,11 +33959,21 @@
             el.style.transform =
               `rotate(${(actor.rotation || 0) + sideTurn}deg)` +
               (flipY ? " scaleY(-1)" : "");
-            syncSkinCrown(el, SKIN_FRAMES[skin] && SKIN_FRAMES[skin].crown);
+            syncTvScreen(
+              el,
+              tvOn,
+              visualW / visualH,
+              this.level.status,
+              skin,
+            );
+            syncSkinCrown(
+              el,
+              !tvOn && SKIN_FRAMES[skin] && SKIN_FRAMES[skin].crown,
+            );
 
             // The ghost floats off whatever it is standing on: the floor, or
             // the ceiling when gravity is reversed.
-            if (skin === GHOST_SKIN) {
+            if (skin === GHOST_SKIN && !tvOn) {
               el.style.opacity = String(GHOST_OPACITY);
               if (sideways)
                 visualX -= (actor.gravityDirection > 0 ? 1 : -1) * GHOST_FLOAT;
@@ -33771,7 +34042,8 @@
           // are placed once the element has the size it will be drawn at.
           // Only the player ever wears one
           if (actor.type === "player") {
-            if (skin === REFLECTION_SKIN) this.syncSkinReflection(el, actor);
+            if (skin === REFLECTION_SKIN && !el.boiTv)
+              this.syncSkinReflection(el, actor);
             else if (el.dataset.reflected) clearSkinReflection(el);
           }
 
@@ -36875,9 +37147,10 @@
         // anywhere jammed S for the whole collection, not just for the skin
         // being worn. It walks the cards the skins screen shows, so a
         // collection is one step, in the version its card is showing.
-        const cards = skinGridUnits(getAvailableSkins()).map((unit) =>
-          unit.stacks.map((st) => st.id),
-        );
+        // The TV is switched on and off, never stepped into
+        const cards = skinGridUnits(
+          getAvailableSkins().filter((id) => id !== TV_SKIN),
+        ).map((unit) => unit.stacks.map((st) => st.id));
         if (!cards.length) return;
         const at = cards.findIndex((ids) =>
           ids.includes(gameSettings.currentSkin),
@@ -36887,6 +37160,8 @@
           next.length > 1
             ? collectionPick(skinCollectionName(next[0]), next, gameSettings)
             : next[0];
+        if (gameSettings.tvOverlay && !tvSupports(gameSettings.currentSkin))
+          gameSettings.tvOverlay = false;
         saveSettings();
         if (activeLevelDisplay) activeLevelDisplay.syncActors();
         skinChangedForEmotes();
@@ -38420,7 +38695,7 @@
             "</div>";
         view.innerHTML =
           '<div class="sv-skin" style="' +
-          skinPreviewCSS(id) +
+          (opts.canEquip ? skinPreviewCSS(id) : shopSkinPreviewCSS(id)) +
           '"></div><div class="sv-platform"></div>' +
           '<div class="sv-name">' +
           escapeHtml(skinDisplayName(id)) +
@@ -38438,16 +38713,30 @@
           const btn = document.createElement("button");
           btn.className = "sv-equip";
           btn.type = "button";
-          const on = gameSettings.currentSkin === id;
-          btn.disabled = on;
-          btn.textContent = on ? "Using" : "Use";
-          btn.onclick = (e) => {
-            e.stopPropagation();
-            equipSkin(id);
-            btn.disabled = true;
-            btn.textContent = "Using";
-            setTimeout(closeSkinViewer, 380);
-          };
+          const on = skinIsWorn(id);
+          if (id === TV_SKIN) {
+            // A switch: on over the skin you have, or off again. Over one
+            // it doesn't fit it can't be switched on.
+            btn.disabled = !on && !tvSupports(gameSettings.currentSkin);
+            btn.textContent = on ? "Take off" : "Use";
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              if (!toggleTvOverlay()) return;
+              btn.disabled = true;
+              btn.textContent = tvOverlayOn() ? "Using" : "Taken off";
+              setTimeout(closeSkinViewer, 380);
+            };
+          } else {
+            btn.disabled = on;
+            btn.textContent = on ? "Using" : "Use";
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              equipSkin(id);
+              btn.disabled = true;
+              btn.textContent = "Using";
+              setTimeout(closeSkinViewer, 380);
+            };
+          }
           view.insertBefore(btn, view.querySelector(".sv-hint"));
         }
         view.onclick = closeSkinViewer;
@@ -38829,6 +39118,7 @@
             SOLID_SKIN_OUTLINE
           );
         if (!/^[A-Za-z0-9_-]+$/.test(String(id))) return "";
+        if (id === TV_SKIN) return tvPreviewCSS(false);
         const art = "background-image:url('" + skinImageFile(id) + "');";
         // Hovering over its platform, see-through, as it is in a level.
         // `translate` stacks with the hover hop's transform.
@@ -38841,7 +39131,15 @@
       // The old path rebuilt the entire account page, which threw away the
       // scroll position every time you tried a skin on.
       function equipSkin(skinId) {
+        // TV (Remastered) goes on over the skin you have, or comes off
+        if (skinId === TV_SKIN) {
+          toggleTvOverlay();
+          return;
+        }
         gameSettings.currentSkin = skinId;
+        // The TV can't stay on over a skin that doesn't fit in it
+        if (gameSettings.tvOverlay && !tvSupports(skinId))
+          gameSettings.tvOverlay = false;
         // A collection's card keeps showing the one you wore last from it
         // after you change to something else.
         const col = skinCollectionName(skinId);
@@ -38852,6 +39150,12 @@
             { [col]: skinId },
           );
         saveSettings();
+        repaintWornSkinCards();
+        showTopNotification("Now using " + skinDisplayName(skinId));
+      }
+
+      // Which of your skin cards on screen say USING
+      function repaintWornSkinCards() {
         document
           .querySelectorAll('.skin-item[data-owner="self"]')
           .forEach((el) => {
@@ -38859,12 +39163,12 @@
               paintSkinCollection(el, gameSettings);
               return;
             }
-            const on = el.dataset.skin === skinId;
+            const on = skinIsWorn(el.dataset.skin);
             el.classList.toggle("in-use", on);
             const flag = el.querySelector(".skin-item-flag");
             if (flag) flag.hidden = !on;
           });
-        showTopNotification("Now using " + skinDisplayName(skinId));
+        repaintTvPreviews();
       }
 
       // Looking at an item. On your own collection it carries a Use button;
@@ -38916,7 +39220,9 @@
 
         const canEquip =
           currentUserSkins.includes(skinId) &&
-          gameSettings.currentSkin !== skinId;
+          (skinId === TV_SKIN
+            ? !tvOverlayOn() && tvSupports(gameSettings.currentSkin)
+            : gameSettings.currentSkin !== skinId);
         const buttons = [];
         if (canEquip) {
           buttons.push({
@@ -38961,7 +39267,7 @@
           copies: "Unknown",
         };
         const description = skinDescription(skinId);
-        const inUse = !!isInteractive && gameSettings.currentSkin === skinId;
+        const inUse = !!isInteractive && skinIsWorn(skinId);
 
         const el = document.createElement("div");
         el.className =
@@ -51406,7 +51712,7 @@
                   '">' +
                   (isCosmeticItem(it)
                     ? cosmeticPreviewHTML(it, 76, true)
-                    : '<div class="shop-card-preview" style="' + skinPreviewCSS(it) + '"></div>') +
+                    : '<div class="shop-card-preview" style="' + shopSkinPreviewCSS(it) + '"></div>') +
                   "</div>",
               )
               .join("") +
@@ -51438,7 +51744,7 @@
           '><div class="shop-card-preview' +
           (isCrateItem(id) ? " crate-block" : "") +
           '" style="' +
-          skinPreviewCSS(id) +
+          shopSkinPreviewCSS(id) +
           '"></div><div class="skin-platform"></div></div>'
         );
       }

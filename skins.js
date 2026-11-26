@@ -41,6 +41,13 @@ window.SKIN_DEFINITIONS = {
     tag: "OG"
   },
   tv: { name: "TV", copies: "1/2", color: "#f1eef4", artist: "Seppe",tag: "OG" },
+  // Worn over another skin rather than instead of it: see TV_OVERLAY below
+  tvremastered: {
+    name: "TV (Remastered)",
+    copies: "N/A",
+    color: "#1e90ff",
+    artist: "Torgaar",
+  },
   cubemouth: {
     name: "Cube Mouth",
     collection: "Cube Mouth",
@@ -1617,11 +1624,28 @@ window.SKIN_IMAGE_OVERRIDES = {
   shadow: "catshadow.png"
 };
 
-// Skins that change picture in a level when you win or die (like the
-// Emotions skins): id -> { win, dead }. Their normal picture is the usual one.
-// The game and LIVE both read this, so adding one here is all it takes.
+
 window.SKIN_END_FACES = {
   emotionssanta: { win: "emotionssantawin.png", dead: "emotionssantadead.png" },
+};
+
+window.TV_OVERLAY = {
+  id: "tvremastered",
+  aspect: 216 / 600,
+  screen: { left: 45 / 216, top: 251 / 600, width: 126 / 216, height: 272 / 600 },
+  bodyTop: 210 / 600,
+  unsupported: ["pinnochio", "dinodragon"],
+  showcase: ["coolguy", "zombie", "hazmatinfected", "cubemouthscribbled"],
+  showcaseMs: 1600,
+};
+
+window.tvSupportsSkin = function (id) {
+  var tv = window.TV_OVERLAY;
+  if (!id) id = "default";
+  if (id === tv.id) return false;
+  if (tv.unsupported.indexOf(id) >= 0) return false;
+  var def = (window.SKIN_DEFINITIONS || {})[id] || {};
+  return tv.unsupportedCollections.indexOf(def.collection) < 0;
 };
 
 window.TOBREAKER_SKIN_DIR = "skins/";
@@ -1683,7 +1707,6 @@ window.AGE_GATED_TAGS = ["Animal Gangsters"];
     });
     return out;
   }
-  // What a page's markup holds for each gated skin: its id and its file
   function needles() {
     var set = {};
     gatedIds().forEach(function (id) {
