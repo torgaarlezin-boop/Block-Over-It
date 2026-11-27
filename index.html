@@ -13274,8 +13274,12 @@
           (b) => b.alsoInSection && b.alsoInSection.includes(l.skin_id),
         );
         if (def) return def.section || def.name;
-        // LIVE lobbies are a section of their own
-        if (cosmeticKind(l.skin_id) === "environment") return "Environments";
+        // LIVE lobbies are a section of their own, unless their tag names
+        // one (SHOP_TAG_SECTIONS: Starry Night is sold under Starry)
+        if (cosmeticKind(l.skin_id) === "environment") {
+          const env = environmentById(cosmeticKey(l.skin_id));
+          return tagSectionOf(env && env.tag) || "Environments";
+        }
         // The game's emotes for sale have a section of their own
         if (cosmeticKind(l.skin_id) === "emote") return SHOP_EMOTE_SECTION;
         // Skins sold in a section named for them
@@ -13310,15 +13314,22 @@
         midas: SHOP_BIGTOPIA_SEPPE,
         coolguyforehead: "Forehead",
         dinoforehead: "Forehead",
+        tvremastered: "BlockTV",
       };
       // skins.js tags that are a Main Shop section of their own. Selling one
       // is just a shop row (no code change): Animal Gangsters rows 947-949
       // sit inactive until they are switched on.
-      const SHOP_TAG_SECTIONS = ["Animal Gangsters"];
+      // Starry sits inactive the same way: rows 960 (Cool Guy (Starry),
+      // 110, 4 copies) and 961 (the Starry Night environment, 130).
+      const SHOP_TAG_SECTIONS = ["Animal Gangsters", "Starry"];
       function shopTagSectionOf(id) {
         const def = skin_definitions[id];
-        if (!def || !def.tag) return null;
-        const tags = Array.isArray(def.tag) ? def.tag : [def.tag];
+        return tagSectionOf(def && def.tag);
+      }
+      // The section a `tag` (one or a list) names, if any
+      function tagSectionOf(tag) {
+        if (!tag) return null;
+        const tags = Array.isArray(tag) ? tag : [tag];
         return SHOP_TAG_SECTIONS.find((t) => tags.includes(t)) || null;
       }
       // The Environments section's order: these first, the rest after
@@ -13330,6 +13341,8 @@
       // newer shop season comes after them)
       const SHOP_TOP_ORDER = [
         "Animal Gangsters",
+        "Starry",
+        "BlockTV",
         "Bigtopia",
         SHOP_BIGTOPIA_SEPPE,
         SHOP_TOP_SECTION,
@@ -26332,7 +26345,7 @@
               "#335699"
           : "transparent";
 
-        el.style.backgroundImage = "url('" + skinImageFile(TV_SKIN) + "')";
+        el.style.backgroundImage = "url('" + tvFileFor(skin) + "')";
         el.style.backgroundSize = "contain";
         el.style.backgroundRepeat = "no-repeat";
         el.style.backgroundPosition = "center";
@@ -26364,6 +26377,86 @@
         }
       }
 
+      // ---- the TV's screen, in the colour of the skin in it ----
+      // The blue of the screen (and its darker blends into the black frame)
+      // is repainted in the skin's colour -- its card colour, or a plain
+      // Blocky's own -- so wherever the skin doesn't cover the screen, that
+      // colour shows. Made once per colour on a canvas; until it is ready
+      // (or if the browser won't), the plain TV.
+      const TV_SCREEN_BLUE = [56, 182, 255];
+      const tvTints = {}; // colour -> data URL, "pending" or "failed"
+      let tvTintVersion = 0; // goes up as each one is ready
+      let tvBaseImg = null;
+      function tvScreenColor(id) {
+        return (
+          plainSkinColor(id) ||
+          (TRAIL_SKINS[id] && TRAIL_SKINS[id].color) ||
+          (skin_definitions[id] && skin_definitions[id].color) ||
+          (id === "default" ? "#335699" : null)
+        );
+      }
+      // The TV picture to draw over skin `id`
+      function tvFileFor(id) {
+        const base = skinImageFile(TV_SKIN);
+        const color = tvScreenColor(id);
+        if (!color) return base;
+        const got = tvTints[color];
+        if (got === undefined) makeTvTint(color);
+        return got && got !== "pending" && got !== "failed" ? got : base;
+      }
+      function makeTvTint(color) {
+        tvTints[color] = "pending";
+        const base = skinImageFile(TV_SKIN);
+        if (!tvBaseImg) {
+          tvBaseImg = new Image();
+          tvBaseImg.src = base;
+        }
+        const img = tvBaseImg;
+        const paint = () => {
+          try {
+            const c = document.createElement("canvas");
+            c.width = img.naturalWidth;
+            c.height = img.naturalHeight;
+            const ctx = c.getContext("2d");
+            // The browser reads any CSS colour into #rrggbb for us
+            ctx.fillStyle = "#000";
+            ctx.fillStyle = color;
+            const hex = /^#([0-9a-f]{6})$/i.exec(ctx.fillStyle);
+            if (!hex) throw new Error("not a solid colour: " + color);
+            const n = parseInt(hex[1], 16);
+            const to = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+            ctx.drawImage(img, 0, 0);
+            const px = ctx.getImageData(0, 0, c.width, c.height);
+            const d = px.data;
+            const [R, G, B] = TV_SCREEN_BLUE;
+            for (let i = 0; i < d.length; i += 4) {
+              if (d[i + 3] < 8) continue;
+              // How much of the blue this pixel is (the rest is black)
+              const k = d[i + 2] / B;
+              if (k < 0.12) continue;
+              if (Math.abs(d[i] - k * R) > 16 || Math.abs(d[i + 1] - k * G) > 20)
+                continue;
+              d[i] = Math.round(k * to[0]);
+              d[i + 1] = Math.round(k * to[1]);
+              d[i + 2] = Math.round(Math.min(1, k) * to[2]);
+            }
+            ctx.putImageData(px, 0, 0);
+            tvTints[color] = c.toDataURL("image/png");
+            tvTintVersion++;
+            refreshTvPreviews();
+          } catch (e) {
+            tvTints[color] = "failed";
+          }
+        };
+        if (img.complete && img.naturalWidth) paint();
+        else {
+          img.addEventListener("load", paint, { once: true });
+          img.addEventListener("error", () => (tvTints[color] = "failed"), {
+            once: true,
+          });
+        }
+      }
+
       // ---- the TV in previews ----
       // Drawn as it is in a level: the TV, and in its screen the skin you
       // have on -- or, in the shop and wherever that isn't yours to show,
@@ -26387,8 +26480,10 @@
         return { id: tvShowcaseSkin(), cycle: true };
       }
       // Two background layers: the skin, sized and placed on the TV's
-      // screen, over the TV itself. The TV stands the full height of the
-      // box, as `contain` puts it in any box wider than it is.
+      // screen, over the TV itself (its screen in the skin's colour). The
+      // TV stands the full height of the box, as `contain` puts it in any
+      // box wider than it is. Marked --tv-cycle (showcasing) or --tv-mine
+      // (your own skin) so refreshTvPreviews can find it again.
       function tvPreviewCSS(cycle) {
         const inner = tvPreviewInner(cycle);
         const id = inner.id;
@@ -26421,13 +26516,13 @@
           "background-image:" +
           pic +
           ",url('" +
-          skinImageFile(TV_SKIN) +
+          tvFileFor(id) +
           "');background-size:auto " +
           (h * 100).toFixed(2) +
           "%,auto 100%;background-position:50% " +
           y.toFixed(2) +
           "%,50% 50%;background-repeat:no-repeat;background-color:transparent;" +
-          (inner.cycle ? "--tv-cycle:1;" : "")
+          (inner.cycle ? "--tv-cycle:1;" : "--tv-mine:1;")
         );
       }
       // A preview of any skin as the shop shows it: the TV's turns through
@@ -26435,12 +26530,32 @@
       function shopSkinPreviewCSS(id) {
         return id === TV_SKIN ? tvPreviewCSS(true) : skinPreviewCSS(id);
       }
+      // Draws every TV preview on screen again, keeping the rest of its
+      // style: showcasing ones with the showcase's skin of the moment, your
+      // own with the skin you have on now
+      function refreshTvPreviews() {
+        const redo = (sel, cycle) => {
+          const els = document.querySelectorAll(sel);
+          if (!els.length) return;
+          const css = tvPreviewCSS(cycle);
+          els.forEach((el) => {
+            el.style.background = "";
+            el.style.removeProperty("--tv-cycle");
+            el.style.removeProperty("--tv-mine");
+            el.style.cssText += ";" + css;
+          });
+        };
+        redo('[style*="--tv-cycle"]', true);
+        redo('[style*="--tv-mine"]', false);
+      }
       let tvShowcaseLoaded = false;
       function preloadTvShowcase() {
         if (tvShowcaseLoaded) return;
         tvShowcaseLoaded = true;
         ((TV_OVERLAY && TV_OVERLAY.showcase) || []).forEach((id) => {
-          if (skin_definitions[id]) new Image().src = skinImageFile(id);
+          if (!skin_definitions[id]) return;
+          new Image().src = skinImageFile(id);
+          tvFileFor(id);
         });
         // Every showcasing preview on screen moves on to the next skin
         setInterval(() => {
@@ -26448,22 +26563,16 @@
           if (!els.length) return;
           const css = tvPreviewCSS(true);
           els.forEach((el) => {
-            const keep = el.style.cssText
-              .split(";")
-              .filter((d) => d.trim() && !/^\s*(background|--tv-cycle)/.test(d))
-              .join(";");
-            el.style.cssText = (keep ? keep + ";" : "") + css;
+            el.style.background = "";
+            el.style.removeProperty("--tv-cycle");
+            el.style.cssText += ";" + css;
           });
         }, (TV_OVERLAY && TV_OVERLAY.showcaseMs) || 1600);
       }
-      // Your own TV cards after changing skin or switching it: the new skin
-      // in the screen
+      // After changing skin or switching the TV: your own TV previews show
+      // the new skin
       function repaintTvPreviews() {
-        document
-          .querySelectorAll(
-            '.skin-item[data-owner="self"][data-skin="' + TV_SKIN + '"] .skin-item-preview',
-          )
-          .forEach((el) => (el.style.cssText = tvPreviewCSS(false)));
+        refreshTvPreviews();
       }
 
       function getAvailableSkins() {
@@ -51109,6 +51218,46 @@
             { text: "1", x: 25, y: 10.5 },
             { text: "2", x: 41, y: 11.5 },
             { text: "3", x: 9, y: 13.5 },
+          ],
+        },
+        {
+          // By Torgaar (Big To's editor project "LIVE"): the Default lobby
+          // at night -- dark blocks on black under ✦ stars (decorations, no
+          // hitbox). Same layout as Default, so the same spots and podium.
+          id: "starrynight",
+          name: "Starry Night",
+          artist: "Torgaar",
+          tag: "Starry",
+          data: {
+            name: "Starry Night",
+            music: "skate",
+            gravity: 27,
+            tags: ["v2", "v3"],
+            visualFont: "Courier New",
+            visualTitleColor: "white",
+            background: "#000000",
+            colors: {
+              "#1b1c1d":
+                "7,5 8,5 9,5 20,5 21,5 22,5 2,8 3,8 4,8 5,8 24,8 25,8 26,8 27,8 14,9 15,9 16,9 11,10 12,10 13,10 14,10 15,10 16,10 11,11 12,11 13,11 14,11 15,11 16,11 17,11 18,11 19,11 0,12 1,12 2,12 3,12 4,12 5,12 6,12 7,12 8,12 9,12 10,12 11,12 12,12 13,12 14,12 15,12 16,12 17,12 18,12 19,12 20,12 21,12 22,12 23,12 24,12 25,12 26,12 27,12 28,12 29,12",
+            },
+            blockConfigs: [
+              [{ deco: "✦" }, "8,2 3,4 19,3 13,6 14,3 22,7 18,7 25,3 22,1 17,5 8,9 1,1 28,10 23,10 29,6 27,1 0,7"],
+            ],
+            plan: ["30 "," Z20 Z4 Z2 ","8 Z21 ","14 Z4 Z5 Z4 ","3 Z26 ","7 3x7 Z2 3x7 ","13 Z15 Z","Z17 Z3 Z7 ","2 4x18 4x2 ","8 Z5 3x13 ","11 6x6 Z4 Z ","3 @7 9x10 ","30x"],
+            fmt: "boi1",
+          },
+          spots: [2.25, 4.25, 6.25, 8.25, 21.25, 23.25, 25.25, 27.25].map(
+            (x) => ({ x, y: 11 }),
+          ),
+          podium: [
+            { x: 15.25, y: 8 },
+            { x: 12.25, y: 9 },
+            { x: 18.25, y: 10 },
+          ],
+          podiumLabels: [
+            { text: "1", x: 15.5, y: 10.5 },
+            { text: "2", x: 12.5, y: 11 },
+            { text: "3", x: 18.5, y: 11.5 },
           ],
         },
       ];

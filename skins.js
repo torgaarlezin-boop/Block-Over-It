@@ -44,7 +44,7 @@ window.SKIN_DEFINITIONS = {
   // Worn over another skin rather than instead of it: see TV_OVERLAY below
   tvremastered: {
     name: "TV (Remastered)",
-    copies: "N/A",
+    copies: "1/4",
     color: "#1e90ff",
     artist: "Torgaar",
   },
@@ -1578,6 +1578,16 @@ window.SKIN_DEFINITIONS = {
     color: "#e7191f",
     collection: "Cool Guy",
     tag: "Blockydays",
+  },
+  // Picture: coolguystarry.png. Sold in the Starry section of the shop
+  // (with the Starry Night environment) when that is switched on.
+  coolguystarry: {
+    name: "Cool Guy (Starry)",
+    artist: "Torgaar",
+    copies: "1/4",
+    color: "#0b1a3a",
+    collection: "Cool Guy",
+    tag: "Starry",
   }
 
 

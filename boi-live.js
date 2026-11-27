@@ -3003,7 +3003,10 @@
   // is the block's width / height, for where the screen goes.
   function paintRacer(node, skin, st, e, tv, box) {
     var frame = racerFrame(skin, st, e);
-    var key = skin + "|" + st + "|" + (frame || "") + "|" + (tv ? box.toFixed(3) : "");
+    // The TV's screen goes the skin's colour once that picture is made
+    var key =
+      skin + "|" + st + "|" + (frame || "") + "|" +
+      (tv ? box.toFixed(3) + "|" + (typeof tvTintVersion === "number" ? tvTintVersion : 0) : "");
     if (node.lvKey === key) return;
     node.lvKey = key;
     if (typeof syncSkinCrown === "function")
