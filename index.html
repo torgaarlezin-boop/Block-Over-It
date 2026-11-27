@@ -13295,8 +13295,10 @@
         return null;
       }
       // A section drawn inside another, right under it: child -> parent
-      const SHOP_BIGTOPIA_SEPPE = "Bigtopia x Seppe Collection";
-      const SHOP_SUBSECTIONS = { [SHOP_BIGTOPIA_SEPPE]: "Bigtopia" };
+      // Bigtopia and its sub-section Bigtopia x Seppe Collection were merged
+      // into the one Bigtopia 2 section (user, 2026-11-27)
+      const SHOP_BIGTOPIA = "Bigtopia 2";
+      const SHOP_SUBSECTIONS = {};
       const SHOP_SKIN_SECTIONS = {
         jdog: "Jdog",
         pixels: "Pixelated",
@@ -13308,10 +13310,10 @@
         mrolsenpixelated: "Pixelated",
         dinowarrior: "Dinos",
         dinozombie: "Dinos",
-        redgreenblue: "Bigtopia",
-        blockytransformed: "Bigtopia",
-        bigtopia: SHOP_BIGTOPIA_SEPPE,
-        midas: SHOP_BIGTOPIA_SEPPE,
+        redgreenblue: SHOP_BIGTOPIA,
+        blockytransformed: SHOP_BIGTOPIA,
+        bigtopia: SHOP_BIGTOPIA,
+        midas: SHOP_BIGTOPIA,
         coolguyforehead: "Forehead",
         dinoforehead: "Forehead",
         tvremastered: "BlockTV",
@@ -13344,8 +13346,7 @@
         "Starry",
         SHOP_EMOTE_SECTION,
         "BlockTV",
-        "Bigtopia",
-        SHOP_BIGTOPIA_SEPPE,
+        SHOP_BIGTOPIA,
         SHOP_TOP_SECTION,
         "Dinos",
         "Environments",
@@ -52062,7 +52063,7 @@
         },
         bigtopia: {
           name: "Bigtopia Bundle",
-          section: "Bigtopia",
+          section: "Bigtopia 2",
           items: ["coolguytorgaargreen", "coolguytorgaarblue", "emote:givemetuff"],
           color: "#2e6d18",
           // Cool Guy (Torgaar Blue) on its own, the Red Green Blue Mini
