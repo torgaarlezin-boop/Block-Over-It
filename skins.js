@@ -1585,7 +1585,7 @@ window.SKIN_DEFINITIONS = {
     name: "Cool Guy (Starry)",
     artist: "Torgaar",
     copies: "1/4",
-    color: "#0b1a3a",
+    color: "#ffffff",
     collection: "Cool Guy",
     tag: "Starry",
   }
