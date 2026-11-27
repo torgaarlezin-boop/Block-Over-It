@@ -13342,13 +13342,13 @@
       const SHOP_TOP_ORDER = [
         "Animal Gangsters",
         "Starry",
+        SHOP_EMOTE_SECTION,
         "BlockTV",
         "Bigtopia",
         SHOP_BIGTOPIA_SEPPE,
         SHOP_TOP_SECTION,
         "Dinos",
         "Environments",
-        SHOP_EMOTE_SECTION,
       ];
       function shopSeasonNumber() {
         return Number(String(SHOP_SEASON).replace(/\D/g, "")) || 0;
@@ -16881,13 +16881,24 @@
               ) +
               sec.listings.map((listing) => shopCardHTML(listing, isMobile)).join("");
             newer.forEach((s) => bundleSections.splice(bundleSections.indexOf(s), 1));
-            // Crate collections come first (user, 2026-11-24: the
-            // Scribbled 2 crate at the top of the shop)
-            grid.innerHTML =
+            // Crate collections go in right after the top sections up to and
+            // including CRATES_AFTER -- Animal Gangsters, Starry, BlockTV,
+            // whichever are on (user, 2026-11-27: Scribbled 2 moved down from
+            // the top of the shop, with BlockTV before it)
+            const CRATES_AFTER = "BlockTV";
+            const cratesAt = newer.filter(
+              (s) => topRank(s) <= SHOP_TOP_ORDER.indexOf(CRATES_AFTER),
+            ).length;
+            const topParts = newer.map(sectionHTML);
+            topParts.splice(
+              cratesAt,
+              0,
               ARTIST_COLLECTIONS.map(
                 (col) => shopSectionHTML(col.label, col.signature) + collectionGridHTML(col),
-              ).join("") +
-              newer.map(sectionHTML).join("") +
+              ).join(""),
+            );
+            grid.innerHTML =
+              topParts.join("") +
               // An empty season under a newer one isn't shown at all
               (season.length || !newer.length
                 ? shopSectionHTML(SHOP_SEASON) +
