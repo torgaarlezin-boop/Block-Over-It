@@ -1639,13 +1639,16 @@ window.TV_OVERLAY = {
   showcaseMs: 1600,
 };
 
+// Whether the TV can go on over skin `id`: not over an id in
+// TV_OVERLAY.unsupported, nor over any skin in a collection named in
+// TV_OVERLAY.unsupportedCollections. Either list can be left out.
 window.tvSupportsSkin = function (id) {
-  var tv = window.TV_OVERLAY;
+  var tv = window.TV_OVERLAY || {};
   if (!id) id = "default";
   if (id === tv.id) return false;
-  if (tv.unsupported.indexOf(id) >= 0) return false;
+  if ((tv.unsupported || []).indexOf(id) >= 0) return false;
   var def = (window.SKIN_DEFINITIONS || {})[id] || {};
-  return tv.unsupportedCollections.indexOf(def.collection) < 0;
+  return (tv.unsupportedCollections || []).indexOf(def.collection) < 0;
 };
 
 window.TOBREAKER_SKIN_DIR = "skins/";

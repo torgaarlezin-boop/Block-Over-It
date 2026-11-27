@@ -26257,8 +26257,15 @@
       // currentSkin stays the skin shown in its screen.
       const TV_OVERLAY = window.TV_OVERLAY || null;
       const TV_SKIN = TV_OVERLAY ? TV_OVERLAY.id : null;
+      // Never lets a broken TV_OVERLAY take the skin screens down with it:
+      // the TV just can't go on
       function tvSupports(id) {
-        return !!TV_OVERLAY && !!window.tvSupportsSkin && window.tvSupportsSkin(id);
+        try {
+          return !!TV_OVERLAY && !!window.tvSupportsSkin && window.tvSupportsSkin(id);
+        } catch (e) {
+          console.error("TV (Remastered): bad TV_OVERLAY in skins.js", e);
+          return false;
+        }
       }
       function tvOverlayOn() {
         return (
