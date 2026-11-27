@@ -204,6 +204,16 @@
       .lvl-sub { color: var(--dim); font-size: 0.8rem; }
       .lvl-info .btn { text-decoration: none; white-space: nowrap; }
       .msg-actions { position: absolute; right: 16px; top: -10px; display: none; z-index: 1; }
+      .edited { color: var(--faint); font-size: 0.7rem; margin-left: 6px; white-space: nowrap; }
+      .msg.editing { background: #1d2738; }
+      .msg.editing:hover { background: #1d2738; }
+      .event.editing { border-color: #eee; }
+      .edit-bar {
+        display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+        background: #1d2738; border: 4px solid var(--blue); border-bottom: 0;
+        font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+      }
+      .edit-bar span { flex: 1; }
       .msg:hover .msg-actions { display: block; }
       .empty { color: var(--dim); padding: 8px 16px; }
 
@@ -224,6 +234,36 @@
       .poll-opt .pct { color: #ddd; white-space: nowrap; }
       .poll-foot { color: var(--faint); font-size: 0.75rem; margin-top: 10px; text-transform: uppercase; }
       .poll-end { margin-top: 10px; }
+
+      /* Events */
+      .events { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+      .events-label { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+      .event { position: relative; background: #141414; border: 4px solid var(--edge); display: flex; flex-direction: column; }
+      .event.now { border-color: var(--blue); }
+      .event-pic { display: block; width: 100%; max-height: 300px; object-fit: cover; background: #0d0d0d; border-bottom: 4px solid var(--edge); cursor: zoom-in; }
+      .event-row { display: flex; gap: 14px; padding: 14px; }
+      .event-date {
+        flex: none; width: 64px; text-align: center; background: #262626; border: 3px solid var(--edge);
+        padding: 6px 0; align-self: flex-start; text-transform: uppercase;
+      }
+      .event-date .mon { font-size: 0.75rem; color: var(--dim); letter-spacing: 1px; }
+      .event-date .dnum { font-size: 1.6rem; font-weight: bold; line-height: 1.1; }
+      .event-date .wd { font-size: 0.7rem; color: var(--dim); }
+      .event-main { flex: 1; min-width: 0; }
+      .event-title { font-weight: bold; font-size: 1.15rem; word-wrap: break-word; }
+      .event-when { color: #ddd; font-size: 0.9rem; margin-top: 4px; }
+      .event-soon { display: inline-block; margin-top: 8px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; background: #262626; border: 3px solid var(--edge); padding: 3px 8px; }
+      .event.now .event-soon { background: var(--blue); border-color: #eee; }
+      .event-by { color: var(--faint); font-size: 0.75rem; margin-top: 10px; }
+      .event .msg-actions { right: 10px; top: 10px; }
+      .event:hover .msg-actions { display: block; }
+      .event-form { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+      .event-form .line { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .event-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.7rem; color: var(--dim); text-transform: uppercase; flex: 1; min-width: 180px; }
+      .event-form .field { padding: 7px 10px; font-size: 0.95rem; color-scheme: dark; }
+      .event-form textarea.field { resize: vertical; min-height: 60px; }
+      .event-form .actions { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; align-items: center; }
+      .event-form .pic-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
       /* Composer (admins) */
       .composer { flex: none; padding: 0 16px 16px; }
@@ -326,6 +366,7 @@
         <div class="channels">
           <button class="channel on" data-ch="news">News</button>
           <button class="channel" data-ch="polls">Polls</button>
+          <button class="channel" data-ch="events">Events</button>
         </div>
         <div class="me">
           <div class="skin" id="me-skin"></div>
@@ -342,6 +383,7 @@
           <span class="m-tabs">
             <button data-ch="news" class="on">News</button>
             <button data-ch="polls">Polls</button>
+            <button data-ch="events">Events</button>
           </span>
           <span class="spacer"></span>
           <button class="btn small" id="signout-top">Sign Out</button>
@@ -349,8 +391,10 @@
 
         <div class="messages" id="news-list"></div>
         <div class="messages hidden" id="polls-list"></div>
+        <div class="messages hidden" id="events-list"></div>
 
         <div class="composer hidden" id="news-composer">
+          <div class="edit-bar hidden" id="post-edit-bar"><span>Editing your post</span><button class="btn small" id="post-edit-cancel">Cancel</button></div>
           <div class="compose-box">
             <div class="attach-row" id="attach-row"></div>
             <div class="compose-row">
@@ -370,6 +414,7 @@
         </div>
 
         <div class="composer hidden" id="poll-composer">
+          <div class="edit-bar hidden" id="poll-edit-bar"><span>Editing your poll</span><button class="btn small" id="poll-edit-cancel">Cancel</button></div>
           <div class="compose-box">
             <div class="poll-form">
               <input class="field" id="poll-question" maxlength="300" placeholder="Ask a question" />
@@ -381,6 +426,30 @@
             </div>
           </div>
           <div class="compose-note" id="poll-note"></div>
+        </div>
+
+        <div class="composer hidden" id="event-composer">
+          <div class="edit-bar hidden" id="event-edit-bar"><span>Editing your event</span><button class="btn small" id="event-edit-cancel">Cancel</button></div>
+          <div class="compose-box">
+            <div class="event-form">
+              <input class="field" id="event-title" maxlength="120" placeholder="Event name" />
+              <div class="line">
+                <label>Starts<input class="field" id="event-start" type="datetime-local" /></label>
+                <label>Ends (optional)<input class="field" id="event-end" type="datetime-local" /></label>
+              </div>
+              <textarea class="field" id="event-details" maxlength="2000" rows="2" placeholder="Details (optional)"></textarea>
+              <div class="actions">
+                <span class="pic-tools">
+                  <span class="attach-row" id="event-pic-row" style="padding:0"></span>
+                  <button class="btn small" id="event-repo-btn" title="A picture from the GitHub repo">Repo Picture</button>
+                  <button class="btn small" id="event-upload-btn" title="Upload a picture">Upload</button>
+                </span>
+                <button class="btn small" id="event-send">Add Event</button>
+              </div>
+            </div>
+          </div>
+          <div class="compose-note" id="event-note"></div>
+          <input type="file" id="event-file-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
         </div>
       </main>
     </div>
@@ -451,6 +520,7 @@
       let posts = [];
       let polls = [];
       let pollResults = {};
+      let events = []; // upcoming only, soonest first
       const skins = {}; // username -> equipped skin
       const imageCache = new Map(); // upload id -> data url
       let attachments = []; // {ref, src?, label?, busy}
@@ -533,8 +603,14 @@
         token = "";
         me = null;
         store.del(TOKEN_KEY);
+        stopPostEdit();
+        stopPollEdit();
+        stopEventEdit();
         attachments = [];
+        text.value = "";
         renderAttachments();
+        resetPollForm();
+        resetEventForm();
         resetNewsList();
         updateUnread();
         show("signin");
@@ -573,7 +649,7 @@
         $("me-skin").outerHTML = skinHTML(me.user).replace('class="skin"', 'class="skin" id="me-skin"');
         show("app");
         setChannel(channel);
-        await Promise.all([loadPosts(true), loadPolls(true)]);
+        await Promise.all([loadPosts(true), loadPolls(true), loadEvents()]);
       }
 
       // ---------- new messages ----------
@@ -584,7 +660,7 @@
       function readSeen() {
         try { return JSON.parse(store.get(SEEN_KEY)) || {}; } catch (e) { return {}; }
       }
-      const channelItems = (ch) => (ch === "news" ? posts : polls);
+      const channelItems = (ch) => (ch === "news" ? posts : ch === "polls" ? polls : events);
       function markRead(ch) {
         const seen = readSeen();
         const newest = channelItems(ch).reduce((a, x) => Math.max(a, x.id), 0);
@@ -599,7 +675,7 @@
         const seen = readSeen();
         const count = (ch) => (me ? channelItems(ch).filter((x) => x.id > (seen[ch] || 0)).length : 0);
         document.querySelectorAll("[data-ch]").forEach((b) => b.classList.toggle("unread", count(b.dataset.ch) > 0));
-        const total = count("news") + count("polls");
+        const total = count("news") + count("polls") + count("events");
         document.title = total ? "(" + total + ") " + PAGE_TITLE : PAGE_TITLE;
       }
       document.addEventListener("visibilitychange", updateUnread);
@@ -609,14 +685,17 @@
       function setChannel(ch) {
         channel = ch;
         document.querySelectorAll("[data-ch]").forEach((b) => b.classList.toggle("on", b.dataset.ch === ch));
-        $("head-name").textContent = ch === "news" ? "News" : "Polls";
+        $("head-name").textContent = ch === "news" ? "News" : ch === "polls" ? "Polls" : "Events";
         $("news-list").classList.toggle("hidden", ch !== "news");
         $("polls-list").classList.toggle("hidden", ch !== "polls");
+        $("events-list").classList.toggle("hidden", ch !== "events");
         const admin = !!(me && me.admin);
         $("news-composer").classList.toggle("hidden", !(admin && ch === "news"));
         $("poll-composer").classList.toggle("hidden", !(admin && ch === "polls"));
+        $("event-composer").classList.toggle("hidden", !(admin && ch === "events"));
         const list = $(ch + "-list");
-        list.scrollTop = list.scrollHeight;
+        // Events read top-down (soonest first); the chats read from the bottom
+        list.scrollTop = ch === "events" ? 0 : list.scrollHeight;
         updateUnread();
         if (ch === "news") requestAnimationFrame(recheckViews);
       }
@@ -691,11 +770,21 @@
       $("dialog-cancel").onclick = () => closeDialog && closeDialog(false);
       $("dialog").onclick = (e) => { if (e.target === $("dialog") && closeDialog) closeDialog(false); };
 
+      // Admin buttons on a post, poll or event. Only the person who made it can edit it.
+      function itemActions(item, deleteAttr, editAttr) {
+        let h = '<div class="msg-actions">';
+        if (editAttr && me && item.author === me.user)
+          h += '<button class="btn small" ' + editAttr + '="' + item.id + '">Edit</button> ';
+        return h + '<button class="btn small red" ' + deleteAttr + '="' + item.id + '">Delete</button></div>';
+      }
+      const editedTag = (item) =>
+        item.edited_at ? '<span class="edited" title="' + esc(new Date(item.edited_at).toLocaleString()) + '">(edited)</span>' : "";
+
       // A chat list: day lines, and a header (skin, name, date) unless the
       // same person posted a moment ago
       function listWriter(box) {
         let lastDay = "", lastAuthor = "", lastTime = 0;
-        return function add(item, contentHTML, deleteAttr) {
+        return function add(item, contentHTML, deleteAttr, editAttr) {
           const d = new Date(item.created_at);
           if (d.toDateString() !== lastDay) {
             box.appendChild(el('<div class="day">' + esc(dayLabel(d)) + "</div>"));
@@ -715,8 +804,7 @@
               esc(item.author) + '</span><span class="stamp" title="' + esc(d.toLocaleString()) + '">' +
               esc(fullStamp(d)) + "</span></div>";
           html += contentHTML + "</div>";
-          if (me && me.admin)
-            html += '<div class="msg-actions"><button class="btn small red" ' + deleteAttr + '="' + item.id + '">Delete</button></div>';
+          if (me && me.admin) html += itemActions(item, deleteAttr, editAttr);
           html += "</div>";
           const node = el(html);
           box.appendChild(node);
@@ -739,7 +827,7 @@
         const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
         const { data, error } = await db
           .from("news_posts")
-          .select("id, created_at, author, body, images")
+          .select("id, created_at, author, body, images, edited_at")
           .order("created_at", { ascending: true })
           .limit(1000);
         if (error) {
@@ -862,7 +950,9 @@
       // (a post taken down) redraws the list
       function renderNews() {
         const box = $("news-list");
-        const ids = posts.map((p) => p.id);
+        // A post's key changes when it is edited, so an edit redraws the list
+        const postKey = (p) => p.id + ":" + (p.edited_at || "");
+        const ids = posts.map(postKey);
         const extends_ = newsWriter && shownPosts.every((id, i) => ids[i] === id);
         if (!extends_) {
           box.innerHTML = "";
@@ -877,13 +967,16 @@
           const atts = (p.images || []).map((r) => attachmentHTML(r, p.author)).join("");
           const node = newsWriter(
             p,
-            (p.body ? '<div class="body">' + formatBody(p.body) + "</div>" : "") +
+            (p.body ? '<div class="body">' + formatBody(p.body) + editedTag(p) + "</div>" : "") +
               (atts ? '<div class="atts">' + atts + "</div>" : "") +
+              (!p.body && p.edited_at ? '<div class="views">' + editedTag(p) + "</div>" : "") +
               (me && me.admin ? '<div class="views" data-views="' + p.id + '"></div>' : ""),
             "data-del",
+            "data-edit",
           );
+          if (editingPost && editingPost.id === p.id) node.classList.add("editing");
           viewObserver.observe(node);
-          shownPosts.push(p.id);
+          shownPosts.push(postKey(p));
         });
         showViewCounts();
       }
@@ -901,12 +994,15 @@
           f.contentWindow.postMessage({ boiNews: "exit" }, FRAME_TARGET);
           return;
         }
+        const edit = e.target.closest("[data-edit]");
+        if (edit) { startPostEdit(Number(edit.dataset.edit)); return; }
         const del = e.target.closest("[data-del]");
         if (del) {
           if (!(await askUser("Delete this post?", "Delete", true))) return;
           del.disabled = true;
           const { error } = await db.rpc("boi_news_delete", { p_id: Number(del.dataset.del) });
           if (error) { await tellUser(errorText(error)); handleSessionError(error); del.disabled = false; return; }
+          if (editingPost && editingPost.id === Number(del.dataset.del)) stopPostEdit();
           await loadPosts(false);
         }
       });
@@ -935,7 +1031,7 @@
         const box = $("polls-list");
         const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
         const [{ data, error }, res] = await Promise.all([
-          db.from("news_polls").select("id, created_at, author, question, options, ended_at").order("created_at", { ascending: true }).limit(500),
+          db.from("news_polls").select("id, created_at, author, question, options, ended_at, edited_at").order("created_at", { ascending: true }).limit(500),
           db.rpc("boi_news_poll_results"),
         ]);
         if (error) {
@@ -974,7 +1070,7 @@
         if (showCounts) foot.push(total + (total === 1 ? " vote" : " votes"));
         if (!ended) foot.push(voted ? "You voted" : "You can only vote once");
         if (!ended && !showCounts) foot.push("Results show when the poll ends");
-        h += '<div class="poll-foot">' + foot.join(" · ") + "</div>";
+        h += '<div class="poll-foot">' + foot.join(" · ") + editedTag(p) + "</div>";
         if (!ended && me && me.admin) h += '<button class="btn small poll-end" data-endpoll="' + p.id + '">End Poll</button>';
         return h + "</div>";
       }
@@ -984,7 +1080,10 @@
         box.innerHTML = "";
         if (!polls.length) box.appendChild(el('<div class="empty">No polls yet.</div>'));
         const add = listWriter(box);
-        polls.forEach((p) => add(p, pollHTML(p), "data-delpoll"));
+        polls.forEach((p) => {
+          const node = add(p, pollHTML(p), "data-delpoll", "data-editpoll");
+          if (editingPoll && editingPoll.id === p.id) node.classList.add("editing");
+        });
       }
 
       $("polls-list").addEventListener("click", async (e) => {
@@ -1010,24 +1109,34 @@
           await loadPolls(false);
           return;
         }
+        const edit = e.target.closest("[data-editpoll]");
+        if (edit) { startPollEdit(Number(edit.dataset.editpoll)); return; }
         const del = e.target.closest("[data-delpoll]");
         if (del) {
           if (!(await askUser("Delete this poll?", "Delete", true))) return;
           del.disabled = true;
           const { error } = await db.rpc("boi_news_delete_poll", { p_id: Number(del.dataset.delpoll) });
           if (error) { await tellUser(errorText(error)); handleSessionError(error); del.disabled = false; return; }
+          if (editingPoll && editingPoll.id === Number(del.dataset.delpoll)) stopPollEdit();
           await loadPolls(false);
         }
       });
 
       // New poll (admins)
-      function addOptionLine(value) {
+      // locked: an option people may already have voted for. Votes point at
+      // an option's place in the list, so it can be reworded but not removed.
+      function addOptionLine(value, locked) {
         const box = $("poll-options");
         if (box.children.length >= 10) return;
         const line = el('<div class="opt-line"><input class="field" maxlength="120" /><button class="btn small red" title="Remove">X</button></div>');
         line.querySelector("input").value = value || "";
         line.querySelector("input").placeholder = "Option " + (box.children.length + 1);
-        line.querySelector("button").onclick = () => {
+        const x = line.querySelector("button");
+        if (locked) {
+          x.disabled = true;
+          x.title = "People have voted, so this option can only be reworded";
+        }
+        x.onclick = () => {
           if (box.children.length > 2) line.remove();
         };
         box.appendChild(line);
@@ -1039,25 +1148,357 @@
         addOptionLine();
       }
       resetPollForm();
+
+      let editingPoll = null; // {id, ended, draft: {question, options}}
+      function pollDraft() {
+        return { question: $("poll-question").value, options: [...$("poll-options").querySelectorAll("input")].map((i) => i.value) };
+      }
+      function startPollEdit(id) {
+        const p = polls.find((x) => x.id === id);
+        if (!p || !me || p.author !== me.user) return;
+        const r = pollResults[p.id] || {};
+        const votes = (r.counts || []).reduce((a, b) => a + b, 0);
+        const ended = !!p.ended_at;
+        // Admins are sent the counts; if they are missing, play it safe
+        const locked = ended || votes > 0 || !Array.isArray(r.counts);
+        editingPoll = { id, ended, draft: editingPoll ? editingPoll.draft : pollDraft() };
+        $("poll-question").value = p.question;
+        $("poll-options").innerHTML = "";
+        (p.options || []).forEach((o) => addOptionLine(o, locked));
+        $("poll-add").disabled = ended;
+        $("poll-send").textContent = "Save Poll";
+        $("poll-edit-bar").classList.remove("hidden");
+        const n = $("poll-note");
+        n.classList.remove("err");
+        n.textContent = ended ? "This poll has ended: you can fix the wording, but not add or remove options." :
+          locked ? "People have voted: you can reword options and add new ones, but not remove any." : "";
+        document.querySelectorAll("#polls-list .msg.editing").forEach((m) => m.classList.remove("editing"));
+        const row = $("polls-list").querySelector('.msg[data-id="' + id + '"]');
+        if (row) row.classList.add("editing");
+        $("poll-question").focus();
+      }
+      function stopPollEdit() {
+        if (!editingPoll) return;
+        const d = editingPoll.draft;
+        editingPoll = null;
+        $("poll-question").value = d.question;
+        $("poll-options").innerHTML = "";
+        d.options.forEach((o) => addOptionLine(o));
+        while ($("poll-options").children.length < 2) addOptionLine();
+        $("poll-add").disabled = false;
+        $("poll-send").textContent = "Post Poll";
+        $("poll-edit-bar").classList.add("hidden");
+        $("poll-note").textContent = "";
+        document.querySelectorAll("#polls-list .msg.editing").forEach((m) => m.classList.remove("editing"));
+      }
+      $("poll-edit-cancel").onclick = stopPollEdit;
+
       $("poll-add").onclick = () => addOptionLine();
       $("poll-send").onclick = async () => {
         const question = $("poll-question").value.trim();
-        const options = [...$("poll-options").querySelectorAll("input")].map((i) => i.value.trim()).filter(Boolean);
+        const all = [...$("poll-options").querySelectorAll("input")].map((i) => i.value.trim());
+        const options = all.filter(Boolean);
         const note = $("poll-note");
         note.classList.add("err");
         if (!question) { note.textContent = "Write a question."; return; }
         if (options.length < 2) { note.textContent = "Give it at least two options."; return; }
+        const editing = editingPoll;
+        // Dropping a blank line would move the options after it
+        if (editing && options.length !== all.length) { note.textContent = "Fill in every option, or remove the empty ones."; return; }
         $("poll-send").disabled = true;
         try {
-          const { data, error } = await db.rpc("boi_news_new_poll", { p_question: question, p_options: options });
+          const { data, error } = editing
+            ? await db.rpc("boi_news_edit_poll", { p_id: editing.id, p_question: question, p_options: options })
+            : await db.rpc("boi_news_new_poll", { p_question: question, p_options: options });
           if (error) { handleSessionError(error); note.textContent = errorText(error); return; }
-          if (!data || !data.ok) { note.textContent = "Could not post that poll."; return; }
+          if (!data || !data.ok) {
+            const why = data && data.reason;
+            note.textContent =
+              why === "voted" ? "People have voted, so options can't be removed." :
+              why === "ended" ? "This poll has ended, so options can't be added or removed." :
+              why === "missing" ? "That poll was deleted." :
+              why === "notyours" ? "You can only edit your own polls." :
+              editing ? "Could not save that poll." : "Could not post that poll.";
+            return;
+          }
           note.textContent = "";
           note.classList.remove("err");
+          if (editing) {
+            stopPollEdit();
+            await loadPolls(false);
+            return;
+          }
           resetPollForm();
           await loadPolls(true);
         } finally {
           $("poll-send").disabled = false;
+        }
+      };
+
+      // ---------- #events ----------
+      // An event with no end time counts as over at the end of its start day
+      function eventEnd(ev) {
+        if (ev.ends_at) return new Date(ev.ends_at);
+        const d = new Date(ev.starts_at);
+        d.setHours(23, 59, 59, 999);
+        return d;
+      }
+      async function loadEvents() {
+        if (!db) return;
+        const box = $("events-list");
+        const { data, error } = await db
+          .from("news_events")
+          .select("id, created_at, author, title, details, image, starts_at, ends_at, edited_at")
+          // Anything that started in the last few weeks may still be running
+          .gte("starts_at", new Date(Date.now() - 45 * 86400000).toISOString())
+          .order("starts_at", { ascending: true })
+          .limit(500);
+        if (error) {
+          if (!events.length) box.innerHTML = '<div class="empty">Could not load the events. Try reloading.</div>';
+          return;
+        }
+        const now = new Date();
+        events = (data || []).filter((ev) => eventEnd(ev) > now);
+        const need = events
+          .map((ev) => ev.image)
+          .filter((r) => typeof r === "string" && r.startsWith("upload:") && !imageCache.has(r.slice(7)))
+          .map((r) => r.slice(7));
+        for (let i = 0; i < need.length; i += 20) {
+          const { data: imgs } = await db.from("news_images").select("id, data").in("id", need.slice(i, i + 20));
+          (imgs || []).forEach((im) => imageCache.set(im.id, im.data));
+        }
+        renderEvents();
+        updateUnread();
+      }
+
+      function countdown(start, end, now) {
+        if (start <= now) return "Live · ends " + (end.toDateString() === now.toDateString() ? timeOf(end) : fullStamp(end));
+        const mins = Math.round((start - now) / 60000);
+        if (mins < 60) return "Starts in " + mins + (mins === 1 ? " minute" : " minutes");
+        const hrs = Math.round(mins / 60);
+        if (hrs < 24) return "Starts in " + hrs + (hrs === 1 ? " hour" : " hours");
+        const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+        if (start.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+        const days = Math.ceil((start - now) / 86400000);
+        return "In " + days + " days";
+      }
+      function whenText(ev) {
+        const s = new Date(ev.starts_at);
+        const day = (d) => d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+        let t = day(s) + ", " + timeOf(s);
+        if (ev.ends_at) {
+          const e = new Date(ev.ends_at);
+          t += " – " + (e.toDateString() === s.toDateString() ? timeOf(e) : day(e) + ", " + timeOf(e));
+        }
+        return t;
+      }
+      function eventHTML(ev, now) {
+        const s = new Date(ev.starts_at);
+        const live = s <= now;
+        const src = ev.image ? imageSrc(ev.image) : "";
+        let h = '<div class="event' + (live ? " now" : "") + (editingEvent && editingEvent.id === ev.id ? " editing" : "") + '">';
+        if (src) h += '<img class="event-pic" loading="lazy" alt="" src="' + esc(src) + '" />';
+        h += '<div class="event-row"><div class="event-date">' +
+          '<div class="mon">' + esc(s.toLocaleDateString(undefined, { month: "short" })) + "</div>" +
+          '<div class="dnum">' + s.getDate() + "</div>" +
+          '<div class="wd">' + esc(s.toLocaleDateString(undefined, { weekday: "short" })) + "</div></div>" +
+          '<div class="event-main"><div class="event-title">' + esc(ev.title) + "</div>" +
+          '<div class="event-when">' + esc(whenText(ev)) + "</div>" +
+          (ev.details ? '<div class="body">' + formatBody(ev.details) + "</div>" : "") +
+          '<span class="event-soon">' + esc(countdown(s, eventEnd(ev), now)) + "</span>" +
+          '<div class="event-by">Added by ' + esc(ev.author) + editedTag(ev) + "</div></div></div>";
+        if (me && me.admin) h += itemActions(ev, "data-delevent", "data-editevent");
+        return h + "</div>";
+      }
+      function renderEvents() {
+        const box = $("events-list");
+        const keep = box.scrollTop;
+        box.innerHTML = "";
+        const wrap = el('<div class="events"></div>');
+        box.appendChild(wrap);
+        if (!events.length) {
+          wrap.appendChild(el('<div class="empty" style="padding:8px 0">No upcoming events.</div>'));
+          return;
+        }
+        const now = new Date();
+        const live = events.filter((ev) => new Date(ev.starts_at) <= now);
+        const soon = events.filter((ev) => new Date(ev.starts_at) > now);
+        if (live.length) {
+          wrap.appendChild(el('<div class="events-label">Happening now</div>'));
+          live.forEach((ev) => wrap.appendChild(el(eventHTML(ev, now))));
+        }
+        if (soon.length) {
+          wrap.appendChild(el('<div class="events-label">Upcoming</div>'));
+          soon.forEach((ev) => wrap.appendChild(el(eventHTML(ev, now))));
+        }
+        box.scrollTop = keep;
+      }
+      // Keeps the "starts in" lines current and drops events that have ended
+      setInterval(() => {
+        if (!me || document.hidden) return;
+        const before = events.length;
+        const now = new Date();
+        events = events.filter((ev) => eventEnd(ev) > now);
+        renderEvents();
+        if (events.length !== before) updateUnread();
+      }, 60000);
+
+      $("events-list").addEventListener("click", async (e) => {
+        const img = e.target.closest(".event-pic");
+        if (img) {
+          $("viewer-img").src = img.src;
+          $("viewer").classList.remove("hidden");
+          return;
+        }
+        const edit = e.target.closest("[data-editevent]");
+        if (edit) { startEventEdit(Number(edit.dataset.editevent)); return; }
+        const del = e.target.closest("[data-delevent]");
+        if (del) {
+          if (!(await askUser("Delete this event?", "Delete", true))) return;
+          del.disabled = true;
+          const { error } = await db.rpc("boi_news_delete_event", { p_id: Number(del.dataset.delevent) });
+          if (error) { await tellUser(errorText(error)); handleSessionError(error); del.disabled = false; return; }
+          if (editingEvent && editingEvent.id === Number(del.dataset.delevent)) stopEventEdit();
+          await loadEvents();
+        }
+      });
+
+      // New event (admins). One picture: from the repo, or uploaded.
+      let eventPic = null; // {ref, src, busy}
+      function renderEventPic() {
+        const row = $("event-pic-row");
+        row.innerHTML = "";
+        if (!eventPic) return;
+        const chip = el('<div class="chip" style="width:56px;height:56px"><img alt="" /><button title="Remove">X</button></div>');
+        chip.querySelector("img").src = eventPic.src;
+        if (eventPic.busy) chip.appendChild(el('<div class="busy">...</div>'));
+        chip.querySelector("button").onclick = () => { eventPic = null; renderEventPic(); };
+        row.appendChild(chip);
+      }
+      function setEventRepoPic(path) {
+        eventPic = { ref: "repo:" + path, src: repoUrl(path), busy: false };
+        renderEventPic();
+      }
+      function eventNote(msg, isErr) {
+        $("event-note").textContent = msg || "";
+        $("event-note").classList.toggle("err", !!isErr);
+      }
+      $("event-repo-btn").onclick = openRepoPicker;
+      $("event-upload-btn").onclick = () => $("event-file-input").click();
+      $("event-file-input").onchange = async (e) => {
+        const file = e.target.files[0];
+        e.target.value = "";
+        if (!file) return;
+        if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) { eventNote("Use a PNG, JPG, WEBP or GIF.", true); return; }
+        const pic = { ref: null, src: "", busy: true };
+        eventPic = pic;
+        try {
+          pic.src = await shrink(file);
+          renderEventPic();
+          const { data, error } = await db.rpc("boi_news_upload", { p_data: pic.src });
+          if (error) { handleSessionError(error); throw new Error(errorText(error)); }
+          if (!data || !data.ok) throw new Error(data && data.reason === "big" ? "That picture is too big." : "Could not upload that picture.");
+          pic.ref = "upload:" + data.id;
+          imageCache.set(data.id, pic.src);
+          pic.busy = false;
+          eventNote("");
+        } catch (ex) {
+          if (eventPic === pic) eventPic = null;
+          eventNote(ex.message === "big" ? "That picture is too big." : ex.message || "Could not upload that picture.", true);
+        }
+        renderEventPic();
+      };
+      const EVENT_FIELDS = ["event-title", "event-start", "event-end", "event-details"];
+      function resetEventForm() {
+        EVENT_FIELDS.forEach((id) => ($(id).value = ""));
+        eventPic = null;
+        renderEventPic();
+      }
+      // A time as a datetime-local box wants it: the viewer's own clock
+      function localInputValue(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        const p = (n) => String(n).padStart(2, "0");
+        return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+      }
+
+      let editingEvent = null; // {id, draft: {fields, pic}}
+      function startEventEdit(id) {
+        const ev = events.find((x) => x.id === id);
+        if (!ev || !me || ev.author !== me.user) return;
+        const draft = editingEvent ? editingEvent.draft : { fields: EVENT_FIELDS.map((f) => $(f).value), pic: eventPic };
+        editingEvent = { id, draft };
+        $("event-title").value = ev.title;
+        $("event-start").value = localInputValue(ev.starts_at);
+        $("event-end").value = localInputValue(ev.ends_at);
+        $("event-details").value = ev.details || "";
+        eventPic = ev.image ? { ref: ev.image, src: imageSrc(ev.image), busy: false } : null;
+        renderEventPic();
+        $("event-send").textContent = "Save Event";
+        $("event-edit-bar").classList.remove("hidden");
+        eventNote("");
+        renderEvents();
+        $("event-title").focus();
+      }
+      function stopEventEdit() {
+        if (!editingEvent) return;
+        const d = editingEvent.draft;
+        editingEvent = null;
+        EVENT_FIELDS.forEach((f, i) => ($(f).value = d.fields[i]));
+        eventPic = d.pic;
+        renderEventPic();
+        $("event-send").textContent = "Add Event";
+        $("event-edit-bar").classList.add("hidden");
+        eventNote("");
+        renderEvents();
+      }
+      $("event-edit-cancel").onclick = stopEventEdit;
+      $("event-send").onclick = async () => {
+        const title = $("event-title").value.trim();
+        const startV = $("event-start").value;
+        const endV = $("event-end").value;
+        if (!title) { eventNote("Give the event a name.", true); return; }
+        if (!startV) { eventNote("Pick when it starts.", true); return; }
+        // datetime-local is the admin's own time; the database keeps it as an instant
+        const start = new Date(startV);
+        const end = endV ? new Date(endV) : null;
+        if (isNaN(start)) { eventNote("That start time doesn't look right.", true); return; }
+        if (end && (isNaN(end) || end < start)) { eventNote("It has to end after it starts.", true); return; }
+        // The same rule the list uses: no end time means it runs to the end of its day
+        if (eventEnd({ starts_at: start, ends_at: end }) < new Date()) { eventNote("That time has already passed.", true); return; }
+        if (eventPic && eventPic.busy) { eventNote("Wait for the picture to finish uploading.", true); return; }
+        $("event-send").disabled = true;
+        const editing = editingEvent;
+        const fields = {
+          p_title: title,
+          p_details: $("event-details").value.trim(),
+          p_image: eventPic ? eventPic.ref : null,
+          p_starts_at: start.toISOString(),
+          p_ends_at: end ? end.toISOString() : null,
+        };
+        try {
+          const { data, error } = editing
+            ? await db.rpc("boi_news_edit_event", Object.assign({ p_id: editing.id }, fields))
+            : await db.rpc("boi_news_new_event", fields);
+          if (error) { handleSessionError(error); eventNote(errorText(error), true); return; }
+          if (!data || !data.ok) {
+            const why = data && data.reason;
+            eventNote(why === "missing" ? "That event was deleted." :
+              why === "notyours" ? "You can only edit your own events." :
+              editing ? "Could not save that event." : "Could not add that event.", true);
+            return;
+          }
+          if (editing) {
+            stopEventEdit();
+            eventNote("Event saved.");
+            await loadEvents();
+            return;
+          }
+          eventNote("Event added.");
+          resetEventForm();
+          await loadEvents();
+        } finally {
+          $("event-send").disabled = false;
         }
       };
 
@@ -1172,20 +1613,83 @@
         renderAttachments();
       }
 
+      // Editing a post loads it into the composer; whatever was being
+      // written there comes back when the edit is saved or cancelled
+      let editingPost = null; // {id, draft: {text, attachments}}
+      function attachmentChip(ref) {
+        if (ref.startsWith("upload:") || ref.startsWith("repo:")) return { ref, src: imageSrc(ref), busy: false };
+        if (ref.startsWith("emote:")) {
+          const em = gameList && gameList.emotes.find((x) => x.id === ref.slice(6));
+          return { ref, kind: "Emote", label: em ? em.name : ref.slice(6), color: em && em.color, busy: false };
+        }
+        if (ref.startsWith("environment:")) {
+          const en = gameList && gameList.environments.find((x) => x.id === ref.slice(12));
+          return { ref, kind: "Environment", label: en ? en.name : ref.slice(12), color: "#24402e", busy: false };
+        }
+        const lv = levelMeta[ref.slice(6)];
+        return { ref, kind: "Level", label: lv ? lv.name : "Level " + ref.slice(6), color: "#1f3357", busy: false };
+      }
+      function startPostEdit(id) {
+        const p = posts.find((x) => x.id === id);
+        if (!p || !me || p.author !== me.user) return;
+        if (!editingPost) editingPost = { id, draft: { text: text.value, attachments } };
+        else editingPost.id = id;
+        text.value = p.body || "";
+        attachments = (p.images || []).filter((r) => typeof r === "string").map(attachmentChip);
+        renderAttachments();
+        grow();
+        $("post-edit-bar").classList.remove("hidden");
+        $("send-btn").textContent = "Save";
+        note("Enter saves, Shift+Enter for a new line.");
+        document.querySelectorAll("#news-list .msg.editing").forEach((m) => m.classList.remove("editing"));
+        const row = $("news-list").querySelector('.msg[data-id="' + id + '"]');
+        if (row) row.classList.add("editing");
+        text.focus();
+      }
+      function stopPostEdit() {
+        if (!editingPost) return;
+        text.value = editingPost.draft.text;
+        attachments = editingPost.draft.attachments;
+        editingPost = null;
+        renderAttachments();
+        grow();
+        $("post-edit-bar").classList.add("hidden");
+        $("send-btn").textContent = "Post";
+        note();
+        document.querySelectorAll("#news-list .msg.editing").forEach((m) => m.classList.remove("editing"));
+      }
+      $("post-edit-cancel").onclick = stopPostEdit;
+      text.addEventListener("keydown", (e) => { if (e.key === "Escape" && editingPost) stopPostEdit(); });
+
       let sending = false;
       async function send() {
         if (sending || !me || !me.admin) return;
         const body = text.value.trim();
         if (attachments.some((a) => a.busy)) { note("Wait for the pictures to finish uploading.", true); return; }
         const images = attachments.map((a) => a.ref).filter(Boolean);
-        if (!body && !images.length) return;
+        if (!body && !images.length) {
+          if (editingPost) note("A post needs some text or something attached. Delete it instead?", true);
+          return;
+        }
         sending = true;
         $("send-btn").disabled = true;
         try {
-          const { data, error } = await db.rpc("boi_news_post", { p_body: body, p_images: images });
+          const editing = editingPost;
+          const { data, error } = editing
+            ? await db.rpc("boi_news_edit_post", { p_id: editing.id, p_body: body, p_images: images })
+            : await db.rpc("boi_news_post", { p_body: body, p_images: images });
           if (error) { handleSessionError(error); note(errorText(error), true); return; }
           if (!data || !data.ok) {
-            note(data && data.reason === "long" ? "That post is too long." : "Could not post that.", true);
+            const why = data && data.reason;
+            note(why === "long" ? "That post is too long." :
+              why === "missing" ? "That post was deleted." :
+              why === "notyours" ? "You can only edit your own posts." :
+              editing ? "Could not save that." : "Could not post that.", true);
+            return;
+          }
+          if (editing) {
+            stopPostEdit();
+            await loadPosts(false);
             return;
           }
           text.value = "";
@@ -1234,7 +1738,8 @@
       $("picker-search").addEventListener("input", renderPicker);
       function closePicker() { $("picker-overlay").classList.add("hidden"); picker = null; }
       function openPicker(title, load) {
-        if (!roomForMore()) return;
+        // The event form takes one picture and has its own slot for it
+        if (channel !== "events" && !roomForMore()) return;
         picker = { title, items: null };
         $("picker-title").textContent = title;
         $("picker-overlay").classList.remove("hidden");
@@ -1268,7 +1773,7 @@
             b.textContent = it.label;
             if (it.color) b.style.borderLeftColor = it.color;
           }
-          b.onclick = () => { it.pick(); closePicker(); text.focus(); };
+          b.onclick = () => { it.pick(); closePicker(); if (channel !== "events") text.focus(); };
           grid.appendChild(b);
         }
       }
@@ -1279,7 +1784,7 @@
         if (list.length === 1) { list[0].pick(); closePicker(); }
         // A repo file the listing left out can still be typed in
         else if (picker.title === "Repo pictures" && q && /^[A-Za-z0-9_./ ()-]+\.(png|jpe?g|gif|webp)$/i.test(q) && !q.includes("..")) {
-          pickRepo(q);
+          if (channel === "events") setEventRepoPic(q); else pickRepo(q);
           closePicker();
         }
       });
@@ -1290,8 +1795,8 @@
         attachments.push({ ref: "repo:" + path, src: repoUrl(path), busy: false });
         renderAttachments();
       }
-      $("repo-btn").onclick = () =>
-        openPicker("Repo pictures", async () => {
+      function openRepoPicker() {
+        return openPicker("Repo pictures", async () => {
           if (!repoFiles) {
             const r = await fetch("https://api.github.com/repos/" + REPO + "/git/trees/main?recursive=1");
             const j = await r.json();
@@ -1300,8 +1805,13 @@
               .map((t) => t.path)
               .sort((a, b) => a.localeCompare(b));
           }
-          return repoFiles.map((p) => ({ label: p, img: repoUrl(p), pick: () => pickRepo(p) }));
+          return repoFiles.map((p) => ({
+            label: p, img: repoUrl(p),
+            pick: () => (channel === "events" ? setEventRepoPic(p) : pickRepo(p)),
+          }));
         });
+      }
+      $("repo-btn").onclick = openRepoPicker;
       // Every published level (newest first); search by name, creator or id
       let levelList = null;
       $("level-btn").onclick = () =>
@@ -1361,6 +1871,7 @@
         if (document.hidden || !me || document.querySelector(".att-env.playing")) return;
         loadPosts(false);
         loadPolls(false);
+        loadEvents();
       }
       document.addEventListener("visibilitychange", refresh);
       setInterval(refresh, 120000);
@@ -1369,10 +1880,11 @@
       async function checkForNew() {
         if (!me || !db) return;
         const newest = (table) => db.from(table).select("id").order("id", { ascending: false }).limit(1);
-        const [a, b] = await Promise.all([newest("news_posts"), newest("news_polls")]);
+        const [a, b, c] = await Promise.all([newest("news_posts"), newest("news_polls"), newest("news_events")]);
         const latest = (res) => (res && res.data && res.data[0] ? res.data[0].id : 0);
         if (latest(a) > posts.reduce((m, x) => Math.max(m, x.id), 0)) loadPosts(false);
         if (latest(b) > polls.reduce((m, x) => Math.max(m, x.id), 0)) loadPolls(false);
+        if (latest(c) > events.reduce((m, x) => Math.max(m, x.id), 0)) loadEvents();
       }
       setInterval(checkForNew, 30000);
 
